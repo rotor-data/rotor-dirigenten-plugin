@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "rotor",
+  "name": "rotor-dirigenten-plugin",
   "description": "Rotors interna plugins.",
   "owner": {
     "name": "Rotor",
