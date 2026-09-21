@@ -549,6 +549,10 @@ body { padding-bottom: 40px; }
 <!-- Varningen står FÖRE huvudet med flit: tittar någon på en kopia ska det
      vara det första hon ser, inte något hon hittar om hon råkar scrolla. -->
 <div id="v-kopia" class="kopia hidden" role="alert"></div>
+<!-- Sidan är publicerad utanför repot och kan vara gammal utan att någon ser
+     det. Servern säger vilken version den hör till; skiljer den sig från
+     sidans egen står det här, överst, i stället för att sidan ser färsk ut. -->
+<div id="vy-gammal" class="kopia hidden" role="alert"></div>
 <header class="site-head">
   <div class="frame">
     <div class="ticker">
@@ -565,7 +569,19 @@ body { padding-bottom: 40px; }
         <button data-screen="bygg">Bygg</button>
         <button data-screen="installningar">Inställningar</button>
       </div>
-      <div class="nav-r"><button class="btn ghost sm" id="v-uppdatera" type="button">Uppdatera</button></div>
+      <div class="nav-r">
+        <!-- Grupperingen (B-110) gäller ALLA listor samtidigt. En vy där
+             inkommande grupperas på ett sätt och dagens arbete på ett annat
+             är två vyer. Valet hör till personen och sparas i registret. -->
+        <label class="lbl" for="v-gruppering">Gruppera</label>
+        <select id="v-gruppering" class="act" style="padding:5px 10px">
+          <option value="area">Område</option>
+          <option value="customer">Kund</option>
+          <option value="responsible">Ansvarig</option>
+          <option value="urgency">Brådska</option>
+        </select>
+        <button class="btn ghost sm" id="v-uppdatera" type="button">Uppdatera</button>
+      </div>
     </nav>
   </div>
 </header>
@@ -661,6 +677,14 @@ body { padding-bottom: 96px; }
         <div id="vecka-inkommande"></div>
         <div class="rullbar" id="vecka-ta"></div>
         <div class="mer hidden"><span class="s" id="ta-mer"></span><button class="act" type="button" data-visa-alla="ta">Visa alla</button></div>
+      </div>
+      <!-- Supportkön (B-109): trådar i de bevakade adresserna som väntar på
+           svar. Räknas fram i dirigenten vid varje läsning; inget lagras. -->
+      <div class="kolumnlista hidden" id="vecka-support" data-lista="support">
+        <div class="sec-h klibb"><h2>Väntar på svar</h2><span class="lbl" id="support-antal"></span>
+          <button class="act" type="button" id="support-triage">Triagera</button></div>
+        <div class="rullbar" id="support-lista"></div>
+        <div class="mer hidden"><span class="s" id="support-mer"></span><button class="act" type="button" data-visa-alla="support">Visa alla</button></div>
       </div>
       <div class="kolumnlista hidden" id="vecka-andra" data-lista="andra">
         <div class="sec-h klibb"><h2>Väntar på andra</h2><span class="lbl" id="andra-antal"></span></div>
@@ -834,7 +858,7 @@ body { padding-bottom: 96px; }
   /* Vilken version av sidan som körs, och när den lades ut.
      Raden stämplas av `npm run bundle` — skriv den inte för hand. Utan den
      går det inte att se om man tittar på en gammal kopia. */
-  const SIDA = { version: "9d41e5e", published: "2026-09-21" };
+  const SIDA = { version: "53d221f", published: "2026-09-21" };
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const DAG = 864e5;
@@ -2201,6 +2225,23 @@ body { padding-bottom: 96px; }
   }
 
   /**
+   * Säger till när sidan är äldre än servern den talar med.
+   *
+   * Servern svarar med den version den hör till; sidan bär sin egen, stämplad
+   * av samma bygge. Skiljer de sig är sidan en gammal publicering — den
+   * fungerar ofta ändå, men saknar det som byggts sedan dess, och det ska
+   * synas i stället för att visa sig som något som "inte fungerar".
+   */
+  function provaVersion(views) {
+    const el = $("vy-gammal");
+    const serverns = asObject(views).version;
+    if (!serverns || serverns === SIDA.version) { el.classList.add("hidden"); return; }
+    el.textContent = `Den här sidan är version ${SIDA.version}, men dirigenten kör ${serverns}.`
+      + " Ladda om sidan; syns det här kvar är den publicerade sidan äldre än servern.";
+    el.classList.remove("hidden");
+  }
+
+  /**
    * Mötena den dagen, som de kom från plan_state (B-096).
    *
    * Bara den egna personens: servern skickar aldrig någon annans. Listan lever
@@ -3022,6 +3063,268 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
     }
   });
 
+  /**
+   * Supportkön (B-109). Dirigenten läser de bevakade adresserna med DIN egen
+   * inloggning och räknar fram kön; vyn visar den och räknar inget eget.
+   *
+   * De avslutade står kvar under en egen rubrik i stället för att försvinna:
+   * de är BEDÖMDA klara av det motparten skrev sist, och den bedömningen ska
+   * gå att säga emot.
+   */
+  let supportKö = null;
+  /**
+   * Grupperingen (B-110). Personens val, hämtat ur inställningarna och sparat
+   * där — inte i webbläsaren, så att det följer med mellan maskiner.
+   */
+  let gruppering = "area";
+
+  /** Skriver en bedömning av en tråd. Allt går genom grinden, som allt annat. */
+  async function bedömTråd(thread, classification, klartext2) {
+    try {
+      await anropa("classify_accept", { thread, classification });
+      await hamtaKo(false);
+      vStatus(klartext2);
+    } catch (e) { vStatus("Kunde inte spara bedömningen: " + (e?.message || e), true); }
+  }
+
+  /** Leveranstyperna att välja bland. Kommer ur registret, aldrig ur en lista här. */
+  let amnen = [];
+  async function hamtaAmnen() {
+    try {
+      const d = await anropa("guide", {});
+      amnen = (d?.guide?.topics || []).filter((t) => t.kind === "deliverable")
+        .map((t) => ({ id: t.key, label: t.label }));
+    } catch { amnen = []; }
+  }
+
+  /**
+   * Triagen (B-110): Claude bedömer det obedömda och sätter upp det SÄKRA.
+   *
+   * Förslaget prövas här innan det skrivs: en leveranstyp som inte finns i
+   * registret, en person som inte finns i planen eller ett okänt utfall
+   * avvisas. Det som modellen själv säger sig vara osäker på skrivs som
+   * "vänta" med osäkerheten utskriven — då står ärendet kvar i listan med
+   * skälet synligt i stället för att hamna fel.
+   */
+  async function triagera() {
+    const knapp = $("support-triage");
+    const obedömda = supportKö?.untriaged || [];
+    if (!obedömda.length) { vStatus("Inget obedömt att gå igenom."); return; }
+    if (!sample) { vStatus("Claude är inte tillgänglig här, så triagen får göras för hand.", true); return; }
+    if (!amnen.length) await hamtaAmnen();
+    knapp.disabled = true;
+    vStatus(`Claude går igenom ${obedömda.length} ärenden…`);
+
+    const personer = [...new Set([...planPersoner.entries()]
+      .filter(([id]) => !id.includes("/")).map(([id, n]) => `${id} (${n})`))];
+    const rader = obedömda.map((ä, i) =>
+      `${i + 1}. tråd ${ä.thread} · från ${ä.party || "okänd"} · "${ä.subject}"`
+      + ` · ${ä.messages} poster · väntat ${ä.workdays} arbetsdagar`);
+    const prompt = [
+      "Du triagerar inkommande post hos en marknadsbyrå. Varje rad är en mejltråd som väntar på svar.",
+      "",
+      "Ärenden:", ...rader, "",
+      `Leveranstyper (använd id:t exakt): ${amnen.map((a2) => `${a2.id} (${a2.label})`).join(", ")}`,
+      personer.length ? `Personer (använd id:t exakt): ${personer.join(", ")}` : "Inga personer kända.",
+      "",
+      "För varje ärende: avgör om det hör till en leverans (delivery, ange deliverable_type),",
+      "om ett eget svar räcker (own_reply), eller om du är osäker (waiting).",
+      "Sätt ansvarig BARA när det är uppenbart vem som gör den sortens arbete; annars utelämna.",
+      "rank är ordningen du föreslår, 1 är först — det som väntat längst eller stoppar andra går före.",
+      "uncertain är det du inte kunde avgöra, en kort mening per sak. Gissa hellre inte än gissa fel.",
+      "",
+      FORMATREGEL,
+      '{"arenden": [{"thread": "<tråd-id ur listan>", "outcome": "delivery"|"own_reply"|"waiting",'
+        + ' "deliverable_type": "<id, bara för delivery>", "responsible": "<person-id, valfritt>",'
+        + ' "rank": <heltal>, "uncertain": ["<kort mening>"]}]}',
+    ].join("\n");
+
+    const idn = new Set(amnen.map((a2) => a2.id));
+    const folk = new Set(planPersoner.keys());
+    const trådar = new Set(obedömda.map((x) => x.thread));
+    const validera = (v) => {
+      if (!v || !Array.isArray(v.arenden)) return "fältet arenden saknas";
+      for (const a2 of v.arenden) {
+        if (!trådar.has(a2?.thread)) return `tråden "${a2?.thread}" fanns inte i listan`;
+        if (!["delivery", "own_reply", "waiting"].includes(a2?.outcome))
+          return "outcome ska vara delivery, own_reply eller waiting";
+        if (a2.outcome === "delivery" && !idn.has(a2.deliverable_type))
+          return `leveranstypen "${a2.deliverable_type}" finns inte i registret`;
+        if (a2.responsible && !folk.has(a2.responsible))
+          return `personen "${a2.responsible}" finns inte i planen`;
+      }
+      return null;
+    };
+
+    const { svar, fel } = await fragaClaude(prompt, validera);
+    if (!svar) { knapp.disabled = false; vStatus(`Kunde inte triagera: ${fel}. Gör det för hand.`, true); return; }
+
+    let skrivna = 0, osäkra = 0;
+    for (const a2 of svar.arenden) {
+      // Osäkert blir "vänta" med skälet utskrivet — aldrig en gissning.
+      const osäkert = (a2.uncertain || []).filter(Boolean);
+      const bedömning = a2.outcome === "waiting" || (osäkert.length && a2.outcome === "delivery" && !a2.deliverable_type)
+        ? { outcome: "waiting", uncertain: osäkert }
+        : {
+          outcome: a2.outcome,
+          ...(a2.deliverable_type ? { deliverable_type: a2.deliverable_type } : {}),
+          ...(a2.responsible ? { responsible: a2.responsible } : {}),
+          ...(typeof a2.rank === "number" ? { rank: a2.rank } : {}),
+          ...(osäkert.length ? { uncertain: osäkert } : {}),
+        };
+      try {
+        await anropa("classify_accept", { thread: a2.thread, classification: bedömning });
+        if (bedömning.outcome === "waiting") osäkra += 1; else skrivna += 1;
+      } catch (e) { vStatus(`Kunde inte spara bedömningen av en tråd: ${e?.message || e}`, true); }
+    }
+    knapp.disabled = false;
+    await hamtaKo(false);
+    vStatus(`${skrivna} ärenden uppsatta, ${osäkra} lämnade som osäkra att avgöra själv.`);
+  }
+
+  async function triageKnapp(knapp) {
+    const thread = knapp.dataset.trad;
+    const sort = knapp.dataset.triage;
+    const ä = (supportKö?.waiting || []).find((x) => x.thread === thread);
+    if (sort === "ignored") {
+      const skäl = prompt("Varför ska ärendet inte bli något? Skälet krävs och sparas.");
+      if (skäl === null) return;
+      if (!skäl.trim()) { vStatus("Inget ändrat: skäl saknas.", true); return; }
+      await bedömTråd(thread, { outcome: "ignored", reason: skäl.trim() }, "Ärendet är avfört.");
+      return;
+    }
+    if (sort === "own_reply") {
+      await bedömTråd(thread, { outcome: "own_reply",
+        ...(ä?.triage?.responsible ? { responsible: ä.triage.responsible } : {}) },
+        "Noterat: eget svar räcker.");
+      return;
+    }
+    if (sort === "responsible") {
+      const namnen = [...new Set([...planPersoner.entries()]
+        .filter(([id]) => !id.includes("/")).map(([, n]) => n))].sort((a, b) => a.localeCompare(b, "sv"));
+      const vem = prompt(`Vem ska göra det?${namnen.length ? `\n\nI planen finns: ${namnen.join(", ")}.` : ""}`);
+      if (vem === null || !vem.trim()) return;
+      const id = [...planPersoner.entries()].find(([, n]) => n.toLowerCase() === vem.trim().toLowerCase())?.[0];
+      if (!id) { vStatus(`Hittade ingen som heter ${vem.trim()}.`, true); return; }
+      const t = ä?.triage;
+      await bedömTråd(thread, {
+        outcome: t && t.outcome !== "waiting" ? t.outcome : "own_reply",
+        ...(t?.deliverable_type ? { deliverable_type: t.deliverable_type } : {}),
+        ...(t?.customer ? { customer: t.customer } : {}),
+        responsible: id,
+      }, `${vem.trim()} är ansvarig.`);
+      return;
+    }
+    if (!amnen.length) await hamtaAmnen();
+    if (!amnen.length) { vStatus("Inga leveranstyper att välja bland — kontrollera registret.", true); return; }
+    const lista = amnen.map((a2, i) => `${i + 1}. ${a2.label}`).join("\n");
+    const val = prompt(`Vilken leverans hör ärendet till?\n\n${lista}\n\nSkriv numret.`);
+    if (val === null) return;
+    const vald = amnen[Number(val) - 1];
+    if (!vald) { vStatus("Inget ändrat: välj ett nummer ur listan.", true); return; }
+    await bedömTråd(thread, {
+      outcome: "delivery", deliverable_type: vald.id,
+      ...(ä?.triage?.responsible ? { responsible: ä.triage.responsible } : {}),
+    }, `Ärendet hör till ${vald.label}.`);
+  }
+
+  async function hamtaKo(sagTill) {
+    if (!mcp) return;
+    const el = $("support-lista");
+    if (sagTill && el) el.innerHTML = `<div class="tom">Läser posten…</div>`;
+    $("vecka-support").classList.remove("hidden");
+    try {
+      const d = await anropa("intake_status", { queue: true, days: 60 });
+      supportKö = d?.queue ?? null;
+      ritaKo();
+    } catch (e) {
+      supportKö = null;
+      if (el) el.innerHTML = `<div class="tom">${esc(e?.message || String(e))}</div>`;
+      $("support-antal").textContent = "";
+    }
+  }
+
+  function ritaKo() {
+    const k = supportKö;
+    const el = $("support-lista");
+    if (!el) return;
+    if (!k) { $("vecka-support").classList.add("hidden"); return; }
+    $("vecka-support").classList.remove("hidden");
+    $("support-antal").textContent = k.waiting.length ? `${k.waiting.length} st` : "inget väntar";
+    const rad = (ä, avslutad) => {
+      const nyckel = `stod|${ä.thread}`;
+      const dagar = ä.workdays === null ? "" : `${ä.workdays} arb.d`;
+      const t = ä.triage;
+      const n = t?.named || {};
+      // Bedömningen i klartext. Ett ärende utan ansvarig sägs vara ofördelat,
+      // aldrig utelämnat — skillnaden mot "ligger hos alla" är hela poängen.
+      const bedömning = !t || t.outcome === "waiting"
+        ? `<span class="state pink"><i></i>obedömd</span>`
+        : t.outcome === "own_reply"
+          ? `<span class="state prim"><i></i>eget svar räcker</span>`
+          : `<span class="state ok"><i></i>${esc(n.deliverable_type?.label || "leverans")}`
+            + `${n.module?.label ? ` · ${esc(n.module.label)}` : ""}</span>`;
+      const ansvarig = t && t.outcome !== "waiting"
+        ? (n.responsible?.label
+          ? `<span class="state"><i></i>${esc(n.responsible.label)}</span>`
+          : `<span class="state warn"><i></i>ofördelad</span>`)
+        : "";
+      const osäkert = (t?.uncertain || []).length
+        ? `<div class="prop">Osäkert: ${esc(t.uncertain.join("; "))}</div>` : "";
+      return `<details class="rad" data-rad="${esc(nyckel)}"${oppenRad === nyckel ? " open" : ""}><summary>`
+        + (!avslutad && ä.workdays >= 5 ? `<svg class="ic"><use href="#i-clock"/></svg>` : "")
+        + `<span class="vad">${esc(ä.subject || "utan ämnesrad")}</span>`
+        + `<span class="nar">${esc(avslutad ? kort(ä.last_at) : dagar)}</span></summary>`
+        + `<div class="inne">`
+        + `<div>${esc(ä.party || "okänd avsändare")} · ${ä.messages} ${ä.messages === 1 ? "post" : "poster"}`
+        + `${ä.attachments ? ` · ${ä.attachments} ${ä.attachments === 1 ? "bilaga" : "bilagor"}` : ""}`
+        + `${ä.since ? ` · väntat sedan ${esc(kort(ä.since))}` : ""}</div>`
+        + (avslutad
+          ? `<div class="prop">Bedömd avslutad av det de svarade sist. Stämmer det inte är ärendet fortfarande öppet.</div>`
+          : `<div>${bedömning}${ansvarig}</div>${osäkert}`
+            + `<div class="acts">`
+            + `<button class="act prim" type="button" data-triage="delivery" data-trad="${esc(ä.thread)}">Hör till en leverans</button>`
+            + `<button class="act" type="button" data-triage="own_reply" data-trad="${esc(ä.thread)}">Eget svar räcker</button>`
+            + `<button class="act" type="button" data-triage="responsible" data-trad="${esc(ä.thread)}">Vem gör det</button>`
+            + `<button class="act" type="button" data-triage="ignored" data-trad="${esc(ä.thread)}">Ignorera</button>`
+            + `</div>`)
+        + `</div></details>`;
+    };
+
+    // Grupperingen (B-110) gäller alla listor. Nyckeln är personens val; det
+    // som saknar värde hamnar under en egen rubrik i stället för att gömmas.
+    const grupp = (ä) => {
+      const n = ä.triage?.named || {};
+      if (gruppering === "customer") return n.customer?.label || "Utan kund";
+      if (gruppering === "responsible") return n.responsible?.label
+        || (ä.triage && ä.triage.outcome !== "waiting" ? "Ofördelade" : "Obedömda");
+      if (gruppering === "urgency") return ä.workdays >= 10 ? "Över tio arbetsdagar"
+        : ä.workdays >= 5 ? "Fem till tio arbetsdagar" : "Denna vecka";
+      return n.module?.label || (ä.triage && ä.triage.outcome === "own_reply" ? "Eget svar" : "Obedömda");
+    };
+    const grupperat = (lista) => {
+      const per = new Map();
+      for (const ä of lista) {
+        const g = grupp(ä);
+        (per.get(g) || per.set(g, []).get(g)).push(ä);
+      }
+      return [...per.entries()].map(([namn2, rader]) =>
+        `<div class="kundgrupp"><h3>${esc(namn2)} <span class="lbl">${rader.length} st</span></h3>`
+        + rader.map((x) => rad(x, false)).join("") + `</div>`).join("");
+    };
+
+    el.innerHTML = `<div class="rader">`
+      + (k.waiting.length ? grupperat(k.waiting)
+        : `<div class="tom">Inget väntar på svar.</div>`)
+      + (k.closed_by_ack.length
+        ? `<div class="kundgrupp"><h3>Avslutade med ett tack</h3>`
+          + k.closed_by_ack.map((x) => rad(x, true)).join("") + `</div>`
+        : "")
+      + `</div>`
+      + (k.truncated ? `<div class="s">Fler trådar finns än de som lästes — taket slog i.</div>` : "");
+    matListor();
+  }
+
   // ── Kopplingar: dirigenten och de andra (B-102) ───────────────────────────
   //
   // Sidan får tala med fler anslutningar än dirigenten, med den tittandes egen
@@ -3638,6 +3941,7 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
       // och räknas inte in i något som lagras (B-096).
       // Adressen till vyerna kommer med planen; saknas den säger vi ingenting.
       provaAdress(d.views_url);
+      provaVersion(d.views);
       senasteMoten = (d.meetings && typeof d.meetings === "object") ? d.meetings : null;
       motesLage = typeof d.meetings_status === "string" ? d.meetings_status : null;
       try { rita(d.plan); }
@@ -3797,6 +4101,13 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
       if (!d || typeof d !== "object") throw new Error("servern svarade inget alls");
       if (!d.settings) throw new Error("svaret saknade inställningar — servern kan vara en äldre version");
       instal = normalizeSettings(d.settings);
+      // Personens gruppering, om hon valt en. Valet gäller alla listor.
+      const valdGruppering = asObject(d.settings?.view).grouping;
+      if (typeof valdGruppering === "string" && valdGruppering && valdGruppering !== gruppering) {
+        gruppering = valdGruppering;
+        $("v-gruppering").value = gruppering;
+        ritaKo();
+      }
       utkast = JSON.parse(JSON.stringify({ calendar: instal.calendar, mail: instal.mail, workday: instal.workday }));
       inStatus("");
       ritaInstallningar();
@@ -4318,7 +4629,33 @@ ${FIELD_RULE} Behåll ordningen i planen.`,
     builderInterpret(k.dataset.builderInterpret);
   });
 
-  $("v-uppdatera").addEventListener("click", () => { hamtaPlan(); hamtaKunder(); hamtaInkommande(); hamtaInstallningar(); });
+  $("v-uppdatera").addEventListener("click", () => {
+    hamtaPlan(); hamtaKunder(); hamtaInkommande(); hamtaKo(false); hamtaInstallningar();
+  });
+  // Hämta post läser om hos Google, inte bara ritar om det vi redan har.
+  $("in-hamta").addEventListener("click", () => { hamtaKo(true); });
+  $("support-triage").addEventListener("click", () => triagera());
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest?.("[data-triage]");
+    if (t) { e.preventDefault(); triageKnapp(t); }
+  });
+  /**
+   * Grupperingen (B-110) gäller personen, inte webbläsaren: den sparas i
+   * registret samma väg som övriga inställningar, så att den följer med
+   * mellan maskiner och var och en får sin egen.
+   */
+  $("v-gruppering").addEventListener("change", async (e) => {
+    gruppering = e.target.value;
+    ritaKo();
+    if (senastePlan) rita(senastePlan);
+    if (!instal?.node) return;
+    try {
+      const nod = JSON.parse(JSON.stringify(instal.node));
+      nod.view = { grouping: gruppering };
+      await anropa("registry_define", { node: nod });
+      instal.view = { grouping: gruppering };
+    } catch (err) { vStatus("Valet gäller här, men kunde inte sparas: " + errorText(err), true); }
+  });
   // Förmågan kan saknas (null): då göms det som behöver den, allt annat fungerar.
   (typeof claude !== "undefined" && claude.use ? claude.use("sample") : Promise.resolve(null))
     .then((m) => {
@@ -4380,6 +4717,7 @@ ${FIELD_RULE} Behåll ordningen i planen.`,
     hamtaPlan();
     hamtaKunder();
     hamtaInkommande();
+    hamtaKo(false);
     hamtaInstallningar();
   });
 })();

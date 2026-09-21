@@ -31,14 +31,14 @@ Files live in the content bank, addressed as `bank://<tenant>/<sha256>`, and are
 
 ## Start with the views
 
-There is exactly ONE Dirigenten views page, and the server says where it is: `views_url`, in every `plan_state` answer and in `guide`. The page shows today, the week, the customers and the file bank, and fetches everything itself.
+There is exactly ONE Dirigenten views page, and the server says where it is: `views_url`, in every `plan_state` answer and in `guide`. The page shows today, the week, the customers, the incoming mail with its triage, and the file bank, and fetches everything itself.
 
 1. Always link the user to `views_url`, verbatim. Never guess an address, never reuse one from an earlier session, never publish a page of your own.
 2. **Never publish or republish the views.** If the user cannot open the address, that is a permissions problem — say so plainly and say who grants access. A copy is not a fix: copies are why people ended up watching a page that was no longer the one being updated.
-3. If `views_url` is missing from the answer, say the tenant has no views page yet. Do not create one.
-4. Then say briefly what matters most today, with the link. Do not recite what the page already shows.
+3. If `views_url` is missing from the answer, say the tenant has no views page yet, and that the address is a setting in the registry (`core.setting.views_url`). Do not create one.
+4. Then say briefly what matters most today, with the link. Do not recite what the page already shows. Two or three lines is the whole opening.
 
-`assets/vyer.html` is the source for whoever deploys the page. It is not something you publish.
+The answer also carries `views.version`: the version the running server belongs to. The page carries its own stamp and says so itself when it is the older one. `assets/vyer.html` is the source for whoever deploys the page — it is not something you publish.
 
 When the page is open, let the user act there — mark a step done, upload a missing input, move a step — rather than doing it for them unasked.
 
@@ -53,6 +53,15 @@ Always fetch guidance from the server before speaking about a customer, a task o
 - A step performed by a human follows its recipe: what is needed, how to do it, how to check it.
 - A step may be marked done even when the work happened elsewhere. If what it should leave is missing, that becomes an open requirement, not an assumption.
 - Planning writes nothing on its own.
+
+## Credentials are the server's, never yours
+
+Dirigenten talks to HubSpot, Gmail, Google Calendar and the content bank **from the server**, with credentials that live in the deployment and are readable only by it. Nobody working through this plugin needs a token, a key or a `.env` file, and no one should be asked for one.
+
+- Never ask the user for an API token, and never suggest putting one in a local file. If you are about to, you are in the wrong place: the work belongs behind dirigenten's surface.
+- The user's own access comes from signing in with their Rotor account. What they may see and do follows from that, not from what is on their machine.
+- **`HUBSPOT_TOKEN is not set` and the like mean you are in another repository** — usually the separate HubSpot CLI, which still keeps its own local secrets. That is not a setup fault to fix with a key: it is a capability that has not been moved into dirigenten yet. Say which command was missing and propose it as an atom and a molecule, so it can be run by everyone instead of by whoever has the token.
+- A tool here failing with an authorisation error is a server matter. Report it plainly — never route around it with a local script.
 
 ## Never guess
 
