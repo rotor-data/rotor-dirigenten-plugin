@@ -38,7 +38,7 @@ There is exactly ONE Dirigenten views page, and the server says where it is: `vi
 3. If `views_url` is missing from the answer, say the tenant has no views page yet, and that the address is a setting in the registry (`core.setting.views_url`). Do not create one.
 4. Then say briefly what matters most today, with the link. Do not recite what the page already shows. Two or three lines is the whole opening.
 
-The answer also carries `views.version`: the version the running server belongs to. The page carries its own stamp and says so itself when it is the older one. `assets/vyer.html` is the source for whoever deploys the page — it is not something you publish.
+The answer also carries `views.version`: the version the running server belongs to. The page carries its own stamp and says so itself when it is the older one. The page itself does not live in this plugin: it is published once, at a fixed address, and everyone who can open it always sees the current version. The source is `views/vyer.html` in the repository, for whoever deploys it — not something you publish.
 
 When the page is open, let the user act there — mark a step done, upload a missing input, move a step — rather than doing it for them unasked.
 
