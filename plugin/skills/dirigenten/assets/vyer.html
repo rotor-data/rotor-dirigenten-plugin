@@ -427,6 +427,20 @@ body { padding-bottom: 40px; }
 .stegdlg .rader2 { display: flex; flex-wrap: wrap; gap: 8px; }
 .stegdlg .avslut { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--hair); padding-top: 14px; }
 .stegdlg .forslag { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Arbetssättet i steg-dialogen: instruktionens sex frågor, eller receptet. */
+.arbetssatt { border-top: 1px solid var(--hair); padding-top: 10px; }
+.arbetssatt > summary { padding: 4px 0; }
+.instr-falt { display: flex; flex-direction: column; gap: 4px; padding: 8px 0 0; }
+.instr-falt textarea { font: inherit; font-size: 13.5px; line-height: 1.45; padding: 8px 10px; border: 1px solid var(--hair); border-radius: 4px; background: var(--page); color: var(--ink); resize: vertical; }
+.arbetssatt .fel { color: var(--crit); }
+/* Projekten: ett åtagande i taget, med stegen under. */
+.projekt > summary { padding: 14px 0; }
+.projekt .inne { padding-bottom: 26px; }
+.kedja-lista { margin: 0; padding: 4px 0 0 18px; font-size: 13.5px; color: var(--ink2); }
+.kedja-lista li { padding: 5px 0; display: flex; flex-direction: column; gap: 4px; }
+.kedja-lista li.nasta { color: var(--ink); font-weight: 600; }
+.kedja-lista li.gjort { color: var(--ink3); }
+#projekt-lista .meter { height: 6px; }
 
 /* Play-knappen: kortets primära åtgärd, alltid synlig, till höger. Märket i
    hörnet säger vilket slags arbete det är (B-099) — inte en andra knapp. */
@@ -487,6 +501,10 @@ body { padding-bottom: 40px; }
 .utkast .rad2 { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 /* Veckan som kalender. */
+/* Kalendern rullar i sidled när panelen är smal — sju dagar behöver sin
+   bredd, och att byta till en lista gjorde att kalendern såg ut att saknas. */
+.kal-ram { overflow-x: auto; overscroll-behavior-x: contain; }
+.kal { min-width: 680px; }
 .kal { display: grid; grid-template-columns: 58px repeat(7, minmax(0, 1fr)); border: 1px solid var(--hair); border-radius: 6px; background: var(--paper); overflow: hidden; }
 .kal .kolhuvud { padding: 9px 8px; font-size: 12.5px; color: var(--ink2); border-bottom: 1px solid var(--hair); border-left: 1px solid var(--hair); }
 .kal .kolhuvud.idag { color: var(--ink); font-weight: 600; background: var(--tint); }
@@ -566,6 +584,8 @@ body { padding-bottom: 40px; }
         <button data-screen="plan">Planering</button>
         <button data-screen="kunder">Kunder</button>
         <button data-screen="bank">Filbank</button>
+        <button data-screen="projekt">Projekt</button>
+        <button data-screen="regler">Regler</button>
         <button data-screen="bygg">Bygg</button>
         <button data-screen="installningar">Inställningar</button>
       </div>
@@ -672,7 +692,9 @@ body { padding-bottom: 96px; }
         <!-- Inkommande post (B-101): egen grupp, egen hämtning. Ärendena kommer
              ur intaget, inte ur planen, och listan ritas därför för sig. -->
         <div class="sec-h"><h3 style="font:inherit;font-weight:600">Inkommande post</h3>
-          <button class="act" type="button" id="in-hamta">Hämta post</button></div>
+          <button class="act" type="button" id="in-hamta">Hämta post</button>
+          <button class="act" type="button" id="in-hamta-allt"
+            data-tip="Läs en bestämd period bakåt. Flyttar inte vattenmärket.">Hämta äldre</button></div>
         <div class="fb-status hidden" id="ink-status" role="status"></div>
         <div id="vecka-inkommande"></div>
         <div class="rullbar" id="vecka-ta"></div>
@@ -812,6 +834,35 @@ body { padding-bottom: 96px; }
 .bygg-kod { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; padding: 9px 11px; border: 1px solid var(--hair); border-radius: 4px; background: rgba(0, 35, 35, 0.04); display: inline-block; max-width: 100%; overflow-x: auto; }
 </style>
 
+<!-- Projekten (B-112): ett åtagande i taget, hur det ligger till och vad som
+     går att göra i det. Planen bär åtagandet på varje uppgift; vyn grupperar
+     och räknar, men räknar inget eget datum. -->
+<section data-screen="projekt" class="hidden">
+  <div class="page-head">
+    <div>
+      <div class="eyebrow lbl"><span class="rule"></span>Åtagandena · ett i taget</div>
+      <h1>Pro<span class="l">jekt</span></h1>
+      <p>Vad vi lovat, hur långt det kommit och vad som står still. Öppna ett projekt för stegen — och gör dem härifrån.</p>
+    </div>
+  </div>
+  <div id="projekt-lista"></div>
+</section>
+
+<!-- Reglerna (B-111): sådant här hanteras så här. De står i registret och
+     gäller alla; här syns de, och här ändras de. -->
+<section data-screen="regler" class="hidden">
+  <div class="page-head">
+    <div>
+      <div class="eyebrow lbl"><span class="rule"></span>Bestämt en gång · gäller alla</div>
+      <h1>Reg<span class="l">ler</span></h1>
+      <p>Post som en regel täcker avgörs utan att någon läser den. Regeln säger vad som gäller, och det syns på ärendet vilken regel det var — så att den går att säga emot.</p>
+    </div>
+    <div class="side"><button class="btn ghost sm" id="regel-ny" type="button">Ny regel</button></div>
+  </div>
+  <div class="fb-status hidden" id="regel-status" role="status"></div>
+  <div id="regel-lista"></div>
+</section>
+
 <section data-screen="bygg" class="hidden">
   <div class="page-head">
     <div>
@@ -858,7 +909,7 @@ body { padding-bottom: 96px; }
   /* Vilken version av sidan som körs, och när den lades ut.
      Raden stämplas av `npm run bundle` — skriv den inte för hand. Utan den
      går det inte att se om man tittar på en gammal kopia. */
-  const SIDA = { version: "53d221f", published: "2026-09-21" };
+  const SIDA = { version: "fc4972f", published: "2026-09-21" };
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const DAG = 864e5;
@@ -955,6 +1006,37 @@ body { padding-bottom: 96px; }
     return "mellan " + kort(w.earliest) + " och " + kort(w.latest);
   }
   const leveransText = (t) => t?.due_window ? fonsterText(t.due_window) : kort(t?.due);
+  /**
+   * Hur många av periodens upprepningar som är gjorda.
+   *
+   * Fem SoMe-poster i månaden blir fem uppgifter, en per förekomst. Var för
+   * sig säger de ingenting om hur långt man kommit — och det är det man vill
+   * veta innan man tar nästa. Räknas ur planen: samma kund, samma leverans,
+   * samma period. En uppgift är gjord när alla dess steg är det.
+   *
+   * Bara uppgifter planen bär räknas. Ligger äldre förekomster utanför
+   * horisonten står de inte med, och då säger raden mindre än den kunde —
+   * men aldrig mer än den vet.
+   */
+  const uppgiftKlar = (t) => {
+    const steg = asList(t.steps);
+    return steg.length > 0 && steg.every((s) => s.done || s.external);
+  };
+  function periodLage(t) {
+    if (!t?.period || !t.deliverable?.id) return null;
+    const syskon = (senastePlan?.tasks || []).filter((x) =>
+      x.period === t.period && x.deliverable?.id === t.deliverable.id
+      && (x.customer?.id || "") === (t.customer?.id || ""));
+    if (syskon.length < 2) return null;
+    const klara = syskon.filter(uppgiftKlar).length;
+    return { klara, av: syskon.length, period: t.period };
+  }
+  /** "2 av 5 i september" — det som är gjort av periodens upprepningar. */
+  const periodText = (t) => {
+    const p = periodLage(t);
+    return p ? `${p.klara} av ${p.av} ${manad(p.period) ? "i " + manad(p.period) : "i perioden"}` : "";
+  };
+
   /** Uppgiftens namn så att två likadana går att skilja åt. */
   const uppgiftsnamn = (t) => {
     const nr = t.ordinal && t.period ? ` nr ${t.ordinal} i ${manad(t.period)}` : "";
@@ -1359,6 +1441,239 @@ body { padding-bottom: 96px; }
       + `<td class="n"><button class="act" type="button" data-kundbank="${esc(k)}">Filer <span class="arr">→</span></button></td></tr>`).join("")
       : `<tr><td colspan="5" class="tom">Inga kunder med planerade uppgifter.</td></tr>`;
   }
+
+  // ── Projekten: ett åtagande i taget (B-112) ───────────────────────────────
+  //
+  // Ett projekt är ett ÅTAGANDE: det vi lovat en kund. Uppgifterna hänger på
+  // det, och det är därför de går att räkna ihop utan att vyn hittar på en
+  // egen gruppering. Allt som går att göra på ett steg går att göra härifrån
+  // — samma knappar, samma väg genom execute_step.
+  let oppetProjekt = null;
+
+  /** Projektets läge, räknat ur uppgifterna. Vyn räknar inga datum själv. */
+  function projektLage(uppgifter) {
+    const steg = uppgifter.flatMap((t) => asList(t.steps));
+    const klara = steg.filter((s) => s.done).length;
+    const utanMarginal = steg.filter((s) => !s.done && s.critical).length;
+    const väntar = steg.filter((s) => !s.done && (s.blocked_by || []).length).length;
+    const nästa = uppgifter.map((t) => ({ t, n: nastaSteg(t) })).filter((x) => x.n)
+      .sort((a, b) => a.n.start.localeCompare(b.n.start))[0] ?? null;
+    const leverans = uppgifter.map((t) => t.due).filter(Boolean).sort()[0] ?? null;
+    return { steg: steg.length, klara, utanMarginal, väntar, nästa, leverans };
+  }
+
+  function ritaProjekt() {
+    const el = $("projekt-lista");
+    if (!el) return;
+    const tasks = asList(senastePlan?.tasks);
+    if (!tasks.length) { el.innerHTML = `<div class="tom">Inga uppgifter i planen.</div>`; return; }
+    const projekt = new Map();
+    for (const t of tasks) {
+      const nyckel = t.commitment || `utan|${t.customer?.id || ""}`;
+      const p = projekt.get(nyckel) || {
+        nyckel, namn: t.commitment_named || null, kund: t.customer || null, uppgifter: [],
+      };
+      p.uppgifter.push(t);
+      projekt.set(nyckel, p);
+    }
+    const rader = [...projekt.values()].sort((a, b) => {
+      const la = projektLage(a.uppgifter).leverans || "9";
+      const lb = projektLage(b.uppgifter).leverans || "9";
+      return la.localeCompare(lb);
+    });
+    el.innerHTML = rader.map((p) => {
+      const l = projektLage(p.uppgifter);
+      const öppen = oppetProjekt === p.nyckel;
+      const titel = p.namn?.label || (p.kund ? `${namn(p.kund)} · utan åtagande` : "Utan åtagande");
+      const delar = [
+        `${l.klara} av ${l.steg} steg klara`,
+        l.utanMarginal ? `${l.utanMarginal} utan marginal` : "",
+        l.väntar ? `${l.väntar} väntar på leverans` : "",
+        l.leverans ? `närmast ${kort(l.leverans)}` : "",
+      ].filter(Boolean);
+      return `<details class="mapp projekt" data-projekt="${esc(p.nyckel)}"${öppen ? " open" : ""}>`
+        + `<summary><span style="font-size:17px"><span class="kundprick" style="background:${esc(kundfarg(p.uppgifter[0]))}"></span>`
+        + `${esc(titel)}</span><small>${esc(delar.join(" · "))}</small></summary>`
+        + `<div class="inne">`
+        + (p.namn?.summary ? `<div class="s">${esc(p.namn.summary)}</div>` : "")
+        + `<div class="meter" style="margin:10px 0 16px"><i style="width:${l.steg ? l.klara / l.steg * 100 : 0}%"></i></div>`
+        + p.uppgifter.map((t) => projektUppgift(t)).join("")
+        + `</div></details>`;
+    }).join("");
+  }
+
+  /** En uppgift i projektet: dess steg i ordning, med samma knappar som annars. */
+  function projektUppgift(t) {
+    const steg = asList(t.steps);
+    const nästa = nastaSteg(t);
+    return `<div class="kundgrupp"><h3><i style="background:${esc(kundfarg(t))}"></i>`
+      + `${esc(uppgiftsnamn(t))} <span class="lbl">leverans ${esc(leveransText(t))}`
+      + `${periodText(t) ? " · " + esc(periodText(t)) : ""}</span></h3>`
+      + `<ol class="kedja-lista">${steg.map((x, i) =>
+        stegRad(t, x, i, x === nästa, planPersoner)).join("")}</ol></div>`;
+  }
+
+  $("projekt-lista").addEventListener("toggle", (e) => {
+    const d = e.target;
+    if (!d.matches?.("details.projekt")) return;
+    oppetProjekt = d.open ? d.dataset.projekt : (oppetProjekt === d.dataset.projekt ? null : oppetProjekt);
+    if (d.open) ritaSammanhang();
+  }, true);
+
+  // ── Reglerna: sådant här hanteras så här (B-111) ───────────────────────────
+  //
+  // Reglerna bor i registret och gäller alla. Här syns de som de är, och här
+  // ändras de — genom registry_define som allt annat, prövade av grinden.
+  // Sidan hittar inte på egna fält: formen står i registret.
+  let regler = [];
+  const regelStatus = (t, fel) => panelStatus("regel-status", t, fel);
+  const UTFALL = {
+    delivery: "hör till en leverans", own_reply: "eget svar räcker",
+    ignored: "ignoreras", waiting: "lämnas att avgöra",
+  };
+
+  /** Regeln i klartext: när den gäller, och vad den gör. */
+  function regelText(r) {
+    const w = asObject(r.when), t = asObject(r.then);
+    const när = [
+      w.from ? `avsändaren ${w.from}` : "",
+      w.subject_contains ? `ämnesraden innehåller "${w.subject_contains}"` : "",
+      w.mailbox ? `brevlådan ${w.mailbox}` : "",
+      w.customer ? `kunden ${namnPaId(w.customer)}` : "",
+    ].filter(Boolean);
+    const gör = [
+      t.outcome ? UTFALL[t.outcome] || t.outcome : "",
+      t.deliverable_type ? `leveranstyp ${namnPaId(t.deliverable_type)}` : "",
+      t.customer ? `kund ${namnPaId(t.customer)}` : "",
+      t.responsible ? `ansvarig ${namnPaId(t.responsible)}` : "",
+      t.rank ? `ordning ${t.rank}` : "",
+    ].filter(Boolean);
+    return { när: när.length ? när.join(" och ") : "allt som kommer in", gör: gör.join(", ") };
+  }
+
+  /** Namn på en post vi råkar känna till ur planen; annars id:t, aldrig en gissning. */
+  function namnPaId(id) {
+    if (!id) return "";
+    if (planPersoner.get(id)) return planPersoner.get(id);
+    for (const t of asList(senastePlan?.tasks)) {
+      if (t.customer?.id === id) return t.customer.label;
+      if (t.deliverable?.id === id) return t.deliverable.label;
+    }
+    return id;
+  }
+
+  function ritaRegler() {
+    const el = $("regel-lista");
+    if (!el) return;
+    if (!regler.length) {
+      el.innerHTML = `<div class="tom">Inga regler än. Allt som kommer in bedöms var för sig.</div>`;
+      return;
+    }
+    el.innerHTML = `<div class="rader">` + regler.map((r) => {
+      const k = regelText(r);
+      return `<details class="rad" data-rad="regel|${esc(r.id)}"><summary>`
+        + `<span class="vad">${esc(r.label)}${r.enabled === false ? " · avstängd" : ""}</span>`
+        + `<span class="nar">${esc(k.gör)}</span></summary>`
+        + `<div class="inne">`
+        + `<div>${esc(r.summary || "")}</div>`
+        + `<div class="prop">När ${esc(k.när)} → ${esc(k.gör)}.</div>`
+        + `<div class="acts">`
+        + `<button class="act" type="button" data-regel-av="${esc(r.id)}" data-pa="${r.enabled === false ? "1" : ""}">`
+        + `${r.enabled === false ? "Slå på" : "Stäng av"}</button>`
+        + `<button class="act" type="button" data-regel-andra="${esc(r.id)}">Ändra</button>`
+        + `</div></div></details>`;
+    }).join("") + `</div>`;
+  }
+
+  /** Reglerna kommer med kön: samma läsning, inget eget anrop. */
+  const laddaRegler = (svar) => {
+    regler = asList(svar?.rules);
+    ritaRegler();
+  };
+
+  /** Slå av eller på en regel. En avstängd regel står kvar och syns. */
+  async function regelPaAv(knapp) {
+    const på = knapp.dataset.pa === "1";
+    knapp.disabled = true;
+    try {
+      await anropa("registry_define", { node: { id: knapp.dataset.regelAv, enabled: på }, change: true });
+      regelStatus(på ? "Regeln gäller igen." : "Regeln är avstängd men står kvar.");
+      await hamtaKo(false);
+    } catch (e) { regelStatus("Kunde inte ändra regeln: " + errorText(e), true); knapp.disabled = false; }
+  }
+
+  /**
+   * En ny regel, eller en ändrad, skriven i vanlig svenska och tolkad av
+   * Claude (B-099). Formen prövas här, och registret prövar den igen: en
+   * regel som pekar på en kund som inte finns går inte in.
+   */
+  async function regelUrText(befintlig) {
+    if (!sample) { regelStatus("Claude är inte tillgänglig här, så regeln kan inte tolkas i vyn.", true); return; }
+    const text = prompt(befintlig
+      ? `Hur ska regeln "${befintlig.label}" ändras? Skriv det i vanlig svenska.`
+      : "Vad ska regeln göra? Till exempel: post från @freebo.se hör till Freebo, och Daniel tar den.");
+    if (text === null || !text.trim()) return;
+    regelStatus("Claude läser regeln…");
+    const kunder2 = [...new Map(asList(senastePlan?.tasks)
+      .filter((t) => t.customer?.id).map((t) => [t.customer.id, t.customer.label])).entries()];
+    const typer = [...new Map(asList(senastePlan?.tasks)
+      .filter((t) => t.deliverable?.id).map((t) => [t.deliverable.id, t.deliverable.label])).entries()];
+    const personer = [...planPersoner.entries()].filter(([id]) => !id.includes("/"));
+    const prompt2 = [
+      "Du skriver en regel för inkommande post hos en marknadsbyrå.",
+      befintlig ? `Regeln som ska ändras: ${JSON.stringify({ when: befintlig.when, then: befintlig.then })}` : "",
+      `Önskemålet: ${text.trim()}`,
+      "",
+      `Kunder (använd id:t exakt): ${kunder2.map(([i, l]) => `${i} (${l})`).join(", ") || "inga kända"}`,
+      `Leveranstyper: ${typer.map(([i, l]) => `${i} (${l})`).join(", ") || "inga kända"}`,
+      `Personer: ${personer.map(([i, l]) => `${i} (${l})`).join(", ") || "inga kända"}`,
+      "",
+      FORMATREGEL,
+      '{"label": "<kort namn>", "summary": "<en mening>",'
+        + ' "when": {"from": "<adress eller @domän>", "subject_contains": "<ord>", "mailbox": "<adress>", "customer": "<id>"},'
+        + ' "then": {"outcome": "delivery|own_reply|ignored|waiting", "deliverable_type": "<id>",'
+        + ' "customer": "<id>", "responsible": "<id>", "rank": <heltal>, "reason": "<mening>"}}',
+      "Utelämna varje fält som önskemålet inte säger något om — ett gissat villkor gör regeln fel för allt annat.",
+      "deliverable_type kräver outcome delivery. outcome ignored kräver reason.",
+      "Id:n måste komma ur listorna ovan, ordagrant.",
+    ].filter(Boolean).join("\n");
+    const idn = new Set([...kunder2.map(([i]) => i), ...typer.map(([i]) => i), ...personer.map(([i]) => i)]);
+    const validera = (v) => {
+      if (!v || !ärSträng(v.label) || !ärSträng(v.summary)) return "label och summary krävs";
+      const t = asObject(v.then);
+      if (!Object.keys(t).length) return "then får inte vara tomt — regeln måste göra något";
+      for (const [f, id] of [["then.customer", t.customer], ["then.responsible", t.responsible],
+        ["then.deliverable_type", t.deliverable_type], ["when.customer", asObject(v.when).customer]])
+        if (id && !idn.has(id)) return `${f} pekar på "${id}" som inte finns i listorna`;
+      if (t.deliverable_type && t.outcome !== "delivery") return "deliverable_type kräver outcome delivery";
+      if (t.outcome === "ignored" && !ärSträng(t.reason)) return "outcome ignored kräver reason";
+      return null;
+    };
+    const { svar, fel } = await fragaClaude(prompt2, validera);
+    if (!svar) { regelStatus("Kunde inte tolka regeln: " + fel + ". Ingenting är skrivet.", true); return; }
+    const k = regelText(svar);
+    if (!confirm(`Spara regeln?\n\n${svar.label}\nNär ${k.när} → ${k.gör}.`)) { regelStatus(""); return; }
+    try {
+      const nod = befintlig
+        ? { id: befintlig.id, label: svar.label, summary: svar.summary, when: svar.when, then: svar.then }
+        : { kind: "rule", id: `r_${Date.now().toString(36)}`,
+            name: `core.rule.${(svar.label || "regel").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}`,
+            grounding: "decided", found_in: "skriven i vyn", scope: "tenant",
+            label: svar.label, summary: svar.summary, applies_to: "mail",
+            when: svar.when || {}, then: svar.then, enabled: true };
+      await anropa("registry_define", { node: nod, ...(befintlig ? { change: true } : {}) });
+      regelStatus(befintlig ? "Regeln är ändrad." : "Regeln är sparad och gäller nästa läsning.");
+      await hamtaKo(false);
+    } catch (e) { regelStatus("Dirigenten sa nej: " + errorText(e), true); }
+  }
+
+  $("regel-ny").addEventListener("click", () => regelUrText(null));
+  $("regel-lista").addEventListener("click", (e) => {
+    const av = e.target.closest("[data-regel-av]");
+    if (av) { e.preventDefault(); regelPaAv(av); return; }
+    const ä = e.target.closest("[data-regel-andra]");
+    if (ä) { e.preventDefault(); regelUrText(regler.find((r) => r.id === ä.dataset.regelAndra) || null); }
+  });
 
   // ── Filbanken: kunder överst, mappträd under varje kund
   const kunder = new Map(); // id → { id, label, antal, filer: null | [] }
@@ -2039,7 +2354,10 @@ body { padding-bottom: 96px; }
           + `<div class="txt">`
           + (b ? klocka(b) : "")
           + `<div class="rubrik">${esc(klartext(s.label))}${del ? ` · ${esc(del.label)}` : ""}</div>`
-          + `<div class="meta">Leverans ${esc(leveransText(t))} · ${esc(del ? (planPersoner.get(del.responsible) || del.responsible) : namn(s.responsible, "utan ansvarig"))} · ${esc(nar)}${raknat ? ` · ${esc(raknat)}` : ""}</div>`
+          + `<div class="meta">Leverans ${esc(leveransText(t))} · ${esc(del ? (planPersoner.get(del.responsible) || del.responsible) : namn(s.responsible, "utan ansvarig"))} · ${esc(nar)}${raknat ? ` · ${esc(raknat)}` : ""}`
+          // Upprepningarna i perioden: fem SoMe-poster i månaden är fem
+          // uppgifter, och det man vill veta är hur många som är gjorda.
+          + `${periodText(t) ? ` · ${esc(periodText(t))}` : ""}</div>`
           + `<span class="acts2">`
           + ikonknapp("i-check", "Markera klart", `data-markera="done" data-uppgift="${esc(t.id)}" data-steg="${esc(s.step)}"`)
           + ikonknapp("i-clock", "Senarelägg", `data-senarelagg="${esc(t.id)}" data-steg="${esc(s.step)}"`)
@@ -2063,6 +2381,7 @@ body { padding-bottom: 96px; }
 
     ritaVecka();
     ritaDagsbelastning(dag);
+    ritaProjekt();
     matListor();
   }
 
@@ -2085,7 +2404,12 @@ body { padding-bottom: 96px; }
     $("kal-vecka").textContent = `Vecka ${veckonr(new Date(mandagen))} · ${kortDag(dagar[0])}–${kortDag(dagar[6])}`;
     const perDag = new Map(dagar.map((d) => [d, dagensArbete(d)]));
 
-    if (window.matchMedia("(max-width: 900px)").matches) {
+    // Rutnätet är kalendern. Det föll förut tillbaka till en lista redan vid
+    // 900 px, och eftersom vyn oftast står i en panel smalare än så fick man
+    // aldrig se kalendern — den såg ut att vara borta. Nu rullar rutnätet i
+    // sidled i stället, och listan finns kvar för en telefon, där sju
+    // kolumner inte går att läsa hur mycket man än rullar.
+    if (window.matchMedia("(max-width: 560px)").matches) {
       $("vecko-kalender").innerHTML = `<div class="kal-lista">` + dagar.map((d) => {
         const rader = perDag.get(d);
         return `<div class="dag"><h3>${esc(langDag(d))}</h3>`
@@ -2170,7 +2494,7 @@ body { padding-bottom: 96px; }
       return { d, utanTid: rader.filter((r) => !r.pass.length), block };
     });
 
-    $("vecko-kalender").innerHTML = `<div class="kal">`
+    $("vecko-kalender").innerHTML = `<div class="kal-ram"><div class="kal">`
       + `<div class="hornet"></div>`
       + kolumner.map(({ d }) => `<div class="kolhuvud ${d === iso(idag) ? "idag" : helg(d) ? "helg" : ""}">${esc(kortDag(d))}</div>`).join("")
       + `<div class="utan" style="border-left:0"><span class="rubrik2">Utan tid</span></div>`
@@ -2180,7 +2504,7 @@ body { padding-bottom: 96px; }
       + `<div class="axel" style="height:${hojd}px">${axel.join("")}</div>`
       + kolumner.map(({ d, block }) => `<div class="kol ${d === iso(idag) ? "idag" : helg(d) ? "helg" : ""}" data-kol="${esc(d)}" style="height:${hojd}px">`
         + linjer.join("") + motesFalt(d, forsta, sista) + block.join("") + `</div>`).join("")
-      + `</div>` + emptyCalendarNotice();
+      + `</div></div>` + emptyCalendarNotice();
   }
 
   /**
@@ -2308,6 +2632,96 @@ body { padding-bottom: 96px; }
     if (d.open) d.close();
   }
 
+  /**
+   * Arbetssättet för steget, att läsa och att ändra.
+   *
+   * Instruktionen och receptet bor på MOLEKYLEN i registret, inte på steget:
+   * det är där de gäller för alla som kör samma sak. Därför ändras de här med
+   * molekylens id, och ändringen går samma väg som allt annat — genom grinden,
+   * med `registry_define` och `change`. Sidan skriver inget eget format.
+   *
+   * Instruktionen svarar på sex fasta frågor (B-102). Fri text blir
+   * slumpmässig: den som skriver väljer själv vad som är värt att säga, och
+   * det som utelämnas syns inte. Därför är fälten fasta här också, och det
+   * som saknas står tomt i stället för att inte finnas.
+   */
+  const INSTRUKTIONSFALT = [
+    ["syfte", "Syfte", "Vad som ska göras och varför. En mening.", false],
+    ["laes_foerst", "Läses först", "Vad som ska läsas innan något skrivs. En per rad.", true],
+    ["saa_goer_du", "Så gör du", "Stegen i ordning. En per rad.", true],
+    ["svarsform", "Svarets form", "Exakt form på svaret: fält, typer, längder.", false],
+    ["far_inte", "Får inte", "Vad som inte får göras. En per rad.", true],
+    ["fraaga_naer", "Stanna och fråga när", "När steget ska fråga i stället för att gissa. En per rad.", true],
+  ];
+
+  function arbetssattet(s) {
+    const i = s.instruktion, r = s.recipe;
+    const mol = i?.molecule || r?.molecule || null;
+    if (!mol?.id) return "";
+    const rad = (nyckel, rubrik, hjalp, lista) => {
+      const v = i ? i[nyckel] : null;
+      const text = Array.isArray(v) ? v.join("\n") : (v || "");
+      return `<label class="instr-falt"><span class="lbl">${esc(rubrik)}</span>`
+        + `<textarea data-instr="${esc(nyckel)}" data-lista="${lista ? "1" : ""}" rows="${lista ? 3 : 2}"`
+        + ` placeholder="${esc(hjalp)}">${esc(text)}</textarea></label>`;
+    };
+    return `<details class="kedja arbetssatt"><summary><div class="lbl">Så här görs steget`
+      + ` <span class="num">${esc(mol.label || mol.name || mol.id)}</span></div></summary>`
+      + `<div class="s">Gäller ${i ? "den här AI-instruktionen" : "receptet"} för alla som kör samma steg,`
+      + ` inte bara den här uppgiften. Ändringen sparas i registret och prövas av grinden.</div>`
+      + (i
+        ? INSTRUKTIONSFALT.map(([n2, rub, hj, li]) => rad(n2, rub, hj, li)).join("")
+        : `<label class="instr-falt"><span class="lbl">Receptet</span>`
+          + `<textarea data-recept="1" rows="8" placeholder="Vad behövs / Så gör du / Kontrollera">`
+          + `${esc(r?.text || "")}</textarea></label>`
+          + `<div class="s">Receptet är fri text än. Rubrikerna Vad behövs, Så gör du och`
+          + ` Kontrollera läses ut ur den — skriv dem som egna rader.</div>`)
+      + `<div class="rader2"><button class="act prim" type="button" data-spara-arbetssatt="${esc(mol.id)}"`
+      + ` data-sort="${i ? "instruktion" : "recept"}">Spara arbetssättet</button>`
+      + `<span class="s" id="arbetssatt-not"></span></div></details>`;
+  }
+
+  /**
+   * Sparar arbetssättet på molekylen. Bara fälten som visas skickas, som en
+   * ändring — hela posten finns inte här, och en avskrift som tappar ett fält
+   * hade tagit bort det ur registret.
+   */
+  async function sparaArbetssatt(knapp) {
+    const not = $("arbetssatt-not");
+    const säg = (t, fel) => { if (not) { not.textContent = t; not.classList.toggle("fel", !!fel); } };
+    const rutor = [...knapp.closest("details").querySelectorAll("[data-instr], [data-recept]")];
+    knapp.disabled = true;
+    säg("Sparar…");
+    try {
+      let ändring;
+      if (knapp.dataset.sort === "recept") {
+        const text = rutor[0]?.value.trim() || "";
+        if (!text) { säg("Receptet är tomt — inget sparat.", true); knapp.disabled = false; return; }
+        ändring = { id: knapp.dataset.sparaArbetssatt, instruction: text };
+      } else {
+        const instruktion = {};
+        for (const ruta of rutor) {
+          const nyckel = ruta.dataset.instr;
+          const värde = ruta.value.trim();
+          instruktion[nyckel] = ruta.dataset.lista
+            ? värde.split("\n").map((x) => x.trim()).filter(Boolean)
+            : värde;
+        }
+        const tomma = INSTRUKTIONSFALT.filter(([n2]) =>
+          Array.isArray(instruktion[n2]) ? !instruktion[n2].length : !instruktion[n2]);
+        if (tomma.length) {
+          säg(`Fyll i ${tomma.map(([, rub]) => rub.toLowerCase()).join(", ")} — instruktionen ska svara på alla sex.`, true);
+          knapp.disabled = false;
+          return;
+        }
+        ändring = { id: knapp.dataset.sparaArbetssatt, instruktion };
+      }
+      await anropa("registry_define", { node: ändring, change: true });
+      säg("Sparat. Det gäller nästa gång steget körs.");
+      await hamtaPlan();
+    } catch (e) { säg("Kunde inte spara: " + errorText(e), true); knapp.disabled = false; }
+  }
+
   function oppnaSteg(knapp) {
     const task = knapp.dataset.oppna || knapp.dataset.uppgift;
     const t = (senastePlan?.tasks || []).find((x) => x.id === task);
@@ -2327,6 +2741,7 @@ body { padding-bottom: 96px; }
       + `<div style="flex:1;min-width:0"><div class="lbl">${esc(namn(t.customer))} · ${esc(uppgiftsnamn(t))} · leverans ${esc(leveransText(t))}</div>`
       + `<h3 id="dlg-rubrik">${esc(klartext(s.label))}</h3>`
       + `<div class="s">Fönster ${esc(kort(s.start))}–${esc(kort(s.end))} · ${esc(namn(s.responsible, "utan ansvarig"))}`
+      + (periodText(t) ? ` · ${esc(periodText(t))}` : "")
       + (s.estimate_minutes ? ` · ${s.estimate_minutes} min beräknat, ${s.remaining_minutes} kvar att lägga ut` : "")
       + `</div></div>${s.done ? "" : playKnapp(t, s)}</div>`
       + (pass ? `<div class="falt">`
@@ -2335,6 +2750,7 @@ body { padding-bottom: 96px; }
         + `<label>Längd (min)<input type="number" min="15" step="15" id="dlg-min" value="${pass.minutes}"></label>`
         + `</div>` : `<div class="s">Steget har inget arbetspass än.</div>`)
       + (r ? del("Vad behövs", r.needs) + del("Så gör du", r.how) + del("Kontrollera", r.check) : "")
+      + arbetssattet(s)
       + `<div class="rader2">`
       + (s.done
         ? ikonknapp("i-chev", "Öppna igen", `data-oppna-igen="${esc(t.id)}" data-steg="${esc(s.step)}" data-namn="${esc(klartext(s.label))}"`)
@@ -2774,6 +3190,7 @@ body { padding-bottom: 96px; }
     const op = e.target.closest("[data-oppna]"); if (op) { e.preventDefault(); oppnaSteg(op); return; }
     const da = e.target.closest("[data-dlg-avbryt]"); if (da) { e.preventDefault(); stangDialog(); return; }
     const ds = e.target.closest("[data-dlg-spara]"); if (ds) { e.preventDefault(); sparaDialog(ds); return; }
+    const sa2 = e.target.closest("[data-spara-arbetssatt]"); if (sa2) { e.preventDefault(); sparaArbetssatt(sa2); return; }
     const dl = e.target.closest("[data-dlg-senare]"); if (dl) { e.preventDefault(); dialogSenare(dl); return; }
     const tb = e.target.closest("[data-ta-bort-pass]"); if (tb) { e.preventDefault(); taBortPass(tb); return; }
     const du = e.target.closest("[data-dela]"); if (du) { e.preventDefault(); delaUpp(du); return; }
@@ -2925,13 +3342,19 @@ och samma of_parts på alla. Ett mejl som inte är ett ärende — internt, auto
 ren bekräftelse — läggs i overhoppade i stället. Gissa aldrig en kund som inte finns
 i listan: skriv null. Skriv aldrig av brödtexten.`;
 
-  async function fetchMail() {
-    const knapp = $("in-hamta");
+  /**
+   * Läser posten. Utan fönster: allt som kommit sedan sist — och "sist" är
+   * DELAT, så det någon annan redan hämtat hämtas inte igen. Med ett fönster:
+   * en uttrycklig hämtning bakåt, som läser om det den täcker och lämnar
+   * vattenmärket i fred (B-113).
+   */
+  async function fetchMail(fonster) {
+    const knapp = $(fonster ? "in-hamta-allt" : "in-hamta");
     if (!mcp) { intakeStatus("Sidan har ingen anslutning till dirigenten.", true); return; }
     knapp.disabled = true;
-    intakeStatus("Läser brevlådorna…");
+    intakeStatus(fonster ? `Läser posten ${fonster.from}–${fonster.to}…` : "Läser brevlådorna…");
     let d;
-    try { d = await anropa("intake_submit", { fetch: { source: "gmail" } }); }
+    try { d = await anropa("intake_submit", { fetch: { source: "gmail", ...(fonster || {}) } }); }
     catch (e) { intakeStatus("Kunde inte läsa posten: " + errorText(e), true); knapp.disabled = false; return; }
 
     // Vad som faktiskt hände, per brevlåda — inte en siffra utan ursprung.
@@ -3023,6 +3446,21 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
     knapp.disabled = false;
   }
   $("in-hamta").addEventListener("click", () => fetchMail());
+  /**
+   * Första gången finns ingenting hämtat, och då vill man se allt som ligger
+   * i brevlådan — inte bara det som kommit sedan i går. Datumen frågas, för
+   * "allt" är olika långt tillbaka för olika brevlådor, och ett förval här
+   * vore ett beslut i koden.
+   */
+  $("in-hamta-allt").addEventListener("click", async () => {
+    const från = prompt("Hämta post från och med vilket datum? ÅÅÅÅ-MM-DD.\n\n"
+      + "Det här läser om perioden och flyttar inte vattenmärket — vanliga hämtningar "
+      + "fortsätter där de var, och det någon redan hämtat hämtas inte igen.",
+      new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10));
+    if (från === null) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(från.trim())) { intakeStatus("Skriv datumet som ÅÅÅÅ-MM-DD.", true); return; }
+    await fetchMail({ from: från.trim(), to: iso(idag) });
+  });
   /** Svaret på ett ärende. `route: "none"` är ignorera och ger läget avförd. */
   async function svaraInkommande(candidate, klassning) {
     const p = inkommande.find((x) => x.candidate === candidate);
@@ -3106,10 +3544,43 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
    * "vänta" med osäkerheten utskriven — då står ärendet kvar i listan med
    * skälet synligt i stället för att hamna fel.
    */
+  /**
+   * Det som en regel täcker sätts upp först, utan att någon modell tillfrågas
+   * (B-111). Det är hela poängen med en regel: det som är bestämt ska inte
+   * bedömas om varje gång, och en modell som får tycka till om det kommer
+   * förr eller senare att tycka något annat.
+   */
+  async function korReglerna() {
+    const täckta = supportKö?.by_rule || [];
+    if (!täckta.length) return 0;
+    let n = 0;
+    for (const ä of täckta) {
+      const t = ä.rule?.then || {};
+      try {
+        await anropa("classify_accept", { thread: ä.thread, classification: {
+          outcome: t.outcome || "delivery",
+          ...(t.deliverable_type ? { deliverable_type: t.deliverable_type } : {}),
+          ...(t.customer ? { customer: t.customer } : {}),
+          ...(t.responsible ? { responsible: t.responsible } : {}),
+          ...(typeof t.rank === "number" ? { rank: t.rank } : {}),
+          reason: t.reason || `regeln ${ä.rule.label}`,
+          by_rule: ä.rule.rule,
+        } });
+        n += 1;
+      } catch (e) { vStatus(`Regeln ${ä.rule?.label} gick inte att tillämpa: ${errorText(e)}`, true); }
+    }
+    return n;
+  }
+
   async function triagera() {
     const knapp = $("support-triage");
     const obedömda = supportKö?.untriaged || [];
-    if (!obedömda.length) { vStatus("Inget obedömt att gå igenom."); return; }
+    const avRegel = await korReglerna();
+    if (!obedömda.length) {
+      vStatus(avRegel ? `${avRegel} ärenden uppsatta av regler. Inget annat obedömt.` : "Inget obedömt att gå igenom.");
+      if (avRegel) await hamtaKo(false);
+      return;
+    }
     if (!sample) { vStatus("Claude är inte tillgänglig här, så triagen får göras för hand.", true); return; }
     if (!amnen.length) await hamtaAmnen();
     knapp.disabled = true;
@@ -3179,7 +3650,8 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
     }
     knapp.disabled = false;
     await hamtaKo(false);
-    vStatus(`${skrivna} ärenden uppsatta, ${osäkra} lämnade som osäkra att avgöra själv.`);
+    vStatus(`${skrivna} ärenden uppsatta, ${osäkra} lämnade som osäkra att avgöra själv.`
+      + (avRegel ? ` ${avRegel} till avgjordes av en regel, utan att frågas om.` : ""));
   }
 
   async function triageKnapp(knapp) {
@@ -3236,6 +3708,9 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
     try {
       const d = await anropa("intake_status", { queue: true, days: 60 });
       supportKö = d?.queue ?? null;
+      // Reglerna kommer med samma läsning: de gäller kön, och en egen
+      // hämtning hade bara gett två svar som kunde säga olika.
+      laddaRegler(d);
       ritaKo();
     } catch (e) {
       supportKö = null;
@@ -3258,6 +3733,11 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
       const n = t?.named || {};
       // Bedömningen i klartext. Ett ärende utan ansvarig sägs vara ofördelat,
       // aldrig utelämnat — skillnaden mot "ligger hos alla" är hela poängen.
+      // Avgjordes det av en regel står det — en regel går att läsa och ändra,
+      // till skillnad från en bedömning någon gjorde en gång.
+      const avRegel = t?.by_rule
+        ? `<span class="state prim"><i></i>regel: ${esc(regler.find((r) => r.id === t.by_rule)?.label || t.by_rule)}</span>`
+        : "";
       const bedömning = !t || t.outcome === "waiting"
         ? `<span class="state pink"><i></i>obedömd</span>`
         : t.outcome === "own_reply"
@@ -3276,12 +3756,15 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
         + `<span class="vad">${esc(ä.subject || "utan ämnesrad")}</span>`
         + `<span class="nar">${esc(avslutad ? kort(ä.last_at) : dagar)}</span></summary>`
         + `<div class="inne">`
+        + (ä.rule ? `<div class="prop">Regeln <b>${esc(ä.rule.label)}</b> täcker det här`
+          + ` — ${esc(regelText({ when: {}, then: ä.rule.then }).gör)}.`
+          + ` Triagen sätter upp det utan att fråga.</div>` : "")
         + `<div>${esc(ä.party || "okänd avsändare")} · ${ä.messages} ${ä.messages === 1 ? "post" : "poster"}`
         + `${ä.attachments ? ` · ${ä.attachments} ${ä.attachments === 1 ? "bilaga" : "bilagor"}` : ""}`
         + `${ä.since ? ` · väntat sedan ${esc(kort(ä.since))}` : ""}</div>`
         + (avslutad
           ? `<div class="prop">Bedömd avslutad av det de svarade sist. Stämmer det inte är ärendet fortfarande öppet.</div>`
-          : `<div>${bedömning}${ansvarig}</div>${osäkert}`
+          : `<div>${bedömning}${avRegel}${ansvarig}</div>${osäkert}`
             + `<div class="acts">`
             + `<button class="act prim" type="button" data-triage="delivery" data-trad="${esc(ä.thread)}">Hör till en leverans</button>`
             + `<button class="act" type="button" data-triage="own_reply" data-trad="${esc(ä.thread)}">Eget svar räcker</button>`
@@ -3706,6 +4189,15 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
     const delar = [];
     if (flik) delar.push(`Flik: ${flik.replace(/\s+\d+$/, "")}`);
     if (valdDag) delar.push(`Vald dag: ${valdDag}`);
+    // Vad som är öppet i den flik man står i — det är det frågan oftast gäller.
+    if (oppetProjekt) {
+      const p = asList(senastePlan?.tasks).find((t) => (t.commitment || "") === oppetProjekt);
+      delar.push(`Öppet projekt: ${p?.commitment_named?.label || oppetProjekt}`);
+    }
+    if (gruppering && gruppering !== "area") delar.push(`Gruppering: ${gruppering}`);
+    const ärende = document.querySelector("#support-lista details.rad[open]");
+    if (ärende) delar.push(`Öppet ärende i kön: ${ärende.querySelector(".vad")?.textContent?.trim() || ""}`);
+    if (regler.length) delar.push(`${regler.length} regler för inkommande post`);
     const öppen = aiKörning ? `${uppgiftsnamn(aiKörning.t)} · ${klartext(aiKörning.s.label)}` : "";
     if (öppen) delar.push(`Öppet steg: ${öppen}`);
     const kund = [...kunder.values()].find((k) => k.oppen);
@@ -3771,6 +4263,23 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
         },
       },
       {
+        name: "visa_flik",
+        description: "Byt till en flik i vyn: idag, plan, kunder, bank, projekt, regler, bygg eller "
+          + "installningar. Använd den när svaret finns på en annan flik än den användaren står i.",
+        inputSchema: { type: "object", properties: { flik: { type: "string" } }, required: ["flik"] },
+        execute: (i) => {
+          const namn2 = String(i.flik || "").toLowerCase();
+          const karta = { idag: "vecka", vecka: "vecka", plan: "plan", planering: "plan",
+            kunder: "kunder", bank: "bank", filbank: "bank", projekt: "projekt",
+            regler: "regler", bygg: "bygg", installningar: "installningar", "inställningar": "installningar" };
+          const flik = karta[namn2];
+          if (!flik) throw new Error(`det finns ingen flik som heter "${i.flik}"`);
+          visa(flik);
+          ritaSammanhang();
+          return `visar fliken ${flik}`;
+        },
+      },
+      {
         name: "oppna",
         description: "Ge användaren en knapp som öppnar något i vyn: ett steg (uppgiftens och stegets id) "
           + "eller en kunds filer. Använd den när svaret gäller något som syns på sidan.",
@@ -3808,6 +4317,7 @@ i listan: skriv null. Skriv aldrig av brödtexten.`;
       "  Argumenten står inte här. Är du inte säker: fråga användaren i stället för att gissa.",
       "- skriv: skriver till dirigenten, men bara efter att användaren sagt ja i chatten.",
       "- oppna: ger användaren en knapp som öppnar steget eller kunden det handlar om.",
+      "- visa_flik: byter flik i vyn när svaret finns någon annanstans (projekt, regler, filbank …).",
       "",
       "Hitta aldrig på något ur registret — hämta det. Säg när du inte vet.",
     ].join("\n");
