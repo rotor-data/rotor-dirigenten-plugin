@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "rotor-dirigenten": {
+      "type": "http",
+      "url": "https://rotor-dirigenten.netlify.app/mcp"
+    }
+  }
+}

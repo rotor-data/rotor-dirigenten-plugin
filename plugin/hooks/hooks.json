@@ -1,0 +1,18 @@
+{
+  "description": "Hämtar dirigentens ämnesöversikt från servern, med användarens egen inloggning, när sammanhanget börjar om.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "clear|compact",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rotor-dirigenten:rotor-dirigenten",
+            "tool": "guide",
+            "input": {}
+          }
+        ]
+      }
+    ]
+  }
+}

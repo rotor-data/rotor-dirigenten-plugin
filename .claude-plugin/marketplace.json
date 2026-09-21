@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "rotor",
+  "description": "Rotors interna plugins.",
+  "owner": {
+    "name": "Rotor",
+    "email": "data@rotormediagroup.se"
+  },
+  "plugins": [
+    {
+      "name": "rotor-dirigenten",
+      "description": "Rotors register, planering och utförande: vad som är lovat, vad som ska göras, och frågorna som väntar. Du loggar in med ditt Rotor-konto, och din behörighet och vilka kunder du ser följer med.",
+      "version": "0.5.0",
+      "author": {
+        "name": "Rotor"
+      },
+      "category": "productivity",
+      "source": "./plugin"
+    }
+  ]
+}
