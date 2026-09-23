@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "rotor-dirigenten",
   "displayName": "Rotor · dirigenten",
-  "version": "0.5.463",
+  "version": "0.5.464",
   "description": "Rotors register, planering och utförande: vad som är lovat, vad som ska göras, och frågorna som väntar. Du loggar in med ditt Rotor-konto, och din behörighet och vilka kunder du ser följer med.",
   "author": {
     "name": "Rotor"
