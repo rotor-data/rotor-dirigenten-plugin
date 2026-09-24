@@ -1,7 +1,18 @@
 {
-  "description": "Hämtar dirigentens ämnesöversikt från servern, med användarens egen inloggning, när sammanhanget börjar om.",
+  "description": "Hämtar personens agenda när en session startar, och dirigentens ämnesöversikt när sammanhanget börjar om — med användarens egen inloggning.",
   "hooks": {
     "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "mcp_tool",
+            "server": "plugin:rotor-dirigenten:rotor-dirigenten",
+            "tool": "plan_state",
+            "input": { "agenda": true }
+          }
+        ]
+      },
       {
         "matcher": "clear|compact",
         "hooks": [

@@ -10,7 +10,7 @@
     {
       "name": "rotor-dirigenten",
       "description": "Rotors register, planering och utförande: vad som är lovat, vad som ska göras, och frågorna som väntar. Du loggar in med ditt Rotor-konto, och din behörighet och vilka kunder du ser följer med.",
-      "version": "0.5.487",
+      "version": "0.5.614",
       "author": {
         "name": "Rotor"
       },

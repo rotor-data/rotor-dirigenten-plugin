@@ -38,9 +38,18 @@ There is exactly ONE Dirigenten views page, and the server says where it is: `vi
 3. If `views_url` is missing from the answer, say the tenant has no views page yet, and that the address is a setting in the registry (`core.setting.views_url`). Do not create one.
 4. Then say briefly what matters most today, with the link. Do not recite what the page already shows. Two or three lines is the whole opening.
 
-The answer also carries `views.version`: the version the running server belongs to. The page carries its own stamp and says so itself when it is the older one. The page itself does not live in this plugin: it is published once, at a fixed address, and everyone who can open it always sees the current version. The source is `views/vyer.html` in the repository, for whoever deploys it — not something you publish.
+The answer also carries `views.version`: the version the running server belongs to. The page carries its own stamp and says so itself when it is the older one. The page itself does not live in this plugin: it is published once, at a fixed address, and everyone who can open it always sees the current version. The source is `views/next.html` in the repository, for whoever deploys it — not something you publish.
 
 When the page is open, let the user act there — mark a step done, upload a missing input, move a step — rather than doing it for them unasked.
+
+## Know what is waiting, and continue what was started
+
+`plan_state` with `agenda: true` is the person's list: what burns, what is today, what is soon, each row with the reason and the exact next call. It is the same list the views page shows. Start there when someone asks what to do, and when a session begins.
+
+- **Continue, never restart.** A step may be *started* by someone, with a note on where they stopped, and carry *drafts* saved to it. Read them (`content_get`) before doing the step again.
+- When you begin a step, say so: `execute_step` with `start: true`. When you stop before it is done, `start: false` with a `note` on where you are — the next person or session reads it.
+- Save what you write for a step with `content_save` and `for_task` + `for_step`, as you go. A draft that lives only in this chat is lost when the chat ends.
+- A step done by hand leaves something (text, a file or a link): register it with `asset_register` and `for_task` before marking the step done, or the steps after it wait.
 
 ## Fetch guidance before you answer
 
