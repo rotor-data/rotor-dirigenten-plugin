@@ -544,7 +544,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "98db4aa", published: "2026-09-25" };
+  const SIDA = { version: "ebf91b9", published: "2026-09-25" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -3497,7 +3497,7 @@ a.btn { text-decoration: none; color: var(--text); }
     return [`Utför steget «${s.label}» nu. Dirigenten gör det med sin egen nyckel; du tar fram värdena: ${namn}.`,
       "", ...(s.instruktion || s.recipe ? ["Stegets instruktion:", ...instructionLines(s), ""] : []),
       "1. Läs det tidigare steg lämnat i lägesbilden (till exempel urvalet). Läs fält och deras interna namn i kundens system med hamta när det behövs.",
-      "2. Ta fram värdena. Villkor för ett segment i HubSpot skrivs som en lista [{ property, operation: { operationType, operator, value | values } }] med fältens interna namn, till exempel { property: \"lifecyclestage\", operation: { operationType: \"ENUMERATION\", operator: \"IS_ANY_OF\", values: [\"customer\"] } }. Alla villkor i listan ska gälla.",
+      "2. Ta fram värdena. Villkor för ett segment i HubSpot skrivs som en lista [{ property, operation: { operationType, operator, value | values } }] med fältens interna namn, till exempel { property: \"lifecyclestage\", operation: { operationType: \"ENUMERATION\", operator: \"IS_ANY_OF\", values: [\"customer\"] } }. Alla villkor i listan ska gälla. Är urvalet en uppräkning av kontakter utan fält att filtrera på: filters = { emails: [alla adresser] }, som ger en fast lista.",
       `3. Kör med skriv → rotor-dirigenten execute_step { task: "${t.id}", step: "${s.step}", values: { … }, confirmed: true, user_approval: <vad användaren sa ja till> }. I vad står på vanlig svenska exakt vad som skapas eller ändras: namnet och varje villkor.`,
       "4. Säger användaren nej: fråga vad som ska vara annorlunda. Svara efteråt med vad dirigenten svarade (id och antal)."].join("\n");
   }
@@ -3566,6 +3566,7 @@ a.btn { text-decoration: none; color: var(--text); }
     await load();
     if (d?.ok) return toast(`${label} är kört.`);
     toast(`${label} gick inte hela vägen${d?.failed_named?.label || d?.failed ? ` — det stannade vid ${lbl(d.failed_named, "") || "en del"}` : ""}`
+      + (d?.error ? ` (${d.error})` : "")
       + (d?.transient ? ". Felet ser tillfälligt ut: försök igen om en stund." : ". Ingenting efter det kördes."), null, true);
   }
   function confirmRun(btn) {
