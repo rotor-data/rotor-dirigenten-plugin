@@ -257,6 +257,8 @@ ol.moments input { flex: 1; min-width: 0; border: 1px solid var(--line-strong); 
 .row .t .cust { color: var(--text-2); font-weight: 400; }
 .row .s { color: var(--text-2); font-size: var(--fs-meta); white-space: nowrap; }
 .row .why { color: var(--text-2); font-size: var(--fs-meta); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Steget som tagg under arbetets rubrik (Daniel P 2026-09-25). */
+.chip.steg { height: 18px; margin-right: 6px; background: transparent; border: 1px solid var(--line-strong); color: var(--text-2); font-size: 11.5px; vertical-align: 1px; }
 .row .txt { min-width: 0; display: flex; flex-direction: column; }
 .row .when { text-align: right; }
 .row .when.late { color: var(--red); }
@@ -284,6 +286,10 @@ ol.moments input { flex: 1; min-width: 0; border: 1px solid var(--line-strong); 
 .chain .node.added { border-color: var(--green); background: var(--green-weak); }
 .chain .node.removed { border-style: dashed; color: var(--text-3); text-decoration: line-through; }
 .chain .node.changed { border-color: var(--amber); background: var(--amber-weak); }
+/* Ett steg som bara finns i uppgiften, inte i metoden (Daniel P 2026-09-25). */
+.chain .node.own { border-style: dashed; border-color: var(--accent); }
+.chain .addstep { width: 20px; height: 20px; padding: 0; border: 1px dashed var(--line-strong); border-radius: 50%; background: var(--bg); color: var(--text-3); font-size: 13px; line-height: 1; cursor: pointer; }
+.chain .addstep:hover { color: var(--accent); border-color: var(--accent); }
 .chain .arrow { color: var(--text-2); font-size: 11px; }
 .dots { display: inline-flex; gap: 3px; }
 .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
@@ -495,7 +501,7 @@ a.btn { text-decoration: none; color: var(--text); }
 .row.frow { cursor: default; }
 .row.frow:hover { background: none; }
 .fcards + .fcards { margin-top: var(--s4); }
-[data-fdrop].fdrop-on { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--accent-weak); }
+[data-fdrop].fdrop-on, [data-lvdrop].fdrop-on { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--accent-weak); }
 .flink { width: 100%; border: 1px solid var(--line-strong); border-radius: 10px; padding: 7px 10px; font: inherit; color: var(--text-2); background: var(--bg-subtle); margin-bottom: var(--s3); }
 @media (max-width: 760px) { .fsearch { min-width: 0; width: 100%; } }
 </style>
@@ -544,7 +550,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "ebf91b9", published: "2026-09-25" };
+  const SIDA = { version: "f17ebb2", published: "2026-09-25" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -667,7 +673,8 @@ a.btn { text-decoration: none; color: var(--text); }
       // stod på "Hämtar" för evigt — och den lokala stubben dolde det, för den
       // svarade med båda i ett (B-213).
       S.phase = "Hämtar din lista…"; render();
-      const a = await withTimeout(call("plan_state", { agenda: true }), 45000, "Listan");
+      // Hur långt fram listan räcker (Daniel P 2026-09-25): 1 = resten av veckan, 0 = allt.
+      const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks() }), 45000, "Listan");
       if (!a?.agenda) throw new Error("servern skickade ingen agenda — den kan vara en äldre version");
       S.agenda = a.agenda;
       S.phase = "Hämtar planen…"; render();
@@ -1140,7 +1147,9 @@ a.btn { text-decoration: none; color: var(--text); }
   /** Snabb klarmarkering (Daniel P 2026-09-25): en bock direkt på stapeln, raden eller noden. */
   const tickBtn = (task, step, cls = "tick") => `<button class="${cls}" data-quick-done="${esc(task)}|${esc(step)}" title="Markera klart" aria-label="Markera klart">${ic("check")}</button>`;
   /** Kedjans nod: ett klart steg har en grön bock, ett ogjort en bock att klicka i. */
-  const chainNode = (t, x, cls) => `<span class="node ${cls}" data-open-step="${esc(t.id)}|${esc(x.step)}"${x.done ? ` title="${doneText(x)}"` : ""}>`
+  // Ett steg som lagts till i just den här uppgiften är streckat: det finns inte i metoden.
+  const nodeTitle = (x) => x.done ? ` title="${doneText(x)}"` : x.added ? ` title="Bara i den här uppgiften"` : "";
+  const chainNode = (t, x, cls) => `<span class="node ${cls}${x.added ? " own" : ""}" data-open-step="${esc(t.id)}|${esc(x.step)}"${nodeTitle(x)}>`
     + (x.done ? `<span class="ok" style="color:var(--green)">${ic("check")}</span>` : x.external ? kindMark(kindOf(x)) : tickBtn(t.id, x.step))
     + `<span class="l">${esc(x.label)}</span></span>`;
   /** Uppgiftens namn: leveransen, och det som utlöste den när det finns (B-202). */
@@ -1165,6 +1174,23 @@ a.btn { text-decoration: none; color: var(--text); }
     return `${d}, ${periodName(t.period)}${siblings > 1 && t.ordinal ? ` nr ${t.ordinal}` : ""}`;
   };
   function nextStep(t) { return t.steps.find((s) => !s.done && !s.external) ?? null; }
+  /**
+   * Arbetet, inte steget (Daniel P 2026-09-25: "rubriker som är mer själva
+   * arbetet och inte steget först. Steget ska stå med men mer som en smart
+   * tag"). Rubriken är ärendets ämnesrad eller tillfället; steget blir en tagg.
+   */
+  // Utan uppgiften i planen (längre fram än planen räcker) står radens eget tillfälle eller sort.
+  const workTitle = (t, x) => (t?.thread && threadSubject(t.thread)) || t?.occasion || (t ? taskName(t) : x?.occasion || lbl(x?.deliverable, "Uppgift"));
+  /** Veckor framåt på Idag; 1 = till och med söndag den här veckan, 0 = obegränsat. Tre som förut. */
+  const aheadWeeks = () => [0, 1, 2, 3, 4].includes(store.ahead) ? store.ahead : 3;
+  const stepTag = (label) => `<span class="chip steg">${esc(label)}</span>`;
+  /** Raden under rubriken: taggen, sorten när rubriken är ärendet, och skälet utan det som redan står i rubriken. */
+  function workWhy(x, t) {
+    const rubrik = workTitle(t, x);
+    const skäl = String(x.reason || "").split(" · ").filter((p) => p && p !== x.occasion && p !== rubrik).join(" · ");
+    const sort = t && rubrik !== taskName(t) ? lbl(t?.deliverable, "") : "";
+    return stepTag(x.headline) + esc([sort, skäl].filter(Boolean).join(" · "));
+  }
   /** Agendan räknas på servern (B-193). Vyn räknar den inte en gång till. */
   const agenda = () => S.agenda?.items ?? [];
   /** Namn på en person ur planen: belastningen bär bara id. */
@@ -1304,8 +1330,8 @@ a.btn { text-decoration: none; color: var(--text); }
       const ms = (S.agenda?.messages ?? []).filter((m) => m.row === x.key);
       const chips = (x.attached?.questions ?? []).map((q) => ` <button class="chip ${q.blocking ? "red" : "amber"}" data-open-q="${esc(q.open)}" title="Svara på frågan">Fråga: ${esc(q.headline)}</button>`).join("")
         + ms.map((m) => ` <button class="chip blue" data-msg-read="${esc(m.id)}" title="${esc(m.text)} — klicka för att markera läst">${esc(lbl(m.from, "En kollega"))}: ${esc(m.text.slice(0, 60))}${m.text.length > 60 ? "…" : ""}</button>`).join("");
-      return row({ kind: kindMark(k), dot: custDot(x.customer?.color), title: `${esc(x.headline)} <span class="ctx">— ${esc(taskName(t))}</span>${addonChip(t)}${lvlChip}${chips}`, cust: lbl(x.customer),
-        why: esc(x.reason), when: short(x.due), late: x.due < TODAY,
+      return row({ kind: kindMark(k), dot: custDot(x.customer?.color), title: `${esc(workTitle(t, x))}${addonChip(t)}${lvlChip}${chips}`, cust: lbl(x.customer),
+        why: workWhy(x, t), when: short(x.due), late: x.due < TODAY,
         // Bocken markerar klart med ett klick; knappen bredvid gör steget.
         act: tickBtn(x.task, x.step, "iconbtn tick") + (k === "llm" ? `<button class="btn sm ai" data-copy-step="${esc(x.task)}|${esc(x.step)}" title="Stegets prompt till vanliga Claude-chatten">${SP} Kopiera till chatten</button>`
           // Det som bara är att köra får en Utför-knapp (Daniel P 2026-09-25). Dirigenten visar först vad som ändras.
@@ -1317,8 +1343,8 @@ a.btn { text-decoration: none; color: var(--text); }
     // som vill göra det själv tar över uppgiften med ett klick.
     if (x.kind === "colleague")
       return row({ kind: `<span class="kind" title="Hos ${esc(lbl(x.holder, "en kollega"))}">${ic("user")}</span>`, dot: custDot(x.customer?.color),
-        title: `${esc(x.headline)}${t ? ` <span class="ctx">— ${esc(taskName(t))}</span>${addonChip(t)}` : ""}${lvlChip}`, cust: lbl(x.customer),
-        why: esc(x.reason), when: short(x.due), late: x.due < TODAY,
+        title: `${esc(workTitle(t, x))}${addonChip(t)}${lvlChip}`, cust: lbl(x.customer),
+        why: workWhy(x, t), when: short(x.due), late: x.due < TODAY,
         act: `<button class="btn sm" data-take-task="${esc(x.task)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över uppgift</button>`,
         attrs: `data-open-step="${esc(x.task)}|${esc(x.step)}"` });
     const handover = x.kind === "handover";
@@ -1398,6 +1424,8 @@ a.btn { text-decoration: none; color: var(--text); }
       const n = (k) => k === "all" ? all.length : all.filter((x) => (k === "work" ? isWork(x) : !isWork(x))).length;
       return `<div class="card"><div class="head"><h2>${who === "others" ? "Andras" : who === "all" ? "Allas" : "Min lista"}</h2><span class="meta">${all.length} saker</span><div class="right"><div class="seg">`
         + [["mine", "Mina"], ["others", "Andras"], ["all", "Alla"]].map(([k, l]) => `<button data-who="${k}" aria-pressed="${who === k}">${l}</button>`).join("")
+        + `</div><div class="seg" title="Hur långt fram listan visar">`
+        + [[1, "Veckan"], [2, "2 v"], [3, "3 v"], [4, "4 v"], [0, "Allt"]].map(([k, l]) => `<button data-ahead="${k}" aria-pressed="${aheadWeeks() === k}">${l}</button>`).join("")
         + `</div><div class="seg">`
         + [["all", "Allt"], ["work", "Arbete"], ["q", "Frågor"]].map(([k, l]) => `<button data-filter="${k}" aria-pressed="${f === k}">${l}<span class="n">${n(k)}</span></button>`).join("")
         + `</div></div></div>${agendaRows(vis, groups)}</div>`;
@@ -1411,16 +1439,22 @@ a.btn { text-decoration: none; color: var(--text); }
       const openAttr = (a) => !a ? "" : a.thread ? `data-open-case="${esc(a.thread)}"` : a.open ? `data-open-q="${esc(a.open)}"` : a.task && a.step ? `data-open-step="${esc(a.task)}|${esc(a.step)}"` : "";
       const msg = (m) => `<div class="inmsg"><div class="meta"><b>${esc(lbl(m.from, "En kollega"))}</b> · ${short(m.at)}${m.about_label ? ` · om ${esc(m.about_label)}` : ""}${(m.also_to || []).length ? ` · även till ${m.also_to.map((x) => esc(lbl(x))).join(", ")}` : ""}</div>`
         + `<div class="msgtext">${esc(m.text)}</div><div class="bar-actions">${openAttr(m.about) ? `<button class="btn sm" ${openAttr(m.about)}>Öppna</button>` : ""}<button class="btn sm quiet" data-msg-read="${esc(m.id)}">Markera läst</button></div></div>`;
-      const n = h.length + ms.length;
+      // Åtaganden som väntar på ett ja (felrapport 2026-09-25): utan det blir inga uppgifter.
+      const pc = S.agenda?.pending_confirmation ?? [];
+      const förslag = (c) => row({ kind: `<span class="kind warn" title="Väntar på ditt ja">${ic("help")}</span>`, dot: custDot(c.customer?.color),
+        title: `${esc(c.label)} <span class="chip amber">förslag</span>`, cust: lbl(c.customer),
+        why: esc((c.covers || []).map((l) => `${l.quantity ?? ""} ${lbl(l.deliverable)}${l.due ? ` senast ${short(l.due)}` : ""}`.trim()).join(" · ") || "Åtagande"),
+        act: `<button class="btn sm primary" data-confirm-node="${esc(c.id)}">Bekräfta</button>` });
+      const n = h.length + ms.length + pc.length;
       return `<div class="card"><div class="head"><h2>Till dig</h2><span class="meta">${n || ""}</span></div>`
-        + ms.map(msg).join("") + h.map((x) => agendaRow(x)).join("")
+        + pc.map(förslag).join("") + ms.map(msg).join("") + h.map((x) => agendaRow(x)).join("")
         + (n ? "" : `<div class="empty"><b>Inget till dig.</b>Meddelanden från kollegor och steg som lämnas över till dig står här tills du läst eller tagit emot dem.</div>`) + `</div>`;
     } },
     hosandra: { name: "Hos andra", size: "half", html: () => {
       const w = S.agenda?.waiting_on_others ?? [];
       return `<div class="card"><div class="head"><h2>Hos andra</h2><span class="meta">${w.length || ""}</span></div>`
-        + (w.length ? projectGroups(w, S.agenda?.waiting_groups).slice(0, 5).map((g) => groupHtml(g, (x) => row({ kind: kindMark("ext"), dot: custDot(x.customer?.color), title: esc(x.headline),
-            cust: lbl(x.customer), why: `${esc(x.reason)}${taskById(x.task) ? ` · ${esc(taskName(taskById(x.task)))}` : ""}`, when: short(x.due), late: x.due < TODAY,
+        + (w.length ? projectGroups(w, S.agenda?.waiting_groups).slice(0, 5).map((g) => groupHtml(g, (x) => row({ kind: kindMark("ext"), dot: custDot(x.customer?.color), title: taskById(x.task) ? esc(workTitle(taskById(x.task))) : esc(x.headline),
+            cust: lbl(x.customer), why: taskById(x.task) ? workWhy(x, taskById(x.task)) : esc(x.reason), when: short(x.due), late: x.due < TODAY,
             attrs: `data-open-step="${esc(x.task)}|${esc(x.step)}"` }))).join("")
           : `<div class="empty"><b>Inget väntar på andra.</b>Steg som görs av kunden eller en partner hamnar här.</div>`) + `</div>`;
     } },
@@ -1558,7 +1592,7 @@ a.btn { text-decoration: none; color: var(--text); }
   const ZONES = ["Europe/Stockholm", "Europe/Helsinki", "Europe/London", "UTC"];
   const GROUPINGS = [["area", "Område"], ["customer", "Kund"], ["responsible", "Ansvarig"], ["urgency", "Brådska"]];
   /** Verktygen vyn anropar. Provet håller listan i takt med `call("…")` i koden. */
-  const TOOLS_USED = ["search", "asset_get", "asset_register", "bug_report", "content_get", "content_save", "context", "library_check", "note_link", "read_call", "classify_accept", "execute_step", "guide", "intake_status", "intake_submit",
+  const TOOLS_USED = ["search", "task_lock", "asset_get", "asset_register", "bug_report", "content_get", "content_save", "context", "library_check", "note_link", "read_call", "classify_accept", "execute_step", "guide", "intake_status", "intake_submit",
     "message", "method_build", "plan_state", "registry_define"];
 
   /**
@@ -2132,12 +2166,9 @@ a.btn { text-decoration: none; color: var(--text); }
     let ok = 0;
     for (const f of files) {
       if (f.size > MAX_FILE) { toast(`${f.name} är ${fsize(f.size)}. Dirigenten tar emot högst 4 MB än.`, null, true); continue; }
-      toast(`Laddar upp ${f.name}…`);
       try {
-        const thumb = IMG_TYPE.test(f.type) ? await makeThumb(f) : null;
-        const d = await call("asset_register", { asset_type: "core.asset.incoming_attachment", acquisition: "provided",
-          customer: custId, filename: f.name, mime: f.type || "application/octet-stream", base64: await toBase64(f),
-          ...(folder ? { folder } : {}), ...(thumb ? { thumbnail_base64: thumb } : {}) });
+        const d = await sendFile(f, { asset_type: "core.asset.incoming_attachment", acquisition: "provided",
+          customer: custId, ...(folder ? { folder } : {}) });
         const where = String(d?.found_in || "").replace(/^[^:]*:/, "").split("/").slice(0, -1).join("/");
         toast(d?.duplicate ? `${f.name} fanns redan hos ${label}. Inget skrevs igen.` : `${f.name} ligger hos ${label}${where ? ` i ${where}` : ""}.`);
         ok++;
@@ -2180,6 +2211,27 @@ a.btn { text-decoration: none; color: var(--text); }
     if (!z) return toast("Släpp filen på en kund eller en mapp.", null, true);
     const [cust, ...path] = z.dataset.fdrop.split("|");
     uploadFiles([...e.dataTransfer.files], cust, path.join("|"));
+  });
+  // Släpp en fil på det ett steg lämnar: samma som att välja den med knappen.
+  // Den skickas när steget markeras klart.
+  document.addEventListener("dragover", (e) => {
+    const z = e.target.closest?.("[data-lvdrop]");
+    if (!z || !dragsFiles(e)) return;
+    e.preventDefault();
+    for (const x of document.querySelectorAll(".fdrop-on")) if (x !== z) x.classList.remove("fdrop-on");
+    z.classList.add("fdrop-on");
+  });
+  document.addEventListener("drop", (e) => {
+    const z = e.target.closest?.("[data-lvdrop]");
+    if (!z || !dragsFiles(e)) return;
+    e.preventDefault();
+    z.classList.remove("fdrop-on");
+    const f = e.dataTransfer.files?.[0], key = z.dataset.lvdrop;
+    if (!f || !state.obj) return;
+    const st = document.querySelector(`[data-lvstatus="${CSS.escape(key)}"]`);
+    if (f.size > MAX_FILE) { if (st) st.textContent = `${f.name} är större än 4 MB — ange var den finns i stället.`; return; }
+    (state.obj.inputs ||= { parts: {}, files: {}, note: "" }).files[key] = f;
+    if (st) st.textContent = `Vald: ${f.name}${e.dataTransfer.files.length > 1 ? " (bara den första filen tas med)" : ""}`;
   });
   document.addEventListener("input", (e) => { if (e.target.dataset?.fq !== undefined) { FB.q = e.target.value; paintFiles(); } });
   document.addEventListener("change", (e) => {
@@ -2537,7 +2589,7 @@ a.btn { text-decoration: none; color: var(--text); }
     const leaves = s.leaves || [];
     return `<div class="card section" style="margin-top:16px"><h2>Det steget lämnar <span class="meta">sparas när du markerar klart</span></h2>`
       + (leaves.length ? leaves.map((lv) => { const key = lv.name || lv.label; const v = inp.parts[key] || {};
-        return `<div class="deliver"><b>${esc(lbl(lv))}</b><textarea rows="3" data-lvtext="${esc(key)}" placeholder="Skriv det här, eller ladda upp en fil eller ange var det finns">${esc(v.text || "")}</textarea>`
+        return `<div class="deliver" data-lvdrop="${esc(key)}"><b>${esc(lbl(lv))}</b><textarea rows="3" data-lvtext="${esc(key)}" placeholder="Skriv det här, ladda upp eller släpp en fil här, eller ange var det finns">${esc(v.text || "")}</textarea>`
           + `<div class="bar-actions"><label class="btn sm">${ic("upload")} Ladda upp fil<input type="file" hidden data-lvfile="${esc(key)}"></label>`
           + `<input class="field-inline" data-lvlink="${esc(key)}" value="${esc(v.link || "")}" placeholder="…eller var det finns: länk eller plats">`
           + `<span class="meta" data-lvstatus="${esc(key)}">${inp.files[key] ? `Vald: ${esc(inp.files[key].name)}` : ""}</span></div></div>`; }).join("")
@@ -2686,14 +2738,17 @@ a.btn { text-decoration: none; color: var(--text); }
               + `<div class="bar-actions" style="margin-top:10px">${s.started ? `<button class="btn quiet" data-start="false">Släpp steget</button>` : `<button class="btn" data-start="true">Jag börjar på det</button>`}</div>`;
       return `<div class="wshead"><div class="titles"><span class="meta">${custDot(t.customer?.color)} ${esc(lbl(t.customer))} · ${esc(taskName(t))} · leverans ${short(t.due)}</span>`
         + `<h1>${esc(s.label)}</h1><div class="line">${kindMark(k)} ${esc(kindTxt)} · ansvarig ${esc(lbl(s.responsible, "–"))} · ${short(s.start)}–${short(s.latest_end || s.end)}`
-        + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="chip">${s.float_days} d marginal</span>`) + (s.done ? ` · <span class="chip green">${ic("check")} ${doneText(s)}</span>` : "") + (started ? ` · ${started}` : "") + `</div></div></div>`
+        + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="chip">${s.float_days} d marginal</span>`)
+          + (s.added ? ` · <span class="chip">Bara i den här uppgiften</span> <button class="linkbtn" data-remove-added="${esc(t.id)}|${esc(s.step)}">Ta bort ur uppgiften</button>` : "") + (s.done ? ` · <span class="chip green">${ic("check")} ${doneText(s)}</span>` : "") + (started ? ` · ${started}` : "") + `</div></div></div>`
         // Markera klart står överst (Daniel P 2026-09-25: "markera klart måste vara högst upp").
         + (s.done ? "" : `<div class="bar-actions" style="margin:4px 0 16px"><button class="btn primary" data-done="1">Markera klart och gå till nästa ${ic("arrow")}</button>`
           + `<span class="right"><button class="btn quiet" data-calstep="${esc(t.id)}|${esc(s.step)}">${ic("calendar")} Lägg i kalendern</button>${(s.postpone_options || []).length ? `<button class="btn quiet" data-postpone="1">Senarelägg</button>` : ""}<button class="btn quiet" data-handover-to="1">Lämna över</button>${t.steps.some((x) => !x.done && !x.external && (x.responsible?.id ?? x.responsible) !== me()) ? `<button class="btn quiet" data-take-task="${esc(t.id)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över uppgift</button>` : ""}${msgBtn({ task: t.id, step: s.step }, s.label)}</span></div>`)
         + materialCard(t, s, true)
         + `<div class="card section"><h2>Kedjan ${t.method ? `<button class="linkbtn" data-open-method="${esc(t.method)}" title="Öppna metoden — där den kan ändras för alla">${esc(lbl(t.method_named, "metoden"))} ${ic("arrow")}</button>` : ""}`
         + `${t.method ? ` <button class="btn quiet sm" data-change="${esc(t.id)}">Ändra stegen för ${esc(lbl(t.customer, "kunden"))}</button>` : ""}`
-        + ` <button class="btn quiet sm" data-step-edit="${esc(s.step)}">Så görs steget</button></h2><div class="chain">${t.steps.map((x, i) => `${i ? `<span class="arrow">${ic("chev")}</span>` : ""}${chainNode(t, x, `${x.done ? "done" : x.step === s.step ? "now" : ""} ${x.critical ? "crit" : ""}`)}`).join("")}</div></div>`
+        + ` <button class="btn quiet sm" data-step-edit="${esc(s.step)}">Så görs steget</button></h2><div class="chain">${t.steps.map((x, i) => `${i ? `<span class="arrow">${ic("chev")}</span>` : ""}${chainNode(t, x, `${x.done ? "done" : x.step === s.step ? "now" : ""} ${x.critical ? "crit" : ""}`)}`
+          // «+» efter varje steg (Daniel P 2026-09-25): ett steg bara i den här uppgiften, utan att bygga om metoden.
+          + `<button class="addstep" data-add-step="${esc(t.id)}|${esc(x.step)}" title="Lägg till steg här" aria-label="Lägg till steg efter ${esc(x.label)}">+</button>`).join("")}</div></div>`
         + (t.thread ? threadCard(t.thread) : "")
         + `<div class="ws2"><div class="card section"><h2>Behövs</h2>`
         + (qs.length ? qs.map((o) => `<div class="need" style="cursor:pointer" data-open-q="${esc(o.id)}"><span class="no">${ic(o.step === s.step ? "stop" : "help")}</span><span class="t">${esc(headlineForOpen(o))}${o.step && o.step !== s.step ? ` <span class="meta">· stoppar «${esc(lbl(o.step_named, ""))}»</span>` : ""}</span><button class="btn sm" data-open-q="${esc(o.id)}">Svara</button></div>`).join("")
@@ -3167,6 +3222,73 @@ a.btn { text-decoration: none; color: var(--text); }
   const MAX_FILE = 4 * 1024 * 1024;
   const toBase64 = (file) => new Promise((ok, bad) => { const r = new FileReader();
     r.onload = () => ok(String(r.result).split(",")[1] || ""); r.onerror = () => bad(r.error); r.readAsDataURL(file); });
+  /*
+   * Filen går direkt till dirigenten, inte inuti verktygsanropet (felrapport
+   * 2026-09-25: "tool input is too large or too deeply nested"). Daniel P:
+   * "Stora filer måste väl gå via en file upload". asset_register med upload_sha256
+   * prövar allt och ger en adress som gäller tio minuter; filen skickas dit
+   * och registreras där, genom samma väg. Når sidan inte adressen — claude.ai
+   * kan spärra anrop från artefakten till andra adresser (?) — går små filer
+   * som förut, i anropet, och större får besked om var de kan laddas upp.
+   */
+  const INLINE_MAX = 512 * 1024;
+  const UPLOAD = { direct: null, home: null };
+  const sha256Hex = async (file) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", await file.arrayBuffer()))]
+    .map((b) => b.toString(16).padStart(2, "0")).join("");
+  /** Ett besked som står kvar medan filen går upp, och visar hur långt den kommit. */
+  function progressNote() {
+    const el = document.createElement("div");
+    el.className = "toast"; el.setAttribute("role", "status");
+    document.body.append(el);
+    return { set: (text) => { el.textContent = text; }, done: () => el.remove() };
+  }
+  /** Filens bytes till uppladdningsadressen. XMLHttpRequest, för att kunna visa hur långt den kommit. */
+  function postFile(up, file, onProgress) {
+    return new Promise((ok, bad) => {
+      const x = new XMLHttpRequest();
+      x.open(up.method || "POST", up.url);
+      for (const [k, v] of Object.entries(up.headers || {})) x.setRequestHeader(k, v);
+      x.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+      x.onerror = () => bad(Object.assign(new Error("dirigentens adress gick inte att nå härifrån"), { code: "UNREACHABLE" }));
+      x.onload = () => {
+        let body = null;
+        try { body = JSON.parse(x.responseText); } catch { /* inte JSON */ }
+        if (x.status >= 200 && x.status < 300) return ok(body);
+        bad(Object.assign(new Error(body?.error?.message || `dirigenten svarade ${x.status}`), { code: body?.error?.code || `HTTP_${x.status}` }));
+      };
+      x.send(file);
+    });
+  }
+  /** En fil in i banken och registret. Svaret är asset_registers, vilken väg filen än tog. */
+  async function sendFile(f, fields) {
+    const mime = f.type || "application/octet-stream";
+    if (f.size > MAX_FILE) throw new Error(`${f.name} är ${fsize(f.size)}. Dirigenten tar emot högst 4 MB än — ange var filen finns i stället.`);
+    const thumb = IMG_TYPE.test(f.type) ? await makeThumb(f) : null;
+    const note = progressNote();
+    note.set(`Laddar upp ${f.name}…`);
+    try {
+      if (UPLOAD.direct !== false) {
+        try {
+          const d = await call("asset_register", { ...fields, filename: f.name, mime,
+            upload_sha256: await sha256Hex(f), ...(thumb ? { thumbnail_base64: thumb } : {}) });
+          if (!d?.upload?.url) throw Object.assign(new Error("servern gav ingen uppladdningsadress"), { code: "NOT_READY" });
+          try { UPLOAD.home = `${new URL(d.upload.url).origin}/vy`; } catch { /* ingen adress att visa */ }
+          const r = await postFile(d.upload, f, (p) => note.set(`Laddar upp ${f.name} · ${Math.round(p * 100)} %`));
+          UPLOAD.direct = true;
+          return r;
+        } catch (e) {
+          if (e?.code !== "UNREACHABLE" && e?.code !== "NOT_READY") throw e;
+          UPLOAD.direct = false;
+        }
+      }
+      if (f.size > INLINE_MAX)
+        throw new Error(`${f.name} är ${fsize(f.size)}. Härifrån går bara filer upp till 500 kB att skicka. `
+          + (WEB.on ? "Ange var filen finns i stället." : `Öppna vyn på dirigentens egen adress${UPLOAD.home ? ` (${UPLOAD.home})` : ""} och ladda upp den där, eller ange var filen finns.`));
+      const small = thumb && f.size + thumb.length * 0.75 <= INLINE_MAX ? thumb : null;
+      return await call("asset_register", { ...fields, filename: f.name, mime, base64: await toBase64(f),
+        ...(small ? { thumbnail_base64: small } : {}) });
+    } finally { note.done(); }
+  }
   const busy = async (btn, fn) => { if (btn) btn.disabled = true; try { return await fn(); } finally { if (btn?.isConnected) btn.disabled = false; } };
   const current = () => { const t = taskById(state.obj?.task); return { t, s: stepOf(t, state.obj?.step) }; };
 
@@ -3191,7 +3313,8 @@ a.btn { text-decoration: none; color: var(--text); }
     const o = opens().find((x) => x.id === input.dataset.qfile), f = input.files?.[0];
     if (!o || !f) return;
     if (f.size > MAX_FILE) return toast(`${f.name} är större än 4 MB. Ange var filen finns i stället.`, null, true);
-    try { await registerAsset(o, { filename: f.name, mime: f.type || "application/octet-stream", base64: await toBase64(f) });
+    const t = taskById(o.task);
+    try { await sendFile(f, { asset_type: o.about, acquisition: "provided", for_task: o.task, ...(t?.customer?.id ? { customer: t.customer.id } : {}) });
       state.obj = null; await afterWrite(`${f.name} är uppladdad.`); }
     catch (e) { fail("Filen laddades inte upp", e); }
   }
@@ -3265,7 +3388,7 @@ a.btn { text-decoration: none; color: var(--text); }
         for (const lv of leaves.filter(filled)) {
           const k = lv.name || lv.label, v = inp.parts[k] || {}, f = inp.files[k];
           const base = { asset_type: lv.name, acquisition: "provided", for_task: t.id, for_step: s.step, ...(t.customer?.id ? { customer: t.customer.id } : {}) };
-          if (f) await call("asset_register", { ...base, filename: f.name, mime: f.type || "application/octet-stream", base64: await toBase64(f) });
+          if (f) await sendFile(f, base);
           else if (v.link?.trim()) await call("asset_register", { ...base, mime: /^https?:\/\//i.test(v.link) ? "text/uri-list" : "text/plain", external: v.link.trim() });
           else await call("asset_register", { ...base, mime: "text/plain", text: v.text.trim() });
         }
@@ -3497,9 +3620,11 @@ a.btn { text-decoration: none; color: var(--text); }
     return [`Utför steget «${s.label}» nu. Dirigenten gör det med sin egen nyckel; du tar fram värdena: ${namn}.`,
       "", ...(s.instruktion || s.recipe ? ["Stegets instruktion:", ...instructionLines(s), ""] : []),
       "1. Läs det tidigare steg lämnat i lägesbilden (till exempel urvalet). Läs fält och deras interna namn i kundens system med hamta när det behövs.",
-      "2. Ta fram värdena. Villkor för ett segment i HubSpot skrivs som en lista [{ property, operation: { operationType, operator, value | values } }] med fältens interna namn, till exempel { property: \"lifecyclestage\", operation: { operationType: \"ENUMERATION\", operator: \"IS_ANY_OF\", values: [\"customer\"] } }. Alla villkor i listan ska gälla. Är urvalet en uppräkning av kontakter utan fält att filtrera på: filters = { emails: [alla adresser] }, som ger en fast lista.",
-      `3. Kör med skriv → rotor-dirigenten execute_step { task: "${t.id}", step: "${s.step}", values: { … }, confirmed: true, user_approval: <vad användaren sa ja till> }. I vad står på vanlig svenska exakt vad som skapas eller ändras: namnet och varje villkor.`,
-      "4. Säger användaren nej: fråga vad som ska vara annorlunda. Svara efteråt med vad dirigenten svarade (id och antal)."].join("\n");
+      "2. Ta fram värdena. Bara de som står ovan behövs; ett värde som inte gäller lämnas som tom text \"\".",
+      "   · Villkor för ett segment i HubSpot (filters) skrivs som en lista [{ property, operation: { operationType, operator, value | values } }] med fältens interna namn, till exempel { property: \"lifecyclestage\", operation: { operationType: \"ENUMERATION\", operator: \"IS_ANY_OF\", values: [\"customer\"] } }. Alla villkor i listan ska gälla. Är urvalet en uppräkning av kontakter utan fält att filtrera på: filters = { emails: [alla adresser] }, som ger en fast lista.",
+      "   · Ett marknadsmejl: subject, preview_text och body_html är den GODKÄNDA texten ur innehållsbanken — hitta den med rotor-dirigenten content_list och läs den med content_get; skriv inte om den. body_html är texten som HTML (stycken i <p>). segment_id är segmentets id som steget «Skapa segmentet i HubSpot» lämnade (lägesbilden eller stegets resultat). template_email_id är id på det mejl i HubSpot som ska klonas som mall, till exempel kundens förra utskick; läs mejlen i HubSpot med hamta. name är utkastets namn i HubSpot. from_name och reply_to lämnas tomma om mallens avsändare ska gälla. Har mallen flera textmoduler svarar dirigenten med deras nycklar; ange då body_html som { modulnyckel: html }.",
+      `3. Kör med skriv → rotor-dirigenten execute_step { task: "${t.id}", step: "${s.step}", values: { … }, confirmed: true, user_approval: <vad användaren sa ja till> }. I vad står på vanlig svenska exakt vad som skapas eller ändras: namnet och varje villkor, eller för ett mejl namn, ämnesrad, mall och segment. Ett mejl blir alltid ett utkast; dirigenten skickar det aldrig.`,
+      "4. Säger användaren nej: fråga vad som ska vara annorlunda. Svara efteråt med vad dirigenten svarade (id, antal eller länk till utkastet)."].join("\n");
   }
   /** Uppdraget när Utför trycks på ett steg som ändrar i ett system (B-269). */
   function writeStepTask(t, s) {
@@ -3524,6 +3649,22 @@ a.btn { text-decoration: none; color: var(--text); }
   /** Stegen före det här i kedjan som inte är gjorda (B-231). */
   const undoneBefore = (t, s) => { const i = t.steps.findIndex((x) => x.step === s.step); return t.steps.slice(0, Math.max(0, i)).filter((x) => !x.done); };
 
+  /** Bekräfta ett föreslaget åtagande (felrapport 2026-09-25): rutan visar vad det lovar. */
+  function confirmNodeDialog(id) {
+    const c = (S.agenda?.pending_confirmation ?? []).find((x) => x.id === id);
+    if (!c) return toast("Förslaget finns inte längre.", null, true);
+    dialog(`<h2>Bekräfta ${esc(c.label)}</h2><p>${esc(c.summary || "")}</p><p class="meta">${esc(lbl(c.customer))}</p>`
+      + `<div class="preview">${(c.covers || []).map((l) => `<div class="row2"><span>${esc(lbl(l.deliverable))}</span><span>${l.quantity ?? "–"} st${l.due ? ` · senast ${short(l.due)}` : ""}</span></div>`).join("")}</div>`
+      + `<p class="meta">Åtagandet blir beslutat av dig. Beställningar på det blir uppgifter i planen.</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-confirm-node-yes="${esc(c.id)}">Bekräfta</button></div>`);
+  }
+  function confirmNode(btn, id) {
+    const c = (S.agenda?.pending_confirmation ?? []).find((x) => x.id === id);
+    return busy(btn, async () => {
+      try { await call("registry_define", { confirm: id, user_approval: `Ja, bekräftat i vyn: ${c?.label ?? id}` }); closeDialog(); await load(); toast("Bekräftat."); }
+      catch (e) { fail("Bekräftelsen gick inte igenom", e); }
+    });
+  }
   /**
    * Ta över uppgiften (B-271). Daniel P 2026-09-25: "Man borde kunna trycka
    * 'ta över uppgift'". Rutan säger vilka steg som blir dina och från vem.
@@ -4110,7 +4251,7 @@ a.btn { text-decoration: none; color: var(--text); }
     if (!t?.method) return toast("Uppgiften följer ingen metod än — det finns inga steg att ändra.", null, true);
     state.change = { task: t.id, draft: null };
     dialog(`<h2>Ändra stegen för ${esc(lbl(t.customer, "kunden"))}</h2>`
-      + `<p class="meta">Ändringen blir ett kundflöde: den gäller ${esc(lbl(t.customer, "kunden"))}s kommande uppgifter, och metoden står kvar för alla andra. Bara den här gången går inte än.</p>`
+      + `<p class="meta">Ändringen blir ett kundflöde: den gäller ${esc(lbl(t.customer, "kunden"))}s kommande uppgifter, och metoden står kvar för alla andra. Gäller det bara den här gången: stäng och tryck + mellan stegen i kedjan.</p>`
       + `<div class="chain" style="margin:8px 0">${t.steps.map((x, i) => `${i ? `<span class="arrow">${ic("chev")}</span>` : ""}<span class="node ${x.done ? "done" : ""}">${x.done ? `<span class="ok" style="color:var(--green)">${ic("check")}</span>` : kindMark(kindOf(x))}<span class="l">${esc(x.label)}</span></span>`).join("")}</div>`
       + `<label class="field"><span>Vad ska ändras?</span><textarea id="chg-text" rows="3" placeholder="T.ex.: lägg till en korrekturvända efter utkastet, och hoppa över speglingen."></textarea></label>`
       + `<div id="chg-out"></div><div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn ai" data-chg-read="1">${SP} Läs och föreslå</button></div>`);
@@ -4263,6 +4404,55 @@ a.btn { text-decoration: none; color: var(--text); }
       try { await call("execute_step", { task: h.task, step: h.step, handover_to: to, ...(note ? { note } : {}) });
         state.handover = null; closeDialog(); await afterWrite(`Steget är lämnat till ${personName(to)} — det blir hens när hen tagit emot det.`); }
       catch (e) { fail("Steget lämnades inte över", e); }
+    });
+  }
+
+  /**
+   * Lägg till steg här (Daniel P 2026-09-25): "Jag vill inte att man ska
+   * behöva bygga om en hel metod för att sätta in ett steg i en kedja - det
+   * är ju ett specifikt flow från kunden." Steget hamnar i den här uppgiften
+   * och ingen annan; metoden och kundens flöde ändras inte. Görs det av
+   * kunden blir det en väntan på svar, som metodens egna steg hos kunden.
+   */
+  function addStepDialog(task, after) {
+    const tk = taskById(task), x = stepOf(tk, after); if (!tk || !x) return;
+    const next = tk.steps[tk.steps.indexOf(x) + 1];
+    const customerName = lbl(tk.customer, "kunden");
+    state.addStep = { task, after };
+    const cs = (S.agenda?.colleagues ?? []).filter((c) => c.id !== me());
+    dialog(`<h2>Lägg till steg här</h2>`
+      + `<p class="meta">Efter «${esc(x.label)}»${next ? ` och före «${esc(next.label)}»` : ", sist"}. Bara i den här uppgiften — metoden och ${esc(customerName)}s andra uppgifter ändras inte.</p>`
+      + `<label class="field"><span>Vad ska göras?</span><input id="as-label" maxlength="120" placeholder="T.ex.: ${esc(customerName)} godkänner testmejlet"></label>`
+      + `<label class="field"><span>Vem gör det?</span><select id="as-who"><option value="">Jag</option>${cs.map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join("")}`
+      + `<option value="customer">${esc(customerName)} — vi väntar på deras svar</option></select></label>`
+      + `<label class="field"><span>Vad behöver den veta? · valfritt</span><textarea id="as-note" rows="2" maxlength="500"></textarea></label>`
+      + `<label class="field"><span>Hur lång tid tar det, i minuter? · valfritt</span><input id="as-min" type="number" min="1" step="5"></label>`
+      + `<p class="meta">Det här skrivs: ett nytt steg i uppgiften, som går att markera klart och ta bort igen.</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-add-step-send="1">Lägg till</button></div>`);
+  }
+  function sendAddStep(btn) {
+    const a = state.addStep, label = $("#as-label")?.value.trim(), who = $("#as-who")?.value, note = $("#as-note")?.value.trim();
+    const min = Number($("#as-min")?.value || 0);
+    if (!a) return; if (!label) return toast("Skriv vad som ska göras.", null, true);
+    return busy(btn, async () => {
+      try { await call("task_lock", { task: a.task, add_step: { after: a.after, label, ...(who ? { who } : {}), ...(note ? { note } : {}),
+          ...(min > 0 ? { estimate_minutes: Math.round(min) } : {}) } });
+        state.addStep = null; closeDialog(); await afterWrite(`«${label}» står nu i uppgiften. Metoden är orörd.`); }
+      catch (e) { fail("Steget lades inte till", e); }
+    });
+  }
+  function removeAddedDialog(task, step) {
+    const st = stepOf(taskById(task), step); if (!st) return;
+    state.removeAdded = { task, step };
+    dialog(`<h2>Ta bort ${esc(st.label)}?</h2><p class="meta">Steget lades till i den här uppgiften och finns inte i metoden. Det tas bort ur uppgiften${st.done ? ", fast det är markerat klart" : ""}.</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-remove-added-send="1">Ta bort</button></div>`);
+  }
+  function sendRemoveAdded(btn) {
+    const r = state.removeAdded; if (!r) return;
+    return busy(btn, async () => {
+      try { await call("task_lock", { task: r.task, add_step: { remove: r.step } });
+        state.removeAdded = null; closeDialog(); if (state.obj?.step === r.step) state.obj = null; await afterWrite("Steget är borttaget ur uppgiften."); }
+      catch (e) { fail("Steget togs inte bort", e); }
     });
   }
 
@@ -4489,6 +4679,9 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.density) { density = ds.density; document.body.dataset.density = density; for (const b of document.querySelectorAll("[data-density]")) if (b.tagName === "BUTTON") b.setAttribute("aria-pressed", b.dataset.density === density); return; }
     if (ds.filter) { state.filter = ds.filter; return render(); }
     if (ds.who) { store.who = ds.who; save(); return render(); }
+    if (ds.confirmNode) return confirmNodeDialog(ds.confirmNode);
+    if (ds.confirmNodeYes) return confirmNode(t, ds.confirmNodeYes);
+    if (ds.ahead !== undefined) { store.ahead = Number(ds.ahead); save(); render(); return load(); }
     if (ds.takeTask) return takeTaskDialog(ds.takeTask);
     if (ds.takeTaskYes) return takeTask(t, ds.takeTaskYes);
     if (ds.toggleSoon) { store.showSoon = !store.showSoon; save(); return render(); }
@@ -4527,6 +4720,10 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.menuHandover) { closeMenu(); const [task, step] = ds.menuHandover.split("|"); return handoverDialog(task, step); }
     if (ds.handoverTo) { const { t: tt, s: ss } = current(); return ss ? handoverDialog(tt.id, ss.step) : undefined; }
     if (ds.handoverSend) return sendHandover(t);
+    if (ds.addStep) { const [task, after] = ds.addStep.split("|"); return addStepDialog(task, after); }
+    if (ds.addStepSend) return sendAddStep(t);
+    if (ds.removeAdded) { const [task, step] = ds.removeAdded.split("|"); return removeAddedDialog(task, step); }
+    if (ds.removeAddedSend) return sendRemoveAdded(t);
     if (ds.msg) { closeMenu(); const m = JSON.parse(ds.msg); return messageDialog(m.about, m.title); }
     if (ds.msgTo) { t.setAttribute("aria-pressed", t.getAttribute("aria-pressed") === "true" ? "false" : "true"); return; }
     if (ds.msgSend) return sendMessage(t);

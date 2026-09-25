@@ -1,6 +1,6 @@
 {
  "title": "Dirigenten",
- "version": "ebf91b9",
+ "version": "f17ebb2",
  "file": "https://rotor-dirigenten.netlify.app/vy/fil",
  "capabilities": {
   "mcp": {
@@ -29,6 +29,7 @@
       "read_call",
       "registry_define",
       "search",
+      "task_lock",
       "time_report"
      ]
     },
