@@ -544,7 +544,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "7977fd4", published: "2026-09-25" };
+  const SIDA = { version: "7417960", published: "2026-09-25" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1311,6 +1311,14 @@ a.btn { text-decoration: none; color: var(--text); }
           : `<button class="btn sm primary" data-step="${esc(x.task)}|${esc(x.step)}">${k === "code" ? "Öppna" : "Gör"}</button>`),
         attrs: `data-open-step="${esc(x.task)}|${esc(x.step)}"` });
     }
+    // Nästa steg ligger hos en kollega (B-271): raden säger hos vem, och den
+    // som vill göra det själv tar över uppgiften med ett klick.
+    if (x.kind === "colleague")
+      return row({ kind: `<span class="kind" title="Hos ${esc(lbl(x.holder, "en kollega"))}">${ic("user")}</span>`, dot: custDot(x.customer?.color),
+        title: `${esc(x.headline)}${t ? ` <span class="ctx">— ${esc(taskName(t))}</span>${addonChip(t)}` : ""}${lvlChip}`, cust: lbl(x.customer),
+        why: esc(x.reason), when: short(x.due), late: x.due < TODAY,
+        act: `<button class="btn sm" data-take-task="${esc(x.task)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över uppgift</button>`,
+        attrs: `data-open-step="${esc(x.task)}|${esc(x.step)}"` });
     const handover = x.kind === "handover";
     return row({ kind: `<span class="kind q" title="${handover ? "Överlämning" : "Fråga"}">${ic(handover ? "user" : "help")}</span>`,
       dot: custDot(x.customer?.color), title: `${esc(x.headline)}${t ? ` <span class="ctx">— ${esc(taskName(t))}</span>${addonChip(t)}` : ""}${lvlChip}`, cust: lbl(x.customer), why: esc(x.reason),
@@ -1333,6 +1341,16 @@ a.btn { text-decoration: none; color: var(--text); }
     return gs.map((g) => { const rows = g.items.map((k) => byKey.get(k)).filter(Boolean);
       return rows.length ? { ...g, rows, level: rows.reduce((l, x) => LEVEL_RANK[x.level] < LEVEL_RANK[l] ? x.level : l, rows[0].level) } : null; })
       .filter(Boolean);
+  }
+  /** Rader grupperade per projekt, som servern gör (groupItems) — för Alla, som vyn sätter ihop. */
+  function clientGroups(items) {
+    const out = new Map();
+    for (const x of items) {
+      const key = x.project?.id ?? `task|${x.task}`, g = out.get(key);
+      if (!g) out.set(key, { key, project: x.project, customer: x.customer, items: [x.key] });
+      else g.items.push(x.key);
+    }
+    return [...out.values()];
   }
   /**
    * Fälla ihop och ut (Daniel P 2026-09-25: "grupperade saker måste gå att
@@ -1365,14 +1383,22 @@ a.btn { text-decoration: none; color: var(--text); }
 
   const MODULES = {
     min: { name: "Min lista", size: "full", html: () => {
-      const all = agenda().filter((x) => x.kind !== "handover");
+      // Mina · Andras · Alla (Daniel P 2026-09-25: "på idagsidan borde man
+      // kunna filtrera sina egna och andras uppgifter"). Valet sparas.
+      const who = store.who || "mine";
+      const mina = agenda().filter((x) => x.kind !== "handover"), andras = S.agenda?.others ?? [];
+      const all = who === "others" ? andras
+        : who === "all" ? [...mina, ...andras.filter((x) => !mina.some((m) => m.key === x.key))] : mina;
+      const groups = who === "others" ? S.agenda?.others_groups : who === "all" ? clientGroups(all) : S.agenda?.groups;
       const f = state.filter;
-      const isWork = (x) => x.kind === "step";
+      const isWork = (x) => x.kind === "step" || x.kind === "colleague";
       const vis = all.filter((x) => f === "all" || (f === "work" && isWork(x)) || (f === "q" && !isWork(x)));
       const n = (k) => k === "all" ? all.length : all.filter((x) => (k === "work" ? isWork(x) : !isWork(x))).length;
-      return `<div class="card"><div class="head"><h2>Min lista</h2><span class="meta">${all.length} saker</span><div class="right"><div class="seg">`
+      return `<div class="card"><div class="head"><h2>${who === "others" ? "Andras" : who === "all" ? "Allas" : "Min lista"}</h2><span class="meta">${all.length} saker</span><div class="right"><div class="seg">`
+        + [["mine", "Mina"], ["others", "Andras"], ["all", "Alla"]].map(([k, l]) => `<button data-who="${k}" aria-pressed="${who === k}">${l}</button>`).join("")
+        + `</div><div class="seg">`
         + [["all", "Allt"], ["work", "Arbete"], ["q", "Frågor"]].map(([k, l]) => `<button data-filter="${k}" aria-pressed="${f === k}">${l}<span class="n">${n(k)}</span></button>`).join("")
-        + `</div></div></div>${agendaRows(vis)}</div>`;
+        + `</div></div></div>${agendaRows(vis, groups)}</div>`;
     } },
     /* Till dig: meddelanden från kollegor som du inte markerat läst (B-220) och
        överlämningar som väntar på att du tar emot dem. Båda ur agendan. */
@@ -1450,7 +1476,7 @@ a.btn { text-decoration: none; color: var(--text); }
 
   const SCREENS = {
     idag() {
-      const hot = agenda().filter((x) => x.level === "hot").length;
+      const hot = agenda().filter((x) => x.level === "hot" && x.kind !== "colleague").length;
       return `<div class="pagehead"><h1>Idag</h1><span class="sub">${wday(TODAY)}${hot ? ` · <span style="color:var(--red)">${hot} brinner</span>` : ""}</span>`
         + `<div class="actions"><button class="btn" data-customize="1">Anpassa</button></div></div>`
         + `<div class="grid2">${modules().map((k) => MODULES[k] ? `<div class="mod ${MODULES[k].size}">${MODULES[k].html()}</div>` : "").join("")}</div>`;
@@ -2660,7 +2686,7 @@ a.btn { text-decoration: none; color: var(--text); }
         + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="chip">${s.float_days} d marginal</span>`) + (s.done ? ` · <span class="chip green">${ic("check")} ${doneText(s)}</span>` : "") + (started ? ` · ${started}` : "") + `</div></div></div>`
         // Markera klart står överst (Daniel P 2026-09-25: "markera klart måste vara högst upp").
         + (s.done ? "" : `<div class="bar-actions" style="margin:4px 0 16px"><button class="btn primary" data-done="1">Markera klart och gå till nästa ${ic("arrow")}</button>`
-          + `<span class="right"><button class="btn quiet" data-calstep="${esc(t.id)}|${esc(s.step)}">${ic("calendar")} Lägg i kalendern</button>${(s.postpone_options || []).length ? `<button class="btn quiet" data-postpone="1">Senarelägg</button>` : ""}<button class="btn quiet" data-handover-to="1">Lämna över</button>${msgBtn({ task: t.id, step: s.step }, s.label)}</span></div>`)
+          + `<span class="right"><button class="btn quiet" data-calstep="${esc(t.id)}|${esc(s.step)}">${ic("calendar")} Lägg i kalendern</button>${(s.postpone_options || []).length ? `<button class="btn quiet" data-postpone="1">Senarelägg</button>` : ""}<button class="btn quiet" data-handover-to="1">Lämna över</button>${t.steps.some((x) => !x.done && !x.external && (x.responsible?.id ?? x.responsible) !== me()) ? `<button class="btn quiet" data-take-task="${esc(t.id)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över uppgift</button>` : ""}${msgBtn({ task: t.id, step: s.step }, s.label)}</span></div>`)
         + materialCard(t, s, true)
         + `<div class="card section"><h2>Kedjan ${t.method ? `<button class="linkbtn" data-open-method="${esc(t.method)}" title="Öppna metoden — där den kan ändras för alla">${esc(lbl(t.method_named, "metoden"))} ${ic("arrow")}</button>` : ""}`
         + `${t.method ? ` <button class="btn quiet sm" data-change="${esc(t.id)}">Ändra stegen för ${esc(lbl(t.customer, "kunden"))}</button>` : ""}`
@@ -3473,6 +3499,26 @@ a.btn { text-decoration: none; color: var(--text); }
   /** Stegen före det här i kedjan som inte är gjorda (B-231). */
   const undoneBefore = (t, s) => { const i = t.steps.findIndex((x) => x.step === s.step); return t.steps.slice(0, Math.max(0, i)).filter((x) => !x.done); };
 
+  /**
+   * Ta över uppgiften (B-271). Daniel P 2026-09-25: "Man borde kunna trycka
+   * 'ta över uppgift'". Rutan säger vilka steg som blir dina och från vem.
+   */
+  function takeTaskDialog(id) {
+    const tk = taskById(id);
+    if (!tk) return toast("Uppgiften finns inte längre i planen.", null, true);
+    const steg = tk.steps.filter((x) => !x.done && !x.external && (x.responsible?.id ?? x.responsible) !== me());
+    if (!steg.length) return toast("Alla ogjorda steg i uppgiften är redan dina.");
+    dialog(`<h2>Ta över ${esc(taskName(tk))}</h2><p>De här stegen blir dina:</p>`
+      + `<div class="preview">${steg.map((x) => `<div class="row2"><span>${esc(x.label)}</span><span>från ${esc(lbl(x.responsible, "–"))}</span></div>`).join("")}</div>`
+      + `<p class="meta">Bara i den här uppgiften. Metoden ändras inte.</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-take-task-yes="${esc(tk.id)}">Ta över</button></div>`);
+  }
+  function takeTask(btn, id) {
+    return busy(btn, async () => {
+      try { await call("execute_step", { task: id, take_over: true }); closeDialog(); await load(); toast("Uppgiften är din."); }
+      catch (e) { fail("Uppgiften togs inte över", e); }
+    });
+  }
   function runCode(btn, at = current()) {
     const { t, s } = at;
     if (!t || !s) return toast("Steget finns inte längre i planen. Hämta igen.", null, true);
@@ -4413,6 +4459,9 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.back) { state.obj = null; return render(); }
     if (ds.density) { density = ds.density; document.body.dataset.density = density; for (const b of document.querySelectorAll("[data-density]")) if (b.tagName === "BUTTON") b.setAttribute("aria-pressed", b.dataset.density === density); return; }
     if (ds.filter) { state.filter = ds.filter; return render(); }
+    if (ds.who) { store.who = ds.who; save(); return render(); }
+    if (ds.takeTask) return takeTaskDialog(ds.takeTask);
+    if (ds.takeTaskYes) return takeTask(t, ds.takeTaskYes);
     if (ds.toggleSoon) { store.showSoon = !store.showSoon; save(); return render(); }
     if (ds.fold) { store.folded = { ...(store.folded || {}), [ds.fold]: !isFolded(ds.fold) }; save(); return render(); }
     if (ds.planmode) { state.planMode = ds.planmode; return render(); }
