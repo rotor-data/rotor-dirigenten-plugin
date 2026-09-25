@@ -294,6 +294,8 @@ ol.moments input { flex: 1; min-width: 0; border: 1px solid var(--line-strong); 
 .chain { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 .chain .node { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 6px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); font-size: 12.5px; white-space: nowrap; max-width: 220px; cursor: pointer; }
 .chain .node span.l { overflow: hidden; text-overflow: ellipsis; }
+.chain .node span.who { color: var(--text-3); font-size: 11.5px; flex-shrink: 0; }
+.chain .node span.who.pending { color: var(--amber); }
 .chain .node.done { color: var(--green); background: var(--green-weak); border-color: var(--green); }
 .chain .node.done span.l { text-decoration: line-through; }
 .chain .node .tick { width: 18px; height: 18px; padding: 0; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--bg); color: var(--text-3); display: inline-grid; place-items: center; cursor: pointer; }
@@ -588,7 +590,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "478d139", published: "2026-09-25" };
+  const SIDA = { version: "87fa16a", published: "2026-09-25" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1229,9 +1231,19 @@ a.btn { text-decoration: none; color: var(--text); }
   const assumeChips = (s) => (s.needed_by ? ` · <span class="chip blue">${esc(s.needed_by.text)}</span>` : "")
     + (s.assumes ? ` · <span class="chip">${esc(s.assumes.text)}</span>` : "")
     + (s.done_under_assumption ? ` · <span class="chip amber">${esc(s.done_under_assumption.reason)}</span>` : "");
+  /**
+   * Vem som gör steget, som tagg på noden (Daniel P 2026-09-25: "alla steg ska
+   * väl synas i leveransen oavsett vem som gör dem"). Ett lämnat steg som inte
+   * tagits emot säger det; ett steg hos kunden eller en partner säger hos vem.
+   */
+  const whoOf = (x) => x.handover ? `väntar på att ${lbl(x.handover.to_named, personName(x.handover.to))} tar emot`
+    : x.external ? lbl(x.waiting?.on, lbl(x.performer_named?.[0], "kunden"))
+    : lbl(x.responsible, "");
+  const whoTag = (x) => { const w = x.done ? "" : whoOf(x);
+    return w ? ` <span class="who${x.handover ? " pending" : ""}">· ${esc(w)}</span>` : ""; };
   const chainNode = (t, x, cls) => `<span class="node ${cls}${x.added ? " own" : ""}" data-open-step="${esc(t.id)}|${esc(x.step)}"${nodeTitle(x)}>`
     + (x.done ? `<span class="ok" style="color:var(--green)">${ic("check")}</span>` : x.external ? kindMark(kindOf(x)) : tickBtn(t.id, x.step))
-    + `<span class="l">${esc(x.label)}</span></span>`;
+    + `<span class="l">${esc(x.label)}</span>${whoTag(x)}</span>`;
   /** Uppgiftens namn: leveransen, och det som utlöste den när det finns (B-202). */
   /**
    * Uppgiftens eget namn (B-224): leveranstypen och det som skiljer den från
@@ -1433,11 +1445,17 @@ a.btn { text-decoration: none; color: var(--text); }
         why: workWhy(x, t), when: short(x.due), late: x.due < TODAY,
         act: `<button class="btn sm" data-take-task="${esc(x.task)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över uppgift</button>`,
         attrs: `data-open-step="${esc(x.task)}|${esc(x.step)}"` });
+    // Lämnat till en kollega som inte tagit emot det än: en rad per uppgift, med antalet steg.
+    if (x.kind === "handover_out")
+      return row({ kind: `<span class="kind" title="Väntar på att ${esc(lbl(x.holder, "en kollega"))} tar emot">${ic("user")}</span>`, dot: custDot(x.customer?.color),
+        title: `${esc(workTitle(t, x))}${addonChip(t)}${lvlChip}`, cust: lbl(x.customer),
+        why: workWhy(x, t), when: short(x.due),
+        attrs: `data-open-step="${esc(x.task)}|${esc(x.step)}"` });
     const handover = x.kind === "handover";
     return row({ kind: `<span class="kind q" title="${handover ? "Överlämning" : "Fråga"}">${ic(handover ? "user" : "help")}</span>`,
       dot: custDot(x.customer?.color), title: `${esc(x.headline)}${t ? ` <span class="ctx">— ${esc(taskName(t))}</span>${addonChip(t)}` : ""}${lvlChip}`, cust: lbl(x.customer), why: esc(x.reason),
       when: short(x.due), late: x.due < TODAY,
-      act: `<button class="btn sm" data-open-q="${esc(x.open)}">${handover ? "Ta över" : "Svara"}</button>`,
+      act: `<button class="btn sm" data-open-q="${esc(x.open)}">${handover ? "Ta emot" : "Svara"}</button>`,
       attrs: `data-open-q="${esc(x.open)}"` });
   }
   const LEVEL_NAME = { hot: "brinner", today: "i dag", soon: "snart" };
@@ -1505,7 +1523,7 @@ a.btn { text-decoration: none; color: var(--text); }
         : who === "all" ? [...mina, ...andras.filter((x) => !mina.some((m) => m.key === x.key))] : mina;
       const groups = who === "others" ? S.agenda?.others_groups : who === "all" ? clientGroups(all) : S.agenda?.groups;
       const f = state.filter;
-      const isWork = (x) => x.kind === "step" || x.kind === "colleague";
+      const isWork = (x) => x.kind === "step" || x.kind === "colleague" || x.kind === "handover_out";
       const vis = all.filter((x) => f === "all" || (f === "work" && isWork(x)) || (f === "q" && !isWork(x)));
       const n = (k) => k === "all" ? all.length : all.filter((x) => (k === "work" ? isWork(x) : !isWork(x))).length;
       return `<div class="card"><div class="head"><h2>${who === "others" ? "Andras" : who === "all" ? "Allas" : "Min lista"}</h2><span class="meta">${all.length} saker</span><div class="right"><div class="seg">`
@@ -1545,10 +1563,10 @@ a.btn { text-decoration: none; color: var(--text); }
     hosandra: { name: "Hos andra", size: "half", html: () => {
       const w = S.agenda?.waiting_on_others ?? [];
       return `<div class="card"><div class="head"><h2>Hos andra</h2><span class="meta">${w.length || ""}</span></div>`
-        + (w.length ? projectGroups(w, S.agenda?.waiting_groups).slice(0, 5).map((g) => groupHtml(g, (x) => row({ kind: kindMark("ext"), dot: custDot(x.customer?.color), title: taskById(x.task) ? esc(workTitle(taskById(x.task))) : esc(x.headline),
+        + (w.length ? projectGroups(w, S.agenda?.waiting_groups).slice(0, 5).map((g) => groupHtml(g, (x, lvl) => x.kind === "handover_out" ? agendaRow(x, lvl) : row({ kind: kindMark("ext"), dot: custDot(x.customer?.color), title: taskById(x.task) ? esc(workTitle(taskById(x.task))) : esc(x.headline),
             cust: lbl(x.customer), why: taskById(x.task) ? workWhy(x, taskById(x.task)) : esc(x.reason), when: short(x.due), late: x.due < TODAY,
             attrs: `data-open-step="${esc(x.task)}|${esc(x.step)}"` }))).join("")
-          : `<div class="empty"><b>Inget väntar på andra.</b>Steg som görs av kunden eller en partner hamnar här.</div>`) + `</div>`;
+          : `<div class="empty"><b>Inget väntar på andra.</b>Steg som görs av kunden eller en partner, och steg du lämnat till en kollega som inte tagit emot dem, hamnar här.</div>`) + `</div>`;
     } },
     veckan: { name: "Veckan", size: "full", html: () => {
       // Valfri vecka (Daniel P 2026-09-25: "kan man inte se nästa veckas
@@ -2390,7 +2408,7 @@ a.btn { text-decoration: none; color: var(--text); }
             const a = pos(st.start), b = pos(add(st.end.slice(0, 10), 1));
             // Ett klart steg syns när spannet går bakåt, men flyttas inte.
             return `<div class="bar sbar ${st.done ? "done" : st.critical ? "crit" : ""}" draggable="false" data-open-step="${esc(t.id)}|${esc(st.step)}"${st.done ? "" : ` data-drag-start="${esc(st.start.slice(0, 10))}"`}`
-              + ` style="left:${a}%;width:${Math.max(1.2, b - a)}%" title="${esc(st.label)} · ${short(st.start)}–${short(st.end)}${st.done ? ` · ${doneText(st)}` : st.critical ? " · utan marginal" : ` · kan flyttas ${st.float_days} dagar utan att leveransen spricker`}">`
+              + ` style="left:${a}%;width:${Math.max(1.2, b - a)}%" title="${esc(st.label)}${st.done || !whoOf(st) ? "" : ` · ${esc(whoOf(st))}`} · ${short(st.start)}–${short(st.end)}${st.done ? ` · ${doneText(st)}` : st.critical ? " · utan marginal" : ` · kan flyttas ${st.float_days} dagar utan att leveransen spricker`}">`
               + (st.done ? `<span class="ok">${ic("check")}</span>` : st.external ? "" : tickBtn(t.id, st.step)) + `${esc(st.label)}</div>`;
           }).join("") + `</div></td></tr>`;
       }).join("") + `</tbody></table></div><p class="meta">Ljus = har marginal · bärnsten = utan marginal · grön med bock = klart. Bocken i början av ett steg markerar det klart. Dra ett steg framåt för att senarelägga det, bakåt för att flytta det tidigare — aldrig före i dag, och aldrig före ett steg som måste vara klart innan. Klicka för att öppna.</p>`;
@@ -2795,7 +2813,7 @@ a.btn { text-decoration: none; color: var(--text); }
       const handover = o.reason === "handover_pending";
       const answer = handover
         ? `<div class="card section"><h2>Överlämning</h2><p class="meta">${esc(lbl(o.handover?.by_named, "En kollega"))} vill lämna steget till dig${o.handover?.note ? `: ${esc(o.handover.note)}` : "."}</p>`
-          + `<div class="bar-actions"><button class="btn primary" data-handover="accept">Ta över</button><button class="btn quiet" data-handover="decline">Tacka nej</button></div></div>`
+          + `<div class="bar-actions"><button class="btn primary" data-handover="accept">Ta emot</button><button class="btn quiet" data-handover="decline">Tacka nej</button></div></div>`
         : `<div class="card section"><h2>Svara</h2>`
           + (opts ? `<div class="opts">${opts.map((x) => `<button class="opt" data-qchoice="${esc(x)}" aria-pressed="${chosen === x}">${esc(x)}${o.recommended === x ? "<small>föreslaget</small>" : ""}</button>`).join("")}</div>` : "")
           + `<label class="field wide"><span>${opts ? "Eller skriv svaret" : "Svaret"}</span><textarea rows="3" id="q-text" placeholder="Skriv svaret som det är">${esc(chosen || o.proposal || "")}</textarea></label>`
