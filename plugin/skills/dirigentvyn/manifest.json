@@ -1,0 +1,69 @@
+{
+ "title": "Dirigenten",
+ "version": "7977fd4",
+ "file": "https://rotor-dirigenten.netlify.app/vy/fil",
+ "capabilities": {
+  "mcp": {
+   "servers": [
+    {
+     "server": "rotor-dirigenten",
+     "tools": [
+      "asset_get",
+      "asset_register",
+      "bug_report",
+      "classify_accept",
+      "content_get",
+      "content_save",
+      "content_search",
+      "context",
+      "execute_step",
+      "guide",
+      "intake_status",
+      "intake_submit",
+      "library_check",
+      "message",
+      "method_build",
+      "note_link",
+      "plan_state",
+      "question_answer",
+      "read_call",
+      "registry_define",
+      "search",
+      "time_report"
+     ]
+    },
+    {
+     "server": "HubSpot",
+     "tools": [
+      "search_crm_objects",
+      "get_crm_objects",
+      "query_crm_data",
+      "search_owners",
+      "search_properties",
+      "get_properties",
+      "search_conversations",
+      "get_conversation_channel_metadata",
+      "discover_hubspot_schema",
+      "get_organization_details",
+      "get_user_details",
+      "read_campaign_data",
+      "get_campaign_attribution_reports",
+      "get_content_analytics_report",
+      "get_marketing_email_analytics",
+      "tool_guidance",
+      "manage_crm_objects",
+      "manage_campaign_objects",
+      "manage_marketing_email",
+      "manage_blog_post",
+      "manage_landing_page",
+      "manage_website_page",
+      "manage_segment",
+      "manage_saved_reports"
+     ]
+    }
+   ]
+  },
+  "sample": {},
+  "downloads": true
+ }
+}
