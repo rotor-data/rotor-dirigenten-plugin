@@ -544,7 +544,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "7417960", published: "2026-09-25" };
+  const SIDA = { version: "98db4aa", published: "2026-09-25" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1291,7 +1291,9 @@ a.btn { text-decoration: none; color: var(--text); }
 
   /** En rad per sak i agendan. Knappen säger vad den gör, verbet först. */
   /** Ett steg som går att köra direkt: kod, en session kan göra det, och nästa anrop kör steget (inte markerar det). */
-  const runnableNow = (x, k) => k === "code" && x.by === "session" && x.next?.tool === "execute_step" && !x.next.args?.mark;
+  // Ett kodsteg som behöver värden (B-272) körs från steget, där Claude fyller i dem.
+  const runnableNow = (x, k) => k === "code" && x.by === "session" && x.next?.tool === "execute_step" && !x.next.args?.mark
+    && !(stepOf(taskById(x.task), x.step)?.needs_values || []).length;
   function agendaRow(x, groupLevel = x.level) {
     const t = taskById(x.task);
     // I en grupp under en mer brådskande nivå säger raden sin egen nivå.
@@ -2674,6 +2676,7 @@ a.btn { text-decoration: none; color: var(--text); }
         : s.recipe?.how ? String(s.recipe.how).split(/\n+/).map((x) => x.replace(/^\d+[.)]\s*/, "")).filter(Boolean) : null;
       const started = s.started ? `<span class="chip blue">påbörjat ${short(s.started.at)}${s.started.by_named ? ` av ${esc(s.started.by_named.label)}` : ""}</span>` : "";
       const doArea = s.done ? `<div><span class="chip green">${ic("check")} ${doneText(s)}</span></div>`
+        : k === "code" && (s.needs_values || []).length ? valuesStepCard(t, s)
         : k === "code"
           ? `<div class="bar-actions"><button class="btn primary" data-code-run="1">Utför</button><span class="meta">Visar först vad som ändras. Inget ändras förrän du bekräftar.</span></div>`
           : k === "llm" ? (s.writes_to ? writeStepCard(t, s) : aiStepCard(t, s))
@@ -3338,7 +3341,7 @@ a.btn { text-decoration: none; color: var(--text); }
    * texter i högerchatten. Däremot ska den kunna kopiera prompts med
    * instruktioner till vanliga chatten."
    */
-  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till chatten under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system via en koppling (B-269) — det gör du här, med skriv, efter uppdraget i frågan.";
+  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till chatten under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan.";
   const HUNT_HINT = "Leta med search först (B-257): EN fråga med 2–5 formuleringar — kundens ord och husets ord — och inbox när ärendet har en adress. Svaret är högst tio rader; hämta bara det en rad pekar på (fetch). Ramens steg står i svaret — hämta inte hela metoden med guide. maybe är antaganden: säg att de är det. Står det inget självklart: fråga användaren vad det kan handla om; vet hen inte, föreslå en fråga till den som skrev. Sluta leta när du har svaret, och svara kort. Långa listor: read_call { call, hitta: \"sökord\" } filtrerar på servern. Ser du hur något hänger ihop (ett workflow skickar ett fält, ett mejl kommer från ett flöde): notera det med note_link, så vet nästa ärende det. Saknas en förmåga i dirigenten — kod som kan göra en ändring som behövs: säg vad som saknas; atomförslaget skrivs i vanliga chatten. Leta effektivt: börja i kundens systemkarta. I HubSpot räknar och filtrerar query_crm_data i ETT anrop (hur många affärer som har ett fält ifyllt, vilka värden som förekommer, vilka produkter som finns på affärerna) — använd den i stället för många sökningar. get_properties ger ett fälts definition och tillåtna värden. Sök inte på samma sak två gånger.";
   let catalogCache = null;
   /** Kopplingarnas läsverktyg med sina argument, ur kopplingarnas egna listor — så att Claude inte gissar. */
@@ -3475,6 +3478,28 @@ a.btn { text-decoration: none; color: var(--text); }
       + (här ? `<button class="btn primary" data-write-run="${esc(t.id)}|${esc(s.step)}">Utför</button>` : "")
       + `<button class="btn ai${här ? " quiet" : " primary"}" data-copy-step="${esc(t.id)}|${esc(s.step)}">${SP} Kopiera till chatten</button>`
       + `<span class="meta">Claude tar fram ändringen i ${esc(sys)} och visar den. Inget ändras förrän du sagt ja.</span></div>`;
+  }
+  /**
+   * Ett kodsteg som behöver värden när det körs (B-272), som segmentets namn
+   * och villkor. Dirigenten gör ändringen med sin egen nyckel; Claude tar fram
+   * värdena ur uppgiften, och rutan visar dem innan något körs.
+   */
+  function valuesStepCard(t, s) {
+    const namn = (s.needs_values || []).join(", ");
+    return aiWarnings(t, s) + `<div class="bar-actions" style="margin-top:10px">`
+      + (sample ? `<button class="btn primary" data-values-run="${esc(t.id)}|${esc(s.step)}">Utför</button>` : "")
+      + `<button class="btn ai${sample ? " quiet" : " primary"}" data-copy-step="${esc(t.id)}|${esc(s.step)}">${SP} Kopiera till chatten</button>`
+      + `<span class="meta">Dirigenten gör steget. Claude tar fram ${esc(namn)} ur uppgiften och visar dem först. Inget ändras förrän du sagt ja.</span></div>`;
+  }
+  /** Uppdraget när Utför trycks på ett kodsteg som behöver värden (B-272). */
+  function valuesStepTask(t, s) {
+    const namn = (s.needs_values || []).join(", ");
+    return [`Utför steget «${s.label}» nu. Dirigenten gör det med sin egen nyckel; du tar fram värdena: ${namn}.`,
+      "", ...(s.instruktion || s.recipe ? ["Stegets instruktion:", ...instructionLines(s), ""] : []),
+      "1. Läs det tidigare steg lämnat i lägesbilden (till exempel urvalet). Läs fält och deras interna namn i kundens system med hamta när det behövs.",
+      "2. Ta fram värdena. Villkor för ett segment i HubSpot skrivs som en lista [{ property, operation: { operationType, operator, value | values } }] med fältens interna namn, till exempel { property: \"lifecyclestage\", operation: { operationType: \"ENUMERATION\", operator: \"IS_ANY_OF\", values: [\"customer\"] } }. Alla villkor i listan ska gälla.",
+      `3. Kör med skriv → rotor-dirigenten execute_step { task: "${t.id}", step: "${s.step}", values: { … }, confirmed: true, user_approval: <vad användaren sa ja till> }. I vad står på vanlig svenska exakt vad som skapas eller ändras: namnet och varje villkor.`,
+      "4. Säger användaren nej: fråga vad som ska vara annorlunda. Svara efteråt med vad dirigenten svarade (id och antal)."].join("\n");
   }
   /** Uppdraget när Utför trycks på ett steg som ändrar i ett system (B-269). */
   function writeStepTask(t, s) {
@@ -3879,13 +3904,16 @@ a.btn { text-decoration: none; color: var(--text); }
       "Så går du till väga:",
       `1. Läs lägesbilden: context { task: "${t.id}", step: "${s.step}" }. Den har mejltråden, det tidigare steg lämnat och kundens systemkarta — sök inte efter det igen.`,
       "2. Leta vidare med search bara om lägesbilden inte räcker. Resonera med mig där något är oklart.",
-      ...(s.writes_to ? [
+      ...((s.needs_values || []).length ? [
+        `3. Steget görs av dirigenten med execute_step och behöver värdena ${(s.needs_values || []).join(", ")}. Ta fram dem ur uppgiften (villkor för ett HubSpot-segment som [{ property, operation: { operationType, operator, value | values } }] med fältens interna namn). Visa dem för mig på vanlig svenska och vänta på mitt ja.`,
+        `4. Efter mitt ja: execute_step { task: "${t.id}", step: "${s.step}", values: { … }, confirmed: true, user_approval: <det jag sa ja till> }.`,
+      ] : s.writes_to ? [
         `3. Steget ändrar i ${(s.writes_to.connections || []).join(", ")} (${s.writes_to.verb} ${s.writes_to.object}). Ta fram ändringen och visa exakt vad som ändras — vilken post, vilka fält och värden — och vänta på mitt ja innan du anropar något verktyg som skriver. Ändra aldrig rättigheter, användare eller kontoinställningar.`,
         `4. Efter mitt ja: gör ändringen med kopplingen, och markera steget klart med execute_step { task: "${t.id}", step: "${s.step}", mark: "done", note: <resultatet på en rad> }.`,
       ] : [
       "3. Skriv texten i Smyra (smyra_write) med kundens röst och persona, och visa den för mig.",
       `4. Efter mitt ja: spara texten med content_save { customer: "${cust || "<kundens id>"}", for_task: "${t.id}", for_step: "${s.step}", kind, name, title, markdown }, och markera steget klart med execute_step { task: "${t.id}", step: "${s.step}", mark: "done" }.`]),
-      "", s.writes_to ? CHAT_RULES.split("\n").filter((x) => !x.includes("Smyra")).join("\n") : CHAT_RULES].filter((x) => x !== null).join("\n");
+      "", s.writes_to || (s.needs_values || []).length ? CHAT_RULES.split("\n").filter((x) => !x.includes("Smyra")).join("\n") : CHAT_RULES].filter((x) => x !== null).join("\n");
   }
   /** Prompten för en del i Så görs steget: gör den till Claude eller kod, eller lägg till en. */
   function partChatPrompt(o, { kind, i, part } = {}) {
@@ -4523,6 +4551,9 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.peAdd) return copyToChat(partChatPrompt(state.obj), "Prompten för en ny del");
     if (ds.peSave) return peSave(t);
     if (ds.peDiscard) { state.obj.calls = JSON.parse(state.obj.orig); state.obj.check = null; return render(); }
+    if (ds.valuesRun) { const [task, step] = ds.valuesRun.split("|"); const tk = taskById(task), st = stepOf(tk, step);
+      if (!st) return toast("Steget finns inte i planen längre.", null, true);
+      return ask(valuesStepTask(tk, st), `Utför «${st.label}»`); }
     if (ds.writeRun) { const [task, step] = ds.writeRun.split("|"); const tk = taskById(task), st = stepOf(tk, step);
       if (!st?.writes_to) return toast("Steget finns inte i planen längre.", null, true);
       return ask(writeStepTask(tk, st), `Utför «${st.label}»`); }
