@@ -21,6 +21,12 @@ body[data-density="compact"] { --h-control: 28px; --h-row: 32px; --s4: 12px; --s
 html, body { margin: 0; height: 100%; background: var(--bg-page); color: var(--text); }
 body { font: 400 var(--fs-body)/1.5 var(--font); font-feature-settings: "tnum"; -webkit-font-smoothing: antialiased; word-spacing: .02em; }
 button, input, select, textarea { font: inherit; color: inherit; }
+/* Rutorna har egen bakgrund och text (Daniel P 2026-09-25: "flera inputrutor
+   (jag tror alla med någon form av up-down-counter) svarta och texten är också
+   svart"). Utan det tog webbläsarens mörka läge rutorna, men inte texten. */
+:root { color-scheme: light; }
+input, select, textarea { background-color: var(--bg); color: var(--text); color-scheme: light; }
+input::placeholder, textarea::placeholder { color: var(--text-3); }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
@@ -290,6 +296,23 @@ ol.moments input { flex: 1; min-width: 0; border: 1px solid var(--line-strong); 
 .chain .node.own { border-style: dashed; border-color: var(--accent); }
 .chain .addstep { width: 20px; height: 20px; padding: 0; border: 1px dashed var(--line-strong); border-radius: 50%; background: var(--bg); color: var(--text-3); font-size: 13px; line-height: 1; cursor: pointer; }
 .chain .addstep:hover { color: var(--accent); border-color: var(--accent); }
+/* Paletten: dra in ett steg i uppgiften (Daniel P 2026-09-25). */
+.stpal { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
+.stpal .grp { font-size: 12px; color: var(--text-2); margin: 12px 0 6px; font-weight: 600; }
+.stpal .cards { display: flex; flex-wrap: wrap; gap: 8px; }
+.stpal .palq { width: 100%; max-width: 360px; margin: 0 0 8px; font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg); color: var(--text); }
+.stcard { display: flex; flex-direction: column; gap: 3px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg); padding: 8px 10px; max-width: 280px; cursor: grab; touch-action: none; user-select: none; }
+.stcard:hover { border-color: var(--accent); }
+.stcard:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.stcard .l { font-weight: 500; }
+.stcard .chip { align-self: flex-start; }
+.stghost { position: fixed; pointer-events: none; z-index: 1000; opacity: .92; box-shadow: 0 6px 20px rgba(0,0,0,.18); }
+.chain .addstep.drop-ok { border: 2px solid var(--green); color: var(--green); background: var(--green-weak); }
+.chain .addstep.drop-warn { border: 2px solid var(--amber); color: var(--amber); background: var(--amber-weak); }
+.chain .addstep.drop-no { border: 2px solid var(--line-strong); color: var(--text-3); opacity: .45; cursor: not-allowed; }
+.chain .addstep.drop-hover, .chain .addstep.drop-kbd { transform: scale(1.35); box-shadow: 0 0 0 3px var(--accent-weak); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 767px) { .stcard { cursor: pointer; touch-action: auto; max-width: none; width: 100%; } }
 .chain .arrow { color: var(--text-2); font-size: 11px; }
 .dots { display: inline-flex; gap: 3px; }
 .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
@@ -544,13 +567,14 @@ a.btn { text-decoration: none; color: var(--text); }
   </aside>
 </div>
 <div id="layer"></div>
+<div id="pal-live" class="sr" aria-live="polite"></div>
 <script>
 (() => {
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "f17ebb2", published: "2026-09-25" };
+  const SIDA = { version: "5f17fef", published: "2026-09-25" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -609,7 +633,7 @@ a.btn { text-decoration: none; color: var(--text); }
   const noClaude = () => WEB.on
     ? "Claude i panelen finns bara när vyn är öppen i claude.ai. Kopiera till chatten tar med det till vanliga Claude-chatten."
     : "Claude är inte tillgänglig i den här vyn.";
-  const S = { plan: null, agenda: null, meetings: {}, lib: null, error: null, fetchedAt: null };
+  const S = { plan: null, agenda: null, meetings: {}, lib: null, error: null, fetchedAt: null, at: {} };
   const data = (r) => { const p = r && (r.payload ?? r); if (p?.structuredContent) return p.structuredContent;
     if (Array.isArray(p?.content)) { try { return JSON.parse(p.content[0].text); } catch { /* inte JSON */ } } return p; };
   /**
@@ -647,7 +671,7 @@ a.btn { text-decoration: none; color: var(--text); }
   /** Posten (intake_status queue). Hämtas efter planen och när In öppnas. */
   async function loadQueue() {
     try { const d = await withTimeout(call("intake_status", { queue: true, days: 60 }), 45000, "Posten");
-      S.queue = d?.queue ?? null; S.queueError = null; }
+      S.queue = d?.queue ?? null; S.queueError = null; S.at.queue = Date.now(); }
     catch (e) { S.queueError = e; }
     render();
   }
@@ -665,6 +689,16 @@ a.btn { text-decoration: none; color: var(--text); }
   const customerList = () => [...new Map(tasks().filter((t) => t.customer?.id).map((t) => [t.customer.id, t.customer])).values()];
   const peopleList = () => [...new Map(tasks().flatMap((t) => t.steps).filter((st) => st.responsible?.id).map((st) => [st.responsible.id, st.responsible])).values()];
 
+  /** Biblioteket med alla sorter — bara när något behöver det, inte vid varje återkomst. */
+  function loadLib() {
+    if (S.libLoading || !mcp) return;
+    S.libLoading = true;
+    withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"] }), 45000, "Biblioteket")
+      // Metoder ritas om när biblioteket kommit; andra ytor behöver det inte
+      // och ritas inte om medan någon skriver där.
+      .then((lib) => { S.lib = lib; S.libError = null; S.at.lib = Date.now(); }).catch((e) => { S.libError = e; })
+      .finally(() => { S.libLoading = false; if (state.screen === "metoder") render(); });
+  }
   async function load() {
     try {
       if (!mcp) throw new Error(`anslutningen ${SERVER} är inte tillgänglig här — öppna sidan i claude.ai med kopplingen påslagen`);
@@ -676,25 +710,49 @@ a.btn { text-decoration: none; color: var(--text); }
       // Hur långt fram listan räcker (Daniel P 2026-09-25): 1 = resten av veckan, 0 = allt.
       const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks() }), 45000, "Listan");
       if (!a?.agenda) throw new Error("servern skickade ingen agenda — den kan vara en äldre version");
-      S.agenda = a.agenda;
+      S.agenda = a.agenda; S.at.agenda = Date.now();
       S.phase = "Hämtar planen…"; render();
       const p = await withTimeout(call("plan_state", { weeks: state.horizon }), 45000, "Planen");
       if (!p?.plan) throw new Error("servern skickade ingen plan");
       S.plan = p.plan; S.meetings = p.meetings ?? {}; S.error = null;
       S.serverVersion = p.views?.version ?? null;
-      S.fetchedAt = new Date(); S.phase = null;
+      S.fetchedAt = new Date(); S.phase = null; S.at.plan = Date.now();
       render();
       // Resten behövs inte för Idag och får inte hålla den. Biblioteket med
       // alla sorter: utan include ger library_search bara atomer och molekyler.
       loadQueue();
-      withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"] }), 45000, "Biblioteket")
-        // Metoder ritas om när biblioteket kommit; andra ytor behöver det inte
-        // och ritas inte om medan någon skriver där.
-        .then((lib) => { S.lib = lib; S.libError = null; }).catch((e) => { S.libError = e; })
-        .finally(() => { if (state.screen === "metoder") render(); });
+      loadLib();
     } catch (e) { S.error = e; S.phase = null; render(); }
   }
 
+  /**
+   * Var sort sin livslängd (Daniel P 2026-09-25: "kan vi inte ha en smartare
+   * cachning - vissa saker kanske behöver uppdateras oftare, vissa mer
+   * sällan"). Listan med meddelanden oftast, planen och biblioteket sällan.
+   * Det man själv ändrar hämtas som förut direkt efteråt (load).
+   */
+  const TTL = { agenda: 60_000, queue: 180_000, plan: 600_000, lib: 1_800_000, settings: 3_600_000 };
+  const stale = (k) => !S.at[k] || Date.now() - S.at[k] > TTL[k];
+  async function refreshAgenda() {
+    try { const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks() }), 45000, "Listan");
+      if (a?.agenda) { S.agenda = a.agenda; S.at.agenda = Date.now(); render(); } } catch { /* det gamla står kvar */ }
+  }
+  async function refreshPlan() {
+    try { const p = await withTimeout(call("plan_state", { weeks: state.horizon }), 45000, "Planen");
+      if (p?.plan) { S.plan = p.plan; S.meetings = p.meetings ?? {}; S.serverVersion = p.views?.version ?? null;
+        S.fetchedAt = new Date(); S.at.plan = Date.now(); render(); } } catch { /* det gamla står kvar */ }
+  }
+  /** Bara det som blivit gammalt hämtas; resten står kvar. */
+  function refreshStale() {
+    if (!mcp || S.phase || document.visibilityState !== "visible") return;
+    if (!S.plan) return load();
+    if (stale("agenda")) refreshAgenda();
+    if (stale("plan")) refreshPlan();
+    if (stale("queue")) loadQueue();
+    if (state.screen === "metoder" && stale("lib")) loadLib();
+    if (stale("settings")) loadSettings();
+  }
+  setInterval(refreshStale, 60_000);
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const SP = `<svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/><path d='M19 16v4M17 18h4'/></svg>`;
@@ -1235,26 +1293,31 @@ a.btn { text-decoration: none; color: var(--text); }
    */
   const SNAP_KEY = "dirigenten-snap";
   const SNAP_MAX_MS = 12 * 3600_000;
+  /** Webbläsarens lagring överlever att appen river fönstret; annars flikens egen. */
+  const snapStore = () => { try { localStorage.setItem("dirigenten-prov", "1"); localStorage.removeItem("dirigenten-prov"); return localStorage; } catch { return sessionStorage; } };
   let snapTimer = null;
   function saveSnap() {
     clearTimeout(snapTimer);
     snapTimer = setTimeout(() => {
       try {
         const { screen, obj, filter, planMode, horizon, tlFrom, tlWeeks, inTab, metTab, weekFrom } = state;
-        sessionStorage.setItem(SNAP_KEY, JSON.stringify({ at: Date.now(),
+        snapStore().setItem(SNAP_KEY, JSON.stringify({ at: S.fetchedAt ? new Date(S.fetchedAt).getTime() : Date.now(),
           state: { screen, obj, filter, planMode, horizon, tlFrom, tlWeeks, inTab, metTab, weekFrom },
-          data: S.plan ? { agenda: S.agenda, plan: S.plan, meetings: S.meetings, queue: S.queue ?? null, serverVersion: S.serverVersion ?? null } : null }));
+          data: S.plan ? { agenda: S.agenda, plan: S.plan, meetings: S.meetings, queue: S.queue ?? null, serverVersion: S.serverVersion ?? null,
+            settings: S.settings ?? null, at: S.at } : null }));
       } catch { /* full eller avstängd lagring: då hämtas allt som förut */ }
     }, 400);
   }
   function restoreSnap() {
     try {
-      const snap = JSON.parse(sessionStorage.getItem(SNAP_KEY) || "null");
+      const snap = JSON.parse(snapStore().getItem(SNAP_KEY) || sessionStorage.getItem(SNAP_KEY) || "null");
       if (!snap || Date.now() - snap.at > SNAP_MAX_MS) return false;
       Object.assign(state, snap.state || {});
       if (snap.data?.plan) {
         S.agenda = snap.data.agenda; S.plan = snap.data.plan; S.meetings = snap.data.meetings || {};
         S.queue = snap.data.queue; S.serverVersion = snap.data.serverVersion; S.fetchedAt = new Date(snap.at);
+        if (snap.data.settings) { S.settings = snap.data.settings; S.setDraft = draftOf(S.settings); }
+        S.at = { ...(snap.data.at || { agenda: snap.at, plan: snap.at, queue: snap.at }) };
       }
       return true;
     } catch { return false; }
@@ -1262,6 +1325,7 @@ a.btn { text-decoration: none; color: var(--text); }
   addEventListener("pagehide", () => { clearTimeout(snapTimer); snapTimer = null; try { saveSnap(); } catch { /* inget */ } });
   function render() {
     saveSnap();
+    if (state.screen === "metoder" && !S.lib && !S.libError) loadLib();
     for (const b of document.querySelectorAll(".nav[data-go]")) b.setAttribute("aria-current", b.dataset.go === state.screen ? "page" : "false");
     $("#c-idag").textContent = agenda().filter((x) => x.level !== "soon").length || "";
     // Det obedömda: det är det som kräver en människa.
@@ -1639,14 +1703,17 @@ a.btn { text-decoration: none; color: var(--text); }
   // Kopplingen görs i en egen flik hos Google. När man kommer tillbaka läses
   // läget om, så att "kopplad" syns utan att man behöver hämta igen.
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible" && state.screen === "installningar" && !state.obj) loadSettings();
+    if (document.visibilityState !== "visible") return;
+    if (state.screen === "installningar" && !state.obj) loadSettings();
+    // Tillbaka i fönstret: hämta bara det som blivit gammalt.
+    else refreshStale();
   });
   async function loadSettings() {
     if (!mcp) return;
     try {
       const d = await withTimeout(call("plan_state", { settings: true }), 45000, "Inställningarna");
       if (!d?.settings) throw new Error("svaret saknade inställningar — servern kan vara en äldre version");
-      S.settings = normalizeSettings(d.settings); S.setDraft = draftOf(S.settings); S.settingsError = null;
+      S.settings = normalizeSettings(d.settings); S.setDraft = draftOf(S.settings); S.settingsError = null; S.at.settings = Date.now();
       showWhoAmI(S.settings.node.label || S.settings.label);
     } catch (e) { S.settingsError = e; }
     if (state.screen === "installningar" && !state.obj) render();
@@ -2591,8 +2658,9 @@ a.btn { text-decoration: none; color: var(--text); }
       + (leaves.length ? leaves.map((lv) => { const key = lv.name || lv.label; const v = inp.parts[key] || {};
         return `<div class="deliver" data-lvdrop="${esc(key)}"><b>${esc(lbl(lv))}</b><textarea rows="3" data-lvtext="${esc(key)}" placeholder="Skriv det här, ladda upp eller släpp en fil här, eller ange var det finns">${esc(v.text || "")}</textarea>`
           + `<div class="bar-actions"><label class="btn sm">${ic("upload")} Ladda upp fil<input type="file" hidden data-lvfile="${esc(key)}"></label>`
+          + (t.customer?.id ? `<button class="btn sm" data-lvbank="${esc(key)}">${ic("folder")} Välj ur filbanken</button>` : "")
           + `<input class="field-inline" data-lvlink="${esc(key)}" value="${esc(v.link || "")}" placeholder="…eller var det finns: länk eller plats">`
-          + `<span class="meta" data-lvstatus="${esc(key)}">${inp.files[key] ? `Vald: ${esc(inp.files[key].name)}` : ""}</span></div></div>`; }).join("")
+          + `<span class="meta" data-lvstatus="${esc(key)}">${inp.files[key] ? `Vald: ${esc(inp.files[key].name)}` : inp.bank?.[key] ? `Ur filbanken: ${esc(inp.bank[key].name)}` : ""}</span></div></div>`; }).join("")
         : `<div class="meta">Steget lämnar ingen fil eller text till stegen efter.</div>`)
       + `<label class="field" style="margin-top:12px"><span>Vad blev gjort? · valfritt, sparas på steget</span><textarea rows="2" data-lvnote placeholder="Till exempel vad som bestämdes">${esc(inp.note)}</textarea></label></div>`;
   }
@@ -2723,7 +2791,7 @@ a.btn { text-decoration: none; color: var(--text); }
       if (!t || !s) return `<div class="empty"><b>Steget finns inte längre i planen.</b><div style="margin-top:12px"><button class="btn" data-back="1">Tillbaka</button></div></div>`;
       const k = kindOf(s);
       const qs = opens().filter((o) => o.task === t.id);
-      const kindTxt = { code: "Kod gör steget", llm: "Claude gör steget, du godkänner", human: "En människa gör steget", mixed: "Kod och människa", ext: "Kunden eller en partner gör steget" }[k] || "";
+      const kindTxt = { code: "Kod gör steget", llm: "Claude gör steget, du godkänner", human: "En människa gör steget", mixed: mixedKindText(s), ext: "Kunden eller en partner gör steget" }[k] || "";
       const how = s.instruktion?.saa_goer_du?.length ? s.instruktion.saa_goer_du
         : s.recipe?.how ? String(s.recipe.how).split(/\n+/).map((x) => x.replace(/^\d+[.)]\s*/, "")).filter(Boolean) : null;
       const started = s.started ? `<span class="chip blue">påbörjat ${short(s.started.at)}${s.started.by_named ? ` av ${esc(s.started.by_named.label)}` : ""}</span>` : "";
@@ -2732,6 +2800,7 @@ a.btn { text-decoration: none; color: var(--text); }
         : k === "code"
           ? `<div class="bar-actions"><button class="btn primary" data-code-run="1">Utför</button><span class="meta">Visar först vad som ändras. Inget ändras förrän du bekräftar.</span></div>`
           : k === "llm" ? (s.writes_to ? writeStepCard(t, s) : aiStepCard(t, s))
+          : k === "mixed" && (s.molecules || []).length ? mixedStepCard(t, s)
           : k === "ext"
             ? `<div class="meta">Görs av ${esc(lbl(s.waiting?.on, "kunden"))}${s.waiting?.answer_by ? ` · svar behövs senast ${short(s.waiting.answer_by)}` : ""}.</div>`
             : `<div>${(how || []).map((h) => `<div class="howline">${esc(h)}</div>`).join("") || `<div class="meta">Steget saknar beskrivning av hur det görs.</div>`}</div>`
@@ -2746,9 +2815,13 @@ a.btn { text-decoration: none; color: var(--text); }
         + materialCard(t, s, true)
         + `<div class="card section"><h2>Kedjan ${t.method ? `<button class="linkbtn" data-open-method="${esc(t.method)}" title="Öppna metoden — där den kan ändras för alla">${esc(lbl(t.method_named, "metoden"))} ${ic("arrow")}</button>` : ""}`
         + `${t.method ? ` <button class="btn quiet sm" data-change="${esc(t.id)}">Ändra stegen för ${esc(lbl(t.customer, "kunden"))}</button>` : ""}`
-        + ` <button class="btn quiet sm" data-step-edit="${esc(s.step)}">Så görs steget</button></h2><div class="chain">${t.steps.map((x, i) => `${i ? `<span class="arrow">${ic("chev")}</span>` : ""}${chainNode(t, x, `${x.done ? "done" : x.step === s.step ? "now" : ""} ${x.critical ? "crit" : ""}`)}`
+        + ` <button class="btn quiet sm" data-step-edit="${esc(s.step)}">Så görs steget</button>`
+        + ` <button class="btn quiet sm" data-pal-open="${esc(t.id)}" aria-expanded="${state.pal?.task === t.id}">Lägg till steg</button></h2>`
+        // «+» först också: ett steg kan behövas före allt annat.
+        + `<div class="chain"><button class="addstep" data-add-step="${esc(t.id)}|" title="Lägg till steg här" aria-label="Lägg till steg först">+</button>${t.steps.map((x, i) => `${i ? `<span class="arrow">${ic("chev")}</span>` : ""}${chainNode(t, x, `${x.done ? "done" : x.step === s.step ? "now" : ""} ${x.critical ? "crit" : ""}`)}`
           // «+» efter varje steg (Daniel P 2026-09-25): ett steg bara i den här uppgiften, utan att bygga om metoden.
-          + `<button class="addstep" data-add-step="${esc(t.id)}|${esc(x.step)}" title="Lägg till steg här" aria-label="Lägg till steg efter ${esc(x.label)}">+</button>`).join("")}</div></div>`
+          + `<button class="addstep" data-add-step="${esc(t.id)}|${esc(x.step)}" title="Lägg till steg här" aria-label="Lägg till steg efter ${esc(x.label)}">+</button>`).join("")}</div>`
+        + (state.pal?.task === t.id ? `<div id="stpal" class="stpal" role="region" aria-label="Lägg till steg">${palHtml(t)}</div>` : "") + `</div>`
         + (t.thread ? threadCard(t.thread) : "")
         + `<div class="ws2"><div class="card section"><h2>Behövs</h2>`
         + (qs.length ? qs.map((o) => `<div class="need" style="cursor:pointer" data-open-q="${esc(o.id)}"><span class="no">${ic(o.step === s.step ? "stop" : "help")}</span><span class="t">${esc(headlineForOpen(o))}${o.step && o.step !== s.step ? ` <span class="meta">· stoppar «${esc(lbl(o.step_named, ""))}»</span>` : ""}</span><button class="btn sm" data-open-q="${esc(o.id)}">Svara</button></div>`).join("")
@@ -3373,11 +3446,28 @@ a.btn { text-decoration: none; color: var(--text); }
     });
   }
   /** Markera klart: det steget lämnar registreras först, sedan steget (B-198). */
+  /**
+   * Välj ur filbanken (Daniel P 2026-09-25: "Man vill också kunna säga, använd
+   * mall i filbanken - man ska inte behöva ge url eller ladda upp (men man ska
+   * kunna)"). Kundens filer, med sökning; valet sparas när steget blir klart.
+   */
+  async function bankPickDialog(key) {
+    const { t } = current();
+    const id = t?.customer?.id; if (!id) return;
+    dialog(`<h2>Välj ur filbanken</h2><p class="meta">${esc(lbl(t.customer))}</p><input id="bank-q" class="field-inline" style="width:100%" placeholder="Sök på namn eller mapp"><div id="bank-list" class="meta" style="margin-top:10px">Hämtar filerna…</div>`);
+    let filer = [];
+    try { const d = await withTimeout(call("asset_get", { customer: id, limit: 500 }), 45000, "Filerna"); filer = (d?.files || []).filter((f) => f.sha256 && !f.ersatt_av); }
+    catch (e) { const el = $("#bank-list"); if (el) el.textContent = `Filerna gick inte att hämta: ${e.message || e}`; return; }
+    const rita = () => { const q = ($("#bank-q")?.value || "").toLowerCase(); const el = $("#bank-list"); if (!el) return;
+      const träff = filer.filter((f) => `${f.folder || ""}/${f.name || ""}`.toLowerCase().includes(q)).slice(0, 60);
+      el.innerHTML = träff.length ? träff.map((f) => `<button class="linkbtn" style="display:block;text-align:left;padding:4px 0" data-bank-pick="${esc(key)}|${esc(f.sha256)}|${esc(f.name || f.sha256.slice(0, 12))}">${esc(f.name || "fil")} <span class="meta">· ${esc(f.folder || "")}</span></button>`).join("") : "Inget passar."; };
+    rita(); $("#bank-q")?.addEventListener("input", rita);
+  }
   function markDone(btn, force) {
     const { t, s } = current();
     const inp = state.obj.inputs || { parts: {}, files: {}, note: "" };
     const leaves = (kindOf(s) === "human" || kindOf(s) === "mixed") ? (s.leaves || []) : [];
-    const filled = (lv) => { const k = lv.name || lv.label, v = inp.parts[k] || {}; return !!(v.text?.trim() || v.link?.trim() || inp.files[k]); };
+    const filled = (lv) => { const k = lv.name || lv.label, v = inp.parts[k] || {}; return !!(v.text?.trim() || v.link?.trim() || inp.files[k] || inp.bank?.[k]); };
     const empty = leaves.filter((lv) => !filled(lv));
     if (empty.length && !force)
       return dialog(`<h2>${empty.map((lv) => esc(lbl(lv))).join(", ")} är inte ifyllt</h2><p>Stegen efter som behöver det kommer att vänta på det. Fyll i det, eller markera klart ändå.</p>`
@@ -3389,6 +3479,8 @@ a.btn { text-decoration: none; color: var(--text); }
           const k = lv.name || lv.label, v = inp.parts[k] || {}, f = inp.files[k];
           const base = { asset_type: lv.name, acquisition: "provided", for_task: t.id, for_step: s.step, ...(t.customer?.id ? { customer: t.customer.id } : {}) };
           if (f) await sendFile(f, base);
+          // En fil som redan finns (Daniel P 2026-09-25): ingen uppladdning, samma fil.
+          else if (inp.bank?.[k]) await call("asset_register", { ...base, from_ref: inp.bank[k].sha256 });
           else if (v.link?.trim()) await call("asset_register", { ...base, mime: /^https?:\/\//i.test(v.link) ? "text/uri-list" : "text/plain", external: v.link.trim() });
           else await call("asset_register", { ...base, mime: "text/plain", text: v.text.trim() });
         }
@@ -3452,19 +3544,25 @@ a.btn { text-decoration: none; color: var(--text); }
   // Allt som skriver, i dirigenten och i HubSpot — utom kontots uppsättning
   // (manage_onboarding): rättigheter i HubSpot ändras aldrig via API.
   const CLAUDE_WRITES = {
-    [SERVER]: ["execute_step", "asset_register", "message", "time_report", "question_answer"],
+    // bug_report: panelen sa att den inte kunde felrapportera fast knappen finns (2026-09-25).
+    [SERVER]: ["execute_step", "asset_register", "message", "time_report", "question_answer", "bug_report"],
     [HUBSPOT]: ["manage_crm_objects", "manage_campaign_objects", "manage_marketing_email", "manage_blog_post", "manage_landing_page",
       "manage_website_page", "manage_segment", "manage_saved_reports"] };
   /** Hur man letar effektivt i HubSpot (B-233): det agenten som gjorde Freebos karta gjorde. */
-  /** Hur vyn och dirigenten används (B-245): panelen svarar på "hur gör jag …". */
-  const DIRIGENT_HJALP = "Om vyn, när användaren frågar hur man gör: Idag visar dina steg, frågor och det som är lämnat till dig; In är posten, där ärenden bedöms och blir arbete; Planen är tidslinjen, där steg dras för att flyttas; Metoder visar hur leveranser görs; Filer är kundernas filer; Inställningar är kopplingar (Google, verktygslistan) och arbetsdag. I ett steg: Kopiera till chatten lägger stegets prompt i urklipp — klistra in den i vanliga Claude-chatten, där steget görs; Så görs steget visar stegets delar och vem som gör dem (Människa, Claude, Kod) — flytta, ta bort och spara ny version här, medan Claude, Kod och Lägg till en del kopierar en prompt till vanliga chatten; Lägg i kalendern, Senarelägg, Lämna över, Skicka till kollega. I panelen: Nytt samtal (det gamla finns under Tidigare), Rensa (tar bort samtalet eller alla samtal här, från den här datorn), Anteckning (på uppgiften, kunden eller fri — sparas i dirigenten), Kopiera till chatten under rutan (samtalet och frågan i rutan, som en prompt till vanliga chatten). Rapportera fel finns i toppraden och i varje felruta. Kopplingar i kundens system sparas när ett workflow läses. Egna uppgifter (sälj, internt) planeras på kunden Rotor internt, med ett åtagande. Svara kort, med var knappen finns.";
+  /**
+   * Hur vyn och dirigenten används (B-245): panelen svarar på "hur gör jag …".
+   * Sälj och Rotor internt (punkt 40 i kvar.md): sälj planeras på prospekten
+   * själv, med säljmetoderna i Försäljning och kundrelation. Rotor internt är
+   * husets eget arbete; det avtalet inte täcker blir ett tillägg där.
+   */
+  const DIRIGENT_HJALP = "Om vyn, när användaren frågar hur man gör: Idag visar dina steg, frågor och det som är lämnat till dig; In är posten, där ärenden bedöms och blir arbete; Planen är tidslinjen, där steg dras för att flyttas; Metoder visar hur leveranser görs; Filer är kundernas filer; Inställningar är kopplingar (Google, verktygslistan) och arbetsdag. I ett steg: Kopiera till chatten lägger stegets prompt i urklipp — klistra in den i vanliga Claude-chatten, där steget görs; Så görs steget visar stegets delar och vem som gör dem (Människa, Claude, Kod) — flytta, ta bort och spara ny version här, medan Claude, Kod och Lägg till en del kopierar en prompt till vanliga chatten; Lägg i kalendern, Senarelägg, Lämna över, Skicka till kollega. I panelen: Nytt samtal (det gamla finns under Tidigare), Rensa (tar bort samtalet eller alla samtal här, från den här datorn), Anteckning (på uppgiften, kunden eller fri — sparas i dirigenten), Kopiera till chatten under rutan (samtalet och frågan i rutan, som en prompt till vanliga chatten). Rapportera fel finns i toppraden och i varje felruta. Kopplingar i kundens system sparas när ett workflow läses. Sälj planeras på prospekten själv: den läggs in som kund med rollen prospekt, och Lägg in beställning på Planen ger en uppgift med säljmetoderna i Försäljning och kundrelation. Rotor internt är husets eget arbete, inte sälj: en egen uppgift läggs in med Lägg in beställning på kunden Rotor internt, och det avtalet inte täcker blir ett tillägg under Utanför avtalet. Svara kort, med var knappen finns.";
   /**
    * Vad panelen gör och inte gör (docs/kvar.md 20). Daniel P 2026-09-25: "vi
    * måste ta bort instruktionerna om att skriva metod och exekvera långa
    * texter i högerchatten. Däremot ska den kunna kopiera prompts med
    * instruktioner till vanliga chatten."
    */
-  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till chatten under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan.";
+  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till chatten under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan. Ber användaren dig rapportera ett fel: gör det med skriv → rotor-dirigenten bug_report { text, where, conversation }.";
   const HUNT_HINT = "Leta med search först (B-257): EN fråga med 2–5 formuleringar — kundens ord och husets ord — och inbox när ärendet har en adress. Svaret är högst tio rader; hämta bara det en rad pekar på (fetch). Ramens steg står i svaret — hämta inte hela metoden med guide. maybe är antaganden: säg att de är det. Står det inget självklart: fråga användaren vad det kan handla om; vet hen inte, föreslå en fråga till den som skrev. Sluta leta när du har svaret, och svara kort. Långa listor: read_call { call, hitta: \"sökord\" } filtrerar på servern. Ser du hur något hänger ihop (ett workflow skickar ett fält, ett mejl kommer från ett flöde): notera det med note_link, så vet nästa ärende det. Saknas en förmåga i dirigenten — kod som kan göra en ändring som behövs: säg vad som saknas; atomförslaget skrivs i vanliga chatten. Leta effektivt: börja i kundens systemkarta. I HubSpot räknar och filtrerar query_crm_data i ETT anrop (hur många affärer som har ett fält ifyllt, vilka värden som förekommer, vilka produkter som finns på affärerna) — använd den i stället för många sökningar. get_properties ger ett fälts definition och tillåtna värden. Sök inte på samma sak två gånger.";
   let catalogCache = null;
   /** Kopplingarnas läsverktyg med sina argument, ur kopplingarnas egna listor — så att Claude inte gissar. */
@@ -3575,6 +3673,65 @@ a.btn { text-decoration: none; color: var(--text); }
       + (typ ? part("Lämnar", esc(lbl(typ))) : "");
   }
   /**
+   * Blandade steg (docs/kvar.md: «Kampanjlänkar och QR» har kod och Claude i
+   * samma steg och fick varken Utför för koden eller för Claude-delen).
+   * Serverns `molecules` bär delarna i ordning; nästa ogjorda del får sitt
+   * eget kort: kod får Utför, Claude får skriv- eller textkortet, en människa
+   * Markera delen klar. Utför kör koddelarna fram till nästa del som inte är kod.
+   */
+  const PERFORMER_TXT = { code: "kod", llm: "Claude", human: "en människa" };
+  function mixedKindText(s) {
+    const who = [...new Set((s.molecules || []).map((m) => PERFORMER_TXT[m.performer] || m.performer))];
+    return who.length ? `Delarna görs av ${who.join(", ")}` : "Kod och människa";
+  }
+  /** Steget sett från en del: delens koppling, och värdena nästa körning behöver. */
+  function moleculeStep(s, id) {
+    const m = (s.molecules || []).find((x) => x.id === id);
+    if (!m) return s;
+    return { ...s, molecule: m, writes_to: m.writes_to || null,
+      needs_values: m.performer === "code" ? (s.needs_values || []) : [],
+      // Stegets instruktion är den första Claude-delens; en annan del har ingen här.
+      instruktion: s.instruktion && s.instruktion.molecule?.id === m.id.split("#")[0] ? s.instruktion : null };
+  }
+  /** Nyckeln korten bär: uppgift|steg, och |del i ett blandat steg. */
+  const stepKey = (t, s) => `${esc(t.id)}|${esc(s.step)}${s.molecule ? `|${esc(s.molecule.id)}` : ""}`;
+  /** Anropet som markerar klart: hela steget, eller delen i ett blandat steg. */
+  const doneCall = (t, s, note) => `execute_step { task: "${t.id}", step: "${s.step}"${s.molecule ? `, molecule: "${s.molecule.id}"` : ""}, mark: "done"${note ? `, note: ${note}` : ""} }`;
+  /** Vad som görs, i prompten: steget, eller delen i steget. */
+  const doingWhat = (s) => s.molecule ? `delen «${s.molecule.named?.label || "del"}» i steget «${s.label}»` : `steget «${s.label}»`;
+  function mixedStepCard(t, s) {
+    const ms = s.molecules || [];
+    const next = ms.find((m) => !m.done);
+    const rows = ms.map((m) => `<div class="need"><span class="no">${kindMark(m.performer)}</span><span class="t">${esc(lbl(m.named, "del"))}`
+      + ` <span class="meta">· ${esc(PERFORMER_TXT[m.performer] || m.performer)}</span></span>`
+      + (m.done ? `<span class="chip green">${ic("check")} gjord</span>` : m === next ? `<span class="chip blue">näst</span>` : "") + `</div>`).join("");
+    let act;
+    if (!next) act = `<div class="meta" style="margin-top:10px">Alla delar är gjorda. Markera steget klart ovan.</div>`;
+    else if (next.performer === "code") {
+      const ps = moleculeStep(s, next.id);
+      act = (ps.needs_values || []).length ? valuesStepCard(t, ps)
+        : `<div class="bar-actions" style="margin-top:10px"><button class="btn primary" data-code-run="1">Utför</button><span class="meta">Kör koddelarna fram till nästa del som inte är kod. Visar först vad som ändras. Inget ändras förrän du bekräftar.</span></div>`;
+    } else if (next.performer === "llm") {
+      const ps = moleculeStep(s, next.id);
+      act = ps.writes_to ? writeStepCard(t, ps) : aiStepCard(t, ps);
+    } else act = `<div class="bar-actions" style="margin-top:10px"><button class="btn primary" data-molecule-done="${esc(t.id)}|${esc(s.step)}|${esc(next.id)}">Markera delen klar</button>`
+      + `<span class="meta">Gör «${esc(lbl(next.named, "delen"))}» för hand. Nästa del tar vid efter den.</span></div>`;
+    return `<div>${rows}</div>${act}`;
+  }
+  /** En människas del i ett blandat steg är gjord; nästa körning fortsätter efter den. */
+  function moleculeDone(btn, key) {
+    const [task, step, id] = String(key).split("|");
+    const s = stepOf(taskById(task), step), m = (s?.molecules || []).find((x) => x.id === id);
+    if (!m) return toast("Delen finns inte längre i steget. Hämta igen.", null, true);
+    return busy(btn, async () => {
+      try {
+        await call("execute_step", { task, step, molecule: id, mark: "done" });
+        await load();
+        toast(`${lbl(m.named, "Delen")} är gjord.`);
+      } catch (e) { fail("Delen markerades inte klar", e); }
+    });
+  }
+  /**
    * Stegets Gör-kort för ett Claude-steg. Steget görs i vanliga Claude-chatten,
    * inte i panelen (docs/kvar.md 20). Daniel P 2026-09-25: "vi måste ta bort
    * instruktionerna om att skriva metod och exekvera långa texter i
@@ -3583,7 +3740,7 @@ a.btn { text-decoration: none; color: var(--text); }
    */
   function aiStepCard(t, s) {
     return aiWarnings(t, s) + aiBrief(s) + `<div class="bar-actions" style="margin-top:10px">`
-      + `<button class="btn ai primary" data-copy-step="${esc(t.id)}|${esc(s.step)}">${SP} Kopiera till chatten</button>`
+      + `<button class="btn ai primary" data-copy-step="${stepKey(t, s)}">${SP} Kopiera till chatten</button>`
       + `<span class="meta">Klistra in i vanliga Claude-chatten. Där görs steget, texten skrivs i Smyra, och inget sparas förrän du sagt ja.</span></div>`;
   }
   /**
@@ -3598,8 +3755,8 @@ a.btn { text-decoration: none; color: var(--text); }
     // Utför bara där vyn får skriva med kopplingen: ett mejl skickas inte härifrån.
     const här = sample && (s.writes_to.connections || []).every((c) => c === "Smyra" || (CLAUDE_WRITES[c] || []).length);
     return aiWarnings(t, s) + aiBrief(s) + `<div class="bar-actions" style="margin-top:10px">`
-      + (här ? `<button class="btn primary" data-write-run="${esc(t.id)}|${esc(s.step)}">Utför</button>` : "")
-      + `<button class="btn ai${här ? " quiet" : " primary"}" data-copy-step="${esc(t.id)}|${esc(s.step)}">${SP} Kopiera till chatten</button>`
+      + (här ? `<button class="btn primary" data-write-run="${stepKey(t, s)}">Utför</button>` : "")
+      + `<button class="btn ai${här ? " quiet" : " primary"}" data-copy-step="${stepKey(t, s)}">${SP} Kopiera till chatten</button>`
       + `<span class="meta">Claude tar fram ändringen i ${esc(sys)} och visar den. Inget ändras förrän du sagt ja.</span></div>`;
   }
   /**
@@ -3610,14 +3767,15 @@ a.btn { text-decoration: none; color: var(--text); }
   function valuesStepCard(t, s) {
     const namn = (s.needs_values || []).join(", ");
     return aiWarnings(t, s) + `<div class="bar-actions" style="margin-top:10px">`
-      + (sample ? `<button class="btn primary" data-values-run="${esc(t.id)}|${esc(s.step)}">Utför</button>` : "")
-      + `<button class="btn ai${sample ? " quiet" : " primary"}" data-copy-step="${esc(t.id)}|${esc(s.step)}">${SP} Kopiera till chatten</button>`
+      + (sample ? `<button class="btn primary" data-values-run="${stepKey(t, s)}">Utför</button>` : "")
+      + `<button class="btn ai${sample ? " quiet" : " primary"}" data-copy-step="${stepKey(t, s)}">${SP} Kopiera till chatten</button>`
       + `<span class="meta">Dirigenten gör steget. Claude tar fram ${esc(namn)} ur uppgiften och visar dem först. Inget ändras förrän du sagt ja.</span></div>`;
   }
   /** Uppdraget när Utför trycks på ett kodsteg som behöver värden (B-272). */
   function valuesStepTask(t, s) {
     const namn = (s.needs_values || []).join(", ");
-    return [`Utför steget «${s.label}» nu. Dirigenten gör det med sin egen nyckel; du tar fram värdena: ${namn}.`,
+    return [`Utför ${doingWhat(s)} nu. Dirigenten gör det med sin egen nyckel; du tar fram värdena: ${namn}.`,
+      ...(s.molecule ? ["Steget har delar som Claude eller en människa gör. Dirigenten kör koddelarna fram till nästa sådan del och stannar där."] : []),
       "", ...(s.instruktion || s.recipe ? ["Stegets instruktion:", ...instructionLines(s), ""] : []),
       "1. Läs det tidigare steg lämnat i lägesbilden (till exempel urvalet). Läs fält och deras interna namn i kundens system med hamta när det behövs.",
       "2. Ta fram värdena. Bara de som står ovan behövs; ett värde som inte gäller lämnas som tom text \"\".",
@@ -3629,13 +3787,13 @@ a.btn { text-decoration: none; color: var(--text); }
   /** Uppdraget när Utför trycks på ett steg som ändrar i ett system (B-269). */
   function writeStepTask(t, s) {
     const w = s.writes_to, sys = (w.connections || []).join(", ");
-    return [`Utför steget «${s.label}» nu. Steget ändrar i ${sys} (${w.verb} ${w.object}).`,
+    return [`Utför ${doingWhat(s)} nu. Den ändrar i ${sys} (${w.verb} ${w.object}).`,
       "", "Stegets instruktion:", ...instructionLines(s), "",
       `1. Läs det du behöver: lägesbilden har det tidigare steg lämnat. Läs i ${sys} med hamta.`,
       `2. Gör ändringen med verktyget skriv, mot ${sys}. I vad står exakt vad som ändras: vilken post, vilka fält och värden, på vanlig svenska. Användaren ser det och säger ja eller nej.`,
       "3. Säger användaren nej: fråga vad som ska vara annorlunda. Gissa inte om.",
-      "4. När ändringen är gjord: svara enligt svarets form. Markera sedan steget klart med skriv → rotor-dirigenten execute_step "
-        + `{ task: "${t.id}", step: "${s.step}", mark: "done", note: <resultatet på en rad> }.`,
+      `4. När ändringen är gjord: svara enligt svarets form. Markera sedan ${s.molecule ? "delen" : "steget"} klart med skriv → rotor-dirigenten `
+        + `${doneCall(t, s, "<resultatet på en rad>")}.`,
       "Ändra aldrig rättigheter, användare eller kontoinställningar."].join("\n");
   }
   /** Det som bör sägas innan ett Claude-steg görs: tråden som inte går att läsa, stegen före som inte är gjorda. */
@@ -3706,6 +3864,8 @@ a.btn { text-decoration: none; color: var(--text); }
   async function codeResult(label, d) {
     await load();
     if (d?.ok) return toast(`${label} är kört.`);
+    // Ett blandat steg stannar före Claudes eller människans del. Det är inget fel.
+    if (d?.waiting_on) return toast(`${label}: koddelarna är gjorda. Nästa del, ${lbl(d.waiting_on.named, "nästa del")}, görs av ${PERFORMER_TXT[d.waiting_on.performer] || "någon annan"}.`);
     toast(`${label} gick inte hela vägen${d?.failed_named?.label || d?.failed ? ` — det stannade vid ${lbl(d.failed_named, "") || "en del"}` : ""}`
       + (d?.error ? ` (${d.error})` : "")
       + (d?.transient ? ". Felet ser tillfälligt ut: försök igen om en stund." : ". Ingenting efter det kördes."), null, true);
@@ -4036,10 +4196,10 @@ a.btn { text-decoration: none; color: var(--text); }
   function stepChatPrompt(t, s) {
     const typ = (s.leaves || [])[0], cust = t.customer?.id;
     const ogjorda = undoneBefore(t, s);
-    return [`Gör steget «${s.label}» i dirigenten, tillsammans med mig.`, "",
+    return [`Gör ${doingWhat(s)} i dirigenten, tillsammans med mig.`, "",
       `Kund: ${lbl(t.customer, "okänd")}${idOf(t.customer)}.`,
       `Uppgift: ${taskName(t)} (id ${t.id}), leverans senast ${t.due}.`,
-      `Steg: ${s.label} (id ${s.step}). Görs av: ${kindOf(s) === "llm" ? "Claude, och en människa godkänner" : kindOf(s)}.`,
+      `Steg: ${s.label} (id ${s.step}). Görs av: ${kindOf(s) === "llm" || s.molecule?.performer === "llm" ? "Claude, och en människa godkänner" : kindOf(s)}.`,
       typ ? `Steget ska lämna: ${lbl(typ)}${typ.name ? ` (${typ.name})` : ""}.` : null,
       ogjorda.length ? `Inte gjorda än, fast de ligger före: ${ogjorda.map((x) => x.label).join(", ")}. Det de skulle lämna saknas.` : null,
       "", "Stegets instruktion:", ...instructionLines(s), "",
@@ -4051,10 +4211,10 @@ a.btn { text-decoration: none; color: var(--text); }
         `4. Efter mitt ja: execute_step { task: "${t.id}", step: "${s.step}", values: { … }, confirmed: true, user_approval: <det jag sa ja till> }.`,
       ] : s.writes_to ? [
         `3. Steget ändrar i ${(s.writes_to.connections || []).join(", ")} (${s.writes_to.verb} ${s.writes_to.object}). Ta fram ändringen och visa exakt vad som ändras — vilken post, vilka fält och värden — och vänta på mitt ja innan du anropar något verktyg som skriver. Ändra aldrig rättigheter, användare eller kontoinställningar.`,
-        `4. Efter mitt ja: gör ändringen med kopplingen, och markera steget klart med execute_step { task: "${t.id}", step: "${s.step}", mark: "done", note: <resultatet på en rad> }.`,
+        `4. Efter mitt ja: gör ändringen med kopplingen, och markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s, "<resultatet på en rad>")}.`,
       ] : [
       "3. Skriv texten i Smyra (smyra_write) med kundens röst och persona, och visa den för mig.",
-      `4. Efter mitt ja: spara texten med content_save { customer: "${cust || "<kundens id>"}", for_task: "${t.id}", for_step: "${s.step}", kind, name, title, markdown }, och markera steget klart med execute_step { task: "${t.id}", step: "${s.step}", mark: "done" }.`]),
+      `4. Efter mitt ja: spara texten med content_save { customer: "${cust || "<kundens id>"}", for_task: "${t.id}", for_step: "${s.step}", kind, name, title, markdown }, och markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s)}.`]),
       "", s.writes_to || (s.needs_values || []).length ? CHAT_RULES.split("\n").filter((x) => !x.includes("Smyra")).join("\n") : CHAT_RULES].filter((x) => x !== null).join("\n");
   }
   /** Prompten för en del i Så görs steget: gör den till Claude eller kod, eller lägg till en. */
@@ -4415,13 +4575,13 @@ a.btn { text-decoration: none; color: var(--text); }
    * kunden blir det en väntan på svar, som metodens egna steg hos kunden.
    */
   function addStepDialog(task, after) {
-    const tk = taskById(task), x = stepOf(tk, after); if (!tk || !x) return;
-    const next = tk.steps[tk.steps.indexOf(x) + 1];
+    const tk = taskById(task), x = after === null ? null : stepOf(tk, after); if (!tk || (after !== null && !x)) return;
+    const next = x ? tk.steps[tk.steps.indexOf(x) + 1] : tk.steps[0];
     const customerName = lbl(tk.customer, "kunden");
     state.addStep = { task, after };
     const cs = (S.agenda?.colleagues ?? []).filter((c) => c.id !== me());
     dialog(`<h2>Lägg till steg här</h2>`
-      + `<p class="meta">Efter «${esc(x.label)}»${next ? ` och före «${esc(next.label)}»` : ", sist"}. Bara i den här uppgiften — metoden och ${esc(customerName)}s andra uppgifter ändras inte.</p>`
+      + `<p class="meta">${esc(placeText(tk, after))}. Bara i den här uppgiften — metoden och ${esc(customerName)}s andra uppgifter ändras inte.</p>`
       + `<label class="field"><span>Vad ska göras?</span><input id="as-label" maxlength="120" placeholder="T.ex.: ${esc(customerName)} godkänner testmejlet"></label>`
       + `<label class="field"><span>Vem gör det?</span><select id="as-who"><option value="">Jag</option>${cs.map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join("")}`
       + `<option value="customer">${esc(customerName)} — vi väntar på deras svar</option></select></label>`
@@ -4455,6 +4615,226 @@ a.btn { text-decoration: none; color: var(--text); }
       catch (e) { fail("Steget togs inte bort", e); }
     });
   }
+
+  /**
+   * Paletten: dra in ett steg (Daniel P 2026-09-25): "hur mer drag-and-dropigt
+   * kan lägga in ett steg enklare (med relevant urval) i ett flöde (här får
+   * man ju också tänka på dependencies" — och "palett med steg - om den
+   * behöver något innan, kan den inte dra in den också då".
+   *
+   * Korten kommer ur servern (task_lock add_step candidates), med skälet och
+   * hur de passar på varje plats: grönt går, gult går men något läggs in före
+   * eller saknas, grått går inte (före ett klart steg, eller en cirkel).
+   * Släpps ett kort provar servern platsen (check) och vyn visar hela kedjan
+   * som läggs in, med nytt slutdatum mot leveransen. Inget skrivs förrän
+   * «Lägg in».
+   *
+   * Dra med pekaren; med tangentbordet väljer Enter ett kort, pilarna en
+   * plats, Enter lägger dit och Esc avbryter. På telefon dras ingenting: ett
+   * tryck på «+» öppnar paletten för just den platsen.
+   */
+  const PHONE = () => matchMedia("(max-width: 767px)").matches;
+  const live = (text) => { const el = $("#pal-live"); if (el) el.textContent = text; };
+  const addTargets = () => [...document.querySelectorAll(".chain .addstep[data-add-step]")];
+  const afterOf = (el) => el?.dataset.addStep.split("|")[1] || null;
+  function placeText(t, after) {
+    if (after === null) return t.steps[0] ? `Först, före «${t.steps[0].label}»` : "Först";
+    const i = t.steps.findIndex((x) => x.step === after), x = t.steps[i], next = t.steps[i + 1];
+    return `Efter «${x?.label ?? "steget"}»${next ? ` och före «${next.label}»` : ", sist"}`;
+  }
+  /** Snabbstegen: det som oftast läggs till för hand, utan att leta i biblioteket. */
+  const quickSteps = (t) => { const c = lbl(t.customer, "kunden"); return [
+    { kind: "quick", label: `${c} godkänner`, who: "customer", reason: "En väntan på kundens ja" },
+    { kind: "quick", label: "Intern korrektur", who: "", reason: "Någon i huset läser igenom" },
+    { kind: "quick", label: `Vänta på material från ${c}`, who: "customer", reason: "En väntan på det kunden ska skicka" },
+  ]; };
+  /** Korten, med nycklar som står kvar när urvalet byts ut under sökningen. */
+  function palItems(t) {
+    const p = state.pal;
+    const items = [
+      ...(p.cands || []).map((c, i) => ({ key: `f${i}`, kind: c.step ? "lib" : "label", group: "fit", label: c.label, use: c.step, reason: c.reason,
+        requires: c.requires, produces: c.produces, needs: c.needs_prerequisites || [], places: c.places || [] })),
+      ...quickSteps(t).map((q, i) => ({ ...q, key: `q${i}`, group: "quick" })),
+      { key: "own", kind: "own", group: "own", label: "Skriv ett eget steg", reason: "Namn, vem som gör det och tiden väljer du själv" },
+    ];
+    p.byKey = Object.fromEntries(items.map((it) => [it.key, it]));
+    return items;
+  }
+  /** Hur kortet passar efter `after`: före ett klart steg går inget; resten säger servern. */
+  function placeFit(t, it, after) {
+    const i = after === null ? -1 : t.steps.findIndex((x) => x.step === after);
+    if (t.steps[i + 1]?.done) return { fit: "invalid", why: "steget efter är redan klart" };
+    const pl = (it.places || []).find((x) => x.after === after);
+    return pl ? { fit: pl.fit, why: pl.why } : { fit: "ok", why: null };
+  }
+  const palIO = (it) => [it.requires?.length ? `kräver ${it.requires.join(", ")}` : "", it.produces?.length ? `ger ${it.produces.join(", ")}` : ""].filter(Boolean).join(" · ");
+  const palCard = (it) => `<div class="stcard" role="button" tabindex="0" data-pal-card="${esc(it.key)}" aria-describedby="pal-help">`
+    + `<span class="l">${esc(it.label)}</span>${it.reason ? `<span class="meta">${esc(it.reason)}</span>` : ""}`
+    + (palIO(it) ? `<span class="meta">${esc(palIO(it))}</span>` : "")
+    + (it.needs?.length ? `<span class="chip amber">Behöver ${esc(it.needs.map((n) => `«${n.label}»`).join(", "))} först</span>` : "") + `</div>`;
+  function palHtml(t) {
+    const p = state.pal, items = palItems(t);
+    const group = (g) => items.filter((x) => x.group === g).map(palCard).join("");
+    const help = p.place ? `${placeText(t, p.after)}. Tryck på ett kort.`
+      : PHONE() ? "Tryck på ett kort och sedan på ett + i kedjan." : "Dra ett kort till ett + i kedjan, eller välj med Enter och pilarna.";
+    return `<div class="bar-actions" style="margin:0"><b>Lägg till steg</b><span class="meta" id="pal-help">${esc(help)}</span>`
+      + `<span class="right"><button class="btn quiet sm" data-pal-close="1">Stäng</button></span></div>`
+      + `<div class="grp">Passar här</div>`
+      + `<input id="pal-q" type="search" class="palq" placeholder="Sök ett steg i biblioteket …" aria-label="Sök ett steg i biblioteket" value="${esc(p.q || "")}">`
+      + `<div id="pal-fit">${fitHtml(t)}</div>`
+      + `<div class="grp">Snabbsteg</div><div class="cards">${group("quick")}</div>`
+      + `<div class="grp">Eget steg</div><div class="cards">${group("own")}</div>`;
+  }
+  /** Urvalet ur servern — det enda som byts när någon söker, så att sökfältet behåller markören. */
+  function fitHtml(t) {
+    const p = state.pal, items = palItems(t).filter((x) => x.group === "fit");
+    return (p.error ? `<div class="meta">Urvalet kunde inte hämtas: ${esc(p.error.message || p.error)}</div>`
+        : !p.cands ? `<div class="meta">Hämtar det som passar …</div>`
+        : items.length ? `<div class="cards">${items.map(palCard).join("")}</div>`
+        : `<div class="meta">${p.q ? `Inget steg i biblioteket matchar «${esc(p.q)}».` : "Inget i biblioteket passar särskilt här."} Ta ett snabbsteg eller skriv ett eget.</div>`);
+  }
+  const refreshPal = () => { const t = taskById(state.pal?.task), el = $("#pal-fit"); if (t && el) el.innerHTML = fitHtml(t); };
+  /** Hämta urvalet för platsen, med sökordet när det finns. */
+  async function loadCandidates(p) {
+    p.cands = null; p.error = null; refreshPal();
+    try { const d = await call("task_lock", { task: p.task, add_step: { after: p.after, candidates: true, ...(p.q ? { q: p.q } : {}) } });
+      if (state.pal === p) p.cands = d?.candidates || []; }
+    catch (e) { if (state.pal === p) p.error = e; }
+    if (state.pal === p) { refreshPal(); live(p.cands ? `${p.cands.length} förslag.` : "Urvalet kunde inte hämtas."); }
+  }
+  let palTimer = null;
+  document.addEventListener("input", (e) => {
+    if (e.target.id !== "pal-q" || !state.pal) return;
+    const p = state.pal; clearTimeout(palTimer);
+    palTimer = setTimeout(() => { if (state.pal !== p) return; p.q = e.target.value.trim(); loadCandidates(p); }, 300);
+  });
+  /** Öppna paletten. `place`: bara för platsen efter `after` (ett tryck på «+»). */
+  function openStepPalette(task, after, place) {
+    const p = state.pal = { task, after, place, q: "", cands: null, error: null, byKey: {} };
+    endPick(); render();
+    $("#stpal")?.scrollIntoView?.({ block: "nearest" });
+    live(place ? `Lägg till steg: ${placeText(taskById(task), after)}.` : "Paletten är öppen. Välj ett kort med Enter, eller dra det till ett plus i kedjan.");
+    loadCandidates(p);
+  }
+  function markTargets(it) {
+    const t = taskById(state.pal?.task); if (!t) return;
+    for (const el of addTargets()) {
+      const f = placeFit(t, it, afterOf(el));
+      el.classList.remove("drop-ok", "drop-warn", "drop-no");
+      el.classList.add(f.fit === "ok" ? "drop-ok" : f.fit === "warn" ? "drop-warn" : "drop-no");
+      el.title = f.why ? `${f.fit === "invalid" ? "Går inte: " : ""}${f.why}` : "Släpp här";
+    }
+  }
+  function clearTargets() {
+    for (const el of addTargets()) { el.classList.remove("drop-ok", "drop-warn", "drop-no", "drop-hover", "drop-kbd"); el.title = "Lägg till steg här"; }
+  }
+  /** Tangentbordet (och telefonen): kortet är valt, platsen väljs bland «+». */
+  function startPick(key) {
+    const it = state.pal?.byKey[key], ts = addTargets(); if (!it || !ts.length) return;
+    const here = ts.findIndex((x) => afterOf(x) === state.pal.after);
+    state.pick = { it, i: here < 0 ? 0 : here };
+    showPick();
+  }
+  function showPick() {
+    const k = state.pick, ts = addTargets(), t = taskById(state.pal?.task); if (!k || !t || !ts.length) return;
+    // Ritades kedjan om under tiden har färgerna försvunnit; de sätts igen.
+    markTargets(k.it);
+    ts.forEach((x, j) => x.classList.toggle("drop-kbd", j === k.i));
+    const after = afterOf(ts[k.i]), f = placeFit(t, k.it, after);
+    ts[k.i].scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    live(`«${k.it.label}»: ${placeText(t, after)}${f.fit === "invalid" ? ` — går inte: ${f.why}` : f.why ? ` — ${f.why}` : ""}. Pilarna flyttar, Enter lägger dit, Esc avbryter.`);
+  }
+  function endPick() { if (state.pick) { state.pick = null; clearTargets(); } }
+  function cardChosen(key) {
+    const p = state.pal, it = p?.byKey[key]; if (!it) return;
+    if (p.place) return dropOn(it, p.after);
+    return startPick(key);
+  }
+  function dropOn(it, after) {
+    const t = taskById(state.pal?.task); if (!t) return;
+    const f = placeFit(t, it, after);
+    if (f.fit === "invalid") { live(`Går inte att lägga där: ${f.why}.`); return toast(`«${it.label}» går inte att lägga där: ${f.why}.`, null, true); }
+    if (it.kind === "own") return addStepDialog(t.id, after);
+    return insertPreview(t, it, after);
+  }
+  /** Provet: hela kedjan som läggs in, med nytt slutdatum mot leveransen. Skriver ingenting. */
+  async function insertPreview(t, it, after) {
+    const payload = { after, ...(it.use ? { use: it.use } : { label: it.label }), ...(it.who ? { who: it.who } : {}) };
+    const x = state.insert = { task: t.id, payload, label: it.label };
+    const head = `<h2>Lägg in «${esc(it.label)}»</h2><p class="meta">${esc(placeText(t, after))}. Bara i den här uppgiften — metoden ändras inte.</p>`;
+    dialog(head + `<p class="meta">Provar platsen …</p><div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button></div>`);
+    let c;
+    try { c = await call("task_lock", { task: t.id, add_step: { ...payload, check: true, with_prerequisites: true } }); }
+    catch (e) {
+      if (state.insert === x) dialog(head + `<p>Platsen kunde inte provas: ${esc(e.message || e)}</p><div class="bar-actions"><button class="btn quiet" data-close="1">Stäng</button></div>`);
+      return;
+    }
+    if (state.insert !== x) return;
+    const pre = c.prerequisites || [], ins = c.inserts || [], late = !!c.end && c.end > c.due;
+    live(c.fit?.cycle ? "Platsen går inte: den sluter en cirkel." : `Provat. ${ins.length} steg läggs in; uppgiften blir klar ${short(c.end)}.`);
+    dialog(head
+      + (c.fit?.cycle ? `<p><b>Platsen sluter en cirkel i kedjan:</b> något som står före behöver det steget ger. Välj en annan plats.</p>` : "")
+      + (pre.length ? `<p><b>Det här behöver ${pre.map((p) => `«${esc(p.label)}»`).join(", ")} först — läggs in före.</b></p>` : "")
+      + `<ol class="how">${ins.map((s, k) => `<li>${esc(s.label)}${k < pre.length ? ` <span class="meta">· ger ${esc(pre[k].for_label)}${(pre[k].alternatives || []).length ? ` · eller ${pre[k].alternatives.map((a) => `«${esc(a.label)}»`).join(", ")}` : ""}</span>` : ""}</li>`).join("")}</ol>`
+      + ((c.fit?.feeds || []).length ? `<p class="meta">${c.fit.feeds.map((f) => `«${esc(f)}»`).join(", ")} väntar på det.</p>` : "")
+      + ((c.unresolved || []).length ? `<p class="meta">Inget i biblioteket ger ${esc(c.unresolved.join(", "))} — det behöver finnas på annat sätt innan steget kan göras.</p>` : "")
+      + (c.end ? `<p>Uppgiften blir klar <b>${short(c.end)}</b>${c.end !== c.end_before ? ` (nu ${short(c.end_before)})` : ", samma dag som nu"} · leverans ${short(c.due)}`
+        + `${late ? ` <span class="chip red">efter leveransen</span>` : ""}${c.critical ? ` <span class="chip amber">steget blir utan marginal</span>` : ""}</p>` : "")
+      + `<p class="meta">Det här skrivs: ${ins.length > 1 ? `${ins.length} nya steg` : "ett nytt steg"} i uppgiften, som går att markera klart och ta bort igen.</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button>${c.fit?.cycle ? "" : `<button class="btn primary" data-insert-send="1">Lägg in</button>`}</div>`);
+  }
+  function sendInsert(btn) {
+    const x = state.insert; if (!x) return;
+    return busy(btn, async () => {
+      try { const r = await call("task_lock", { task: x.task, add_step: { ...x.payload, with_prerequisites: true } });
+        const n = (r?.inserted || []).length;
+        state.insert = null; state.pal = null; closeDialog();
+        await afterWrite(n > 1 ? `«${x.label}» och ${n - 1} steg före det står nu i uppgiften. Metoden är orörd.` : `«${x.label}» står nu i uppgiften. Metoden är orörd.`); }
+      catch (e) { fail("Steget lades inte in", e); }
+    });
+  }
+  /** Dra med pekaren. Inte på telefon, och inte när paletten gäller en enda plats. */
+  let palDrag = null;
+  document.addEventListener("pointerdown", (e) => {
+    const c = e.target.closest?.(".stcard[data-pal-card]");
+    if (!c || e.button !== 0 || PHONE() || state.pal?.place) return;
+    palDrag = { card: c, it: state.pal?.byKey[c.dataset.palCard], x0: e.clientX, y0: e.clientY, moved: false, ghost: null, over: null };
+  });
+  document.addEventListener("pointermove", (e) => {
+    const d = palDrag; if (!d?.it) return;
+    if (!d.moved && Math.hypot(e.clientX - d.x0, e.clientY - d.y0) < 6) return;
+    if (!d.moved) {
+      d.moved = true; endPick();
+      d.ghost = d.card.cloneNode(true); d.ghost.classList.add("stghost"); d.ghost.removeAttribute("data-pal-card"); d.ghost.removeAttribute("tabindex");
+      document.body.appendChild(d.ghost); markTargets(d.it);
+      live(`Drar «${d.it.label}». Släpp på ett plus i kedjan.`);
+    }
+    d.ghost.style.left = `${e.clientX + 10}px`; d.ghost.style.top = `${e.clientY + 10}px`;
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest?.(".chain .addstep[data-add-step]") || null;
+    if (over !== d.over) { d.over?.classList.remove("drop-hover"); over?.classList.add("drop-hover"); d.over = over; }
+  });
+  document.addEventListener("pointerup", () => {
+    const d = palDrag; palDrag = null; if (!d?.moved) return;
+    d.ghost?.remove(); suppressNextClick = true;
+    const over = d.over; clearTargets();
+    if (!over) return live("Inget lades in.");
+    return dropOn(d.it, afterOf(over));
+  });
+  document.addEventListener("pointercancel", () => { const d = palDrag; palDrag = null; d?.ghost?.remove(); clearTargets(); });
+  // Före de andra tangenterna: Esc avbryter valet av plats, inte hela steget.
+  document.addEventListener("keydown", (e) => {
+    if (state.pick) {
+      const n = addTargets().length; if (!n) return endPick();
+      const stop = () => { e.preventDefault(); e.stopPropagation(); };
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") { stop(); state.pick.i = (state.pick.i + 1) % n; return showPick(); }
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") { stop(); state.pick.i = (state.pick.i - 1 + n) % n; return showPick(); }
+      if (e.key === "Enter") { stop(); const it = state.pick.it, after = afterOf(addTargets()[state.pick.i]); endPick(); return dropOn(it, after); }
+      if (e.key === "Escape") { stop(); endPick(); return live("Avbrutet. Inget lades in."); }
+      return;
+    }
+    const c = e.target.closest?.(".stcard[data-pal-card]");
+    if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopPropagation(); cardChosen(c.dataset.palCard); }
+  }, true);
 
   /**
    * Skicka till kollega (message, B-220). Till en eller flera; meddelandet
@@ -4665,7 +5045,7 @@ a.btn { text-decoration: none; color: var(--text); }
   document.addEventListener("click", (e) => {
     if (suppressNextClick) { suppressNextClick = false; e.preventDefault(); return; }
     if (!e.target.closest("#menu, [data-more]")) closeMenu();
-    const t = e.target.closest("button, [data-step-edit], [data-open-step], [data-open-project], [data-open-method], [data-open-case], [data-proj-task], [data-open-q], [data-edsel], [data-calcol], [data-fcust], [data-ffolder], .item, [data-close-overlay]");
+    const t = e.target.closest("button, [data-pal-card], [data-step-edit], [data-open-step], [data-open-project], [data-open-method], [data-open-case], [data-proj-task], [data-open-q], [data-edsel], [data-calcol], [data-fcust], [data-ffolder], .item, [data-close-overlay]");
     if (!t) return;
     const ds = t.dataset;
     if (ds.closeOverlay && e.target === t) return closeDialog();
@@ -4679,6 +5059,10 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.density) { density = ds.density; document.body.dataset.density = density; for (const b of document.querySelectorAll("[data-density]")) if (b.tagName === "BUTTON") b.setAttribute("aria-pressed", b.dataset.density === density); return; }
     if (ds.filter) { state.filter = ds.filter; return render(); }
     if (ds.who) { store.who = ds.who; save(); return render(); }
+    if (ds.lvbank !== undefined) return bankPickDialog(ds.lvbank);
+    if (ds.bankPick) { const [key, sha, ...namn] = ds.bankPick.split("|"); const inp = (state.obj.inputs ||= { parts: {}, files: {}, note: "" });
+      (inp.bank ||= {})[key] = { sha256: sha, name: namn.join("|") };
+      closeDialog(); const st = document.querySelector(`[data-lvstatus="${CSS.escape(key)}"]`); if (st) st.textContent = `Ur filbanken: ${namn.join("|")}`; return; }
     if (ds.confirmNode) return confirmNodeDialog(ds.confirmNode);
     if (ds.confirmNodeYes) return confirmNode(t, ds.confirmNodeYes);
     if (ds.ahead !== undefined) { store.ahead = Number(ds.ahead); save(); render(); return load(); }
@@ -4720,7 +5104,15 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.menuHandover) { closeMenu(); const [task, step] = ds.menuHandover.split("|"); return handoverDialog(task, step); }
     if (ds.handoverTo) { const { t: tt, s: ss } = current(); return ss ? handoverDialog(tt.id, ss.step) : undefined; }
     if (ds.handoverSend) return sendHandover(t);
-    if (ds.addStep) { const [task, after] = ds.addStep.split("|"); return addStepDialog(task, after); }
+    // «+»: med ett kort valt läggs det dit; annars öppnas paletten för just den platsen.
+    if (ds.addStep) { const [task, after] = ds.addStep.split("|");
+      if (state.pick) { const it = state.pick.it; endPick(); return dropOn(it, after || null); }
+      return openStepPalette(task, after || null, true); }
+    if (ds.palOpen) { if (state.pal?.task === ds.palOpen && !state.pal.place) { state.pal = null; endPick(); return render(); }
+      return openStepPalette(ds.palOpen, state.obj?.step ?? null, false); }
+    if (ds.palClose) { state.pal = null; endPick(); return render(); }
+    if (ds.palCard !== undefined && t.hasAttribute("data-pal-card")) return cardChosen(ds.palCard);
+    if (ds.insertSend) return sendInsert(t);
     if (ds.addStepSend) return sendAddStep(t);
     if (ds.removeAdded) { const [task, step] = ds.removeAdded.split("|"); return removeAddedDialog(task, step); }
     if (ds.removeAddedSend) return sendRemoveAdded(t);
@@ -4749,15 +5141,19 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.peAdd) return copyToChat(partChatPrompt(state.obj), "Prompten för en ny del");
     if (ds.peSave) return peSave(t);
     if (ds.peDiscard) { state.obj.calls = JSON.parse(state.obj.orig); state.obj.check = null; return render(); }
-    if (ds.valuesRun) { const [task, step] = ds.valuesRun.split("|"); const tk = taskById(task), st = stepOf(tk, step);
+    // Nyckeln är uppgift|steg, och |del när kortet gäller en del i ett blandat steg.
+    const keyed = (key) => { const [task, step, id] = key.split("|"); const tk = taskById(task), st = stepOf(tk, step);
+      return { tk, st: st && id ? moleculeStep(st, id) : st }; };
+    if (ds.valuesRun) { const { tk, st } = keyed(ds.valuesRun);
       if (!st) return toast("Steget finns inte i planen längre.", null, true);
       return ask(valuesStepTask(tk, st), `Utför «${st.label}»`); }
-    if (ds.writeRun) { const [task, step] = ds.writeRun.split("|"); const tk = taskById(task), st = stepOf(tk, step);
+    if (ds.writeRun) { const { tk, st } = keyed(ds.writeRun);
       if (!st?.writes_to) return toast("Steget finns inte i planen längre.", null, true);
       return ask(writeStepTask(tk, st), `Utför «${st.label}»`); }
-    if (ds.copyStep) { const [task, step] = ds.copyStep.split("|"); const tk = taskById(task), st = stepOf(tk, step);
+    if (ds.copyStep) { const { tk, st } = keyed(ds.copyStep);
       if (!st) return toast("Steget finns inte i planen längre.", null, true);
       return copyToChat(stepChatPrompt(tk, st), `Prompten för «${st.label}»`); }
+    if (ds.moleculeDone) return moleculeDone(t, ds.moleculeDone);
     if (ds.threadRetry) { fetchThread(ds.threadRetry, true); return render(); }
     if (ds.bug) return bugDialog();
     if (ds.orderOpen) return orderDialog();
@@ -4962,12 +5358,14 @@ a.btn { text-decoration: none; color: var(--text); }
     } catch { /* läget står kvar och säger vad som gäller */ }
     render();
   });
-  restoreSnap();
+  const restored = restoreSnap();
   render();
   pickMcp({ claude: typeof claude !== "undefined" ? claude : undefined, document, location, fetch: (u, i) => fetch(u, i) })
-    .then(async ({ mcp: m, web }) => { mcp = m; WEB.on = web; if (!m) await readMcpState(); await load();
-      // Inställningarna efter planen: namnet under menyn kommer därifrån (B-209).
-      loadSettings(); checkTools();
+    .then(async ({ mcp: m, web }) => { mcp = m; WEB.on = web; if (!m) await readMcpState();
+      // Med det sparade hämtas bara det som blivit gammalt, sort för sort.
+      if (!(m && restored && S.plan)) { await load(); loadSettings(); }
+      else { if (S.settings) showWhoAmI(S.settings.node?.label || S.settings.label); refreshStale(); }
+      checkTools();
       if (!web) { try { sample = await claude.use("sample"); } catch { sample = null; } }
       renderPanel(); })
     .catch((e) => { S.error = e; render(); });
