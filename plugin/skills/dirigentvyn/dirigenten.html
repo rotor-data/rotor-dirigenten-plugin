@@ -275,6 +275,9 @@ ol.moments input { flex: 1; min-width: 0; border: 1px solid var(--line-strong); 
 /* Steget som tagg under arbetets rubrik (Daniel P 2026-09-25). */
 .chip.steg { height: 18px; margin-right: 6px; background: transparent; border: 1px solid var(--line-strong); color: var(--text-2); font-size: 11.5px; vertical-align: 1px; }
 .row .txt { min-width: 0; display: flex; flex-direction: column; }
+/* Granskningen under ett förslag i Till dig: det som måste rättas, och det som liknar. */
+.row .why .vet-problem, .row .why .vet-similar, .vet .vet-problem, .vet .vet-similar { display: block; white-space: normal; margin-top: 2px; }
+.vet-problem { color: var(--red); } .vet-similar { color: var(--text-2); }
 .row .when { text-align: right; }
 .row .when.late { color: var(--red); }
 .row .acts { display: flex; gap: 4px; align-items: center; }
@@ -585,7 +588,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "fac0ef1", published: "2026-09-25" };
+  const SIDA = { version: "e5eb06a", published: "2026-09-25" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1217,7 +1220,15 @@ a.btn { text-decoration: none; color: var(--text); }
   const tickBtn = (task, step, cls = "tick") => `<button class="${cls}" data-quick-done="${esc(task)}|${esc(step)}" title="Markera klart" aria-label="Markera klart">${ic("check")}</button>`;
   /** Kedjans nod: ett klart steg har en grön bock, ett ogjort en bock att klicka i. */
   // Ett steg som lagts till i just den här uppgiften är streckat: det finns inte i metoden.
-  const nodeTitle = (x) => x.done ? ` title="${doneText(x)}"` : x.added ? ` title="Bara i den här uppgiften"` : "";
+  const nodeTitle = (x) => x.done ? ` title="${doneText(x)}"` : x.added ? ` title="Bara i den här uppgiften"`
+    : x.needed_by ? ` title="${esc(x.needed_by.text)}"` : x.assumes ? ` title="${esc(x.assumes.text)}"` : "";
+  /**
+   * Parallellt och under förutsättning (Daniel P 2026-09-25): texten kommer
+   * från servern (src/plan/needed-by.ts), på svenska och med stegens namn.
+   */
+  const assumeChips = (s) => (s.needed_by ? ` · <span class="chip blue">${esc(s.needed_by.text)}</span>` : "")
+    + (s.assumes ? ` · <span class="chip">${esc(s.assumes.text)}</span>` : "")
+    + (s.done_under_assumption ? ` · <span class="chip amber">${esc(s.done_under_assumption.reason)}</span>` : "");
   const chainNode = (t, x, cls) => `<span class="node ${cls}${x.added ? " own" : ""}" data-open-step="${esc(t.id)}|${esc(x.step)}"${nodeTitle(x)}>`
     + (x.done ? `<span class="ok" style="color:var(--green)">${ic("check")}</span>` : x.external ? kindMark(kindOf(x)) : tickBtn(t.id, x.step))
     + `<span class="l">${esc(x.label)}</span></span>`;
@@ -1516,11 +1527,16 @@ a.btn { text-decoration: none; color: var(--text); }
         + `<div class="msgtext">${esc(m.text)}</div><div class="bar-actions">${openAttr(m.about) ? `<button class="btn sm" ${openAttr(m.about)}>Öppna</button>` : ""}<button class="btn sm quiet" data-msg-read="${esc(m.id)}">Markera läst</button></div></div>`;
       // Åtaganden som väntar på ett ja (felrapport 2026-09-25): utan det blir inga uppgifter.
       const pc = S.agenda?.pending_confirmation ?? [];
-      const förslag = (c) => row({ kind: `<span class="kind warn" title="Väntar på ditt ja">${ic("help")}</span>`, dot: custDot(c.customer?.color),
-        title: `${esc(c.label)} <span class="chip amber">förslag</span>`, cust: lbl(c.customer),
+      // Varje förslag är granskat på servern (vetting): det som måste rättas
+      // står under raden och då går det inte att bekräfta; det som bara liknar
+      // något som finns visas, men stoppar inte.
+      const förslag = (c) => { const v = c.vetting || { ok: true, problems: [], similar: [] };
+        return row({ kind: `<span class="kind warn" title="Väntar på ditt ja">${ic("help")}</span>`, dot: custDot(c.customer?.color),
+        title: `${esc(c.label)} <span class="chip amber">förslag</span>${v.ok ? "" : ` <span class="chip red">behöver rättas</span>`}`, cust: lbl(c.customer),
         why: esc((c.covers || []).map((l) => `${l.quantity ?? ""} ${lbl(l.deliverable)}${l.due ? ` senast ${short(l.due)}` : ""}`.trim()).join(" · ")
-          || ({ commitment: "Åtagande", deliverable_type: "Leveranstyp", method: "Metod" }[c.kind] || "Förslag") + (c.summary ? ` · ${c.summary}` : "")),
-        act: `<button class="btn sm primary" data-confirm-node="${esc(c.id)}">Bekräfta</button>` });
+          || (PROPOSAL_KIND[c.kind] || "Förslag") + (c.summary ? ` · ${c.summary}` : "")) + vettingNote(v),
+        act: v.ok ? `<button class="btn sm primary" data-confirm-node="${esc(c.id)}">Bekräfta</button>`
+          : `<button class="btn sm" disabled title="Rätta det som står under förslaget först">Bekräfta</button>` }); };
       const n = h.length + ms.length + pc.length;
       return `<div class="card"><div class="head"><h2>Till dig</h2><span class="meta">${n || ""}</span></div>`
         + pc.map(förslag).join("") + ms.map(msg).join("") + h.map((x) => agendaRow(x)).join("")
@@ -2820,6 +2836,7 @@ a.btn { text-decoration: none; color: var(--text); }
       return `<div class="wshead"><div class="titles"><span class="meta">${custDot(t.customer?.color)} ${esc(lbl(t.customer))} · ${esc(taskName(t))} · leverans ${short(t.due)}</span>`
         + `<h1>${esc(s.label)}</h1><div class="line">${kindMark(k)} ${esc(kindTxt)} · ansvarig ${esc(lbl(s.responsible, "–"))} · ${short(s.start)}–${short(s.latest_end || s.end)}`
         + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="chip">${s.float_days} d marginal</span>`)
+          + assumeChips(s)
           + (s.added ? ` · <span class="chip">Bara i den här uppgiften</span> <button class="linkbtn" data-remove-added="${esc(t.id)}|${esc(s.step)}">Ta bort ur uppgiften</button>` : "") + (s.done ? ` · <span class="chip green">${ic("check")} ${doneText(s)}</span>` : "") + (started ? ` · ${started}` : "") + `</div></div></div>`
         // Markera klart står överst (Daniel P 2026-09-25: "markera klart måste vara högst upp").
         + (s.done ? "" : `<div class="bar-actions" style="margin:4px 0 16px"><button class="btn primary" data-done="1">Markera klart och gå till nästa ${ic("arrow")}</button>`
@@ -3837,14 +3854,21 @@ a.btn { text-decoration: none; color: var(--text); }
   /** Stegen före det här i kedjan som inte är gjorda (B-231). */
   const undoneBefore = (t, s) => { const i = t.steps.findIndex((x) => x.step === s.step); return t.steps.slice(0, Math.max(0, i)).filter((x) => !x.done); };
 
-  /** Bekräfta ett föreslaget åtagande (felrapport 2026-09-25): rutan visar vad det lovar. */
+  /** Vad ett förslag är, i husets ord (docs/orden-i-vyn.md) — aldrig registrets ord ensamt. */
+  const PROPOSAL_KIND = { commitment: "Vad vi lovat", deliverable_type: "Vad kunden får", method: "Metod", method_variant: "Metod för en kund",
+    module: "Område", rule: "Regel för inkommande post", access_group: "Behörighet", corpus: "Material som behövs", setting: "Inställning" };
+  /** Granskningen under ett förslag: vad som måste rättas, och vad som redan finns som liknar. */
+  const vettingNote = (v) => (v.problems || []).map((p) => `<span class="vet-problem">Behöver rättas: ${esc(p.message)}</span>`).join("")
+    + ((v.similar || []).length ? `<span class="vet-similar">Finns redan liknande: ${v.similar.map((x) => `${esc(x.label)} (${esc(x.why)})`).join(", ")}</span>` : "");
+  /** Bekräfta ett förslag (felrapport 2026-09-25): rutan visar vad det lovar och vad granskningen fann. */
   function confirmNodeDialog(id) {
     const c = (S.agenda?.pending_confirmation ?? []).find((x) => x.id === id);
     if (!c) return toast("Förslaget finns inte längre.", null, true);
     dialog(`<h2>Bekräfta ${esc(c.label)}</h2><p>${esc(c.summary || "")}</p><p class="meta">${esc(lbl(c.customer))}</p>`
       + `<div class="preview">${(c.covers || []).map((l) => `<div class="row2"><span>${esc(lbl(l.deliverable))}</span><span>${l.quantity ?? "–"} st${l.due ? ` · senast ${short(l.due)}` : ""}</span></div>`).join("")}</div>`
-      + `<p class="meta">${c.kind === "commitment" || !c.kind ? "Åtagandet blir beslutat av dig. Beställningar på det blir uppgifter i planen." : `${c.kind === "method" ? "Metoden" : "Leveranstypen"} blir beslutad av dig och kan användas direkt.`}</p>`
-      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-confirm-node-yes="${esc(c.id)}">Bekräfta</button></div>`);
+      + `<p class="meta">${c.kind === "commitment" || !c.kind ? "Det vi lovat blir beslutat av dig. Beställningar på det blir uppgifter i planen." : `${PROPOSAL_KIND[c.kind] || "Förslaget"} blir beslutat av dig och kan användas direkt.`}</p>`
+      + (c.vetting ? `<div class="vet">${vettingNote(c.vetting)}</div>` : "")
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button>${c.vetting && !c.vetting.ok ? "" : `<button class="btn primary" data-confirm-node-yes="${esc(c.id)}">Bekräfta</button>`}</div>`);
   }
   function confirmNode(btn, id) {
     const c = (S.agenda?.pending_confirmation ?? []).find((x) => x.id === id);
