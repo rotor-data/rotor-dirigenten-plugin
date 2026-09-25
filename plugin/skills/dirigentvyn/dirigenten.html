@@ -585,7 +585,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "83491fa", published: "2026-09-25" };
+  const SIDA = { version: "fac0ef1", published: "2026-09-25" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1518,7 +1518,8 @@ a.btn { text-decoration: none; color: var(--text); }
       const pc = S.agenda?.pending_confirmation ?? [];
       const förslag = (c) => row({ kind: `<span class="kind warn" title="Väntar på ditt ja">${ic("help")}</span>`, dot: custDot(c.customer?.color),
         title: `${esc(c.label)} <span class="chip amber">förslag</span>`, cust: lbl(c.customer),
-        why: esc((c.covers || []).map((l) => `${l.quantity ?? ""} ${lbl(l.deliverable)}${l.due ? ` senast ${short(l.due)}` : ""}`.trim()).join(" · ") || "Åtagande"),
+        why: esc((c.covers || []).map((l) => `${l.quantity ?? ""} ${lbl(l.deliverable)}${l.due ? ` senast ${short(l.due)}` : ""}`.trim()).join(" · ")
+          || ({ commitment: "Åtagande", deliverable_type: "Leveranstyp", method: "Metod" }[c.kind] || "Förslag") + (c.summary ? ` · ${c.summary}` : "")),
         act: `<button class="btn sm primary" data-confirm-node="${esc(c.id)}">Bekräfta</button>` });
       const n = h.length + ms.length + pc.length;
       return `<div class="card"><div class="head"><h2>Till dig</h2><span class="meta">${n || ""}</span></div>`
@@ -3842,7 +3843,7 @@ a.btn { text-decoration: none; color: var(--text); }
     if (!c) return toast("Förslaget finns inte längre.", null, true);
     dialog(`<h2>Bekräfta ${esc(c.label)}</h2><p>${esc(c.summary || "")}</p><p class="meta">${esc(lbl(c.customer))}</p>`
       + `<div class="preview">${(c.covers || []).map((l) => `<div class="row2"><span>${esc(lbl(l.deliverable))}</span><span>${l.quantity ?? "–"} st${l.due ? ` · senast ${short(l.due)}` : ""}</span></div>`).join("")}</div>`
-      + `<p class="meta">Åtagandet blir beslutat av dig. Beställningar på det blir uppgifter i planen.</p>`
+      + `<p class="meta">${c.kind === "commitment" || !c.kind ? "Åtagandet blir beslutat av dig. Beställningar på det blir uppgifter i planen." : `${c.kind === "method" ? "Metoden" : "Leveranstypen"} blir beslutad av dig och kan användas direkt.`}</p>`
       + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-confirm-node-yes="${esc(c.id)}">Bekräfta</button></div>`);
   }
   function confirmNode(btn, id) {
