@@ -35,6 +35,15 @@ button { cursor: pointer; }
 .app { display: grid; grid-template-columns: 216px minmax(0, 1fr) 360px; height: 100vh; }
 body.panel-closed .app { grid-template-columns: 216px minmax(0, 1fr) 0; }
 body.rail-narrow .app { grid-template-columns: 60px minmax(0, 1fr) 360px; }
+body.rail-narrow.panel-closed .app { grid-template-columns: 60px minmax(0, 1fr) 0; }
+/* Menyn infälld (Daniel P 2026-09-25: "vore ju bra att kunna fälla in
+   vänstermenyn så att bara ikonerna syns"): namnen syns som titel vid musen. */
+body.rail-narrow .rail .nav .txt, body.rail-narrow .rail .brand, body.rail-narrow .rail .me .txt { display: none; }
+body.rail-narrow .rail .nav { justify-content: center; padding: 8px 0; position: relative; }
+body.rail-narrow .nav .count { position: absolute; top: 2px; right: 6px; margin: 0; font-size: 10px; }
+body.rail-narrow .rail .me { justify-content: center; }
+.nav.railtoggle .ico .i { transition: transform .15s; }
+body.rail-narrow .nav.railtoggle .ico .i { transform: rotate(180deg); }
 .rail { background: var(--bg-subtle); border-right: 1px solid var(--line); display: flex; flex-direction: column; padding: var(--s3) var(--s2); gap: 2px; }
 .brand { display: flex; align-items: baseline; gap: 6px; padding: 6px 10px 16px; font-weight: 800; font-size: 17px; letter-spacing: -.03em; }
 .brand small { color: var(--text-2); font-weight: 400; font-size: var(--fs-meta); }
@@ -463,6 +472,7 @@ body.panel-closed .panel { display: none; }
 @media (max-width: 1200px) {
   .app, body.rail-narrow .app { grid-template-columns: 60px minmax(0, 1fr); }
   .rail .nav .txt, .rail .brand small, .rail .me .txt, .nav .count { display: none; }
+  .rail .railtoggle { display: none; }
   .panel { position: fixed; right: 0; top: 0; bottom: 0; width: min(380px, 92vw); z-index: 40; box-shadow: var(--shadow); }
   body:not(.panel-open) .panel { display: none; }
   .ws2 { grid-template-columns: minmax(0, 1fr); }
@@ -539,6 +549,7 @@ a.btn { text-decoration: none; color: var(--text); }
     <button class="nav" data-go="metoder"><span class="ico"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='m12 3 9 5-9 5-9-5z'/><path d='m3 13 9 5 9-5'/></svg></span><span class="txt">Metoder</span></button>
     <button class="nav" data-go="filer"><span class="ico"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/></svg></span><span class="txt">Filer</span></button>
     <div class="spacer"></div>
+    <button class="nav railtoggle" id="rail-toggle" type="button" aria-pressed="false"><span class="ico"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='m15 6-6 6 6 6'/></svg></span><span class="txt">Fäll in menyn</span></button>
     <button class="me" data-go="installningar"><span class="avatar" id="me-initials">·</span><span class="txt" id="me-name">Inställningar</span></button>
   </nav>
   <div class="center">
@@ -574,7 +585,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "5f17fef", published: "2026-09-25" };
+  const SIDA = { version: "83491fa", published: "2026-09-25" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -3252,7 +3263,7 @@ a.btn { text-decoration: none; color: var(--text); }
          ...inomTaket(convo.filter((m) => m !== reply).map((m) => ({ role: m.role, content: m.content })))],
         { signal: abort.signal, modelTier: "default", onText: ({ text: all }) => { reply.text = all; renderPanel(); },
           tools: [readTool((what) => { if (running) { running.label = `Claude läser ${what}`; renderPanel(); } },
-            budget), writeTool()] });
+            budget), writeTool(), markDoneTool()] });
       reply.text = r.text; reply.content = r.text;
       reply.meter = { fetches: Math.min(budget.used, budget.max), bytes: budget.bytes };
     } catch (e) {
@@ -3562,7 +3573,7 @@ a.btn { text-decoration: none; color: var(--text); }
    * texter i högerchatten. Däremot ska den kunna kopiera prompts med
    * instruktioner till vanliga chatten."
    */
-  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till chatten under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan. Ber användaren dig rapportera ett fel: gör det med skriv → rotor-dirigenten bug_report { text, where, conversation }.";
+  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till chatten under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan. Ber användaren dig rapportera ett fel: gör det med skriv → rotor-dirigenten bug_report { text, where, conversation }. Ber användaren dig markera ett steg klart: gör det med markera_klart.";
   const HUNT_HINT = "Leta med search först (B-257): EN fråga med 2–5 formuleringar — kundens ord och husets ord — och inbox när ärendet har en adress. Svaret är högst tio rader; hämta bara det en rad pekar på (fetch). Ramens steg står i svaret — hämta inte hela metoden med guide. maybe är antaganden: säg att de är det. Står det inget självklart: fråga användaren vad det kan handla om; vet hen inte, föreslå en fråga till den som skrev. Sluta leta när du har svaret, och svara kort. Långa listor: read_call { call, hitta: \"sökord\" } filtrerar på servern. Ser du hur något hänger ihop (ett workflow skickar ett fält, ett mejl kommer från ett flöde): notera det med note_link, så vet nästa ärende det. Saknas en förmåga i dirigenten — kod som kan göra en ändring som behövs: säg vad som saknas; atomförslaget skrivs i vanliga chatten. Leta effektivt: börja i kundens systemkarta. I HubSpot räknar och filtrerar query_crm_data i ETT anrop (hur många affärer som har ett fält ifyllt, vilka värden som förekommer, vilka produkter som finns på affärerna) — använd den i stället för många sökningar. get_properties ger ett fälts definition och tillåtna värden. Sök inte på samma sak två gånger.";
   let catalogCache = null;
   /** Kopplingarnas läsverktyg med sina argument, ur kopplingarnas egna listor — så att Claude inte gissar. */
@@ -3611,6 +3622,24 @@ a.btn { text-decoration: none; color: var(--text); }
         throw new Error(`det går bara att ändra med: ${Object.entries(CLAUDE_WRITES).map(([sv, n]) => `${sv}: ${n.join(", ")}`).join("; ")}`);
       if (!String(i.vad || "").trim()) throw new Error("vad måste säga på vanlig svenska vad som ändras");
       return confirmWrite(k, v, asArgs(i.argument), String(i.vad), ctx?.signal);
+    } });
+  /**
+   * Claude klarmarkerar när användaren ber om det (Daniel P 2026-09-25: "man
+   * borde ju kunna säga till att claude ska kunna klarmarkera också - om man
+   * säger till att den ska göra det"). Utan ja-ruta: det rör bara dirigenten,
+   * användaren har redan sagt det, och kvittot har Ångra.
+   */
+  const markDoneTool = () => ({ name: "markera_klart",
+    description: "Markerar ett steg klart i dirigenten — BARA när användaren i det här samtalet uttryckligen bett dig markera just det steget klart. task och step är id:n; note är en rad om vad som gjordes (valfri). Ingen ja-ruta; användaren får ett kvitto med Ångra.",
+    inputSchema: { type: "object", properties: { task: { type: "string" }, step: { type: "string" }, note: { type: "string" } }, required: ["task", "step"] },
+    execute: async (i) => {
+      const t = taskById(String(i.task || "")), st = stepOf(t, String(i.step || ""));
+      if (!t || !st) throw new Error("steget finns inte i planen — ta task och step ur sammanhanget");
+      if (st.done) return `${st.label} var redan klart.`;
+      await call("execute_step", { task: t.id, step: st.step, mark: "done", ...(i.note ? { note: String(i.note).slice(0, 500) } : {}) });
+      await load();
+      toast(`${st.label} är klart (Claude).`, undoDone(t, st));
+      return `${st.label} är markerat klart.`;
     } });
   const WRITE_NO = "Användaren sa nej. Ingenting ändrades.";
   function confirmWrite(server, tool, args, what, signal) {
@@ -5290,6 +5319,12 @@ a.btn { text-decoration: none; color: var(--text); }
     if (e.key === "Enter" && e.target.closest?.(".row[tabindex]")) e.target.click();
   });
   $("#open-palette").addEventListener("click", palette);
+  // Menyn infälld eller utfälld, sparat. Namnen blir titlar så att de syns vid musen när bara ikonerna står kvar.
+  for (const b of document.querySelectorAll(".rail .nav, .rail .me")) { const t = b.querySelector(".txt")?.textContent?.trim(); if (t) b.title = t; }
+  const setRail = (narrow) => { document.body.classList.toggle("rail-narrow", narrow); const b = $("#rail-toggle");
+    b.setAttribute("aria-pressed", String(narrow)); b.title = narrow ? "Fäll ut menyn" : "Fäll in menyn"; b.querySelector(".txt").textContent = b.title; };
+  setRail(!!store.railNarrow);
+  $("#rail-toggle").addEventListener("click", () => { store.railNarrow = !document.body.classList.contains("rail-narrow"); save(); setRail(store.railNarrow); });
   $("#toggle-panel").addEventListener("click", () => { if (innerWidth <= 1200) document.body.classList.toggle("panel-open"); else document.body.classList.toggle("panel-closed"); });
   $("#close-panel").addEventListener("click", () => { document.body.classList.add("panel-closed"); document.body.classList.remove("panel-open"); });
   const sendAsk = () => { const v = $("#ask").value.trim(); if (!v) return; $("#ask").value = ""; ask(v); };
