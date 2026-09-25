@@ -590,7 +590,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "84f4258", published: "2026-09-25" };
+  const SIDA = { version: "a526378", published: "2026-09-25" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1990,7 +1990,7 @@ a.btn { text-decoration: none; color: var(--text); }
   async function loadCustomerFiles(id, force = false) {
     const had = FB.files.get(id);
     if (had?.loading || (had && !force)) return;
-    const entry = { list: had?.list ?? null, error: null, loading: true, external: had?.external ?? 0 };
+    const entry = { list: had?.list ?? null, error: null, loading: true, external: had?.external ?? 0, removed: had?.removed ?? [] };
     FB.files.set(id, entry);
     try {
       let all = [], offset = 0;
@@ -1998,6 +1998,7 @@ a.btn { text-decoration: none; color: var(--text); }
         const d = await withTimeout(call("asset_get", { customer: id, limit: 500, offset }), 45000, "Kundens filer");
         if (!Array.isArray(d?.files)) throw new Error("svaret innehöll inga filer");
         all = all.concat(d.files); entry.external = d.only_external || 0;
+        if (!offset) entry.removed = Array.isArray(d.removed) ? d.removed : [];
         offset = d.next_offset ?? null;
       } while (offset != null);
       entry.list = all;
@@ -2045,14 +2046,62 @@ a.btn { text-decoration: none; color: var(--text); }
   const fileCard = (f) => `<div class="fcard"><div class="ph" data-thumb="${esc(f.ref)}">${thumbImg(f)}</div>`
     + `<div class="t" title="${esc(f.name)}">${esc(f.name)}</div>`
     + `<div class="meta">${f.width && f.height ? `${f.width}×${f.height} · ` : ""}${fsize(f.size)}${f.ersatt_av ? ` · <span title="Nyare version: ${esc(f.ersatt_av.name)}">äldre version</span>` : ""}</div>`
-    + `<button class="btn sm" data-fget="${esc(f.ref)}" data-fname="${esc(f.name)}">Ladda ned</button></div>`;
+    + `<button class="btn sm" data-fget="${esc(f.ref)}" data-fname="${esc(f.name)}">Ladda ned</button>`
+    + `<button class="btn sm quiet" data-frm="${esc(f.ref)}" data-fname="${esc(f.name)}">Ta bort</button></div>`;
   function fileRow(f, where = "") {
     const ext = /\.([a-z0-9]{1,5})$/i.exec(f.name)?.[1]?.toUpperCase() || "";
     const why = [where, ext, fsize(f.size), f.ersatt_av ? `nyare version: ${f.ersatt_av.name}` : ""].filter(Boolean).map(esc).join(" · ");
     return `<div class="row frow"><span class="kindcell"><span class="kind human" title="Fil">${FILE_IC}</span></span><span></span>`
       + `<span class="txt"><span class="t" title="${esc(f.name)}">${esc(f.name)}</span><span class="why">${why}</span></span>`
       + `<span class="s when" title="Inlagd">${short(f.registered_at)}</span>`
-      + `<span class="acts"><button class="btn sm" data-fget="${esc(f.ref)}" data-fname="${esc(f.name)}">Ladda ned</button></span></div>`;
+      + `<span class="acts"><button class="btn sm" data-fget="${esc(f.ref)}" data-fname="${esc(f.name)}">Ladda ned</button>`
+      + `<button class="btn sm quiet" data-frm="${esc(f.ref)}" data-fname="${esc(f.name)}">Ta bort</button></span></div>`;
+  }
+  /**
+   * Borttagna filer (Daniel P 2026-09-25: "kan vi se till så vi kan ta bort
+   * också"): de syns inte bland filerna, men står här och kan läggas
+   * tillbaka. En fil som raderats för gott står kvar med det, utan knapp.
+   */
+  function removedListing(rs) {
+    if (!rs?.length) return "";
+    return `<details class="card fcards"><summary class="group"><b>Borttagna filer</b><span>${plural(rs.length, "fil", "filer")} · syns inte i filbanken, men kan läggas tillbaka</span></summary>`
+      + rs.map((r) => `<div class="row frow"><span class="kindcell"><span class="kind human" title="Borttagen fil">${FILE_IC}</span></span><span></span>`
+        + `<span class="txt"><span class="t" title="${esc(r.name)}">${esc(r.name)}</span><span class="why">${esc([r.folder, `Varför: ${r.reason}`, r.purged ? "raderad för gott" : ""].filter(Boolean).join(" · "))}</span></span>`
+        + `<span class="s when" title="Borttagen">${short(r.removed_at)}</span>`
+        + `<span class="acts">${r.purged ? "" : `<button class="btn sm" data-frestore="${esc(r.sha256)}" data-fname="${esc(r.name)}">Lägg tillbaka</button>`}</span></div>`).join("")
+      + `</details>`;
+  }
+  /** Ta bort ur filbanken: skälet krävs, och ditt ja följer med som dina ord. */
+  function removeFileDialog(ref, name) {
+    state.pendingRemove = { ref, name, id: state.obj?.id };
+    dialog(`<h2>Ta bort ${esc(name)} ur filbanken?</h2>`
+      + `<p class="meta">Filen försvinner ur filbanken, sökningen och uppgifternas filer. Den går att lägga tillbaka under Borttagna filer — innehållet raderas inte.</p>`
+      + `<label class="field"><span>Varför? · krävs</span><input id="frm-reason"></label>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-frm-ok="1">Ta bort</button></div>`);
+  }
+  function confirmRemoveFile(btn) {
+    const m = state.pendingRemove; if (!m) return;
+    const reason = $("#frm-reason")?.value.trim();
+    if (!reason) return toast("Skriv varför filen tas bort.", null, true);
+    return busy(btn, async () => {
+      try {
+        await call("asset_register", { action: "remove", from_ref: m.ref, reason,
+          user_approval: `Ja, ta bort ur filbanken (i vyn): ${m.name} — ${reason}` });
+        state.pendingRemove = null; closeDialog();
+        if (m.id) await loadCustomerFiles(m.id, true);
+        toast(`${m.name} är borttagen. Den går att lägga tillbaka under Borttagna filer.`);
+      } catch (e) { fail("Filen togs inte bort", e); }
+    });
+  }
+  function restoreFile(btn, sha, name) {
+    const id = state.obj?.id;
+    return busy(btn, async () => {
+      try {
+        await call("asset_register", { action: "restore", from_ref: sha });
+        if (id) await loadCustomerFiles(id, true);
+        toast(`${name} ligger i filbanken igen.`);
+      } catch (e) { fail("Filen lades inte tillbaka", e); }
+    });
   }
   /** Filer med förhandsbild i ett rutnät, de andra som rader. */
   function fileListing(fs, whereOf = null) {
@@ -2120,7 +2169,7 @@ a.btn { text-decoration: none; color: var(--text); }
     const warn = e.error ? `<p class="meta" style="color:var(--red)">Senaste hämtningen misslyckades: ${esc(e.error.message || e.error)}</p>` : "";
     const ext = e.external && !cur ? `<p class="meta">${plural(e.external, "fil finns", "filer finns")} bara utanför banken och syns inte här.</p>` : "";
     const all = e.list, q = FB.q.trim().toLowerCase();
-    if (!all.length) return zone(`<div class="empty"><b>Inga filer hos ${esc(label)} än.</b>Ladda upp en fil, eller släpp den här.</div>`) + ext;
+    if (!all.length) return zone(`<div class="empty"><b>Inga filer hos ${esc(label)} än.</b>Ladda upp en fil, eller släpp den här.</div>`) + ext + removedListing(e.removed);
     if (q) {
       const hits = all.filter((f) => fileMatches(f, q));
       return warn + zone(hits.length ? `<div class="card">${fileListing(hits.slice(0, 200), (f) => f.folder || "utan mapp")}${hits.length > 200 ? `<div class="foot meta">Visar 200 av ${hits.length}. Skriv mer för att smalna av.</div>` : ""}</div>`
@@ -2136,7 +2185,7 @@ a.btn { text-decoration: none; color: var(--text); }
     return warn + `<p class="meta">${cur ? `${plural(here.length + below.length, "fil", "filer")} i mappen och under den` : `${plural(all.length, "fil", "filer")}`}`
       + `${folders.length ? ` · ${plural(folders.length, "mapp", "mappar")}` : ""} · släpp en fil här för att lägga den ${cur ? "i mappen" : `hos ${esc(label)}`}</p>`
       + zone((folders.length ? `<div class="card fcards">${folders.map(([n, k]) => folderRow(n, cur ? `${cur}/${n}` : n, k, id)).join("")}</div>` : "")
-        + (here.length ? `<div class="card fcards">${fileListing(here)}</div>` : "")) + ext;
+        + (here.length ? `<div class="card fcards">${fileListing(here)}</div>` : "")) + ext + (cur ? "" : removedListing(e.removed));
   }
 
   /**
@@ -5350,6 +5399,9 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.ffolder !== undefined && t.hasAttribute("data-ffolder") && state.obj?.type === "files") { state.obj.folder = ds.ffolder; render(); $("#main").scrollTop = 0; return; }
     if (ds.fpick) return $("#fpick")?.click();
     if (ds.fget) return downloadFile(t, ds.fget, ds.fname || "Filen");
+    if (ds.frm) return removeFileDialog(ds.frm, ds.fname || "filen");
+    if (ds.frmOk) return confirmRemoveFile(t);
+    if (ds.frestore) return restoreFile(t, ds.frestore, ds.fname || "Filen");
     if (ds.cget) return readText(t, ds.cget, ds.cname || "Texten");
     if (ds.freload) { FB.customers = null; FB.error = null; FB.files.clear(); FB.asked.clear(); return render(); }
     if (ds.reload) { S.error = null; render(); return load(); }
