@@ -542,6 +542,16 @@ a.btn { text-decoration: none; color: var(--text); }
 [data-fdrop].fdrop-on, [data-lvdrop].fdrop-on { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--accent-weak); }
 .flink { width: 100%; border: 1px solid var(--line-strong); border-radius: 10px; padding: 7px 10px; font: inherit; color: var(--text-2); background: var(--bg-subtle); margin-bottom: var(--s3); }
 @media (max-width: 760px) { .fsearch { min-width: 0; width: 100%; } }
+.unit { border-top: 1px solid var(--line); }
+.unit > summary { display: flex; align-items: center; gap: 12px; padding: 10px 0; cursor: pointer; list-style: none; }
+.unit > summary::-webkit-details-marker { display: none; }
+.unit .mthumbs { display: flex; gap: 4px; align-items: flex-end; min-width: 60px; }
+.unit .mthumb { height: 40px; border-radius: 4px; background: var(--gray-weak); border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: var(--text-3); }
+.unit .ubody { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.unit .ulabel { font-weight: 500; }
+.unit .uchips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.unit .udetail { padding: 0 0 12px 72px; }
+.unit .utext .preview { max-height: 260px; overflow: auto; }
 </style>
 </head>
 <body data-density="airy">
@@ -590,7 +600,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "311af19", published: "2026-09-26" };
+  const SIDA = { version: "8417385", published: "2026-09-26" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1504,7 +1514,9 @@ a.btn { text-decoration: none; color: var(--text); }
     if (g.rows.length < 2) return g.rows.map((x) => rowHtml(x, g.level)).join("");
     const name = g.project?.label || lbl(taskById(g.rows[0].task)?.deliverable, "Uppgifter");
     const key = `proj:${g.key}`;
-    return `<div class="proj${isFolded(key) ? " folded" : ""}" ${g.project ? `data-open-project="${esc(g.project.id)}" title="Öppna projektet"` : ""}>${foldBtn(key, "projektet")}${custDot(g.customer?.color)}`
+    // En leverans (B-274) har ännu ingen egen sida (etapp 5): länken går till åtagandet för den första raden.
+    const pid = g.project?.kind === "delivery" ? taskById(g.rows[0].task)?.commitment : g.project?.id;
+    return `<div class="proj${isFolded(key) ? " folded" : ""}" ${g.project ? `data-open-project="${esc(pid ?? "")}" title="Öppna projektet"` : ""}>${foldBtn(key, "projektet")}${custDot(g.customer?.color)}`
       + `<span>${g.customer ? `${esc(lbl(g.customer))} · ` : ""}${esc(name)}</span><span class="n">${g.rows.length} saker</span></div>`
       + (isFolded(key) ? "" : g.rows.map((x) => rowHtml(x, g.level).replace('<div class="row', '<div class="row inproj')).join(""));
   }
@@ -2273,23 +2285,50 @@ a.btn { text-decoration: none; color: var(--text); }
    */
   function roundsHtml(t) {
     const rounds = asArr(t?.material?.rounds);
-    if (!rounds.length) return "";
-    const rl = (k) => k === "delivery" ? "leverans 1" : `revision ${String(k).slice(3)}`;
+    if (!rounds.some((r) => asArr(r.units).length)) return "";
+    // Daniel P 2026-09-26: "Väldigt rörigt" / "Det där ser bättre ut". En rad
+    // per enhet: bilderna som gäller, var den ligger ute och status i ord.
+    // Utfälld: texten, annonserna med kampanj och status, och det ersatta.
+    const outLabel = (o) => (o.channel === "meta" ? "Meta" : o.channel || "");
+    const statusWord = (x) => { const v = String(x || "").toLowerCase(); return v === "active" ? "aktiv" : v === "paused" ? "pausad" : v === "archived" ? "arkiverad" : v; };
+    const chip = (text, kind) => `<span class="chip ${kind}">${esc(text)}</span>`;
+    const box = (p) => { const r = /9:16/.test(p.part) ? "23px" : "32px";
+      return `<span class="mthumb" style="width:${r}" title="${esc(p.name || p.part)}">${esc((p.part || "").replace(/^Bild /, ""))}</span>`; };
     const unit = (u) => {
-      const text = !u.text ? "" : `Text (version ${u.text.version}, ${u.text.approved ? "godkänd" : "inte godkänd"}${u.text.reused_from ? `, oförändrad från ${rl(u.text.reused_from)}` : u.text.changed ? "" : ", oförändrad"})`;
-      const files = asArr(u.parts).filter((p) => p.kind !== "text").map((p) => `${esc(p.part)}${p.superseded ? " (ersatt i rundan)" : p.new ? " (ny)" : p.reused_from ? ` (från ${rl(p.reused_from)})` : ""}`).join(" · ");
-      const out = asArr(u.out_as).map((o) => esc([o.campaign, o.name].filter(Boolean).join(" · ") || o.id)).join(", ");
-      const line = [text ? esc(text) : "", files, out ? `Ute som: ${out}` : "", asArr(u.missing).length ? `saknar ${esc(u.missing.join(", "))}` : ""].filter(Boolean).join(" · ");
-      return `<div class="need"><span class="no">${ic("layers")}</span><span class="t">${esc(u.label)} <span class="meta">· ${esc(u.status)}</span>`
-        + `${line ? `<br><span class="meta">${line}</span>` : ""}</span></div>`;
+      const parts = asArr(u.parts), now = parts.filter((p) => !p.superseded && p.kind !== "text"), old = parts.filter((p) => p.superseded);
+      const outs = asArr(u.out_as), sys = [...new Set(outs.map(outLabel))].filter(Boolean);
+      const statuses = [...new Set(outs.map((o) => statusWord(o.status)).filter(Boolean))];
+      const chips = [...statuses.map((w) => chip(w, w === "aktiv" ? "green" : "amber")),
+        ...(u.text && !u.text.approved ? [chip("text ej godkänd", "amber")] : []),
+        ...asArr(u.missing).filter((m) => !/^Text/.test(m)).map((m) => chip(`saknar ${m}`, "amber"))].join(" ");
+      const sub = outs.length ? `Ute i ${sys.join(", ")} · ${outs.length} ${outs.length === 1 ? "annons" : "annonser"}` : esc(u.status || "");
+      const detail = `<div class="udetail">`
+        + (u.text ? `<div class="utext" data-utext="${esc(u.key)}"><span class="meta">Hämtar texten…</span></div>` : "")
+        + (outs.length ? `<div class="meta" style="margin-top:6px">${outs.map((o) => `${esc(o.name || o.id)} · ${esc(o.campaign || "")}${o.status ? ` · ${esc(statusWord(o.status))}` : ""}`).join("<br>")}</div>` : "")
+        + (now.length ? `<div class="meta" style="margin-top:6px">${now.map((p) => `${esc(p.part)}: ${esc(p.name || "")}`).join("<br>")}</div>` : "")
+        + (old.length ? `<div class="meta" style="margin-top:6px">Ersatt: ${old.map((p) => esc(p.name || p.part)).join(", ")}</div>` : "")
+        + `</div>`;
+      return `<details class="unit"${u.text ? ` data-unit="${esc(u.key)}"` : ""}><summary><span class="mthumbs">${now.map(box).join("")}</span>`
+        + `<span class="ubody"><span class="ulabel">${esc(u.label.replace(/^.*? — /, ""))}</span><span class="meta">${sub}</span></span>`
+        + `<span class="uchips">${chips}</span></summary>${detail}</details>`;
     };
-    return rounds.map((r) => `<h3 style="margin:8px 0 6px;font-size:13px;font-weight:500">${esc(r.label)}${r.date ? ` · ${esc(short(r.date))}` : ""} · ${esc(r.status)}`
-      + `${r.reason ? ` <span class="meta">· «${esc(r.reason)}»</span>` : ""}</h3>`
-      + asArr(r.units).map(unit).join("")
-      + (asArr(r.ungrouped).length ? `<div class="meta">Ej grupperat: ${r.ungrouped.map((f) => esc(f.type ? `${f.name} (${f.type})` : f.name)).join(", ")}</div>` : "")
-      + (!asArr(r.units).length && !asArr(r.ungrouped).length ? `<div class="meta">Inget material i rundan än.</div>` : "")).join("")
-      + `<h3 style="margin:12px 0 6px;font-size:13px;font-weight:500">Alla filer och texter</h3>`;
+    const many = rounds.filter((r) => asArr(r.units).length).length > 1;
+    return rounds.filter((r) => asArr(r.units).length || asArr(r.ungrouped).length).map((r) =>
+      (many ? `<h3 style="margin:8px 0 6px;font-size:13px;font-weight:500">${esc(r.label)}${r.date ? ` · ${esc(short(r.date))}` : ""} · ${esc(r.status)}`
+        + `${r.reason ? ` <span class="meta">· «${esc(r.reason)}»</span>` : ""}</h3>` : "")
+      + asArr(r.units).map(unit).join("")).join("");
   }
+  /** Texten under en utfälld enhet, hämtad första gången den fälls ut. */
+  document.addEventListener("toggle", async (e) => {
+    const d = e.target;
+    if (!(d instanceof HTMLDetailsElement) || !d.open || !d.dataset.unit || d.dataset.loaded) return;
+    d.dataset.loaded = "1";
+    const box = d.querySelector("[data-utext]");
+    try {
+      const c = await call("content_get", { id: d.dataset.unit });
+      if (box) box.innerHTML = `<div class="preview" style="white-space:pre-wrap">${esc(c?.markdown || "(tom)")}</div>`;
+    } catch (err) { if (box) box.innerHTML = `<span class="meta">Texten kunde inte hämtas.</span>`; delete d.dataset.loaded; }
+  }, true);
   function materialCard(t, s, first = false) {
     const from = (id) => !id ? "lagd på uppgiften"
       : s && id === s.step ? "från det här steget" : `från «${esc(stepOf(t, id)?.label || "ett steg som inte finns i metoden längre")}»`;
@@ -2297,21 +2336,26 @@ a.btn { text-decoration: none; color: var(--text); }
     const producers = new Set(needed.flatMap((n) => n.from.map((x) => x.step)));
     const neededLabels = new Set(needed.map((n) => n.need.label));
     const files = asArr(t.outputs), link = (x) => /^https?:\/\//i.test(x);
+    // Filerna som står på en enhet visas där, inte en gång till.
+    const unitParts = asArr(t?.material?.rounds).flatMap((r) => asArr(r.units).flatMap((u) => asArr(u.parts)));
+    const unitRefs = new Set(unitParts.filter((p) => !p.superseded && p.kind === "file").map((p) => p.ref));
+    const oldRefs = new Set(unitParts.filter((p) => p.superseded).map((p) => p.ref));
     const rows = [
       ...files.map((o) => {
         const ext = o.external ? String(o.ref).replace(/^extern:/, "") : "";
         const name = o.file || o.type;
         const act = !o.external ? `<button class="btn sm" data-fget="${esc(o.ref)}" data-fname="${esc(name)}">Ladda ned</button>`
           : link(ext) ? `<a class="btn sm" href="${esc(ext)}" target="_blank" rel="noopener">Öppna länken</a>` : "";
-        return { at: o.at, step: o.step, type: o.type, needed: producers.has(o.step) || neededLabels.has(o.type), html: `<div class="need"><span class="no">${FILE_IC}</span><span class="t">${esc(name)} <span class="meta">· `
+        return { at: o.at, step: o.step, type: o.type, group: unitRefs.has(o.ref) ? "" : oldRefs.has(o.ref) ? "Ersatta bilder" : "Filer", inUnit: unitRefs.has(o.ref), needed: producers.has(o.step) || neededLabels.has(o.type), html: `<div class="need"><span class="no">${FILE_IC}</span><span class="t">${esc(name)} <span class="meta">· `
           + `${o.file ? `${esc(o.type)} · ` : ""}${o.external ? (link(ext) ? "finns utanför filbanken · " : `finns utanför filbanken: ${esc(ext)} · `) : ""}${from(o.step)} · ${short(o.at)}</span></span>${act}</div>` };
       }),
       ...t.steps.flatMap((x) => asArr(x.drafts).map((dr) => ({ at: dr.at, step: x.step, needed: producers.has(x.step),
+        group: /anteckning/i.test(dr.kind || "") ? "Anteckningar" : /lista|plan/i.test(dr.kind || "") ? "Planer och listor" : "Texter",
         html: `<div class="need"><span class="no">${ic("layers")}</span><span class="t">${esc(dr.name || "Text utan namn")} <span class="meta">· text${dr.kind ? ` (${esc(dr.kind)})` : ""} · `
           + `${from(x.step)} · sparad ${short(dr.at)}${dr.by_label ? ` av ${esc(dr.by_label)}` : ""}</span></span>`
           + `<button class="btn sm" data-cget="${esc(dr.id)}" data-cname="${esc(dr.name || "Texten")}">Läs</button></div>` }))),
     ].sort((a, b) => (s ? (b.step === s.step) - (a.step === s.step) : 0) || String(b.at).localeCompare(String(a.at)));
-    const top = rows.filter((r) => r.needed), rest = rows.filter((r) => !r.needed);
+    const top = rows.filter((r) => r.needed), rest = rows.filter((r) => !r.needed && !r.inUnit);
     // Det steget behöver men som ingen lämnat än: sägs, med vem som lämnar det.
     const missing = needed.filter((n) => !top.some((r) => r.type === n.need.label || (r.step && n.from.some((x) => x.step === r.step))));
     const neededHtml = !needed.length ? "" : `<div class="needed"><h3 style="margin:0 0 6px;font-size:13px;font-weight:500">Det här steget bygger på</h3>`
@@ -2319,9 +2363,17 @@ a.btn { text-decoration: none; color: var(--text); }
       + missing.map((n) => `<div class="meta">${esc(n.need.label)}: inte lämnat än${n.from.length ? ` — kommer från «${n.from.map((x) => esc(x.label)).join("», «")}»` : ""}.</div>`).join("")
       + `</div>`;
     // Högst upp i uppgiften och steget (Daniel P 2026-09-25: *"Texter/material i projektet borde synas högst upp"*).
-    return `<div class="card section" style="${first ? "margin-bottom:16px" : "margin-top:16px"}"><h2>Material i uppgiften${!s ? ` <span class="meta">· ${esc(taskName(t))}</span>` : ""}</h2>` + mirrorsHtml(t) + roundsHtml(t) + neededHtml
-      + (rest.length ? (neededHtml ? `<h3 style="margin:0 0 6px;font-size:13px;font-weight:500">Övrigt material</h3>` : "") + rest.map((r) => r.html).join("")
+    const groupedHtml = roundsHtml(t), grouped = !!groupedHtml;
+    return `<div class="card section" style="${first ? "margin-bottom:16px" : "margin-top:16px"}"><h2>Material i uppgiften${!s ? ` <span class="meta">· ${esc(taskName(t))}</span>` : ""}</h2>` + mirrorsHtml(t) + groupedHtml + neededHtml
+      + (rest.length ? (grouped
+          ? `<details style="margin-top:10px"><summary class="meta" style="cursor:pointer">Anteckningar och övriga filer (${rest.length})</summary>`
+            + ["Anteckningar", "Planer och listor", "Texter", "Filer", "Ersatta bilder"].map((g) => {
+              const rs = rest.filter((r) => (r.group || "Filer") === g);
+              return rs.length ? `<h3 style="margin:10px 0 4px;font-size:12px;font-weight:500">${g} (${rs.length})</h3>` + rs.map((r) => r.html).join("") : "";
+            }).join("")
+          : (neededHtml ? `<h3 style="margin:0 0 6px;font-size:13px;font-weight:500">Övrigt material</h3>` : "") + rest.map((r) => r.html).join(""))
         + (files.length >= MATERIAL_MAX ? `<p class="meta">Här står de ${MATERIAL_MAX} senaste filerna. Alla finns under Filer, hos ${esc(lbl(t.customer, "kunden"))}.</p>` : "")
+        + (grouped ? `</details>` : "")
         : !top.length ? `<div class="meta">Inget material än. Det stegen lämnar hamnar här: filer som läggs in på uppgiften och texter som sparas till ett steg.</div>` : "")
       + `</div>`;
   }
