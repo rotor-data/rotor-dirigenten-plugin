@@ -552,6 +552,138 @@ a.btn { text-decoration: none; color: var(--text); }
 .unit .uchips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .unit .udetail { padding: 0 0 12px 72px; }
 .unit .utext .preview { max-height: 260px; overflow: auto; }
+/* ── Leveransen (B-274, etapp 5): skissen Daniel P godkände 2026-09-26 ── */
+.crumbs a { color: var(--text-2); text-decoration: none; white-space: nowrap; }
+.crumbs a:hover { color: var(--text); text-decoration: underline; }
+.lv-sec { display: flex; align-items: baseline; gap: 10px; margin: var(--s6) 0 var(--s2); flex-wrap: wrap; }
+.lv-sec h2 { font-size: var(--fs-section); font-weight: 700; margin: 0; }
+.lv-sec .n { color: var(--text-2); font-size: var(--fs-meta); }
+.lv-sub { color: var(--text-2); margin: -8px 0 var(--s4); }
+.lv-card { margin-bottom: var(--s4); }
+.lv-card > .head h2 { font-size: var(--fs-section); margin: 0; }
+.lv-card > .head a { color: inherit; text-decoration: none; }
+.lv-card > .head a:hover { text-decoration: underline; }
+.lv-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.lv-fact { padding: var(--s3) var(--s4); border-right: 1px solid var(--line); min-width: 0; }
+.lv-fact:last-child { border-right: 0; }
+.lv-fact .k { font-size: var(--fs-label); font-weight: 600; color: var(--text-2); }
+.lv-fact .v { font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
+.lv-fact .v.late { color: var(--red); }
+.lv-fact .meta { overflow-wrap: anywhere; }
+.lv-tl { padding: 22px 8px 4px; border-top: 1px solid var(--line); }
+.lv-track { position: relative; height: 36px; margin: 0 16px; }
+.lv-bar { position: absolute; left: 0; right: 0; top: 15px; height: 4px; border-radius: 4px; background: var(--line); }
+.lv-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--accent); opacity: .45; }
+.lv-mk { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; }
+.lv-mk .d { font-size: 11.5px; color: var(--text-2); white-space: nowrap; margin-top: 2px; font-weight: 600; }
+.lv-today { position: absolute; top: 6px; width: 2px; height: 22px; background: var(--text-3); transform: translateX(-50%); border-radius: 2px; }
+.lv-today span { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--text-3); white-space: nowrap; }
+.lv-ends { font-size: 11.5px; color: var(--text-3); margin: 14px 16px 0; }
+.lv-legend { display: flex; flex-direction: column; gap: 6px; padding: 10px var(--s4) 12px; border-top: 1px solid var(--line); }
+.lv-li { display: grid; grid-template-columns: 18px 140px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 13px; }
+.lv-li .k { color: var(--text-2); font-size: var(--fs-meta); }
+.lv-li .v { min-width: 0; overflow-wrap: anywhere; }
+.lv-now { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
+.lv-next { fill: var(--bg); stroke: var(--accent); stroke-width: 2; }
+.lv-end { fill: var(--text); }
+.lv-likelymk { fill: var(--bg); stroke: var(--red); stroke-width: 2; stroke-dasharray: 3 2; }
+.lv-tl.passed .lv-endmk .lv-end { fill: var(--red); }
+.lv-tl.passed .lv-endmk .d, .lv-likely .d, .lv-legend b.late { color: var(--red); }
+.lv-tl.out .lv-endmk .lv-end { fill: var(--green); }
+.lv-tl.out .lv-endmk .d { color: var(--green); }
+.lv-sum { display: flex; gap: 10px; align-items: center; padding: 10px var(--s4); color: var(--text-2); font-size: var(--fs-meta); border: 0; border-top: 1px solid var(--line); background: none; width: 100%; text-align: left; cursor: pointer; }
+.lv-sum:hover { color: var(--text); }
+.lv-sum.first { border-top: 0; }
+.lv-fold { display: inline-flex; width: 16px; justify-content: center; color: var(--text-3); transition: transform .15s; flex: none; }
+.lv-fold.open { transform: rotate(90deg); }
+.lv-trow { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px var(--s4); border: 0; border-top: 1px solid var(--line); background: none; width: 100%; text-align: left; cursor: pointer; color: var(--text); }
+.lv-trow:hover { background: var(--bg-hover); }
+.lv-trow.first { border-top: 0; }
+.lv-trow .t { font-weight: 600; }
+.lv-trow .t .ctx { font-weight: 400; color: var(--text-2); }
+.lv-trow .s { color: var(--text-2); font-size: var(--fs-meta); display: block; overflow-wrap: anywhere; }
+.lv-trow .end { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.lv-nest { padding: 4px var(--s4) var(--s3) calc(var(--s4) + 28px); border-top: 1px solid var(--line); background: var(--bg-subtle); }
+.lv-edge { font-size: var(--fs-meta); color: var(--text-2); padding: 6px 0; overflow-wrap: anywhere; }
+.lv-dots { display: inline-flex; gap: 3px; align-items: center; }
+.lv-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+.lv-dots i.done { background: var(--green); } .lv-dots i.now { background: var(--accent); box-shadow: 0 0 0 2px var(--accent-weak); }
+.lv-steps { list-style: none; margin: 0; padding: 0; }
+.lv-step { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding: 8px 0; border-top: 1px dashed var(--line); }
+.lv-step:first-child { border-top: 0; }
+.lv-step .mark { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line-strong); }
+.lv-step.done .mark { background: var(--green); border-color: var(--green); }
+.lv-step.now .mark { border-color: var(--accent); background: var(--accent-weak); box-shadow: 0 0 0 3px var(--accent-weak); }
+.lv-step.hit { background: var(--bg-selected); border-radius: 8px; box-shadow: 0 0 0 6px var(--bg-selected); }
+.lv-step .nm a { color: var(--text); font-weight: 500; text-decoration: none; }
+.lv-step .nm a:hover { text-decoration: underline; }
+.lv-step .sub { color: var(--text-2); font-size: var(--fs-meta); display: block; }
+.lv-step .right { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.lv-step .acts { grid-column: 2 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.lv-round { margin-top: 6px; }
+.lv-round-h { display: flex; gap: 8px; align-items: center; padding: 8px 0 4px; font-weight: 600; flex-wrap: wrap; }
+.lv-round-h .meta { font-weight: 400; }
+.row .acts .btn { flex: none; }
+.lv-acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.lv-th { display: inline-grid; place-items: center; border-radius: 5px; overflow: hidden; border: 1px solid var(--line); background: var(--gray-weak); flex: none; font-size: 9.5px; color: var(--text-3); width: 36px; height: 45px; text-decoration: none; }
+.lv-th.tall { width: 27px; height: 48px; } .lv-th.sq { width: 42px; height: 42px; }
+.lv-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lv-th .i { width: 14px; height: 14px; }
+.lv-th.old { opacity: .6; }
+.lv-th.mid { width: 72px; height: 90px; } .lv-th.mid.tall { width: 51px; height: 90px; } .lv-th.mid.sq { width: 84px; height: 84px; }
+.lv-th.big { width: 128px; height: 160px; } .lv-th.big.tall { width: 90px; height: 160px; } .lv-th.big.sq { width: 150px; height: 150px; }
+.lv-thumbs { display: flex; gap: 6px; align-items: flex-end; flex: none; flex-wrap: wrap; }
+.lv-unit { display: grid; grid-template-columns: 18px auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px var(--s4); border: 0; border-top: 1px solid var(--line); background: none; width: 100%; text-align: left; cursor: pointer; color: var(--text); }
+.lv-unit:hover { background: var(--bg-hover); }
+.lv-unit .t { font-weight: 600; overflow-wrap: anywhere; }
+.lv-unit .txt { display: flex; flex-direction: column; min-width: 0; }
+.lv-unit .end { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.lv-udetail { padding: var(--s3) var(--s4) var(--s4) calc(var(--s4) + 30px); border-top: 1px solid var(--line); background: var(--bg-subtle); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s5); }
+.lv-text { white-space: pre-wrap; font-size: 13px; line-height: 1.55; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 12px; max-height: 280px; overflow: auto; overflow-wrap: anywhere; }
+.lv-kv { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 6px 12px; font-size: 13px; align-items: start; }
+.lv-kv .k { color: var(--text-2); font-size: var(--fs-meta); }
+.lv-part { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px dashed var(--line); }
+.lv-part:first-child { border-top: 0; }
+.lv-part .ptxt { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.lv-hist { list-style: none; margin: 0; padding: 0; }
+.lv-hist li { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; padding: 7px 0; border-top: 1px dashed var(--line); font-size: 13px; }
+.lv-hist li:first-child { border-top: 0; }
+.lv-form { display: flex; flex-direction: column; gap: 12px; }
+.lv-form label.f { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-meta); color: var(--text-2); font-weight: 600; }
+.lv-form textarea { min-height: 60px; }
+.lv-pick { border: 1px solid var(--line); border-radius: var(--r-sm); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.lv-pick .skips { display: flex; flex-direction: column; gap: 6px; }
+.lv-pick .skips label { display: flex; gap: 8px; align-items: center; font-size: 13px; flex-wrap: wrap; }
+.lv-previewbox { border: 1px solid var(--accent); background: var(--bg-selected); border-radius: var(--r-sm); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.lv-previewbox ul { margin: 0; padding-left: 18px; }
+.lv-imgs { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin: 6px 0; }
+.lv-imgs figure { margin: 0; display: flex; flex-direction: column; gap: 4px; align-items: center; max-width: 160px; }
+.lv-imgs figcaption { font-size: 11.5px; color: var(--text-2); text-align: center; overflow-wrap: anywhere; }
+.lv-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s5); padding: var(--s4); }
+.lv-hero .lv-th { width: 200px; height: 250px; }
+.lv-fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px; padding: var(--s3) var(--s4) var(--s4); }
+.lv-fcard { display: flex; flex-direction: column; gap: 4px; min-width: 0; color: var(--text); text-decoration: none; }
+.lv-fcard .lv-th { width: 100%; height: 120px; }
+.lv-fcard .t { font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); }
+.lv-fcard.cur .lv-th { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-weak); }
+.lv-method a, .lv-method button { font-weight: 500; }
+@media (max-width: 760px) {
+  .lv-facts { grid-template-columns: 1fr 1fr; }
+  .lv-fact:nth-child(2) { border-right: 0; }
+  .lv-fact:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .lv-li { grid-template-columns: 18px minmax(0, 1fr); }
+  .lv-li .k, .lv-li .v { grid-column: 2; }
+  .lv-trow { grid-template-columns: 18px minmax(0, 1fr); }
+  .lv-trow .end { grid-column: 2; justify-content: flex-start; }
+  .lv-unit { grid-template-columns: 18px auto minmax(0, 1fr); }
+  .lv-unit .end { grid-column: 3; justify-content: flex-start; }
+  .lv-udetail { grid-template-columns: minmax(0, 1fr); padding-left: var(--s4); }
+  .lv-nest { padding-left: var(--s4); }
+  .lv-hero { grid-template-columns: minmax(0, 1fr); }
+  .lv-hist li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .lv-step { grid-template-columns: 18px minmax(0, 1fr); }
+  .lv-step .right { grid-column: 2; justify-content: flex-start; }
+}
 </style>
 </head>
 <body data-density="airy">
@@ -578,6 +710,7 @@ a.btn { text-decoration: none; color: var(--text); }
       </div>
     </header>
     <div class="warnline" id="stale" role="alert" hidden></div>
+    <div class="warnline" id="plugin-update" role="status" hidden></div>
     <main id="main"></main>
   </div>
   <aside class="panel" id="panel" aria-label="Claude">
@@ -587,7 +720,7 @@ a.btn { text-decoration: none; color: var(--text); }
     <div class="pactivity" id="pactivity"></div>
     <div class="composer">
       <textarea id="ask" placeholder="Fråga eller be om något här — eller släpp en fil."></textarea>
-      <div class="opts"><span>Svarar i vyn</span><button class="btn quiet sm" id="to-chat" type="button" title="Samtalet och frågan i rutan, som en prompt till vanliga Claude-chatten">Kopiera till chatten ↗</button>
+      <div class="opts"><span>Svarar i vyn</span><button class="btn quiet sm" id="to-chat" type="button" title="Samtalet och frågan i rutan, som en prompt till vanliga Claude-chatten">Kopiera till Claude ↗</button>
         <div class="right"><button class="btn primary sm" id="send" type="button">Skicka</button></div></div>
     </div>
   </aside>
@@ -600,7 +733,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "8417385", published: "2026-09-26" };
+  const SIDA = { version: "8bff62c", published: "2026-09-26" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -657,7 +790,7 @@ a.btn { text-decoration: none; color: var(--text); }
     return { mcp: null, web: false };
   }
   const noClaude = () => WEB.on
-    ? "Claude i panelen finns bara när vyn är öppen i claude.ai. Kopiera till chatten tar med det till vanliga Claude-chatten."
+    ? "Claude i panelen finns bara när vyn är öppen i claude.ai. Kopiera till Claude tar med det till vanliga Claude-chatten."
     : "Claude är inte tillgänglig i den här vyn.";
   const S = { plan: null, agenda: null, meetings: {}, lib: null, error: null, fetchedAt: null, at: {} };
   const data = (r) => { const p = r && (r.payload ?? r); if (p?.structuredContent) return p.structuredContent;
@@ -1275,7 +1408,8 @@ a.btn { text-decoration: none; color: var(--text); }
     const siblings = tasks().filter((x) => x.period === t.period && (x.deliverable_type ?? x.deliverable?.id) === (t.deliverable_type ?? t.deliverable?.id)).length;
     return `${d}, ${periodName(t.period)}${siblings > 1 && t.ordinal ? ` nr ${t.ordinal}` : ""}`;
   };
-  function nextStep(t) { return t.steps.find((s) => !s.done && !s.external) ?? null; }
+  // Ett antaget godkännande (etapp 5) är inte det som står i tur.
+  function nextStep(t) { return t.steps.find((s) => !s.done && !s.external && !s.assumed_approved) ?? null; }
   /**
    * Arbetet, inte steget (Daniel P 2026-09-25: "rubriker som är mer själva
    * arbetet och inte steget först. Steget ska stå med men mer som en smart
@@ -1346,7 +1480,7 @@ a.btn { text-decoration: none; color: var(--text); }
       try {
         const { screen, obj, filter, planMode, horizon, tlFrom, tlWeeks, inTab, metTab, weekFrom } = state;
         snapStore().setItem(SNAP_KEY, JSON.stringify({ at: S.fetchedAt ? new Date(S.fetchedAt).getTime() : Date.now(),
-          state: { screen, obj, filter, planMode, horizon, tlFrom, tlWeeks, inTab, metTab, weekFrom },
+          state: { screen, obj, filter, planMode, horizon, tlFrom, tlWeeks, inTab, metTab, weekFrom }, lvOpen: LV.open,
           data: S.plan ? { agenda: S.agenda, plan: S.plan, meetings: S.meetings, queue: S.queue ?? null, serverVersion: S.serverVersion ?? null,
             settings: S.settings ?? null, at: S.at } : null }));
       } catch { /* full eller avstängd lagring: då hämtas allt som förut */ }
@@ -1357,6 +1491,7 @@ a.btn { text-decoration: none; color: var(--text); }
       const snap = JSON.parse(snapStore().getItem(SNAP_KEY) || sessionStorage.getItem(SNAP_KEY) || "null");
       if (!snap || Date.now() - snap.at > SNAP_MAX_MS) return false;
       Object.assign(state, snap.state || {});
+      Object.assign(LV.open, snap.lvOpen || {});
       if (snap.data?.plan) {
         S.agenda = snap.data.agenda; S.plan = snap.data.plan; S.meetings = snap.data.meetings || {};
         S.queue = snap.data.queue; S.serverVersion = snap.data.serverVersion; S.fetchedAt = new Date(snap.at);
@@ -1377,6 +1512,8 @@ a.btn { text-decoration: none; color: var(--text); }
     const m = $("#main");
     keepTop = m.scrollTop;
     const fn0 = state.obj ? OBJ[state.obj.type] : SCREENS[state.screen];
+    // Brödsmulan sätts av sidan när den ritas (Kund › Leverans › Uppgift › Steg); annars räknas den ur läget.
+    CRUMBS = null;
     /* Innan svaret kommit, och om det inte kom, säger ytan det — den ritar
        inte en tom lista som ser ut som "inget att göra". */
     const fn = () => {
@@ -1395,6 +1532,10 @@ a.btn { text-decoration: none; color: var(--text); }
     renderPanel();
     // Den riktiga tiden för hämtningen — prototypens klocka stod på 09:42.
     const f = $("#fresh"); if (f) { f.textContent = S.fetchedAt ? `hämtat ${String(S.fetchedAt.getHours()).padStart(2, "0")}:${String(S.fetchedAt.getMinutes()).padStart(2, "0")}` : ""; f.title = `Sidan v${SIDA.version} · ${SIDA.published}`; }
+    // Pluginen (etapp 5): servern säger när personens plugin är äldre än den senaste.
+    const pu = $("#plugin-update"), up = S.agenda?.plugin_update;
+    if (pu) { pu.hidden = !up;
+      pu.innerHTML = up ? `<i></i><b>Uppdatering finns</b> · du har ${esc(up.have)}, senaste är ${esc(up.latest)}. ${esc(up.path)}. ${esc(up.tip)}` : ""; }
     const st = $("#stale");
     if (st) {
       const v = S.serverVersion, gammal = !!v && v !== SIDA.version;
@@ -1403,16 +1544,29 @@ a.btn { text-decoration: none; color: var(--text); }
     }
     // Samma yta eller objekt: rullningen står kvar. Bara ett byte börjar överst.
     const key = state.obj ? `${state.obj.type}:${state.obj.id || state.obj.key || `${state.obj.task}|${state.obj.step}`}` : state.screen;
-    if (key !== lastKey) m.scrollTop = 0; else m.scrollTop = keepTop;
+    if (key !== lastKey) { if (!hashNav) m.scrollTop = 0; } else m.scrollTop = keepTop;
     lastKey = key;
+    syncHash();
   }
   let lastKey = null, keepTop = 0;
+  /**
+   * Brödsmulan på varje sida (etapp 5): Idag › Kund › Leverans › Uppgift ›
+   * Steg, där varje led är en adress. Sidan sätter den när den ritas; för de
+   * andra sidorna räknas den ur läget här.
+   */
+  function objCrumbs() {
+    const o = state.obj;
+    if (!o) return [[SCREEN_NAME[state.screen] || "Idag", null]];
+    if (o.type === "step") { const t = taskById(o.task), s = stepOf(t, o.step), d = t && deliveryOfTask(t);
+      return d ? pathCrumbs(d, t, s) : [screenCrumb(), [o.title || "Steget", null]]; }
+    if (o.type === "files") { const f = o.file && asArr(FB.files.get(o.id)?.list).find((x) => x.sha256 === o.file);
+      return [["Filer", H.screen("filer")], [custLabelOf(o.id) || o.title || "Kunden", o.file ? H.files(o.id) : null], ...(o.file ? [[f?.name || "Filen", null]] : [])]; }
+    return [screenCrumb(), [o.title || "", null]];
+  }
   function renderCrumbs() {
-    const names = { idag: "Idag", in: "In", planen: "Planen", metoder: "Metoder", filer: "Filer", installningar: "Inställningar" };
-    const c = $("#crumbs");
-    c.innerHTML = state.obj
-      ? `<button data-back="1">${names[state.screen]}</button><span class="crumb-sep">${ic("chev")}</span><b>${esc(state.obj.title || "")}</b>`
-      : `<b>${names[state.screen]}</b>`;
+    const parts = CRUMBS || objCrumbs(), c = $("#crumbs");
+    c.innerHTML = parts.map((p, i) => (i ? `<span class="crumb-sep">${ic("chev")}</span>` : "")
+      + (i === parts.length - 1 || !p[1] ? `<b${i === parts.length - 1 ? ' aria-current="page"' : ""}>${esc(p[0])}</b>` : `<a href="${esc(p[1])}">${esc(p[0])}</a>`)).join("");
   }
 
   const row = ({ kind, dot, title, cust, why, when, late, act, attrs = "", done }) =>
@@ -1441,7 +1595,7 @@ a.btn { text-decoration: none; color: var(--text); }
       return row({ kind: kindMark(k), dot: custDot(x.customer?.color), title: `${esc(workTitle(t, x))}${addonChip(t)}${lvlChip}${chips}`, cust: lbl(x.customer),
         why: workWhy(x, t), when: short(x.due), late: x.due < TODAY,
         // Bocken markerar klart med ett klick; knappen bredvid gör steget.
-        act: tickBtn(x.task, x.step, "iconbtn tick") + (k === "llm" ? `<button class="btn sm ai" data-copy-step="${esc(x.task)}|${esc(x.step)}" title="Stegets prompt till vanliga Claude-chatten">${SP} Kopiera till chatten</button>`
+        act: tickBtn(x.task, x.step, "iconbtn tick") + (k === "llm" ? `<button class="btn sm ai" data-copy-step="${esc(x.task)}|${esc(x.step)}" title="Stegets prompt till vanliga Claude-chatten">${SP} Kopiera till Claude</button>`
           // Det som bara är att köra får en Utför-knapp (Daniel P 2026-09-25). Dirigenten visar först vad som ändras.
           : runnableNow(x, k) ? `<button class="btn sm primary" data-run-step="${esc(x.task)}|${esc(x.step)}" title="Kör steget. Du ser först vad som ändras, och inget ändras förrän du bekräftar.">Utför</button>`
           : `<button class="btn sm primary" data-step="${esc(x.task)}|${esc(x.step)}">${k === "code" ? "Öppna" : "Gör"}</button>`),
@@ -1514,9 +1668,10 @@ a.btn { text-decoration: none; color: var(--text); }
     if (g.rows.length < 2) return g.rows.map((x) => rowHtml(x, g.level)).join("");
     const name = g.project?.label || lbl(taskById(g.rows[0].task)?.deliverable, "Uppgifter");
     const key = `proj:${g.key}`;
-    // En leverans (B-274) har ännu ingen egen sida (etapp 5): länken går till åtagandet för den första raden.
-    const pid = g.project?.kind === "delivery" ? taskById(g.rows[0].task)?.commitment : g.project?.id;
-    return `<div class="proj${isFolded(key) ? " folded" : ""}" ${g.project ? `data-open-project="${esc(pid ?? "")}" title="Öppna projektet"` : ""}>${foldBtn(key, "projektet")}${custDot(g.customer?.color)}`
+    // En leverans (B-274) har en egen sida sedan etapp 5; ett åtagande öppnas som förut.
+    const link = g.project?.kind === "delivery" ? `data-lv-href="${H.delivery(g.project.id)}" title="Öppna leveransen"`
+      : g.project ? `data-open-project="${esc(g.project.id ?? "")}" title="Öppna projektet"` : "";
+    return `<div class="proj${isFolded(key) ? " folded" : ""}" ${link}>${foldBtn(key, "projektet")}${custDot(g.customer?.color)}`
       + `<span>${g.customer ? `${esc(lbl(g.customer))} · ` : ""}${esc(name)}</span><span class="n">${g.rows.length} saker</span></div>`
       + (isFolded(key) ? "" : g.rows.map((x) => rowHtml(x, g.level).replace('<div class="row', '<div class="row inproj')).join(""));
   }
@@ -1646,6 +1801,8 @@ a.btn { text-decoration: none; color: var(--text); }
       const hot = agenda().filter((x) => x.level === "hot" && x.kind !== "colleague").length;
       return `<div class="pagehead"><h1>Idag</h1><span class="sub">${wday(TODAY)}${hot ? ` · <span style="color:var(--red)">${hot} brinner</span>` : ""}</span>`
         + `<div class="actions"><button class="btn" data-customize="1">Anpassa</button></div></div>`
+        // Leveranserna som kort med tidslinje (etapp 5), och under dem listan.
+        + lvIdag() + (realDeliveries().some((x) => !x.closed) ? `<div class="lv-sec"><h2>Att göra nu</h2></div>` : "")
         + `<div class="grid2">${modules().map((k) => MODULES[k] ? `<div class="mod ${MODULES[k].size}">${MODULES[k].html()}</div>` : "").join("")}</div>`;
     },
     in() {
@@ -1688,7 +1845,7 @@ a.btn { text-decoration: none; color: var(--text); }
         + `<div class="tabs" role="tablist">${tabs.map(([k, l, n]) => `<button role="tab" data-mettab="${k}" aria-selected="${state.metTab === k}">${l}${n !== "" ? `<span class="n">${n}</span>` : ""}</button>`).join("")}</div>` + body();
     },
     filer() {
-      if (!FB.customers && !FB.error && !FB.loading) queueMicrotask(loadFileCustomers);
+      if (mcp && !FB.customers && !FB.error && !FB.loading) queueMicrotask(loadFileCustomers);
       return `<div class="pagehead"><h1>Filer</h1><span class="sub">Kundernas filer, i samma mappar som de kom ifrån</span>`
         + `<div class="actions"><input type="search" class="fsearch" data-fq="1" value="${esc(FB.q)}" placeholder="Filtrera: filnamn eller mapp" aria-label="Filtrera filerna">`
         + `<button class="btn quiet" data-freload="1">Hämta igen</button></div></div>`
@@ -2028,6 +2185,7 @@ a.btn { text-decoration: none; color: var(--text); }
   }
   /** Förhandsbilderna till det som syns: 60 per anrop, och vidare där servern stannade (5 MB per svar). */
   async function loadThumbs(refs) {
+    if (!mcp) return;
     const todo = [...new Set(refs)].filter((r) => !FB.thumbs.has(r) && !FB.asked.has(r));
     if (!todo.length) return;
     for (const r of todo) FB.asked.add(r);
@@ -2172,8 +2330,11 @@ a.btn { text-decoration: none; color: var(--text); }
 
   function filesInCustomer() {
     const id = state.obj.id, cur = state.obj.folder || "", parts = cur ? cur.split("/") : [];
-    if (!FB.files.has(id)) queueMicrotask(() => loadCustomerFiles(id));
-    return `<div class="pagehead"><h1>${esc(fileCust(id)?.label || state.obj.title)}</h1>`
+    // Före anslutningen (en adress öppnad direkt) hämtas inget: det görs när planen kommit och sidan ritas om.
+    if (mcp && !FB.files.has(id)) queueMicrotask(() => loadCustomerFiles(id));
+    // En adress direkt till kunden (#/filer/<kund>): kundnamnen hämtas också.
+    if (mcp && !FB.customers && !FB.loading && !FB.error) queueMicrotask(loadFileCustomers);
+    return `<div class="pagehead"><h1>${esc(custLabelOf(id) || state.obj.title || "Kunden")}</h1>`
       + `<div class="actions"><input type="search" class="fsearch" data-fq="1" value="${esc(FB.q)}" placeholder="Filtrera: filnamn eller mapp" aria-label="Filtrera filerna">`
       + `<button class="btn primary" data-fpick="1">${ic("upload")} Ladda upp fil</button><input type="file" id="fpick" hidden multiple data-fupload="1">`
       + `<button class="btn quiet" data-freload="1">Hämta igen</button></div></div>`
@@ -2181,9 +2342,11 @@ a.btn { text-decoration: none; color: var(--text); }
       + parts.map((p, i) => `<span class="crumb-sep">${ic("chev")}</span>${i === parts.length - 1 ? `<b>${esc(p)}</b>` : `<button class="linkbtn" data-ffolder="${esc(parts.slice(0, i + 1).join("/"))}">${esc(p)}</button>`}`).join("")
       + `</nav><div id="flist">${filesBody()}</div>`;
   }
+  /** Kundens namn: filbankens lista, annars planens. */
+  const custLabelOf = (id) => fileCust(id)?.label || customerList().find((c) => c.id === id)?.label || "";
   function customerBody() {
     const id = state.obj.id, e = FB.files.get(id), cur = state.obj.folder || "";
-    const label = fileCust(id)?.label || state.obj.title;
+    const label = custLabelOf(id) || state.obj.title || "kunden";
     if (!e || (e.loading && !e.list)) return `<div class="empty"><b>Hämtar filerna…</b></div>`;
     if (e.error && !e.list) return `<div class="empty"><b>Filerna kunde inte hämtas.</b>${esc(e.error.message || e.error)}<div style="margin-top:12px"><button class="btn" data-freload="1">Försök igen</button></div></div>`;
     const zone = (html) => `<div data-fdrop="${esc(id)}|${esc(cur)}">${html}</div>`;
@@ -2203,7 +2366,9 @@ a.btn { text-decoration: none; color: var(--text); }
     const folders = [...subs].sort((a, b) => a[0].localeCompare(b[0], "sv"));
     if (!folders.length && !here.length)
       return zone(`<div class="empty"><b>Mappen finns inte längre.</b>Filerna kan ha fått nya versioner i en annan mapp.<div style="margin-top:12px"><button class="btn" data-ffolder="">Till alla mappar</button></div></div>`);
-    return warn + `<p class="meta">${cur ? `${plural(here.length + below.length, "fil", "filer")} i mappen och under den` : `${plural(all.length, "fil", "filer")}`}`
+    // Överst (etapp 5): filen adressen pekar på, och filerna per enhet, de som används först.
+    const top = cur ? "" : (state.obj.file ? lvFileHero(id, state.obj.file) : "") + lvFileUnits(id);
+    return warn + top + `<p class="meta">${cur ? `${plural(here.length + below.length, "fil", "filer")} i mappen och under den` : `${plural(all.length, "fil", "filer")}`}`
       + `${folders.length ? ` · ${plural(folders.length, "mapp", "mappar")}` : ""} · släpp en fil här för att lägga den ${cur ? "i mappen" : `hos ${esc(label)}`}</p>`
       + zone((folders.length ? `<div class="card fcards">${folders.map(([n, k]) => folderRow(n, cur ? `${cur}/${n}` : n, k, id)).join("")}</div>` : "")
         + (here.length ? `<div class="card fcards">${fileListing(here)}</div>` : "")) + ext + (cur ? "" : removedListing(e.removed));
@@ -2279,7 +2444,7 @@ a.btn { text-decoration: none; color: var(--text); }
   }
   /**
    * Materialet per runda och leveransenhet (B-273, B-274): leveransen och
-   * varje revision, och under dem enheterna med sina delar — Text, Bild 4:5,
+   * varje revision, och under dem enheterna med sina delar — Text, Bild,
    * PDF, Tryckfil — och vad de blev ute (tasks[].material, räknat på
    * servern). Återanvänt står som återanvänt.
    */
@@ -2288,12 +2453,13 @@ a.btn { text-decoration: none; color: var(--text); }
     if (!rounds.some((r) => asArr(r.units).length)) return "";
     // Daniel P 2026-09-26: "Väldigt rörigt" / "Det där ser bättre ut". En rad
     // per enhet: bilderna som gäller, var den ligger ute och status i ord.
-    // Utfälld: texten, annonserna med kampanj och status, och det ersatta.
-    const outLabel = (o) => (o.channel === "meta" ? "Meta" : o.channel || "");
+    // Utfälld: texten, det som är ute med grupp och status, och det ersatta.
+    // Systemets namn kommer ur spegeln eller kanalen, aldrig ur koden (etapp 5).
+    const outLabel = (o) => systemName(deliveryOfTask(t), o.channel);
     const statusWord = (x) => { const v = String(x || "").toLowerCase(); return v === "active" ? "aktiv" : v === "paused" ? "pausad" : v === "archived" ? "arkiverad" : v; };
     const chip = (text, kind) => `<span class="chip ${kind}">${esc(text)}</span>`;
-    const box = (p) => { const r = /9:16/.test(p.part) ? "23px" : "32px";
-      return `<span class="mthumb" style="width:${r}" title="${esc(p.name || p.part)}">${esc((p.part || "").replace(/^Bild /, ""))}</span>`; };
+    // Miniatyrerna (etapp 5): förhandsbilden när den finns, annars delens namn.
+    const box = (p) => lvThumb(t.customer?.id, p, "", false);
     const unit = (u) => {
       const parts = asArr(u.parts), now = parts.filter((p) => !p.superseded && p.kind !== "text"), old = parts.filter((p) => p.superseded);
       const outs = asArr(u.out_as), sys = [...new Set(outs.map(outLabel))].filter(Boolean);
@@ -2301,15 +2467,16 @@ a.btn { text-decoration: none; color: var(--text); }
       const chips = [...statuses.map((w) => chip(w, w === "aktiv" ? "green" : "amber")),
         ...(u.text && !u.text.approved ? [chip("text ej godkänd", "amber")] : []),
         ...asArr(u.missing).filter((m) => !/^Text/.test(m)).map((m) => chip(`saknar ${m}`, "amber"))].join(" ");
-      const sub = outs.length ? `Ute i ${sys.join(", ")} · ${outs.length} ${outs.length === 1 ? "annons" : "annonser"}` : esc(u.status || "");
+      const sub = outs.length ? `Ute i ${esc(sys.join(", "))} · ${plural(outs.length, "publicering", "publiceringar")}` : esc(u.status || "");
       const detail = `<div class="udetail">`
         + (u.text ? `<div class="utext" data-utext="${esc(u.key)}"><span class="meta">Hämtar texten…</span></div>` : "")
         + (outs.length ? `<div class="meta" style="margin-top:6px">${outs.map((o) => `${esc(o.name || o.id)} · ${esc(o.campaign || "")}${o.status ? ` · ${esc(statusWord(o.status))}` : ""}`).join("<br>")}</div>` : "")
         + (now.length ? `<div class="meta" style="margin-top:6px">${now.map((p) => `${esc(p.part)}: ${esc(p.name || "")}`).join("<br>")}</div>` : "")
         + (old.length ? `<div class="meta" style="margin-top:6px">Ersatt: ${old.map((p) => esc(p.name || p.part)).join(", ")}</div>` : "")
         + `</div>`;
-      return `<details class="unit"${u.text ? ` data-unit="${esc(u.key)}"` : ""}><summary><span class="mthumbs">${now.map(box).join("")}</span>`
-        + `<span class="ubody"><span class="ulabel">${esc(u.label.replace(/^.*? — /, ""))}</span><span class="meta">${sub}</span></span>`
+      const dd = deliveryOfTask(t);
+      return `<details class="unit"${u.text ? ` data-unit="${esc(u.key)}"` : ""}><summary><span class="lv-thumbs">${now.map(box).join("")}</span>`
+        + `<span class="ubody"><span class="ulabel">${esc(u.label.replace(/^.*? — /, ""))}</span><span class="meta">${sub}${dd ? ` · <a href="${H.unit(dd.id, u.key)}">enhetens sida</a>` : ""}</span></span>`
         + `<span class="uchips">${chips}</span></summary>${detail}</details>`;
     };
     const many = rounds.filter((r) => asArr(r.units).length).length > 1;
@@ -2536,7 +2703,7 @@ a.btn { text-decoration: none; color: var(--text); }
     return spanControls() + `<div class="tl"><table><thead><tr><th>Uppgift</th><th><div style="display:flex">${weeks.map((w) => `<span style="flex:1">v${week(w)}</span>`).join("")}</div></th></tr></thead><tbody>`
       + rows.map((t) => {
         const late = t.earliest_finish_worst && t.due && t.earliest_finish_worst > t.due;
-        return `<tr><td class="who">${custDot(t.customer?.color)} <button class="linkbtn" data-open-project="${esc(t.commitment)}" style="font-weight:500">${esc(taskName(t))}</button>${addonChip(t)}<div class="meta">${esc(lbl(t.customer))} · leverans ${short(t.due)}${late ? ` · <span style="color:var(--red)">spricker</span>` : ""} · <button class="linkbtn" data-move-due="${esc(t.id)}">flytta leveransen</button></div></td>`
+        return `<tr><td class="who">${custDot(t.customer?.color)} <a href="${H.delivery(deliveryOfTask(t).id, t.delivery ? t.id : null)}" style="font-weight:500">${esc(taskName(t))}</a>${addonChip(t)}<div class="meta">${esc(lbl(t.customer))} · leverans ${short(t.due)}${late ? ` · <span style="color:var(--red)">spricker</span>` : ""} · <button class="linkbtn" data-move-due="${esc(t.id)}">flytta leveransen</button></div></td>`
           + `<td><div class="lane" data-lane="${esc(t.id)}">${TODAY >= start && TODAY < end ? `<div class="todayline" style="left:${pos(TODAY)}%"></div>` : ""}`
           + (t.due >= start && t.due < end ? `<div class="dueline" style="left:${pos(t.due)}%" title="leverans ${short(t.due)}"></div>` : "")
           + t.steps.filter(shown).map((st) => {
@@ -2552,11 +2719,30 @@ a.btn { text-decoration: none; color: var(--text); }
   const projectsOf = () => { const m = new Map();
     for (const t of tasks()) { const k = t.commitment || "utan"; if (!m.has(k)) m.set(k, { id: k, label: lbl(t.commitment_named, "Utan projekt"), tasks: [] }); m.get(k).tasks.push(t); }
     return m; };
+  /**
+   * Planen ▸ Projekt (etapp 5): leveranserna först, med en sida var; sedan
+   * uppgifterna utan leverans, grupperade per åtagande, var och en en
+   * leverans med en uppgift.
+   */
   function projects() {
+    const real = realDeliveries().filter((x) => lvTasks(x).length);
+    const deliveryRows = real.map((x) => { const ts = lvTasks(x), late = ts.some((t) => t.late);
+      return row({ kind: custDot(custOf(x)?.color), title: `<a href="${H.delivery(x.id)}">${esc(x.label)}</a>`, cust: lbl(custOf(x)),
+        why: `${plural(ts.length, "uppgift", "uppgifter")} · ${esc(x.position?.text || "")}`, when: `slutar ${short(x.moved?.to || x.due)}`,
+        attrs: `data-lv-href="${H.delivery(x.id)}"`, act: late ? `<span class="chip red">sen</span>` : "" }); }).join("");
+    const inDelivery = new Set(real.flatMap((x) => asArr(x.tasks)));
+    const loose = new Map();
+    for (const t of tasks().filter((x) => !inDelivery.has(x.id))) { const k = lbl(t.commitment_named, "Utan projekt"); loose.set(k, [...(loose.get(k) || []), t]); }
+    return (real.length ? `<div class="card" style="margin-bottom:16px"><div class="group"><b>Leveranser</b><span>${plural(real.length, "leverans", "leveranser")}</span></div>${deliveryRows}</div>` : "")
+      + `<div class="card">${[...loose].map(([k, ts]) => `<div class="group"><b>${esc(k)}</b><span>uppgifter utan leverans</span></div>`
+        + ts.map((t) => row({ kind: custDot(t.customer?.color), title: `<a href="${H.delivery(t.id)}">${esc(taskTitle(t))}</a>${addonChip(t)}`, cust: lbl(t.customer),
+          why: esc(lbl(t.method_named, "ingen metod")), when: short(t.due), attrs: `data-lv-href="${H.delivery(t.id)}"`, act: toneChip(taskState(t)) })).join("")).join("")}</div>`;
+  }
+  function commitmentProjects() {
     return `<div class="card">${[...projectsOf().values()].map((p) => {
       const ts = p.tasks, steps = ts.flatMap((t) => t.steps), done = steps.filter((st) => st.done).length;
       const next = ts.map((t) => t.due).filter(Boolean).sort()[0];
-      return row({ kind: custDot(ts[0].customer?.color), title: esc(p.label), cust: lbl(ts[0].customer), why: `${ts.length} leveranser · ${done} av ${steps.length} steg klara`,
+      return row({ kind: custDot(ts[0].customer?.color), title: esc(p.label), cust: lbl(ts[0].customer), why: `${plural(ts.length, "uppgift", "uppgifter")} · ${done} av ${plural(steps.length, "steg", "steg")} klara`,
         when: `nästa ${short(next)}`, attrs: `data-open-project="${esc(p.id)}"`,
         act: `<span class="progress">${Array.from({ length: 10 }, (_, i) => `<i class="${i < Math.round(done / Math.max(1, steps.length) * 10) ? "on" : ""}"></i>`).join("")}</span>` });
     }).join("")}</div>`;
@@ -2581,7 +2767,7 @@ a.btn { text-decoration: none; color: var(--text); }
     if (!cs.length) return `<div class="empty"><b>Inga kunder med arbete i planen.</b></div>`;
     return `<div class="card">${cs.map((c) => { const ts = tasks().filter((t) => t.customer?.id === c.id);
       return row({ kind: custDot(c.color), title: esc(c.label), why: `${ts.length} uppgifter · ${opens().filter((o) => ts.some((t) => t.id === o.task)).length} frågor väntar`,
-        when: `nästa ${short(ts.map((t) => t.due).filter(Boolean).sort()[0])}`, attrs: `data-open-project="${esc(ts[0]?.commitment || "")}"` }); }).join("")}</div>`;
+        when: `nästa ${short(ts.map((t) => t.due).filter(Boolean).sort()[0])}`, attrs: `data-lv-href="${H.customer(c.id)}"` }); }).join("")}</div>`;
   }
 
   /* ── Metoder ── */
@@ -2621,7 +2807,7 @@ a.btn { text-decoration: none; color: var(--text); }
   function improve() {
     const cs = improveCards();
     if (!cs.length) return `<div class="empty"><b>Inget att föreslå just nu.</b>Planen har inga steg som görs för hand eller av Claude.</div>`;
-    return `<div class="improve">${cs.map((c, k) => `<div class="card"><span class="label">${esc(c.kind)}</span><b>${esc(c.title)}</b><span class="gain">${esc(c.gain)}</span><span class="meta">${esc(c.text)}</span><div><button class="btn sm ai" data-improve="${k}">${SP} Kopiera till chatten</button></div></div>`).join("")}</div>`;
+    return `<div class="improve">${cs.map((c, k) => `<div class="card"><span class="label">${esc(c.kind)}</span><b>${esc(c.title)}</b><span class="gain">${esc(c.gain)}</span><span class="meta">${esc(c.text)}</span><div><button class="btn sm ai" data-improve="${k}">${SP} Kopiera till Claude</button></div></div>`).join("")}</div>`;
   }
   /** Ledtiderna (B-178, B-185): alla steg, gissade först, grupperade på metod. Claude föreslår, en människa sätter. */
   function leadTable() {
@@ -2986,7 +3172,10 @@ a.btn { text-decoration: none; color: var(--text); }
             ? `<div class="meta">Görs av ${esc(lbl(s.waiting?.on, "kunden"))}${s.waiting?.answer_by ? ` · svar behövs senast ${short(s.waiting.answer_by)}` : ""}.</div>`
             : `<div>${(how || []).map((h) => `<div class="howline">${esc(h)}</div>`).join("") || `<div class="meta">Steget saknar beskrivning av hur det görs.</div>`}</div>`
               + `<div class="bar-actions" style="margin-top:10px">${s.started ? `<button class="btn quiet" data-start="false">Släpp steget</button>` : `<button class="btn" data-start="true">Jag börjar på det</button>`}</div>`;
-      return `<div class="wshead"><div class="titles"><span class="meta">${custDot(t.customer?.color)} ${esc(lbl(t.customer))} · ${esc(taskName(t))} · leverans ${short(t.due)}</span>`
+      // Var steget hör hemma (etapp 5): «I uppgiften … · i leveransen …», som länkar.
+      const dv = deliveryOfTask(t);
+      return `<div class="wshead"><div class="titles"><span class="meta">${custDot(t.customer?.color)} ${t.customer?.id ? `<a href="${H.customer(t.customer.id)}">${esc(lbl(t.customer))}</a>` : esc(lbl(t.customer))}`
+        + ` · i uppgiften <a href="${H.delivery(dv.id, dv.implicit ? null : t.id, s.step)}">${esc(taskTitle(t))}</a>${dv.implicit ? "" : ` · i leveransen <a href="${H.delivery(dv.id)}">${esc(dv.label)}</a>`} · leverans ${short(t.due)} · ${methodLine(t)}</span>`
         + `<h1>${esc(s.label)}</h1><div class="line">${kindMark(k)} ${esc(kindTxt)} · ansvarig ${esc(lbl(s.responsible, "–"))} · ${short(s.start)}–${short(s.latest_end || s.end)}`
         + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="chip">${s.float_days} d marginal</span>`)
           + assumeChips(s)
@@ -3148,6 +3337,895 @@ a.btn { text-decoration: none; color: var(--text); }
     /** En kunds filer i Filer (B-217): mapparna, förhandsbilderna och uppladdningen. */
     files() { return filesInCustomer(); },
   };
+
+
+  /* ── Leveransen (B-274, etapp 5) ──────────────────────────────────────────
+     Skissen Daniel P godkände 2026-09-26, med serverns svar i stället för
+     skissens konstanter. Leveransen är `plan.deliveries[]`; en uppgift utan
+     leverans visas som en leverans med en uppgift (härledd här, skrivs
+     aldrig). Varje sida har en egen adress och en brödsmula: Idag › Kund ›
+     Leverans › Uppgift › Steg. Status står i ord, med samma färg för samma
+     betydelse: grön klar/aktiv, blå pågår/kan börja, gul väntar, röd sen,
+     grå pausad/ej påbörjad.
+
+     Daniel P: *"viktigt är bara att det är lätt att kopiera och exekvera
+     actions, så att det inte BARA blir info på leveranssidan"*. Varje rad
+     som kräver något har sina handlingar på raden: Gör, Kopiera till Claude
+     och, för en människas steg, receptet och Markera klart med anteckning.
+
+     Inget här vet vilket system något ligger ute i: namnet kommer ur spegeln
+     (`out[].system`) eller ur publiceringens kanal, delarna ur tillgångens
+     `part`, och länken till objektet ur `out_as[].url`. */
+  const LV = { open: {}, scroll: {}, change: null, bind: null, previews: new Map(), texts: new Map() };
+  const enc = encodeURIComponent;
+  const H = {
+    screen: (s) => `#/${s}`,
+    customer: (id) => `#/kund/${enc(id)}`,
+    delivery: (id, task, step) => `#/leverans/${enc(id)}${task ? `/uppgift/${enc(task)}${step ? `/steg/${enc(step)}` : ""}` : ""}`,
+    material: (id) => `#/leverans/${enc(id)}/material`,
+    change: (id, unit) => `#/leverans/${enc(id)}/andra${unit ? `/${enc(unit)}` : ""}`,
+    unit: (id, key) => `#/enhet/${enc(id)}/${enc(key)}`,
+    files: (cust, sha) => `#/filer/${enc(cust)}${sha ? `/${enc(sha)}` : ""}`,
+    preview: (task, step) => `#/forhandsvisning/${enc(task)}/${enc(step)}`,
+    step: (task, step) => `#/steg/${enc(task)}/${enc(step)}`,
+  };
+  const day10 = (x) => String(x || "").slice(0, 10);
+  const isDay = (x) => /^\d{4}-\d{2}-\d{2}$/.test(day10(x));
+  const shaOf = (ref) => String(ref || "").split("/").pop();
+
+  /* ── data ── */
+  const realDeliveries = () => asArr(S.plan?.deliveries);
+  const closedSteps = (t) => new Set(asArr(t?.branch_closed_steps));
+  const liveSteps = (t) => asArr(t?.steps).filter((s) => !closedSteps(t).has(s.step));
+  /** Stegen i rundan som pågår: revisionens när uppgiften har en, annars alla. */
+  const roundSteps = (t) => t?.revision ? liveSteps(t).filter((s) => asArr(t.revision.steps).includes(s.step)) : liveSteps(t);
+  /** Steget uppgiften står på, som servern räknar det (taskPosition): påbörjat, annars nästa. Ett antaget godkännande står aldrig här. */
+  function currentStep(t) {
+    if (!t || t.delivered_externally) return null;
+    const steps = liveSteps(t).filter((s) => !s.assumed_approved);
+    return steps.find((s) => !s.done && s.started) || steps.find((s) => !s.done && !s.external) || steps.find((s) => !s.done) || null;
+  }
+  /**
+   * Anropet som gör steget. Samma regel som servern (src/plan/step-next.ts);
+   * leveransens «att göra nu» bär serverns eget, och det används där det finns.
+   */
+  function stepNextCall(t, s) {
+    const k = s.performer_kind || "human";
+    if (k === "code" && s.runnable) return { tool: "execute_step", args: { task: t.id, step: s.step },
+      does: "Kör steget. Dirigenten visar först vad som ändras; inget skrivs utan bekräftelse." };
+    if (k === "llm") return { tool: "execute_step", args: { task: t.id, step: s.step, mark: "done" },
+      does: "Gör arbetet enligt stegets instruktion (plan_state: tasks[].steps[].instruktion), spara resultatet med content_save, låt en människa godkänna — och markera sedan steget klart med det här anropet." };
+    return { tool: "execute_step", args: { task: t.id, step: s.step, mark: "done" }, does: "Markera steget klart när det är gjort för hand." };
+  }
+  /** En uppgift utan leverans, som en leverans med en uppgift. Härledd här; ingenting skrivs. */
+  function implicitDelivery(t) {
+    if (!t) return null;
+    const cur = currentStep(t);
+    const todo = liveSteps(t).filter((s) => !s.done && !s.assumed_approved && (s === cur || s.waiting))
+      .map((s) => ({ task: t.id, step: s.step, label: s.label, who: s.external ? s.waiting?.on || null : s.responsible || null,
+        start: s.start, end: s.end, waiting: !!s.external, after_check: s.after_check, next: s.external ? null : stepNextCall(t, s) }));
+    const moved = t.external_due && day10(t.due) !== day10(t.external_due) ? { from: day10(t.external_due), to: day10(t.due), reason: t.moved?.reason || t.revision?.reason || "" } : null;
+    return { id: t.id, implicit: true, label: taskTitle(t), customer: t.customer || null, due: day10(t.external_due || t.due), moved,
+      tasks: [t.id], earliest_finish_likely: t.earliest_finish_likely || null, margin_days: isDay(t.earliest_finish_likely) ? diff(day10(t.due), day10(t.earliest_finish_likely)) : null,
+      next_part: t.live || !cur || !isDay(t.due) ? null : { task: t.id, label: t.revision ? `Revision ${t.revision.number}: ${t.revision.what}` : taskTitle(t), date: day10(t.due), kind: t.revision ? "revision" : "task" },
+      revision: null, material: t.material || null, out: asArr(t.mirrors), todo, history: [], warnings: [], closed: null };
+  }
+  /**
+   * Uppgiftens rubrik på leveranssidan: dess eget namn (ärendets ämnesrad eller
+   * tillfället), och sorten bara när namnet saknas. Metoden står på raden under,
+   * så att rubriken inte säger samma sak två gånger (Daniel P 2026-09-26).
+   */
+  const taskTitle = (t) => (t?.thread && threadSubject(t.thread)) || t?.occasion || taskName(t);
+  const lvDelivery = (id) => realDeliveries().find((d) => d.id === id) || implicitDelivery(taskById(id));
+  const deliveryOfTask = (t) => (t?.delivery && realDeliveries().find((d) => d.id === t.delivery)) || implicitDelivery(t);
+  const lvTasks = (d) => asArr(d?.tasks).map(taskById).filter(Boolean);
+  const custOf = (d) => d?.customer?.id ? d.customer : lvTasks(d)[0]?.customer || null;
+
+  /* ── status i ord ── */
+  const toneChip = (x) => `<span class="chip ${x.tone || ""}">${esc(x.word)}</span>`;
+  function stepState(t, s) {
+    if (s.done) return { word: `klar ${short(s.done.at)}`, tone: "green" };
+    if (s.assumed_approved) return { word: "antaget godkänt", tone: "green" };
+    if (s.external) return { word: `väntar på ${lbl(s.waiting?.on, "någon utanför Rotor")}`, tone: "amber" };
+    if (day10(s.end) < TODAY && !s.after_check) return { word: "sen", tone: "red" };
+    if (s.after_check) return { word: "efterkontroll", tone: "blue" };
+    if (s.started) return { word: "pågår", tone: "blue" };
+    if (s === currentStep(t) && day10(s.start) <= TODAY) return { word: "kan börja", tone: "blue" };
+    return { word: "ej påbörjad", tone: "" };
+  }
+  function taskState(t) {
+    if (t.delivered_externally) return { word: "klar", tone: "green" };
+    // En uppgift utan steg är inte klar: den har ingen metod än.
+    if (!liveSteps(t).length) return { word: "ingen metod", tone: "amber" };
+    if (t.late) return { word: "sen", tone: "red" };
+    const left = liveSteps(t).filter((s) => !s.done && !s.assumed_approved);
+    if (!left.length) return { word: "klar", tone: "green" };
+    if (t.live) return { word: left.every((s) => s.after_check) ? "ute · efterkontroll kvar" : "ute", tone: "green" };
+    if (t.steps.some((s) => s.done || s.started)) return { word: "pågår", tone: "blue" };
+    return { word: "ej påbörjad", tone: "" };
+  }
+  const OUT_WORD = { active: ["aktiv", "green"], paused: ["pausad", ""], archived: ["arkiverad", ""], deleted: ["borttagen", ""],
+    campaign_paused: ["pausad", ""], adset_paused: ["pausad", ""], disapproved: ["avvisad", "red"], with_issues: ["har problem", "amber"] };
+  const outState = (o) => { const w = OUT_WORD[String(o.status || "").toLowerCase()]; return w ? { word: w[0], tone: w[1] } : { word: o.status ? String(o.status).toLowerCase() : "registrerad", tone: "" }; };
+  /** Systemets namn: spegelns, annars kanalens som den registrerades. */
+  const systemName = (d, channel) => asArr(d?.out).find((m) => m.surface === channel)?.system
+    || lvTasks(d).flatMap((t) => asArr(t.mirrors)).find((m) => m.surface === channel)?.system
+    || (channel ? channel.charAt(0).toUpperCase() + channel.slice(1) : "systemet");
+  function unitChips(d, u) {
+    const out = asArr(u.out_as).filter((o) => !o.replaced_by);
+    const words = [...new Map(out.map((o) => { const x = outState(o); return [x.word, x]; })).values()];
+    return [...words, ...(u.text && !u.text.approved ? [{ word: "text ej godkänd", tone: "amber" }] : []),
+      ...missingOf(u).map((m) => ({ word: `saknar ${m}`, tone: "amber" })),
+      ...(!out.length && !asArr(u.missing).length ? [{ word: u.status || "klar", tone: /^klar/.test(u.status || "klar") ? "green" : "" }] : [])];
+  }
+  /** Metoden uppgiften görs efter: namn, version, kundvariant och om den är låst (Daniel P 2026-09-26). */
+  function methodLine(t) {
+    if (!t?.method) return "ingen metod";
+    const r = t.resolved || {}, up = t.upgrade;
+    const name = `<button class="linkbtn" data-open-method="${esc(t.method)}" title="Öppna metoden">${esc(lbl(t.method_named, "metoden"))}</button>`;
+    return `<span class="lv-method">${name}${r.method_version ? ` · v${r.method_version}` : ""}`
+      + (t.variant ? ` · kundflöde ${esc(lbl(t.variant_named, ""))}${r.variant_version ? ` v${r.variant_version}` : ""}` : "")
+      + (t.locked ? (up && up.base_version && up.base_version.latest > up.base_version.locked ? ` (låst; senaste är v${up.base_version.latest})` : " (låst)") : "") + `</span>`;
+  }
+
+  /* ── handlingarna på raden ── */
+  function lvActions(t, s, next = stepNextCall(t, s)) {
+    if (!t || !s || s.done || s.assumed_approved) return "";
+    const key = `${t.id}|${s.step}`, k = kindOf(s), out = [];
+    if (k !== "ext") {
+      if (k === "code" && s.runnable && !asArr(s.needs_values).length)
+        out.push(`<button class="btn sm primary" data-run-step="${esc(key)}" title="Kör steget. Du ser först vad som ändras, och inget ändras förrän du bekräftar.">Gör</button>`);
+      else if (k === "human")
+        out.push(`<button class="btn sm primary" data-lv-done="${esc(key)}" title="Markera klart, med en anteckning om vad som gjordes">Markera klart</button>`);
+      else out.push(`<button class="btn sm primary" data-step="${esc(key)}" title="Öppna steget och gör det där">Gör</button>`);
+      if (k === "human" && s.recipe) out.push(`<button class="btn sm" data-lv-recipe="${esc(key)}" title="Vad behövs, så gör du och kontrollera">Recept</button>`);
+    }
+    if (next) out.push(`<button class="btn sm ai" data-lv-copy="${esc(JSON.stringify({ task: t.id, step: s.step, next }))}" title="En färdig instruktion med exakt anrop, att klistra in i Claude">${SP} Kopiera till Claude</button>`);
+    return out.join("");
+  }
+  /** Instruktionen till Claude: meningen i klartext och anropet exakt som servern gav det. */
+  function lvCopyText({ task, step, next, text }) {
+    const t = taskById(task), s = stepOf(t, step);
+    if (s && kindOf(s) === "llm" && next?.args?.mark === "done") return stepChatPrompt(t, s);
+    return [text || next?.does || "", "",
+      t ? `Kund: ${lbl(t.customer, "okänd")}.` : null,
+      t ? `Uppgift: ${taskTitle(t)} (id ${t.id}).` : null,
+      s ? `Steg: ${s.label} (id ${s.step}).` : null, "",
+      next ? `Anropet: rotor-dirigenten ${next.tool} ${JSON.stringify(next.args)}` : null,
+      next?.tool === "execute_step" && !next.args?.mark ? "Dirigenten visar först vad som ändras. Visa mig det på vanlig svenska, och kör samma anrop med confirmed: true och user_approval (mina ord) först när jag sagt ja." : null,
+      next?.args?.mark === "done" ? "Markera klart först när arbetet är gjort, och skriv vad som gjordes i note." : null,
+      next && next.tool !== "execute_step" ? "Visa mig vad som skrivs innan du gör det, och gör det först när jag sagt ja." : null]
+      .filter((x) => x !== null).join("\n");
+  }
+  function recipeDialog(key) {
+    const [task, step] = key.split("|"); const t = taskById(task), s = stepOf(t, step);
+    if (!s) return toast("Steget finns inte längre i planen. Hämta igen.", null, true);
+    const r = s.recipe || {};
+    const how = String(r.how || "").split(/\s*(?=\d+[.)]\s)|\n+/).map((x) => x.replace(/^\d+[.)]\s*/, "").trim()).filter(Boolean);
+    dialog(`<h2>${esc(s.label)}</h2><p class="meta">${esc(taskTitle(t))}</p>`
+      + `<h3 style="font-size:13px;margin:12px 0 4px">Vad behövs</h3><p>${esc(r.needs || "") || `<span class="meta">Saknas i receptet (?)</span>`}</p>`
+      + `<h3 style="font-size:13px;margin:12px 0 4px">Så gör du</h3>${how.length ? `<ol class="how">${how.map((h) => `<li>${esc(h)}</li>`).join("")}</ol>` : `<p class="meta">Saknas i receptet (?)</p>`}`
+      + `<h3 style="font-size:13px;margin:12px 0 4px">Kontrollera</h3><p>${esc(r.check || "") || `<span class="meta">Saknas i receptet (?)</span>`}</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Stäng</button><button class="btn primary" data-lv-done="${esc(key)}">Markera klart</button></div>`);
+  }
+  function doneNoteDialog(key) {
+    const [task, step] = key.split("|"); const t = taskById(task), s = stepOf(t, step);
+    if (!s) return toast("Steget finns inte längre i planen. Hämta igen.", null, true);
+    LV.doneKey = key;
+    dialog(`<h2>Markera «${esc(s.label)}» klart</h2><p class="meta">${esc(taskTitle(t))}${s.approver ? ` · godkänns av ${esc(approverName(t, s.approver))}` : ""}</p>`
+      + `<label class="field wide"><span>Vad gjordes? · följer med som anteckning</span><textarea id="lv-note" rows="3" placeholder="T.ex. skickat till kunden, godkänt i mejl 26/9"></textarea></label>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-lv-done-send="1">Markera klart</button></div>`);
+    $("#lv-note")?.focus();
+  }
+  function sendDoneNote(btn) {
+    const [task, step] = String(LV.doneKey || "").split("|"); const t = taskById(task), s = stepOf(t, step);
+    if (!s) return toast("Steget finns inte längre i planen. Hämta igen.", null, true);
+    const note = ($("#lv-note")?.value || "").trim().slice(0, 500);
+    return busy(btn, async () => {
+      try {
+        await call("execute_step", { task, step, mark: "done", ...(note ? { note } : {}) });
+        closeDialog(); await load();
+        toast(`${s.label} är klart.`, undoDone(t, s));
+      } catch (e) { fail("Steget markerades inte klart", e); }
+    });
+  }
+
+  /* ── tidslinjen: samma på Idag och i läget ── */
+  const svgNow = (n = 18) => `<svg width="${n}" height="${n}" viewBox="0 0 18 18" aria-hidden="true"><circle class="lv-now" cx="9" cy="9" r="7"/></svg>`;
+  const svgNext = (n = 18) => `<svg width="${n}" height="${n}" viewBox="0 0 18 18" aria-hidden="true"><rect class="lv-next" x="4" y="4" width="10" height="10" transform="rotate(45 9 9)"/></svg>`;
+  const svgLikely = (n = 18) => `<svg width="${n}" height="${n}" viewBox="0 0 18 18" aria-hidden="true"><circle class="lv-likelymk" cx="9" cy="9" r="6"/></svg>`;
+  const svgEnd = (n = 18) => `<svg width="${n}" height="${n}" viewBox="0 0 18 18" aria-hidden="true"><path class="lv-end" d="M4 2h1.8v14H4zM6 2.5h8.5l-2.2 3.2 2.2 3.3H6z"/></svg>`;
+  /** Var leveransen är: det tidigaste öppna steget bland uppgifterna, som servern räknar läget. */
+  function lvWhere(d, ts) {
+    const rows = asArr(d.position?.tasks).filter((p) => p.state !== "done" && p.step)
+      .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+    if (rows.length) { const p = rows[0], t = taskById(p.task);
+      return { task: p.task, step: p.step.id, label: `${t ? taskTitle(t) : p.label}: ${p.step.label}`, who: lbl(p.who, ""), date: day10(p.date) }; }
+    const open = ts.map((t) => ({ t, s: currentStep(t) })).filter((x) => x.s).sort((a, b) => String(a.s.start).localeCompare(String(b.s.start)))[0];
+    return open ? { task: open.t.id, step: open.s.step, label: ts.length > 1 ? `${taskTitle(open.t)}: ${open.s.label}` : open.s.label,
+      who: open.s.external ? lbl(open.s.waiting?.on, "") : lbl(open.s.responsible, ""), date: day10(open.s.start) } : null;
+  }
+  function lvTimeline(d, ts) {
+    const end = day10(d.moved?.to || d.due);
+    if (!isDay(end)) return `<div class="lv-legend"><div class="meta">Leveransen har inget datum.</div></div>`;
+    const where = lvWhere(d, ts);
+    const next = d.next_part && isDay(d.next_part.date) ? d.next_part : null;
+    const likely = isDay(d.earliest_finish_likely) ? day10(d.earliest_finish_likely) : null;
+    const starts = ts.flatMap((t) => roundSteps(t).map((s) => day10(s.start))).filter(isDay).sort();
+    const points = [starts[0], end, TODAY, where?.date, next?.date, likely].filter(isDay).sort();
+    const from = points[0]; let to = points.at(-1); if (diff(to, from) < 7) to = add(from, 7);
+    const pos = (x) => Math.max(0, Math.min(100, diff(x, from) / diff(to, from) * 100)).toFixed(1);
+    const dd = (x) => `${d_(x)}`;
+    // Ute: varje uppgift är ute, eller har bara efterkontroll kvar. Då är leveransen
+    // inte försenad, vad datumet än säger, och det står «ute sedan …» (Daniel P 2026-09-26).
+    const allDone = ts.every((t) => liveSteps(t).length && !liveSteps(t).some((s) => !s.done && !s.assumed_approved));
+    const out = ts.some((t) => t.live) && ts.every((t) => t.live || !liveSteps(t).some((s) => !s.done && !s.assumed_approved && !s.after_check));
+    const liveAt = ts.map((t) => day10(t.live?.at)).filter(isDay).sort().at(-1) || null;
+    const passed = !out && !allDone && end < TODAY;
+    const endLabel = out && liveAt ? `ute ${dd(liveAt)}` : passed ? `${dd(end)} passerat` : dd(end);
+    const showLikely = passed && likely && likely !== end;
+    return `<div class="lv-tl${out ? " out" : passed ? " passed" : ""}" role="img" aria-label="Tidslinje: i dag ${short(TODAY)}${where?.date ? `, där vi är ${short(where.date)}` : ""}${next ? `, nästa delleverans ${short(next.date)}` : ""}, ${out && liveAt ? `ute sedan ${short(liveAt)}` : `leveransen slutar ${short(end)}${passed ? ", passerat" : ""}`}">`
+      + `<div class="lv-track"><div class="lv-bar"><i style="width:${pos(TODAY)}%"></i></div>`
+      + `<div class="lv-today" style="left:${pos(TODAY)}%"><span>i dag</span></div>`
+      + (where?.date ? `<div class="lv-mk" style="left:${pos(where.date)}%">${svgNow(20)}<span class="d">${dd(where.date)}</span></div>` : "")
+      // Samma dag som slutet: romben står strax före flaggan, och datumet sägs en gång.
+      + (next ? `<div class="lv-mk" style="left:calc(${pos(next.date)}% - ${next.date === end ? 12 : 0}px)">${svgNext(20)}<span class="d">${next.date === end ? "&nbsp;" : dd(next.date)}</span></div>` : "")
+      + `<div class="lv-mk lv-endmk" style="left:${pos(out && liveAt ? liveAt : end)}%">${svgEnd(20)}<span class="d">${endLabel}</span></div>`
+      + (showLikely ? `<div class="lv-mk lv-likely" style="left:${pos(likely)}%">${svgLikely(20)}<span class="d">troligt ${dd(likely)}</span></div>` : "") + `</div>`
+      + `<div class="lv-ends">från ${short(from)}</div></div>`
+      + `<div class="lv-legend">`
+      + `<div class="lv-li">${svgNow()}<span class="k">Där vi är</span><span class="v">${where ? `<a href="${H.delivery(d.id, where.task, where.step)}"><b>${esc(where.label)}</b></a>${where.who ? ` · ${esc(where.who)}` : ""}${where.date ? ` · ${short(where.date)}` : ""}` : "Alla steg är klara"}</span></div>`
+      + `<div class="lv-li">${svgNext()}<span class="k">Nästa delleverans</span><span class="v">${next ? `<a href="${H.delivery(d.id, next.task)}"><b>${esc(next.label)}</b></a> · ${short(next.date)}` : "Ingen med datum"}</span></div>`
+      + (out ? `<div class="lv-li">${svgEnd()}<span class="k">Ute</span><span class="v"><b>${liveAt ? `ute sedan ${short(liveAt)}` : "ute"}</b>${where ? " · efterkontroll kvar" : ""} · kunden fick ${short(d.due)}</span></div>`
+        : `<div class="lv-li">${svgEnd()}<span class="k">Leveransen slutar</span><span class="v"><b${passed ? ' class="late"' : ""}>${short(end)}${passed ? " · passerat" : ""}</b>${likely && where ? ` · troligt klart ${short(likely)}` : ""}</span></div>`)
+      + (showLikely ? `<div class="lv-li">${svgLikely()}<span class="k">Troligt klart</span><span class="v"><b>${short(likely)}</b> · ${plural(diff(likely, end), "dag", "dagar")} efter leveransdagen</span></div>` : "") + `</div>`;
+  }
+  const d_ = (x) => `${d(x).getUTCDate()}/${d(x).getUTCMonth() + 1}`;
+
+  /* ── stegen i en uppgift ── */
+  /**
+   * Godkännaren i ord: en kollega vid namn, en kontakt hos kunden som
+   * «Anna hos kunden». Ett id visas aldrig.
+   */
+  function approverName(t, ref) {
+    const id = String(ref?.id ?? ref ?? ""), n = personName(id);
+    if (n && n !== id) return n;
+    const [party, who] = id.split("/");
+    const org = party === t?.customer?.id ? lbl(t.customer, "kunden") : "kunden";
+    return who ? `${who.charAt(0).toUpperCase()}${who.slice(1)} hos ${org}` : org;
+  }
+  function lvStepSub(t, s) {
+    const lines = [];
+    if (s.assumed_approved) lines.push(`Antaget godkänt: ${s.assumed_approved_reason || "stegen efter är utförda"}. Steget är inte markerat klart.`);
+    if (s.after_check) lines.push("Efterkontroll: leveransen är ute, och steget gör den inte sen.");
+    if (s.approver && !s.done && !s.assumed_approved) lines.push(`Här stannar det för ett godkännande av ${approverName(t, s.approver)}.`);
+    for (const w of asArr(s.waits_on)) if (!w.done) lines.push(`${w.text[0].toUpperCase()}${w.text.slice(1)}.`);
+    if (s.needed_by) lines.push(s.needed_by.text);
+    if (s.done_under_assumption) lines.push(s.done_under_assumption.reason);
+    if (s.done?.note) lines.push(`Anteckning: ${s.done.note}`);
+    return lines.map((x) => `<span class="sub">${esc(x)}</span>`).join("");
+  }
+  function lvStepLi(d, t, s, hit) {
+    const st = stepState(t, s), cur = s === currentStep(t);
+    const writes = !s.done && kindOf(s) === "code" && s.runnable;
+    return `<li class="lv-step ${s.done ? "done" : cur ? "now" : ""} ${s.step === hit ? "hit" : ""}" id="lv-step-${esc(t.id)}-${esc(s.step)}">`
+      + `<span class="mark" aria-hidden="true"></span>`
+      + `<span class="nm"><a href="${H.delivery(d.id, t.id, s.step)}">${esc(s.label)}</a>${lvStepSub(t, s)}`
+      + (writes ? `<a class="sub" href="${H.preview(t.id, s.step)}">Förhandsvisningen före ja ›</a>` : "") + `</span>`
+      + `<span class="right">${toneChip(st)}<span class="meta">${esc(s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, ""))}${s.done ? "" : ` · ${short(s.end)}`}</span>`
+      + `<a class="btn sm quiet" href="${H.step(t.id, s.step)}" title="Stegets arbetsyta">Öppna</a></span>`
+      + (s.done || s.assumed_approved ? "" : `<span class="acts">${lvActions(t, s)}</span>`) + `</li>`;
+  }
+  function lvStepList(d, t, steps, hit) {
+    const open = steps.filter((s) => !s.done), done = steps.filter((s) => s.done);
+    const k = `done|${d.id}|${t.id}`, show = LV.open[k] || done.some((s) => s.step === hit);
+    return (open.length ? `<ul class="lv-steps">${open.map((s) => lvStepLi(d, t, s, hit)).join("")}</ul>` : "")
+      + (done.length ? `<button class="lv-sum" data-lv-toggle="${esc(k)}" aria-expanded="${!!show}"><span class="lv-fold ${show ? "open" : ""}">›</span>${plural(done.length, "steg klart", "steg klara")}</button>`
+        + (show ? `<ul class="lv-steps">${done.map((s) => lvStepLi(d, t, s, hit)).join("")}</ul>` : "") : "");
+  }
+  /** Rundorna: leveransen och revisionen, den pågående utfälld. */
+  function lvRounds(d, t, hit) {
+    const all = liveSteps(t);
+    if (!t.revision) return `<div class="lv-round"><div class="lv-round-h"><span class="lv-fold open">›</span>Leverans 1 ${toneChip(taskState(t))}</div>${lvStepList(d, t, all, hit)}</div>`;
+    const inRev = new Set(asArr(t.revision.steps));
+    const before = all.filter((s) => !inRev.has(s.step)), rev = all.filter((s) => inRev.has(s.step));
+    const k = `round1|${d.id}|${t.id}`, show = LV.open[k] || before.some((s) => s.step === hit);
+    return `<div class="lv-round"><button class="lv-sum first" data-lv-toggle="${esc(k)}" aria-expanded="${!!show}" style="font-weight:600;color:var(--text)"><span class="lv-fold ${show ? "open" : ""}">›</span>Leverans 1 <span class="chip green">klar</span><span class="meta">${plural(before.length, "steg", "steg")}</span></button>`
+      + (show ? `<ul class="lv-steps">${before.map((s) => lvStepLi(d, t, s, hit)).join("")}</ul>` : "") + `</div>`
+      + `<div class="lv-round"><div class="lv-round-h"><span class="lv-fold open">›</span>Revision ${esc(String(t.revision.number))} ${toneChip(taskState(t))}<span class="meta">sedan ${short(t.revision.at)} · ${esc(t.revision.what || "")}${t.revision.reason ? ` · ${esc(t.revision.reason)}` : ""}</span></div>`
+      + lvStepList(d, t, rev, hit)
+      + (asArr(t.revision.skipped).length ? `<div class="lv-edge">Hoppas över: ${t.revision.skipped.map((x) => `«${esc(lbl(stepOf(t, x.step), x.step))}» (${esc(x.reason)})`).join(", ")}</div>` : "") + `</div>`;
+  }
+  const lvDots = (t) => `<span class="lv-dots" aria-hidden="true">${roundSteps(t).map((s) => `<i class="${s.done ? "done" : s === currentStep(t) ? "now" : ""}"></i>`).join("")}</span>`;
+  const lvCount = (t) => { const r = roundSteps(t); return `${r.filter((s) => s.done).length} / ${plural(r.length, "steg", "steg")} klara`; };
+  const waitsText = (t) => { const s = currentStep(t); return s ? `${s.label} · ${s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, "")}` : "inget"; };
+
+  /* ── att göra nu ── */
+  function lvTodoRows(d, withDelivery) {
+    const rows = asArr(d.todo).map((x) => ({ x, t: taskById(x.task) })).filter((r) => r.t && stepOf(r.t, r.x.step));
+    if (!rows.length) return lvTasks(d).some((t) => !liveSteps(t).length)
+      ? `<div class="empty"><b>Inget att göra i dirigenten.</b>Uppgiften har inga steg: den saknar metod. Lägg till steg från stegets arbetsyta, eller bygg metoden under Metoder.</div>`
+      : `<div class="empty"><b>Inget väntar på någon just nu.</b>Allt i leveransen är gjort, eller står på ett antaget godkännande.</div>`;
+    return rows.map(({ x, t }) => {
+      const s = stepOf(t, x.step), st = stepState(t, s);
+      return `<div class="row" id="lv-todo-${esc(t.id)}-${esc(s.step)}">`
+        + `<span class="kindcell">${toneChip(st)}</span><span></span>`
+        + `<span class="txt"><span class="t"><a href="${H.delivery(d.id, t.id, s.step)}">${esc(s.label)}</a></span>`
+        + `<span class="why">${esc([taskTitle(t), withDelivery && !d.implicit ? d.label : ""].filter(Boolean).join(" · "))}${x.who ? ` · ${esc(lbl(x.who))}` : ""}</span></span>`
+        + `<span class="s when${st.tone === "red" ? " late" : ""}">${short(x.end)}</span>`
+        + `<span class="acts lv-acts">${lvActions(t, s, x.next === undefined ? stepNextCall(t, s) : x.next)}</span></div>`;
+    }).join("");
+  }
+
+  /* ── materialet per enhet (#138:s form: en rad per enhet, miniatyrer och märken) ── */
+  /** Miniatyrens form ur delens eget format (bredd:höjd i delens namn), aldrig ur ett känt format i koden. */
+  const partRatio = (p) => { const m = /(\d+):(\d+)/.exec(p.part || ""); if (!m) return "";
+    const r = Number(m[2]) / Number(m[1]); return r > 1.5 ? "tall" : Math.abs(r - 1) < 0.05 ? "sq" : ""; };
+  /** Förhandsbilderna hämtas i ett anrop per ritning, inte ett per bild. */
+  const wantedThumbs = new Set();
+  const wantThumb = (ref) => { if (!ref || FB.thumbs.has(ref) || FB.asked.has(ref)) return;
+    if (!wantedThumbs.size) queueMicrotask(() => { const refs = [...wantedThumbs]; wantedThumbs.clear(); loadThumbs(refs); });
+    wantedThumbs.add(ref); };
+  /** En miniatyr. Med kund blir den en länk till filen i filbiblioteket; `link: false` inne i en knapp. */
+  function lvThumb(cust, p, size = "", link = true) {
+    wantThumb(p.ref);
+    const inner = FB.thumbs.has(p.ref) ? `<img alt="" src="data:image/webp;base64,${esc(FB.thumbs.get(p.ref))}">` : esc(String(p.part || "").replace(/^Bild /, "") || "fil");
+    const cls = `lv-th ${partRatio(p)} ${size} ${p.superseded ? "old" : ""}`, title = `${esc(p.name || p.part)}${link ? " — öppna i filbiblioteket" : ""}`;
+    return link ? `<a class="${cls}" data-thumb="${esc(p.ref)}" href="${cust ? H.files(cust, shaOf(p.ref)) : "#/filer"}" title="${title}">${inner}</a>`
+      : `<span class="${cls}" data-thumb="${esc(p.ref)}" title="${title}">${inner}</span>`;
+  }
+  const unitKey = (u) => u.key;
+  /** Enheterna i den senaste rundan de finns i, det som behöver något först. */
+  function lvUnits(d) {
+    const seen = new Map();
+    for (const r of asArr(d.material?.rounds)) for (const u of asArr(r.units)) seen.set(unitKey(u), { u, r });
+    const needs = (u) => (asArr(u.missing).length || (u.text && !u.text.approved)) ? 0 : 1;
+    return [...seen.values()].sort((a, b) => needs(a.u) - needs(b.u) || a.u.label.localeCompare(b.u.label, "sv"));
+  }
+  /** Vad enheten är, i ord ur datan: delen för en fil, innehållsslaget för en text. */
+  const kindLabel = (u) => u.key.startsWith("file:") ? (asArr(u.parts)[0]?.part || "Fil") : (u.kind ? u.kind.charAt(0).toUpperCase() + u.kind.slice(1).replace(/_/g, " ") : "Material");
+  /** Gruppen i materialet: var enheten är ute, annars att den inte är ute än. */
+  const unitGroup = (d, u) => { const out = asArr(u.out_as).filter((o) => !o.replaced_by);
+    return out.length ? `Ute i ${[...new Set(out.map((o) => systemName(d, o.channel)))].join(", ")}` : "Inte ute än"; };
+  /** Det som saknas, utan att säga texten två gånger (märket «text ej godkänd» säger det). */
+  const missingOf = (u) => asArr(u.missing).filter((m) => !(u.text && !u.text.approved && /^Text/.test(m)));
+  function lvUnitRow(d, u) {
+    const cust = custOf(d)?.id, o = LV.open[`unit|${d.id}`] === u.key;
+    const now = asArr(u.parts).filter((p) => p.kind === "file" && !p.superseded);
+    const out = asArr(u.out_as).filter((x) => !x.replaced_by), sys = [...new Set(out.map((x) => systemName(d, x.channel)))];
+    return `<button class="lv-unit" data-lv-unit="${esc(u.key)}" aria-expanded="${o}"><span class="lv-fold ${o ? "open" : ""}">›</span>`
+      + `<span class="lv-thumbs">${now.slice(0, 4).map((p) => lvThumb(cust, p, "", false)).join("") || `<span class="lv-th sq">${esc(u.text ? "Text" : "–")}</span>`}</span>`
+      + `<span class="txt"><span class="t">${esc(u.label)}</span><span class="meta">${esc(kindLabel(u))} · ${out.length ? `ute i ${esc(sys.join(", "))} · ${plural(out.length, "publicering", "publiceringar")}` : esc(u.status || "")}${u.template ? ` · gjord ur mallen «${esc(u.template.label)}»` : ""}</span></span>`
+      + `<span class="end">${unitChips(d, u).map(toneChip).join("")}</span></button>`
+      + (o ? lvUnitDetail(d, u) : "");
+  }
+  function lvText(id) {
+    if (!LV.texts.has(id)) { LV.texts.set(id, null);
+      call("content_get", { id }).then((c) => { LV.texts.set(id, c || { markdown: "" }); render(); }, () => { LV.texts.set(id, { error: true }); render(); }); }
+    const c = LV.texts.get(id);
+    return !c ? `<span class="meta">Hämtar texten…</span>` : c.error ? `<span class="meta">Texten kunde inte hämtas.</span>`
+      : `<div class="lv-text">${c.title ? `<b style="display:block;margin-bottom:6px">${esc(c.title)}</b>` : ""}${esc(c.markdown || "(tom)")}</div>`;
+  }
+  function lvUnitDetail(d, u) {
+    const cust = custOf(d)?.id, now = asArr(u.parts).filter((p) => p.kind === "file" && !p.superseded), old = asArr(u.parts).filter((p) => p.superseded);
+    const out = asArr(u.out_as).filter((x) => !x.replaced_by);
+    return `<div class="lv-udetail"><div>`
+      + (u.text ? `<div class="k meta" style="margin-bottom:6px">Texten · version ${esc(String(u.text.version))} · ${u.text.approved ? "godkänd" : "inte godkänd"}</div>${lvText(u.key)}` : `<div class="meta">Ingen text i enheten.</div>`)
+      + (u.template ? `<div class="meta" style="margin-top:6px">Gjord ur mallen «${esc(u.template.label)}».</div>` : "")
+      + `</div><div>`
+      + (now.length ? `<div class="k meta">Delarna</div><div class="lv-thumbs" style="margin:6px 0">${now.map((p) => lvThumb(cust, p, "mid")).join("")}</div>` : "")
+      + (old.length ? `<div class="meta">${plural(old.length, "tidigare fil ersatt", "tidigare filer ersatta")} · syns på enhetens sida</div>` : "")
+      + (out.length ? `<div class="k meta" style="margin-top:6px">Ute som</div><div class="meta">${out.map((o) => `${esc(systemName(d, o.channel))}: ${esc(o.name || o.id)} · ${esc(outState(o).word)}`).join("<br>")}</div>` : "")
+      + (missingOf(u).length ? `<div class="meta" style="margin-top:6px;color:var(--amber)">Saknas: ${missingOf(u).map(esc).join(", ")}</div>` : "")
+      + `<div class="lv-acts" style="justify-content:flex-start;margin-top:8px"><a class="btn sm primary" href="${H.unit(d.id, u.key)}">Öppna enheten</a>`
+      + `<a class="btn sm" href="${H.change(d.id, d.implicit ? "" : u.key)}">Ändra efter leverans</a>`
+      + (asArr(u.missing).length || (u.text && !u.text.approved) ? `<button class="btn sm ai" data-lv-copy="${esc(JSON.stringify({ task: lvTasks(d)[0]?.id, text: unitAsk(d, u) }))}">${SP} Kopiera till Claude</button>` : "")
+      + `</div></div></div>`;
+  }
+  const unitAsk = (d, u) => [asArr(u.missing).length ? `Ta fram det som saknas i «${u.label}»: ${asArr(u.missing).join(", ")}.` : "",
+    u.text && !u.text.approved ? `Texten i «${u.label}» (innehållet ${u.key}) är inte godkänd: visa den för mig, och godkänn den med content_search { do: "approve", id: "${u.key}" } först när jag sagt ja.` : "",
+    `Leveransen: ${d.label}${d.implicit ? "" : ` (id ${d.id})`}. Läs läget med plan_state { ${d.implicit ? `customer: "${lbl(custOf(d), "")}"` : `delivery: "${d.id}"`} } först.`].filter(Boolean).join(" ");
+  function lvMaterial(d) {
+    const us = lvUnits(d), ungrouped = asArr(d.material?.rounds).flatMap((r) => asArr(r.ungrouped));
+    if (!us.length && !ungrouped.length) return `<div class="card"><div class="empty"><b>Inget material än.</b>Det stegen lämnar hamnar här, en rad per enhet.</div></div>`;
+    const groups = new Map();
+    for (const x of us) { const k = unitGroup(d, x.u); groups.set(k, [...(groups.get(k) || []), x.u]); }
+    return `<div class="card">${[...groups].map(([k, xs], i) => `<div class="group"${i ? ' style="border-top:1px solid var(--line)"' : ""}><b>${esc(k)} · ${xs.length}</b></div>${xs.map((u) => lvUnitRow(d, u)).join("")}`).join("")}`
+      + (ungrouped.length ? `<details style="border-top:1px solid var(--line)"><summary class="lv-sum first">Övrigt, inte grupperat · ${plural(ungrouped.length, "fil", "filer")}</summary>`
+        + [...new Set(ungrouped.map((f) => f.type || "Övrigt"))].map((ty) => `<div class="group"><b>${esc(ty)}</b></div>`
+          + ungrouped.filter((f) => (f.type || "Övrigt") === ty).map((f) => `<div class="row"><span class="kindcell">${FILE_IC}</span><span></span><span class="txt"><span class="t">${esc(f.name)}</span></span><span class="s when">${short(f.at)}</span><span class="acts"><button class="btn sm" data-fget="${esc(f.ref)}" data-fname="${esc(f.name)}">Ladda ned</button></span></div>`).join("")).join("")
+        + `</details>` : "") + `</div>`;
+  }
+
+  /* ── ute i systemen ── */
+  function lvOut(d) {
+    const objs = lvUnits(d).flatMap(({ u }) => asArr(u.out_as).filter((o) => !o.replaced_by).map((o) => ({ u, o })));
+    const mirrors = asArr(d.out);
+    const channels = [...new Set([...mirrors.map((m) => m.surface), ...objs.map((x) => x.o.channel)])];
+    if (!channels.length) return `<div class="card"><div class="empty"><b>Inget är ute än.</b>Det som läggs ut i ett system står här, med läget.</div></div>`;
+    return channels.map((ch) => {
+      const m = mirrors.find((x) => x.surface === ch), rows = objs.filter((x) => x.o.channel === ch);
+      const task = lvTasks(d).find((t) => asArr(t.mirrors).some((x) => x.surface === ch));
+      const drift = asArr(m?.drift);
+      return `<div class="card lv-card"><div class="head"><h3 style="margin:0;font-size:14px">${esc(systemName(d, ch))}</h3>`
+        + `<span class="meta">${plural(rows.length, "sak ute", "saker ute")}</span>`
+        + `<span class="right">${m ? `<span class="meta">${m.read_at ? `läst ${esc(readClock(m.read_at))}` : "inte läst än"}${m.stale ? " · ändrat genom dirigenten efter läsningen" : ""}</span>${task ? `<button class="btn sm" data-mirror-reread="${esc(task.id)}">Läs om</button>` : ""}` : `<span class="meta">läses inte av dirigenten</span>`}</span></div>`
+        + rows.map(({ u, o }) => { const x = outState(o);
+          return `<div class="row"><span class="kindcell">${toneChip(x)}</span><span></span>`
+            + `<span class="txt"><span class="t"><a href="${H.unit(d.id, u.key)}">${esc(u.label)}</a></span><span class="why">${esc([o.name, o.campaign].filter(Boolean).join(" · ") || o.id)}</span></span><span class="s when"></span>`
+            + `<span class="acts">${o.url ? `<a class="btn sm" href="${esc(o.url)}" target="_blank" rel="noopener">Öppna i ${esc(systemName(d, ch))} ↗</a>` : ""}</span></div>`; }).join("")
+        + drift.map((x) => { const n = asArr(x.next)[0];
+          return `<div class="row"><span class="kindcell"><span class="chip amber">ändrat utanför dirigenten</span></span><span></span><span class="txt"><span class="t">${esc(x.text)}</span>${n ? `<span class="why">${esc(n.does || "")}</span>` : ""}</span><span class="s when"></span>`
+            + `<span class="acts lv-acts">${n ? `<button class="btn sm primary" data-lv-do="${esc(JSON.stringify(n))}">Gör</button><button class="btn sm ai" data-lv-copy="${esc(JSON.stringify({ task: task?.id, next: n, text: `${x.text}. ${n.does || ""}` }))}">${SP} Kopiera till Claude</button>` : ""}</span></div>`; }).join("")
+        + (!rows.length && !drift.length ? `<div class="empty">Inget ute enligt senaste läsningen.</div>` : "")
+        + (m ? "" : `<div class="foot meta">Det här systemet läses inte av dirigenten, så här står det som senast registrerades i dirigenten.</div>`) + `</div>`;
+    }).join("");
+  }
+  /** En handling ur en skillnad: vad som skrivs står först, och inget görs utan ja. */
+  function lvDo(btn, n) {
+    return busy(btn, async () => {
+      const svar = await confirmWrite(SERVER, n.tool, n.args, n.does || "Registrera skillnaden i dirigenten.");
+      if (svar !== WRITE_NO) await load();
+    });
+  }
+
+  /* ── historiken ── */
+  function lvHistory(d, ts) {
+    const items = d.implicit ? ts.flatMap((t) => [
+      ...liveSteps(t).filter((s) => s.done).map((s) => ({ at: s.done.at, by: personName(s.done.by?.id ?? s.done.by), text: `«${s.label}» markerat klart${s.done.note ? `: ${s.done.note}` : ""}` })),
+      ...(t.moved ? [{ at: t.moved.at, by: personName(t.moved.by), text: `Datumet flyttades ${t.moved.from} → ${t.moved.to}${t.moved.reason ? `: ${t.moved.reason}` : ""}` }] : []),
+      ...(t.revision ? [{ at: t.revision.at, by: personName(t.revision.by), text: `Ändring efter leverans: ${t.revision.what} — ny slutpunkt ${day10(t.revision.due)}` }] : [])])
+      : asArr(d.history).map((h) => ({ ...h, by: personName(h.by) }));
+    const sorted = items.filter((h) => h.at).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const k = `hist|${d.id}`, o = !!LV.open[k];
+    if (!sorted.length) return `<div class="card"><div class="empty">Ingen historik än.</div></div>`;
+    return `<div class="card"><button class="lv-sum first" data-lv-toggle="${esc(k)}" aria-expanded="${o}"><span class="lv-fold ${o ? "open" : ""}">›</span>${plural(sorted.length, "händelse", "händelser")} · senast ${short(sorted[0].at)}</button>`
+      + (o ? `<div style="padding:4px 16px 12px;border-top:1px solid var(--line)"><ul class="lv-hist">${sorted.map((h) => `<li><span class="meta">${short(h.at)} ${String(h.at).slice(11, 16)}</span><span>${esc(h.text)} <span class="meta">· ${esc(h.by || "")}</span></span></li>`).join("")}</ul></div>` : "") + `</div>`;
+  }
+
+  /* ── Ändra efter leverans: formen, serverns förhandsvisning och Bekräfta ── */
+  function newChange(d, unit) {
+    const ts = lvTasks(d);
+    const parts = Object.fromEntries(ts.map((t) => { const done = roundSteps(t).filter((s) => s.done);
+      return [t.id, { on: d.implicit || (!unit && ts.length === 1), from: done[0]?.step || "", skip: {} }]; }));
+    return { id: d.id, unit: unit || "", what: "", reason: "", due: add(TODAY, 3), parts, preview: null, error: null };
+  }
+  function changeArgs(d, c) {
+    const on = Object.entries(c.parts).filter(([, p]) => p.on && p.from);
+    if (d.implicit) { const [t, p] = on[0] || [d.id, c.parts[d.id] || {}];
+      return { task: t, step: p.from, mark: "revise", reason: c.reason, values: { due: c.due, what: c.what, ...(Object.keys(p.skip || {}).length ? { skip: p.skip } : {}) } }; }
+    const skip = Object.fromEntries(on.filter(([, p]) => Object.keys(p.skip).length).map(([t, p]) => [t, p.skip]));
+    return { task: d.id, mark: "revise", reason: c.reason, values: { due: c.due, what: c.what,
+      ...(c.unit && !on.length ? { unit: c.unit } : {}), ...(on.length ? { from: Object.fromEntries(on.map(([t, p]) => [t, p.from])) } : {}),
+      ...(Object.keys(skip).length ? { skip } : {}) } };
+  }
+  function lvChangeForm(d) {
+    const c = LV.change?.id === d.id ? LV.change : null;
+    if (!c) return "";
+    const ts = lvTasks(d);
+    const u = c.unit ? lvUnits(d).find((x) => x.u.key === c.unit)?.u : null;
+    return `<div class="card" id="lv-change" style="border-color:var(--accent)"><div class="head"><h2 style="font-size:var(--fs-section);margin:0">Ändra efter leverans</h2><span class="meta">en ny runda med en gemensam slutpunkt</span><span class="right"><a class="btn quiet sm" href="${H.delivery(d.id)}">Stäng</a></span></div>`
+      + `<div class="lv-form" style="padding:12px 16px">`
+      + (u ? `<div class="meta">Förvalt ur «${esc(u.label)}»: servern väljer stegen som lämnade enhetens delar.</div>` : "")
+      + `<label class="f">Vad ska ändras?<textarea data-lv-chg="what">${esc(c.what)}</textarea></label>`
+      + `<label class="f">Varför? Med orden från den som bad om det<input data-lv-chg="reason" value="${esc(c.reason)}"></label>`
+      + `<label class="f" style="max-width:220px">Ny slutpunkt<input type="date" data-lv-chg="due" value="${esc(c.due)}"></label>`
+      + `<div class="k meta">Uppgifter som görs om</div>`
+      + ts.map((t) => { const p = c.parts[t.id] || { on: false, from: "", skip: {} }; const done = roundSteps(t).filter((s) => s.done);
+        const from = liveSteps(t).findIndex((s) => s.step === p.from), after = from < 0 ? [] : liveSteps(t).slice(from);
+        return `<div class="lv-pick"><label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" data-lv-chg-on="${esc(t.id)}" ${p.on ? "checked" : ""} ${d.implicit ? "disabled" : ""}>${esc(taskTitle(t))}</label>`
+          + (p.on ? (done.length ? `<label class="f">Gör om från steget<select data-lv-chg-from="${esc(t.id)}">${done.map((s) => `<option value="${esc(s.step)}" ${s.step === p.from ? "selected" : ""}>${esc(s.label)}</option>`).join("")}</select></label>`
+            + `<div class="skips"><span class="k meta">Hoppa över, med skäl</span>${after.slice(1).map((s) => `<label><input type="checkbox" data-lv-chg-skip="${esc(t.id)}|${esc(s.step)}" ${p.skip[s.step] !== undefined ? "checked" : ""}>${esc(s.label)}${p.skip[s.step] !== undefined ? `<input data-lv-chg-why="${esc(t.id)}|${esc(s.step)}" value="${esc(p.skip[s.step])}" placeholder="Skäl">` : ""}</label>`).join("") || `<span class="meta">Inga steg efter.</span>`}</div>`
+            : `<div class="meta">Inget steg är klart än: gör stegen som vanligt, och flytta datumet om det behövs.</div>`) : "") + `</div>`; }).join("")
+      + `<div class="lv-acts" style="justify-content:flex-start"><button class="btn" data-lv-chg-preview="1">Visa vad som händer</button><span class="meta">Servern visar förhandsvisningen. Inget skrivs.</span></div>`
+      + (c.error ? `<div class="warnnote">${esc(c.error)}</div>` : "")
+      + (c.preview ? lvChangePreview(c) : "") + `</div></div>`;
+  }
+  function lvChangePreview(c) {
+    const p = c.preview;
+    const parts = asArr(p.parts);
+    return `<div class="lv-previewbox"><b>Förhandsvisning · inget är skrivet</b><div>${esc(p.what || c.what)}</div>`
+      + (parts.length ? `<div class="k meta">Görs om</div><ul>${parts.filter((x) => asArr(x.steps).length).map((x) => `<li><b>${esc(x.label)}:</b> ${x.steps.map((s) => `«${esc(s.label)}»`).join(", ")}</li>`).join("")}</ul>` : "")
+      + (parts.some((x) => asArr(x.skipped).length) ? `<div class="k meta">Hoppas över</div><ul>${parts.flatMap((x) => asArr(x.skipped).map((s) => `<li>${esc(x.label)}: «${esc(s.step.label)}» (${esc(s.reason)})</li>`)).join("")}</ul>` : "")
+      + (parts.some((x) => asArr(x.replace).length) ? `<div class="k meta">Det som är ute</div><ul>${parts.flatMap((x) => asArr(x.replace).map((r) => `<li>${esc(r.text || r.note || lbl(r.step_named, ""))}</li>`)).join("")}</ul>` : "")
+      + `<div>Ny slutpunkt <b>${esc(short(p.due || c.due))}</b></div><div class="meta">${esc(p.question || "")}</div>`
+      + `<div class="lv-acts" style="justify-content:flex-start"><button class="btn primary" data-lv-chg-yes="1">Bekräfta</button><span class="meta">Bekräfta skriver rundan.</span></div></div>`;
+  }
+  function changePreview(btn) {
+    const c = LV.change, d = c && lvDelivery(c.id); if (!d) return toast("Leveransen finns inte längre i planen.", null, true);
+    if (!c.what.trim() || !c.reason.trim() || !isDay(c.due)) { c.error = "Skriv vad som ska ändras, varför, och en ny slutpunkt."; return render(); }
+    return busy(btn, async () => {
+      try { const r = await call("execute_step", changeArgs(d, c)); c.preview = r?.preview || null; c.error = r?.preview ? null : "Servern skickade ingen förhandsvisning."; }
+      catch (e) { c.preview = null; c.error = e.message || String(e); }
+      render();
+    });
+  }
+  function changeConfirm(btn) {
+    const c = LV.change, d = c && lvDelivery(c.id); if (!d || !c.preview) return toast("Visa förhandsvisningen först.", null, true);
+    return busy(btn, async () => {
+      try {
+        await call("execute_step", { ...changeArgs(d, c), confirmed: true, user_approval: `Ja, bekräfta (i vyn): ${c.preview.question || c.what}` });
+        LV.change = null; await load(); location.hash = H.delivery(d.id); toast("Ändringen efter leverans är skriven. Rundan står under uppgifterna.");
+      } catch (e) { fail("Ändringen skrevs inte", e); }
+    });
+  }
+
+  /* ── Lägg i leverans (en uppgift utan leverans) ── */
+  function lvBindForm(d) {
+    if (!d.implicit) return "";
+    const b = LV.bind?.task === d.id ? LV.bind : null;
+    const same = realDeliveries().filter((x) => !x.closed && x.customer?.id === custOf(d)?.id);
+    if (!b) return `<button class="btn" data-lv-bind="${esc(d.id)}">Lägg i en leverans</button>`;
+    return `<div class="card" style="border-color:var(--accent)"><div class="head"><h2 style="font-size:var(--fs-section);margin:0">Lägg i en leverans</h2><span class="right"><button class="btn quiet sm" data-lv-bind-close="1">Stäng</button></span></div>`
+      + `<div class="lv-form" style="padding:12px 16px"><label class="f">Leveransen: en som finns, eller ett nytt namn<input list="lv-bind-list" data-lv-bind-f="name" value="${esc(b.name)}"><datalist id="lv-bind-list">${same.map((x) => `<option value="${esc(x.label)}">`).join("")}</datalist></label>`
+      + `<label class="f" style="max-width:220px">Leveransdag, för en ny<input type="date" data-lv-bind-f="due" value="${esc(b.due)}"></label>`
+      + `<div class="lv-acts" style="justify-content:flex-start"><button class="btn" data-lv-bind-preview="1">Visa vad som händer</button></div>`
+      + (b.error ? `<div class="warnnote">${esc(b.error)}</div>` : "")
+      + (b.preview ? `<div class="lv-previewbox"><b>Förhandsvisning · inget är skrivet</b><div>${esc(b.preview)}</div><div class="lv-acts" style="justify-content:flex-start"><button class="btn primary" data-lv-bind-yes="1">Bekräfta</button></div></div>` : "")
+      + `</div></div>`;
+  }
+  const bindArgs = (b) => ({ task: b.task, values: { delivery: b.name.trim(), ...(isDay(b.due) ? { due: b.due } : {}) } });
+  function bindPreview(btn) {
+    const b = LV.bind; if (!b?.name.trim()) { if (b) b.error = "Skriv leveransens namn."; return render(); }
+    return busy(btn, async () => {
+      try { const r = await call("execute_step", bindArgs(b));
+        const t = taskById(b.task), p = r?.preview;
+        b.preview = r?.written === false && p ? `«${taskTitle(t)}» läggs i ${realDeliveries().some((x) => x.label === b.name.trim()) ? "leveransen" : "en ny leverans"} «${lbl(p, b.name)}»${p.due ? `, leveransdag ${p.due}` : ""}.` : null;
+        b.error = b.preview ? null : "Uppgiften ligger redan där, eller servern svarade utan förhandsvisning."; }
+      catch (e) { b.preview = null; b.error = e.message || String(e); }
+      render();
+    });
+  }
+  function bindConfirm(btn) {
+    const b = LV.bind; if (!b?.preview) return toast("Visa förhandsvisningen först.", null, true);
+    return busy(btn, async () => {
+      try { await call("execute_step", { ...bindArgs(b), confirmed: true, user_approval: `Ja, bekräfta (i vyn): ${b.preview}` });
+        LV.bind = null; await load(); const t = taskById(b.task);
+        location.hash = H.delivery(t?.delivery || b.task); toast("Uppgiften ligger i leveransen."); }
+      catch (e) { fail("Uppgiften lades inte i leveransen", e); }
+    });
+  }
+
+  /* ── brödsmulan ── */
+  let CRUMBS = null;
+  const SCREEN_NAME = { idag: "Idag", in: "In", planen: "Planen", metoder: "Metoder", filer: "Filer", installningar: "Inställningar" };
+  const screenCrumb = () => [SCREEN_NAME[state.screen] || "Idag", H.screen(state.screen || "idag")];
+  /** Kund › Leverans › Uppgift › Steg. En uppgift utan leverans är sin egen leverans och står en gång. */
+  function pathCrumbs(d, t, s, tail = []) {
+    const c = custOf(d);
+    const out = [screenCrumb()];
+    if (c?.id) out.push([lbl(c, "Kunden"), H.customer(c.id)]);
+    if (d) out.push([d.label, H.delivery(d.id)]);
+    if (t && !d?.implicit) out.push([taskTitle(t), H.delivery(d.id, t.id)]);
+    if (s) out.push([s.label, H.delivery(d.id, t.id, s.step)]);
+    return [...out, ...tail];
+  }
+
+  /* ── sidorna ── */
+  function lvHead(d, ts) {
+    const late = ts.filter((t) => t.late).length;
+    const projects = [...new Set(ts.map((t) => lbl(t.commitment_named, "")).filter(Boolean))];
+    return `<div class="pagehead" style="margin-bottom:8px"><h1>${esc(d.label)}</h1>${late ? `<span class="chip red">${plural(late, "uppgift sen", "uppgifter sena")}</span>` : ""}${ts.some((t) => t.outside_contract) ? `<span class="chip amber">utanför avtalet</span>` : ""}${d.closed ? `<span class="chip">avslutad</span>` : ""}</div>`
+      + `<div class="lv-sub">${custOf(d)?.id ? `<a href="${H.customer(custOf(d).id)}">${esc(lbl(custOf(d)))}</a>` : ""}`
+      + (d.implicit ? ` · uppgift utan leverans · ${methodLine(ts[0])}` : ` · ${plural(ts.length, "uppgift", "uppgifter")}${projects.length ? ` från ${projects.map(esc).join(" och ")}` : ""}`) + `</div>`;
+  }
+  function lvFacts(d, ts) {
+    const end = day10(d.moved?.to || d.due);
+    const late = ts.filter((t) => t.late);
+    const units = lvUnits(d), out = units.flatMap(({ u }) => asArr(u.out_as).filter((o) => !o.replaced_by));
+    const unread = out.every((o) => !o.status);
+    const words = unread ? (out.length ? ["läget inte läst"] : []) : [...new Map(out.map((o) => [outState(o).word, 0])).keys()].map((w) => `${out.filter((o) => outState(o).word === w).length} ${w}`);
+    const reads = asArr(d.out).filter((m) => m.read_at).map((m) => `${m.system} läst ${readClock(m.read_at)}`);
+    return `<div class="lv-facts">`
+      + `<div class="lv-fact"><div class="k">Leveransen slutar</div><div class="v">${isDay(end) ? short(end) : "–"}</div><div class="meta">${d.moved ? `kunden fick ${short(d.due)}; flyttat${d.moved.reason ? `: «${esc(d.moved.reason)}»` : ""}` : "det kunden fått"}</div></div>`
+      + (() => { const left = ts.flatMap((t) => liveSteps(t).filter((s) => !s.done && !s.assumed_approved));
+        const checks = left.length && left.every((s) => s.after_check), none = !ts.some((t) => liveSteps(t).length);
+        return `<div class="lv-fact"><div class="k">Troligt klart</div><div class="v">${none ? "–" : !left.length ? "Klart" : isDay(d.earliest_finish_likely) ? short(d.earliest_finish_likely) : "–"}</div><div class="meta">${none ? "uppgiften har inga steg: den saknar metod" : !left.length ? "alla steg är gjorda"
+          : checks ? "bara efterkontroll kvar; räknas inte som sent"
+          : d.margin_days == null ? "" : d.margin_days >= 0 ? `kan flyttas ${plural(d.margin_days, "dag", "dagar")} utan att leveransen spricker` : `${plural(-d.margin_days, "dag", "dagar")} efter leveransdagen`}</div></div>`; })()
+      + `<div class="lv-fact"><div class="k">Sen</div>${late.length ? `<div class="v late">${late.map((t) => esc(taskTitle(t))).join(", ")}</div><div class="meta">${late.map((t) => `skulle vara klar ${short(t.due)}, troligt ${short(t.earliest_finish_likely)}`).join("; ")}</div>` : `<div class="v">Ingen</div><div class="meta">${ts.some((t) => t.live && liveSteps(t).some((s) => s.after_check)) ? "det som är ute och bara har efterkontroll kvar räknas aldrig som sent" : "ingen uppgift blir klar efter sitt datum"}</div>`}</div>`
+      + `<div class="lv-fact"><div class="k">Ute nu</div><div class="v">${out.length ? plural(out.length, "sak", "saker") : "Inget"}</div><div class="meta">${esc([words.join(", "), reads.join(", ")].filter(Boolean).join(" · ")) || "inget ute enligt det som registrerats"}</div></div></div>`;
+  }
+  function lvTaskRows(d, ts, hitTask, hitStep) {
+    return ts.map((t, i) => {
+      const o = hitTask === t.id, st = taskState(t);
+      return `<button class="lv-trow ${i ? "" : "first"}" id="lv-task-${esc(t.id)}" data-lv-task="${esc(t.id)}" aria-expanded="${o}"><span class="lv-fold ${o ? "open" : ""}">›</span>`
+        + `<span><span class="t">${esc(taskTitle(t))} <span class="ctx">· ${esc(lbl(t.method_named, "ingen metod"))}</span></span>`
+        + `<span class="s">${t.revision ? `Revision ${esc(String(t.revision.number))}` : "Leverans 1"} · väntar på: ${esc(waitsText(t))}</span></span>`
+        + `<span class="end">${t.outside_contract ? `<span class="chip amber">utanför avtalet</span>` : ""}${lvDots(t)}<span class="meta">${lvCount(t)}</span>${toneChip(st)}<span class="meta">${short(t.due)}</span></span></button>`
+        + (o ? `<div class="lv-nest"><div class="lv-edge">Metod: ${methodLine(t)} · projekt ${esc(lbl(t.commitment_named, "–"))} · troligt klart ${short(t.earliest_finish_likely)}${t.moved ? ` · kunden fick ${short(t.external_due)}; flyttat${t.moved.reason ? `: «${esc(t.moved.reason)}»` : ""}` : ""}${t.live ? ` · ute sedan ${short(t.live.at)}` : ""}</div>`
+          + lvRounds(d, t, hitStep)
+          + asArr(t.steps).filter((s) => asArr(s.waits_on).some((w) => !w.done)).slice(0, 1).map((s) => `<div class="lv-edge">${esc(s.waits_on.find((w) => !w.done).text)}.</div>`).join("")
+          + `</div>` : "");
+    }).join("");
+  }
+  function pageDelivery() {
+    const o = state.obj, d = lvDelivery(o.id);
+    if (!d) { CRUMBS = [screenCrumb(), ["Hittas inte", null]]; return `<div class="empty"><b>Leveransen finns inte i planen.</b>Den kan vara avslutad, eller ligga längre fram än planen räcker.<div style="margin-top:12px"><a class="btn" href="${H.screen(state.screen)}">Tillbaka</a></div></div>`; }
+    const ts = lvTasks(d);
+    const t = o.task ? taskById(o.task) : null, s = t && o.step ? stepOf(t, o.step) : null;
+    if (o.task) LV.open[`task|${d.id}`] = o.task;
+    if (d.implicit) LV.open[`task|${d.id}`] = d.id;
+    const openTask = LV.open[`task|${d.id}`] || null;
+    if (o.sub === "andra" && (!LV.change || LV.change.id !== d.id || LV.change.unit !== (o.unit || ""))) LV.change = newChange(d, o.unit);
+    CRUMBS = pathCrumbs(d, t, s, o.sub === "andra" ? [["Ändra efter leverans", null]] : o.sub === "material" ? [["Material", null]] : []);
+    if (t) openMirror(t.id); else if (ts[0]) openMirror(ts[0].id);
+    return lvHead(d, ts)
+      + (asArr(d.warnings).length ? `<div class="warnnote" style="margin-bottom:12px">${d.warnings.map(esc).join("<br>")}</div>` : "")
+      + `<div class="lv-sec"><h2>Läget</h2></div><div class="card lv-card">${lvFacts(d, ts)}${lvTimeline(d, ts)}</div>`
+      + `<div class="lv-sec"><h2>Att göra nu</h2><span class="n">${plural(asArr(d.todo).length, "sak", "saker")}</span></div><div class="card lv-card">${lvTodoRows(d, false)}</div>`
+      + `<div class="lv-sec"><h2>${d.implicit ? "Stegen" : "Uppgifter och rundor"}</h2><span class="n">${d.implicit ? esc(lvCount(ts[0])) : `${plural(ts.length, "uppgift", "uppgifter")} · en utfälld i taget`}</span></div>`
+      + `<div class="card lv-card">${d.implicit ? `<div style="padding:4px 16px 12px">${lvRounds(d, ts[0], o.step)}</div>` : lvTaskRows(d, ts, openTask, o.step)}</div>`
+      + `<div class="lv-sec" id="lv-material"><h2>Material per enhet</h2><span class="n">${plural(lvUnits(d).length, "enhet", "enheter")} · det som behöver något först</span></div>${lvMaterial(d)}`
+      + `<div class="lv-sec"><h2>Ute i systemen</h2><span class="n">det senast lästa, inte läget just nu</span></div>${lvOut(d)}`
+      + `<div class="lv-sec"><h2>Historik</h2></div>${lvHistory(d, ts)}`
+      + `<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap" id="lv-changes">${o.sub === "andra" ? "" : `<a class="btn" href="${H.change(d.id)}">Ändra efter leverans</a>`}${lvBindForm(d)}</div>`
+      + (o.sub === "andra" ? lvChangeForm(d) : "");
+  }
+  function pageUnit() {
+    const o = state.obj, d = lvDelivery(o.delivery);
+    const rounds = asArr(d?.material?.rounds).filter((r) => asArr(r.units).some((u) => u.key === o.key));
+    const u = rounds.length ? rounds.at(-1).units.find((x) => x.key === o.key) : null;
+    if (!d || !u) { CRUMBS = [screenCrumb(), ["Hittas inte", null]]; return `<div class="empty"><b>Enheten finns inte i leveransens material.</b><div style="margin-top:12px">${d ? `<a class="btn" href="${H.material(d.id)}">Till leveransen</a>` : ""}</div></div>`; }
+    const cust = custOf(d)?.id;
+    const t = lvTasks(d).find((x) => asArr(x.material?.rounds).some((r) => asArr(r.units).some((y) => y.key === u.key)));
+    CRUMBS = pathCrumbs(d, t, null, [[u.label, null]]);
+    const now = asArr(u.parts).filter((p) => p.kind === "file" && !p.superseded), old = asArr(u.parts).filter((p) => p.superseded);
+    const out = asArr(u.out_as);
+    return `<div class="lv-acts" style="justify-content:flex-start;margin-bottom:12px"><a href="${H.material(d.id)}">‹ Till leveransen</a>${t && !d.implicit ? `<a href="${H.delivery(d.id, t.id)}">Till uppgiften ${esc(taskTitle(t))}</a>` : ""}</div>`
+      + `<div class="pagehead" style="margin-bottom:8px"><h1>${esc(u.label)}</h1>${unitChips(d, u).map(toneChip).join("")}</div>`
+      + `<div class="lv-sub">${esc(kindLabel(u))} · del av «${esc(d.label)}»${u.template ? ` · gjord ur mallen «${esc(u.template.label)}»` : ""}</div>`
+      + `<div class="lv-sec"><h2>Rundor</h2><span class="n">${plural(rounds.length, "runda", "rundor")}</span></div><div class="card"><div style="padding:8px 16px 12px">`
+      + rounds.map((r) => { const x = r.units.find((y) => y.key === u.key), before = asArr(x.parts).filter((p) => p.superseded), cur = asArr(x.parts).filter((p) => p.kind === "file" && !p.superseded);
+        return `<div class="lv-round-h">${esc(r.label)} <span class="chip ${r.status === "pågår" ? "blue" : "green"}">${esc(r.status)}</span><span class="meta">${r.date ? short(r.date) : ""}${r.reason ? ` · ${esc(r.reason)}` : ""}${asArr(x.missing).length ? ` · saknas: ${x.missing.map(esc).join(", ")}` : ""}</span></div>`
+          + (before.length || cur.length ? `<div class="lv-acts" style="justify-content:flex-start;align-items:flex-end">${before.length ? `<span class="meta">Före:</span>${before.map((p) => lvThumb(cust, p)).join("")}<span class="meta">→ nu:</span>` : ""}${cur.map((p) => lvThumb(cust, p)).join("")}</div>` : ""); }).join("")
+      + `</div></div>`
+      + `<div class="lv-sec"><h2>Delar</h2><span class="n">${esc(asArr(u.parts).filter((p) => !p.superseded).map((p) => p.part).join(", ") || "inga")}</span></div><div class="card"><div style="padding:8px 16px">`
+      + (now.length ? now.map((p) => `<div class="lv-part">${lvThumb(cust, p, "mid")}<span class="ptxt"><b>${esc(p.part)}</b><a class="meta" href="${cust ? H.files(cust, shaOf(p.ref)) : "#/filer"}">${esc(p.name)}</a>${p.reused_from ? `<span class="meta">återanvänd</span>` : ""}</span><span class="chip green">i bruk</span></div>`).join("") : `<div class="meta">Inga filer i enheten.</div>`)
+      + (old.length ? `<details><summary class="meta" style="cursor:pointer;padding:6px 0">${plural(old.length, "ersatt fil", "ersatta filer")}</summary>${old.map((p) => `<div class="lv-part">${lvThumb(cust, p, "mid")}<span class="ptxt"><b>${esc(p.part)}</b><a class="meta" href="${cust ? H.files(cust, shaOf(p.ref)) : "#/filer"}">${esc(p.name)}</a></span><span class="chip">ersatt</span></div>`).join("")}</details>` : "")
+      + `</div></div>`
+      + (u.text ? `<div class="lv-sec"><h2>Texten</h2><span class="n">version ${esc(String(u.text.version))} · ${u.text.approved ? "godkänd" : "inte godkänd"}</span></div><div class="card"><div style="padding:12px 16px">${lvText(u.key)}</div></div>` : "")
+      + `<div class="lv-sec"><h2>Ute som</h2></div><div class="card">${out.length ? out.map((x) => `<div class="row"><span class="kindcell">${toneChip(outState(x))}</span><span></span><span class="txt"><span class="t">${esc(systemName(d, x.channel))} · ${esc(x.name || x.id)}</span><span class="why">${esc(x.campaign || "")}${x.replaced_by ? " · ersatt i en senare runda" : ""}</span></span><span class="s when"></span><span class="acts">${x.url ? `<a class="btn sm" href="${esc(x.url)}" target="_blank" rel="noopener">Öppna i ${esc(systemName(d, x.channel))} ↗</a>` : ""}</span></div>`).join("")
+        : `<div class="empty">Inte ute någonstans enligt det som registrerats.</div>`}</div>`
+      + `<div style="margin-top:16px"><a class="btn" href="${H.change(d.id, d.implicit ? "" : u.key)}">Ändra efter leverans</a></div>`;
+  }
+  function pageCustomer() {
+    const id = state.obj.id;
+    const c = customerList().find((x) => x.id === id) || realDeliveries().find((x) => x.customer?.id === id)?.customer || { id, label: state.obj.title || "Kunden" };
+    CRUMBS = [screenCrumb(), [lbl(c, "Kunden"), null]];
+    const ds = realDeliveries().filter((x) => x.customer?.id === id);
+    const loose = tasks().filter((t) => t.customer?.id === id && !ds.some((x) => asArr(x.tasks).includes(t.id)));
+    return `<div class="pagehead"><h1>${esc(lbl(c, "Kunden"))}</h1><div class="actions"><a class="btn" href="${H.files(id)}">Filbiblioteket</a></div></div>`
+      + `<div class="lv-sec"><h2>Leveranser</h2><span class="n">${plural(ds.length, "leverans", "leveranser")}</span></div>`
+      + `<div class="card">${ds.length ? ds.map((x) => { const ts = lvTasks(x), late = ts.some((t) => t.late);
+          return `<div class="row" data-lv-href="${H.delivery(x.id)}" tabindex="0"><span class="kindcell">${toneChip(x.closed ? { word: "avslutad", tone: "" } : late ? { word: "sen", tone: "red" } : { word: "pågår", tone: "blue" })}</span><span></span>`
+            + `<span class="txt"><span class="t"><a href="${H.delivery(x.id)}">${esc(x.label)}</a></span><span class="why">${plural(ts.length, "uppgift", "uppgifter")} · ${esc(x.position?.text || "")}</span></span><span class="s when">${short(x.moved?.to || x.due)}</span><span class="acts"></span></div>`; }).join("")
+        : `<div class="empty">Ingen leverans hos ${esc(lbl(c, "kunden"))} än. En uppgift läggs i en leverans från uppgiftens sida.</div>`}</div>`
+      + `<div class="lv-sec"><h2>Uppgifter utan leverans</h2><span class="n">${plural(loose.length, "uppgift", "uppgifter")}</span></div>`
+      + `<div class="card">${loose.length ? loose.map((t) => { const cur = currentStep(t);
+          return `<div class="row" data-lv-href="${H.delivery(t.id)}" tabindex="0"><span class="kindcell">${toneChip(taskState(t))}</span><span></span>`
+            + `<span class="txt"><span class="t"><a href="${H.delivery(t.id)}">${esc(taskTitle(t))}</a>${addonChip(t)}</span><span class="why">${esc(lbl(t.method_named, "ingen metod"))}${cur ? ` · nu: ${esc(cur.label)}` : ""}</span></span><span class="s when">${short(t.due)}</span>`
+            + `<span class="acts lv-acts">${cur && !cur.external ? lvActions(t, cur) : ""}</span></div>`; }).join("")
+        : `<div class="empty">Inga.</div>`}</div>`
+      + `<div class="lv-sec"><h2>Filbiblioteket</h2></div><div class="card"><div style="padding:12px 16px"><a href="${H.files(id)}">Kundens filer, med bilderna grupperade per enhet ›</a></div></div>`;
+  }
+  /** Det som skulle ändras, med bilderna som miniatyrer och länk till filbiblioteket (felrapport c96d2186). */
+  function wouldChangeHtml(list, big = false) {
+    return asArr(list).map((c) => {
+      const imgs = asArr(c?.images);
+      const rows = Object.entries(c || {}).filter(([k]) => k !== "images")
+        .map(([k, v]) => `<div class="row2"><span>${esc(k)}</span><span>${esc(typeof v === "string" ? v : JSON.stringify(v))}</span></div>`).join("");
+      const pics = imgs.length ? `<div class="lv-imgs">${imgs.map((i) => { const href = String(i.library || "").replace(/^[^#]*/, "") || "#/filer";
+        const ratio = i.width && i.height ? (i.height / i.width > 1.5 ? "tall" : Math.abs(i.height / i.width - 1) < 0.05 ? "sq" : "") : "";
+        return `<figure><a class="lv-th ${big ? "big" : "mid"} ${ratio}" href="${esc(href)}" title="${esc(i.name)} — öppna i filbiblioteket">${i.thumbnail_base64 ? `<img alt="${esc(i.name)}" src="data:${esc(i.thumbnail_mime || "image/webp")};base64,${esc(i.thumbnail_base64)}">` : esc(i.name)}</a>`
+          + `<figcaption>${esc(i.name)}${i.width && i.height ? ` · ${i.width}×${i.height}` : ""}</figcaption></figure>`; }).join("")}</div>` : "";
+      return pics + rows;
+    }).join("<hr>");
+  }
+  function pagePreview() {
+    const o = state.obj, t = taskById(o.task), s = stepOf(t, o.step), key = `${o.task}|${o.step}`;
+    const d = t && deliveryOfTask(t);
+    CRUMBS = d ? pathCrumbs(d, t, s, [["Förhandsvisning", null]]) : [screenCrumb(), ["Förhandsvisning", null]];
+    if (!s) return `<div class="empty"><b>Steget finns inte längre i planen.</b></div>`;
+    const p = LV.previews.get(key);
+    const head = `<div class="lv-acts" style="justify-content:flex-start;margin-bottom:12px"><a href="${d ? H.delivery(d.id, t.id, s.step) : H.step(t.id, s.step)}">‹ Till steget</a></div>`
+      + `<div class="pagehead" style="margin-bottom:8px"><h1>${esc(s.label)}</h1><span class="chip blue">förhandsvisning</span></div>`;
+    if (s.done) return head + `<div class="lv-sub">Steget är klart. Det som gjordes står i stegets historik; en ändring görs med Ändra efter leverans.</div>`;
+    if (!p) return head + `<div class="lv-sub">Inget är skrivet. Dirigenten läser läget i systemet och visar vad som skulle ändras.</div>`
+      + `<button class="btn primary" data-lv-preview="${esc(key)}">Visa vad som ändras</button>`;
+    if (p.error) return head + `<div class="warnnote">${esc(p.error)}</div><button class="btn" data-lv-preview="${esc(key)}">Försök igen</button>`;
+    return head + `<div class="lv-sub">Inget är skrivet ännu. Så här blir det när du säger ja.</div>`
+      + `<div class="card"><div class="preview" style="padding:12px 16px">${wouldChangeHtml(p.would_change, true) || "<div class='meta'>Servern angav inga detaljer.</div>"}</div>`
+      + `<div class="foot lv-acts" style="justify-content:flex-start"><button class="btn primary" data-lv-preview-yes="${esc(key)}">Ja, utför det</button><a class="btn quiet" href="${d ? H.delivery(d.id, t.id, s.step) : H.step(t.id, s.step)}">Avbryt</a></div></div>`;
+  }
+  function loadPreview(btn, key) {
+    const [task, step] = key.split("|");
+    return busy(btn, async () => {
+      try { const r = await call("execute_step", { task, step });
+        if (r?.awaiting_confirmation) LV.previews.set(key, r);
+        else { LV.previews.delete(key); await codeResult(stepOf(taskById(task), step)?.label || "Steget", r); return; } }
+      catch (e) { LV.previews.set(key, { error: e.message || String(e) }); }
+      render();
+    });
+  }
+  function previewYes(btn, key) {
+    const [task, step] = key.split("|"), s = stepOf(taskById(task), step);
+    return busy(btn, async () => {
+      try { const r = await call("execute_step", { task, step, confirmed: true, user_approval: `Ja, utför det (svarade i vyn på förhandsvisningen av ${s?.label || "steget"})` });
+        LV.previews.delete(key); await codeResult(s?.label || "Steget", r); history.back(); }
+      catch (e) { fail("Steget utfördes inte", e); }
+    });
+  }
+
+  /* ── Idag: leveranserna som kort med tidslinje ── */
+  function lvIdag() {
+    const ds = realDeliveries().filter((x) => !x.closed && lvTasks(x).length);
+    if (!ds.length) return "";
+    return `<div class="lv-sec" style="margin-top:0"><h2>Leveranser</h2><span class="n">${plural(ds.length, "pågår", "pågår")}</span></div>`
+      + ds.map((d) => {
+        const ts = lvTasks(d), late = ts.filter((t) => t.late).length, k = `idag|${d.id}`, o = !!LV.open[k], ot = LV.open[`idagtask|${d.id}`];
+        return `<div class="card lv-card"><div class="head"><a href="${H.delivery(d.id)}"><h2>${esc(d.label)}</h2></a><span class="meta">${esc(lbl(custOf(d), ""))} · ${plural(ts.length, "uppgift", "uppgifter")}</span>`
+          + `<span class="right">${late ? `<span class="chip red">${plural(late, "uppgift sen", "uppgifter sena")}</span>` : ""}<span class="meta">slutar ${short(d.moved?.to || d.due)}</span></span></div>`
+          + lvTimeline(d, ts)
+          + `<button class="lv-sum" data-lv-toggle="${esc(k)}" aria-expanded="${o}"><span class="lv-fold ${o ? "open" : ""}">›</span>Stegen per uppgift · ${ts.map((t) => `${esc(taskTitle(t))} ${lvCount(t).replace(" klara", "")}`).join(" · ")}</button>`
+          + (o ? ts.map((t) => { const x = ot === t.id;
+            return `<button class="lv-trow" data-lv-idagtask="${esc(d.id)}|${esc(t.id)}" aria-expanded="${x}"><span class="lv-fold ${x ? "open" : ""}">›</span>`
+              + `<span><span class="t">${esc(taskTitle(t))}</span><span class="s">väntar på: ${esc(waitsText(t))}</span></span><span class="end">${lvDots(t)}<span class="meta">${lvCount(t)}</span>${toneChip(taskState(t))}</span></button>`
+              + (x ? `<div class="lv-nest">${lvStepList(d, t, roundSteps(t))}<div class="lv-edge"><a href="${H.delivery(d.id, t.id)}">Öppna uppgiften i leveransen ›</a></div></div>` : ""); }).join("") : "")
+          + `<div class="foot"><a class="btn sm" href="${H.delivery(d.id)}">Öppna leveransen</a></div></div>`;
+      }).join("");
+  }
+
+  /* ── filbiblioteket: filerna per enhet, de som används först ── */
+  function lvFileUnits(cust) {
+    const units = new Map();
+    for (const t of tasks().filter((x) => x.customer?.id === cust)) {
+      const d = deliveryOfTask(t);
+      for (const r of asArr(t.material?.rounds)) for (const u of asArr(r.units)) {
+        const e = units.get(u.key) || { u, d, parts: new Map() };
+        for (const p of asArr(u.parts)) if (p.kind === "file") { const had = e.parts.get(p.ref); e.parts.set(p.ref, had && !had.superseded ? had : p); }
+        units.set(u.key, e);
+      }
+    }
+    const withFiles = [...units.values()].filter((e) => e.parts.size);
+    if (!withFiles.length) return "";
+    const cur = state.obj?.file;
+    return `<div class="card" style="margin-bottom:16px"><div class="head"><h2>Filerna per enhet</h2><span class="meta">de som används först</span></div>`
+      + withFiles.map((e) => { const ps = [...e.parts.values()].sort((a, b) => !!a.superseded - !!b.superseded);
+        return `<div class="group"><b><a href="${H.unit(e.d.id, e.u.key)}">${esc(e.u.label)}</a></b><span>${ps.filter((p) => !p.superseded).length} i bruk · ${ps.filter((p) => p.superseded).length} ersatta</span></div>`
+          + `<div class="lv-fgrid">${ps.map((p) => `<a class="lv-fcard ${shaOf(p.ref) === cur ? "cur" : ""}" href="${H.files(cust, shaOf(p.ref))}">${lvThumb(cust, p, "", false)}<span class="t">${esc(p.part)} · ${esc(p.name)}</span>${p.superseded ? `<span class="chip">ersatt</span>` : `<span class="chip green">i bruk</span>`}</a>`).join("")}</div>`; }).join("")
+      + `</div>`;
+  }
+  function lvFileHero(cust, sha) {
+    const f = asArr(FB.files.get(cust)?.list).find((x) => x.sha256 === sha);
+    const where = tasks().filter((t) => t.customer?.id === cust).flatMap((t) => asArr(t.material?.rounds).flatMap((r) => asArr(r.units).map((u) => ({ t, u, p: asArr(u.parts).find((p) => shaOf(p.ref) === sha) })))).find((x) => x.p);
+    if (!f && !where) return `<div class="card" style="margin-bottom:16px"><div class="empty">Filen hittas inte bland kundens filer. Den kan vara borttagen.</div></div>`;
+    const ref = f?.ref || where?.p.ref, name = f?.name || where?.p.name || sha.slice(0, 12);
+    const d = where && deliveryOfTask(where.t);
+    return `<div class="card" style="margin-bottom:16px"><div class="lv-hero">${lvThumb(cust, { ref, part: where?.p.part || "", name }, "big", false)}`
+      + `<div class="lv-kv"><span class="k">Fil</span><span>${esc(name)}</span>`
+      + `<span class="k">Typ</span><span>${esc(where?.p.part || f?.asset_type || "")}${f?.width && f?.height ? ` · ${f.width}×${f.height}` : ""}${f?.size ? ` · ${fsize(f.size)}` : ""}</span>`
+      + `<span class="k">Status</span><span>${where ? (where.p.superseded ? `<span class="chip">ersatt</span>` : `<span class="chip green">i bruk</span>`) : `<span class="chip">inte i någon enhet</span>`}${f?.ersatt_av ? ` · nyare version: ${esc(f.ersatt_av.name)}` : ""}</span>`
+      + (where ? `<span class="k">Hör till</span><span><a href="${H.unit(d.id, where.u.key)}">${esc(where.u.label)}</a> · ${esc(d.label)}</span>` : "")
+      + (f?.folder ? `<span class="k">Mapp</span><span>${esc(f.folder)}</span>` : "")
+      + `<span class="k">Hämta</span><span>${ref ? `<button class="btn sm" data-fget="${esc(ref)}" data-fname="${esc(name)}">Ladda ned</button>` : ""}</span></div></div></div>`;
+  }
+
+  /* ── adresserna ── */
+  /** Sidans adress ur läget. Byggaren och en ny beställning har ingen egen. */
+  function hashOf() {
+    const o = state.obj;
+    if (!o) return H.screen(state.screen || "idag");
+    switch (o.type) {
+      case "step": return H.step(o.task, o.step);
+      case "question": return `#/fraga/${enc(o.id)}`;
+      case "method": return `#/metod/${enc(o.id)}`;
+      case "case": return `#/arende/${enc(o.id)}`;
+      case "project": return `#/projekt/${enc(o.key)}`;
+      case "stepedit": return `#/stegform/${enc(o.id)}`;
+      case "files": return H.files(o.id, o.file);
+      case "delivery": return o.task ? H.delivery(o.id, o.task, o.step) : o.sub === "material" ? H.material(o.id) : o.sub === "andra" ? H.change(o.id, o.unit) : H.delivery(o.id);
+      case "unit": return H.unit(o.delivery, o.key);
+      case "customer": return H.customer(o.id);
+      case "preview": return H.preview(o.task, o.step);
+      default: return null;
+    }
+  }
+  /** Läget ur adressen. En adress som inte finns ger Idag. */
+  function applyHash(h) {
+    const [a = "", ...rest] = String(h || "").replace(/^#\/?/, "").split("/").map((x) => { try { return decodeURIComponent(x); } catch { return x; } });
+    // Leveransen, enheten och kunden nås från Idag eller Planen; brödsmulan börjar där.
+    const keepScreen = () => (state.screen === "planen" ? "planen" : "idag");
+    if (SCREEN_NAME[a] && !(a === "filer" && rest[0])) { state.screen = a; state.obj = null; return; }
+    if (a === "filer") { state.screen = "filer"; state.obj = { type: "files", id: rest[0], title: fileCust(rest[0])?.label || "", folder: "", ...(rest[1] ? { file: rest[1] } : {}) }; return; }
+    if (a === "leverans" && rest[0]) {
+      const [id, x, y, z, w] = rest;
+      state.screen = keepScreen();
+      state.obj = { type: "delivery", id, ...(x === "uppgift" && y ? { task: y, ...(z === "steg" && w ? { step: w } : {}) } : x === "material" ? { sub: "material" } : x === "andra" ? { sub: "andra", unit: y || "" } : {}) };
+      if (state.obj.task) LV.open[`task|${id}`] = state.obj.task;
+      return;
+    }
+    if (a === "enhet" && rest[1]) { state.screen = keepScreen(); state.obj = { type: "unit", delivery: rest[0], key: rest.slice(1).join("/") }; return; }
+    if (a === "kund" && rest[0]) { state.screen = keepScreen(); state.obj = { type: "customer", id: rest[0] }; return; }
+    if (a === "forhandsvisning" && rest[1]) { state.screen = keepScreen(); state.obj = { type: "preview", task: rest[0], step: rest[1] }; return; }
+    if (a === "steg" && rest[1]) { const st = stepOf(taskById(rest[0]), rest[1]); state.screen = keepScreen(); state.obj = { type: "step", task: rest[0], step: rest[1], title: st?.label || "" }; return; }
+    if (a === "fraga" && rest[0]) { const q = opens().find((x) => x.id === rest[0]); state.obj = { type: "question", id: rest[0], title: q ? headlineForOpen(q) : "" }; return; }
+    if (a === "metod" && rest[0]) { state.screen = "metoder"; state.obj = { type: "method", id: rest[0], title: methodById(rest[0])?.label || "" }; return; }
+    if (a === "arende" && rest[0]) { state.screen = "in"; state.obj = { type: "case", id: rest[0], title: caseByThread(rest[0])?.subject || "" }; return; }
+    if (a === "projekt" && rest[0]) { state.obj = { type: "project", key: rest[0], title: projectsOf().get(rest[0])?.label || "" }; return; }
+    if (a === "stegform" && rest[0]) { openStepEdit(rest[0]); return; }
+    state.screen = "idag"; state.obj = null;
+  }
+  let hashNav = false, lastHash = null;
+  /** Efter varje ritning: adressen följer sidan. Ett byte ger en ny post i historiken, så att Bakåt fungerar. */
+  function syncHash() {
+    const h = hashOf();
+    if (!h) return;
+    if (location.hash !== h) { try { history[hashNav ? "replaceState" : "pushState"](null, "", h); } catch { /* sidan får inte ändra adressen: läget står kvar ändå */ } }
+    lastHash = h;
+  }
+  addEventListener("hashchange", () => {
+    if (location.hash === lastHash) return;
+    if (lastHash) LV.scroll[lastHash] = $("#main")?.scrollTop || 0;
+    hashNav = true;
+    try { applyHash(location.hash); render(); } finally { hashNav = false; }
+    const saved = LV.scroll[location.hash], m = $("#main");
+    requestAnimationFrame(() => {
+      const o = state.obj, anchor = o?.type === "delivery" ? (o.step ? `lv-step-${o.task}-${o.step}` : o.task ? `lv-task-${o.task}` : o.sub === "material" ? "lv-material" : o.sub === "andra" ? "lv-change" : null) : null;
+      const el = anchor && document.getElementById(anchor);
+      if (saved !== undefined && m) m.scrollTop = saved;
+      else if (el) el.scrollIntoView({ block: "center" });
+      else if (m) m.scrollTop = 0;
+    });
+  });
+  /* Leveransens egna knappar. Länkarna är vanliga adresser (#/…) och går genom hashchange. */
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest?.("[data-lv-href], [data-lv-toggle], [data-lv-task], [data-lv-unit], [data-lv-idagtask], [data-lv-copy], [data-lv-do], [data-lv-done], [data-lv-done-send], [data-lv-recipe], [data-lv-chg-preview], [data-lv-chg-yes], [data-lv-bind], [data-lv-bind-close], [data-lv-bind-preview], [data-lv-bind-yes], [data-lv-preview], [data-lv-preview-yes]");
+    if (!t) return;
+    const ds = t.dataset;
+    // En rad som länk: knappar och länkar på raden gör sitt eget.
+    if (ds.lvHref !== undefined) { const inner = e.target.closest("button, a, input, select, textarea, summary, label");
+      if (inner && inner !== t && t.contains(inner)) return; location.hash = ds.lvHref; return; }
+    if (ds.lvToggle) { LV.open[ds.lvToggle] = !LV.open[ds.lvToggle]; return render(); }
+    if (ds.lvIdagtask) { const [dd, task] = ds.lvIdagtask.split("|"); LV.open[`idagtask|${dd}`] = LV.open[`idagtask|${dd}`] === task ? null : task; return render(); }
+    if (ds.lvTask) { const o = state.obj; if (o?.type !== "delivery") return;
+      const k = `task|${o.id}`, open = LV.open[k] !== ds.lvTask; LV.open[k] = open ? ds.lvTask : null;
+      state.obj = { type: "delivery", id: o.id, ...(open ? { task: ds.lvTask } : {}) }; return render(); }
+    if (ds.lvUnit) { const o = state.obj; const k = `unit|${o?.id}`; LV.open[k] = LV.open[k] === ds.lvUnit ? null : ds.lvUnit; return render(); }
+    if (ds.lvCopy) { const x = JSON.parse(ds.lvCopy); const s = stepOf(taskById(x.task), x.step);
+      return copyToChat(lvCopyText(x), s ? `Instruktionen för «${s.label}»` : "Instruktionen"); }
+    if (ds.lvDo) return lvDo(t, JSON.parse(ds.lvDo));
+    if (ds.lvDone) { closeDialog(); return doneNoteDialog(ds.lvDone); }
+    if (ds.lvDoneSend) return sendDoneNote(t);
+    if (ds.lvRecipe) return recipeDialog(ds.lvRecipe);
+    if (ds.lvChgPreview) return changePreview(t);
+    if (ds.lvChgYes) return changeConfirm(t);
+    if (ds.lvBind) { LV.bind = { task: ds.lvBind, name: "", due: add(TODAY, 7), preview: null, error: null }; return render(); }
+    if (ds.lvBindClose) { LV.bind = null; return render(); }
+    if (ds.lvBindPreview) return bindPreview(t);
+    if (ds.lvBindYes) return bindConfirm(t);
+    if (ds.lvPreview) return loadPreview(t, ds.lvPreview);
+    if (ds.lvPreviewYes) return previewYes(t, ds.lvPreviewYes);
+  });
+  document.addEventListener("keydown", (e) => {
+    const r = e.target.closest?.("[data-lv-href]");
+    if (r && e.target === r && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); location.hash = r.dataset.lvHref; }
+  });
+  /* Formen skriver i läget utan att rita om; ritas om bara när formen byter form. */
+  document.addEventListener("input", (e) => {
+    const x = e.target, c = LV.change, b = LV.bind;
+    if (c && x.dataset.lvChg) { c[x.dataset.lvChg] = x.value; c.preview = null; return; }
+    if (c && x.dataset.lvChgWhy) { const [task, step] = x.dataset.lvChgWhy.split("|"); c.parts[task].skip[step] = x.value; c.preview = null; return; }
+    if (b && x.dataset.lvBindF) { b[x.dataset.lvBindF] = x.value; b.preview = null; }
+  });
+  document.addEventListener("change", (e) => {
+    const x = e.target, c = LV.change; if (!c) return;
+    if (x.dataset.lvChgOn) { c.parts[x.dataset.lvChgOn].on = x.checked; c.preview = null; return render(); }
+    if (x.dataset.lvChgFrom) { const p = c.parts[x.dataset.lvChgFrom]; p.from = x.value; p.skip = {}; c.preview = null; return render(); }
+    if (x.dataset.lvChgSkip) { const [task, step] = x.dataset.lvChgSkip.split("|"); const p = c.parts[task];
+      if (x.checked) p.skip[step] = ""; else delete p.skip[step]; c.preview = null; return render(); }
+  });
+  Object.assign(OBJ, { delivery: pageDelivery, unit: pageUnit, customer: pageCustomer, preview: pagePreview });
 
   /* ── panelen ── */
   // Prototypens exempelsamtal (CONVO) är borta: samtalet är riktig Claude (B-212).
@@ -3381,7 +4459,7 @@ a.btn { text-decoration: none; color: var(--text); }
       + (fns.length ? `<div><div class="label" style="margin-bottom:6px">Jag kan</div><div class="cans">${fns.map((f) => `<button class="can" data-func="${f.id}" title="${f.write === "none" ? "Läser, skriver ingenting" : "Visar ett förslag innan något skrivs"}">${SP} ${esc(f.label)} <span class="tier">${TIERNAME[f.tier]}</span></button>`).join("")}</div></div>` : "")
       + msgs.map((m) => m.role === "user" ? `<div class="msg user">${esc(m.text)}</div>`
         : `<div class="msg ai${m.error ? " error" : ""}"><span class="who">${SP} Claude</span><div class="txt md">${md(utanTummar(m.text || ""))}</div>${m.meter ? `<div class="meta">${m.meter.fetches} hämtningar · ${Math.round(m.meter.bytes / 102.4) / 10} kB hämtat</div>` : ""}${rateHtml(m)}</div>`).join("")
-      + (!msgs.length ? `<div class="meta">Fråga om det du tittar på. Claude ser samma sak som du, och skriver ingenting utan att du bekräftar. Metodbygge, Claude-steg och långa texter görs i vanliga Claude-chatten: Kopiera till chatten under rutan.</div>` : "")
+      + (!msgs.length ? `<div class="meta">Fråga om det du tittar på. Claude ser samma sak som du, och skriver ingenting utan att du bekräftar. Metodbygge, Claude-steg och långa texter görs i vanliga Claude-chatten: Kopiera till Claude under rutan.</div>` : "")
       + (sample === null ? `<div class="meta">${esc(noClaude())}</div>` : "");
     $("#pactivity").innerHTML = running
       ? `<div class="running"><span class="spin"></span><span>${esc(running.label)} · <span data-since="${running.since}">0 s</span></span><button class="btn quiet sm" data-abort="1" style="margin-left:auto">Avbryt</button></div>` : "";
@@ -3700,7 +4778,7 @@ a.btn { text-decoration: none; color: var(--text); }
   /** Kör ett kodsteg: servern visar först vad som ändras, och kör först efter ja (B-156). */
   /* ── Claude i panelen läser, och ändrar bara efter ja ──────────────────
      Ett Claude-steg görs inte längre i vyn: det görs i vanliga chatten, med
-     en prompt ur Kopiera till chatten (docs/kvar.md 20). */
+     en prompt ur Kopiera till Claude (docs/kvar.md 20). */
   // Panelen har samma sorts tak (B-238): utan det tog svaret slut mitt i, och
   // Claude trodde att verktygen var avstängda.
   // Åtta hämtningar (B-257): med search räcker det, och varje hämtning läses om
@@ -3737,14 +4815,14 @@ a.btn { text-decoration: none; color: var(--text); }
    * själv, med säljmetoderna i Försäljning och kundrelation. Rotor internt är
    * husets eget arbete; det avtalet inte täcker blir ett tillägg där.
    */
-  const DIRIGENT_HJALP = "Om vyn, när användaren frågar hur man gör: Idag visar dina steg, frågor och det som är lämnat till dig; In är posten, där ärenden bedöms och blir arbete; Planen är tidslinjen, där steg dras för att flyttas; Metoder visar hur leveranser görs; Filer är kundernas filer; Inställningar är kopplingar (Google, verktygslistan) och arbetsdag. I ett steg: Kopiera till chatten lägger stegets prompt i urklipp — klistra in den i vanliga Claude-chatten, där steget görs; Så görs steget visar stegets delar och vem som gör dem (Människa, Claude, Kod) — flytta, ta bort och spara ny version här, medan Claude, Kod och Lägg till en del kopierar en prompt till vanliga chatten; Lägg i kalendern, Senarelägg, Lämna över, Skicka till kollega. I panelen: Nytt samtal (det gamla finns under Tidigare), Rensa (tar bort samtalet eller alla samtal här, från den här datorn), Anteckning (på uppgiften, kunden eller fri — sparas i dirigenten), Kopiera till chatten under rutan (samtalet och frågan i rutan, som en prompt till vanliga chatten). Rapportera fel finns i toppraden och i varje felruta. Kopplingar i kundens system sparas när ett workflow läses. Sälj planeras på prospekten själv: den läggs in som kund med rollen prospekt, och Lägg in beställning på Planen ger en uppgift med säljmetoderna i Försäljning och kundrelation. Rotor internt är husets eget arbete, inte sälj: en egen uppgift läggs in med Lägg in beställning på kunden Rotor internt, och det avtalet inte täcker blir ett tillägg under Utanför avtalet. Svara kort, med var knappen finns.";
+  const DIRIGENT_HJALP = "Om vyn, när användaren frågar hur man gör: Idag visar dina steg, frågor och det som är lämnat till dig; In är posten, där ärenden bedöms och blir arbete; Planen är tidslinjen, där steg dras för att flyttas; Metoder visar hur leveranser görs; Filer är kundernas filer; Inställningar är kopplingar (Google, verktygslistan) och arbetsdag. I ett steg: Kopiera till Claude lägger stegets prompt i urklipp — klistra in den i vanliga Claude-chatten, där steget görs; Så görs steget visar stegets delar och vem som gör dem (Människa, Claude, Kod) — flytta, ta bort och spara ny version här, medan Claude, Kod och Lägg till en del kopierar en prompt till vanliga chatten; Lägg i kalendern, Senarelägg, Lämna över, Skicka till kollega. I panelen: Nytt samtal (det gamla finns under Tidigare), Rensa (tar bort samtalet eller alla samtal här, från den här datorn), Anteckning (på uppgiften, kunden eller fri — sparas i dirigenten), Kopiera till Claude under rutan (samtalet och frågan i rutan, som en prompt till vanliga chatten). Rapportera fel finns i toppraden och i varje felruta. Kopplingar i kundens system sparas när ett workflow läses. Sälj planeras på prospekten själv: den läggs in som kund med rollen prospekt, och Lägg in beställning på Planen ger en uppgift med säljmetoderna i Försäljning och kundrelation. Rotor internt är husets eget arbete, inte sälj: en egen uppgift läggs in med Lägg in beställning på kunden Rotor internt, och det avtalet inte täcker blir ett tillägg under Utanför avtalet. Svara kort, med var knappen finns.";
   /**
    * Vad panelen gör och inte gör (docs/kvar.md 20). Daniel P 2026-09-25: "vi
    * måste ta bort instruktionerna om att skriva metod och exekvera långa
    * texter i högerchatten. Däremot ska den kunna kopiera prompts med
    * instruktioner till vanliga chatten."
    */
-  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till chatten under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan. Ber användaren dig rapportera ett fel: gör det med skriv → rotor-dirigenten bug_report { text, where, conversation }. Ber användaren dig markera ett steg klart: gör det med markera_klart.";
+  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till Claude under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan. Ber användaren dig rapportera ett fel: gör det med skriv → rotor-dirigenten bug_report { text, where, conversation }. Ber användaren dig markera ett steg klart: gör det med markera_klart.";
   const HUNT_HINT = "Leta med search först (B-257): EN fråga med 2–5 formuleringar — kundens ord och husets ord — och inbox när ärendet har en adress. Svaret är högst tio rader; hämta bara det en rad pekar på (fetch). Ramens steg står i svaret — hämta inte hela metoden med guide. maybe är antaganden: säg att de är det. Står det inget självklart: fråga användaren vad det kan handla om; vet hen inte, föreslå en fråga till den som skrev. Sluta leta när du har svaret, och svara kort. Långa listor: read_call { call, hitta: \"sökord\" } filtrerar på servern. Ser du hur något hänger ihop (ett workflow skickar ett fält, ett mejl kommer från ett flöde): notera det med note_link, så vet nästa ärende det. Saknas en förmåga i dirigenten — kod som kan göra en ändring som behövs: säg vad som saknas; atomförslaget skrivs i vanliga chatten. Leta effektivt: börja i kundens systemkarta. I HubSpot räknar och filtrerar query_crm_data i ETT anrop (hur många affärer som har ett fält ifyllt, vilka värden som förekommer, vilka produkter som finns på affärerna) — använd den i stället för många sökningar. get_properties ger ett fälts definition och tillåtna värden. Sök inte på samma sak två gånger.";
   let catalogCache = null;
   /** Kopplingarnas läsverktyg med sina argument, ur kopplingarnas egna listor — så att Claude inte gissar. */
@@ -3940,7 +5018,7 @@ a.btn { text-decoration: none; color: var(--text); }
    */
   function aiStepCard(t, s) {
     return aiWarnings(t, s) + aiBrief(s) + `<div class="bar-actions" style="margin-top:10px">`
-      + `<button class="btn ai primary" data-copy-step="${stepKey(t, s)}">${SP} Kopiera till chatten</button>`
+      + `<button class="btn ai primary" data-copy-step="${stepKey(t, s)}">${SP} Kopiera till Claude</button>`
       + `<span class="meta">Klistra in i vanliga Claude-chatten. Där görs steget, texten skrivs i Smyra, och inget sparas förrän du sagt ja.</span></div>`;
   }
   /**
@@ -3956,7 +5034,7 @@ a.btn { text-decoration: none; color: var(--text); }
     const här = sample && (s.writes_to.connections || []).every((c) => c === "Smyra" || (CLAUDE_WRITES[c] || []).length);
     return aiWarnings(t, s) + aiBrief(s) + `<div class="bar-actions" style="margin-top:10px">`
       + (här ? `<button class="btn primary" data-write-run="${stepKey(t, s)}">Utför</button>` : "")
-      + `<button class="btn ai${här ? " quiet" : " primary"}" data-copy-step="${stepKey(t, s)}">${SP} Kopiera till chatten</button>`
+      + `<button class="btn ai${här ? " quiet" : " primary"}" data-copy-step="${stepKey(t, s)}">${SP} Kopiera till Claude</button>`
       + `<span class="meta">Claude tar fram ändringen i ${esc(sys)} och visar den. Inget ändras förrän du sagt ja.</span></div>`;
   }
   /**
@@ -3968,7 +5046,7 @@ a.btn { text-decoration: none; color: var(--text); }
     const namn = (s.needs_values || []).join(", ");
     return aiWarnings(t, s) + `<div class="bar-actions" style="margin-top:10px">`
       + (sample ? `<button class="btn primary" data-values-run="${stepKey(t, s)}">Utför</button>` : "")
-      + `<button class="btn ai${sample ? " quiet" : " primary"}" data-copy-step="${stepKey(t, s)}">${SP} Kopiera till chatten</button>`
+      + `<button class="btn ai${sample ? " quiet" : " primary"}" data-copy-step="${stepKey(t, s)}">${SP} Kopiera till Claude</button>`
       + `<span class="meta">Dirigenten gör steget. Claude tar fram ${esc(namn)} ur uppgiften och visar dem först. Inget ändras förrän du sagt ja.</span></div>`;
   }
   /** Uppdraget när Utför trycks på ett kodsteg som behöver värden (B-272). */
@@ -4094,10 +5172,12 @@ a.btn { text-decoration: none; color: var(--text); }
       try {
         const d = await call("execute_step", { task: t.id, step: s.step });
         if (!d?.awaiting_confirmation) return codeResult(s.label, d);
-        const rows = (d.would_change || []).map((c) => Object.entries(c || {}).map(([k, v]) => `<div class="row2"><span>${esc(k)}</span><span>${esc(typeof v === "string" ? v : JSON.stringify(v))}</span></div>`).join("")).join("<hr>");
+        // Bilderna som miniatyrer med länk till filbiblioteket (felrapport c96d2186).
+        const rows = wouldChangeHtml(d.would_change);
         state.pendingRun = { task: t.id, step: s.step, label: s.label };
+        LV.previews.set(`${t.id}|${s.step}`, d);
         dialog(`<h2>Det här ändras</h2><div class="preview">${rows || "<div class='meta'>Servern angav inga detaljer.</div>"}</div>`
-          + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-confirm-run="1">Utför det</button></div>`);
+          + `<div class="bar-actions"><a class="btn quiet" href="${H.preview(t.id, s.step)}" data-close="1">Visa som sida</a><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-confirm-run="1">Utför det</button></div>`);
       } catch (e) { fail("Steget kördes inte", e); }
     });
   }
@@ -4410,7 +5490,7 @@ a.btn { text-decoration: none; color: var(--text); }
     return copyToChat(partChatPrompt(o, { kind, i, part: e }), `«${e.label}» med ${kind === "llm" ? "Claude" : "kod"}`);
   }
 
-  /* ── Kopiera till chatten (docs/kvar.md 14 och 20) ──────────────────────
+  /* ── Kopiera till Claude (docs/kvar.md 14 och 20) ──────────────────────
      Panelen bygger inga metoder och gör inga Claude-steg. Det görs i vanliga
      Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme.
      Här skrivs prompten: självbärande, med id och namn, stegets instruktion
@@ -4497,7 +5577,7 @@ a.btn { text-decoration: none; color: var(--text); }
   }
   /** Lägg prompten i urklipp. Går det inte, visas den markerad för ⌘C. */
   function copyToChat(text, what = "Prompten") {
-    const visa = () => { dialog(`<h2>Kopiera till chatten</h2><p class="meta">${esc(what)}. Kopiera och klistra in i vanliga Claude-chatten. Den har samma verktyg mot dirigenten.</p>`
+    const visa = () => { dialog(`<h2>Kopiera till Claude</h2><p class="meta">${esc(what)}. Kopiera och klistra in i vanliga Claude-chatten. Den har samma verktyg mot dirigenten.</p>`
       + `<textarea id="to-chat-text" rows="12" style="width:100%">${esc(text)}</textarea>`
       + `<div class="bar-actions"><button class="btn quiet" data-close="1">Stäng</button><button class="btn primary" data-copy-chat="1">Kopiera</button></div>`);
       $("#to-chat-text")?.select(); };
@@ -5281,7 +6361,7 @@ a.btn { text-decoration: none; color: var(--text); }
         + `<button role="menuitem" data-msg='${esc(JSON.stringify({ about: { task: st.split("|")[0], step: st.split("|")[1] }, title: lbl(stepOf(taskById(st.split("|")[0]), st.split("|")[1]), "steget") }))}'>Skicka till kollega</button>`
       : ref?.openQ ? `<button role="menuitem" data-open-q="${esc(ref.openQ)}">${ic("arrow")} Öppna och svara</button>`
         + `<button role="menuitem" data-msg='${esc(JSON.stringify({ about: { open: ref.openQ }, title: headlineForOpen(opens().find((x) => x.id === ref.openQ) || {}) }))}'>Skicka till kollega</button>` : "";
-    m.innerHTML += `<button role="menuitem" data-menu-chat="1">Kopiera till chatten</button>`;
+    m.innerHTML += `<button role="menuitem" data-menu-chat="1">Kopiera till Claude</button>`;
     document.body.append(m);
     const b = btn.getBoundingClientRect(); m.style.top = `${Math.min(innerHeight - m.offsetHeight - 8, b.bottom + 4)}px`; m.style.left = `${Math.max(8, Math.min(innerWidth - m.offsetWidth - 8, b.right - m.offsetWidth))}px`;
     m.querySelector("button")?.focus();
@@ -5333,8 +6413,11 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.openProject) { const pj = projectsOf().get(ds.openProject); if (!pj) return toast("Projektet finns inte i planen längre.", null, true);
       return open({ type: "project", key: pj.id, title: pj.label }); }
     if (ds.projTask) { state.obj.task = ds.projTask; return render(); }
-    if (ds.openMethod) { const m = methodById(ds.openMethod); if (!m) return toast("Metoden finns inte i biblioteket längre.", null, true);
-      state.screen = "metoder"; deliverableTypes().then(render); return open({ type: "method", id: m.id, title: m.label }); }
+    if (ds.openMethod) { const m = methodById(ds.openMethod);
+      // Biblioteket hämtas när Metoder öppnas; från en uppgift kan det saknas än.
+      if (!m && S.lib) return toast("Metoden finns inte i biblioteket längre.", null, true);
+      if (!S.lib) loadLib();
+      state.screen = "metoder"; deliverableTypes().then(render); return open({ type: "method", id: ds.openMethod, title: m?.label || "" }); }
     if (ds.calday) { state.cal.day = ds.calday; state.cal.time = null; return state.cal.draw(); }
     if (ds.calweek) { state.cal.week = add(state.cal.week, +ds.calweek); state.cal.time = null; state.cal.day = null; return state.cal.draw(); }
     if (ds.calcol) { if (e.target.closest("[data-caldel]")) { state.cal.draft.splice(+e.target.closest("[data-caldel]").dataset.caldel, 1); return state.cal.draw(); } return calPick(t, e.clientY); }
@@ -5549,7 +6632,7 @@ a.btn { text-decoration: none; color: var(--text); }
   const sendAsk = () => { const v = $("#ask").value.trim(); if (!v) return; $("#ask").value = ""; ask(v); };
   $("#send").addEventListener("click", sendAsk);
   $("#ask").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendAsk(); } });
-  /* Kopiera till chatten (docs/kvar.md 14): samtalet och frågan i rutan som en
+  /* Kopiera till Claude (docs/kvar.md 14): samtalet och frågan i rutan som en
      prompt till vanliga Claude-chatten. room (sendToClaudeSession) är inte
      provad i vyn (14.2); tills dess går det via urklippet. */
   $("#to-chat").addEventListener("click", () => copyToChat(conversationChatPrompt($("#ask").value.trim()), "Samtalet"));
@@ -5613,7 +6696,10 @@ a.btn { text-decoration: none; color: var(--text); }
     render();
   });
   const restored = restoreSnap();
+  // En adress (#/leverans/…) går före det sparade läget: en länk från en kollega öppnar rätt sida.
+  if (location.hash && location.hash !== "#" && location.hash !== "#/") { hashNav = true; applyHash(location.hash); }
   render();
+  hashNav = false;
   pickMcp({ claude: typeof claude !== "undefined" ? claude : undefined, document, location, fetch: (u, i) => fetch(u, i) })
     .then(async ({ mcp: m, web }) => { mcp = m; WEB.on = web; if (!m) await readMcpState();
       // Med det sparade hämtas bara det som blivit gammalt, sort för sort.
