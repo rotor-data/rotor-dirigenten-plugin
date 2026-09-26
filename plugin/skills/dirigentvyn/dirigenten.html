@@ -590,7 +590,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "e1108ce", published: "2026-09-26" };
+  const SIDA = { version: "2350bbf", published: "2026-09-26" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1451,6 +1451,15 @@ a.btn { text-decoration: none; color: var(--text); }
         title: `${esc(workTitle(t, x))}${addonChip(t)}${lvlChip}`, cust: lbl(x.customer),
         why: workWhy(x, t), when: short(x.due),
         attrs: `data-open-step="${esc(x.task)}|${esc(x.step)}"` });
+    // Ändrat i ett system utanför dirigenten: skillnaderna och lästiden står i
+    // skälet (senaste läsningen, agendan läser inget); «Läs om» läser nu.
+    if (x.kind === "drift") {
+      const first = t?.steps?.find((s) => !s.done)?.step ?? t?.steps?.[0]?.step;
+      return row({ kind: `<span class="kind q" title="Ändrat utanför dirigenten">${ic("alert")}</span>`, dot: custDot(x.customer?.color),
+        title: `${esc(x.headline)}${t ? ` <span class="ctx">— ${esc(taskName(t))}</span>${addonChip(t)}` : ""}${lvlChip}`, cust: lbl(x.customer),
+        why: esc(x.reason), when: short(x.due), act: `<button class="btn sm" data-mirror-reread="${esc(x.task)}">Läs om</button>`,
+        attrs: first ? `data-open-step="${esc(x.task)}|${esc(first)}"` : "" });
+    }
     const handover = x.kind === "handover";
     return row({ kind: `<span class="kind q" title="${handover ? "Överlämning" : "Fråga"}">${ic(handover ? "user" : "help")}</span>`,
       dot: custDot(x.customer?.color), title: `${esc(x.headline)}${t ? ` <span class="ctx">— ${esc(taskName(t))}</span>${addonChip(t)}` : ""}${lvlChip}`, cust: lbl(x.customer), why: esc(x.reason),
@@ -2256,6 +2265,31 @@ a.btn { text-decoration: none; color: var(--text); }
     const needs = asArr(s?.needs).filter((n) => n && n.id);
     return needs.map((n) => ({ need: n, from: t.steps.filter((x) => x.step !== s.step && asArr(x.leaves).some((l) => l.id === n.id)) }));
   }
+  /**
+   * Materialet per runda och leveransenhet (B-273, B-274): leveransen och
+   * varje revision, och under dem enheterna med sina delar — Text, Bild 4:5,
+   * PDF, Tryckfil — och vad de blev ute (tasks[].material, räknat på
+   * servern). Återanvänt står som återanvänt.
+   */
+  function roundsHtml(t) {
+    const rounds = asArr(t?.material?.rounds);
+    if (!rounds.length) return "";
+    const rl = (k) => k === "delivery" ? "leverans 1" : `revision ${String(k).slice(3)}`;
+    const unit = (u) => {
+      const text = !u.text ? "" : `Text (version ${u.text.version}, ${u.text.approved ? "godkänd" : "inte godkänd"}${u.text.reused_from ? `, oförändrad från ${rl(u.text.reused_from)}` : u.text.changed ? "" : ", oförändrad"})`;
+      const files = asArr(u.parts).filter((p) => p.kind !== "text").map((p) => `${esc(p.part)}${p.superseded ? " (ersatt i rundan)" : p.new ? " (ny)" : p.reused_from ? ` (från ${rl(p.reused_from)})` : ""}`).join(" · ");
+      const out = asArr(u.out_as).map((o) => esc([o.campaign, o.name].filter(Boolean).join(" · ") || o.id)).join(", ");
+      const line = [text ? esc(text) : "", files, out ? `Ute som: ${out}` : "", asArr(u.missing).length ? `saknar ${esc(u.missing.join(", "))}` : ""].filter(Boolean).join(" · ");
+      return `<div class="need"><span class="no">${ic("layers")}</span><span class="t">${esc(u.label)} <span class="meta">· ${esc(u.status)}</span>`
+        + `${line ? `<br><span class="meta">${line}</span>` : ""}</span></div>`;
+    };
+    return rounds.map((r) => `<h3 style="margin:8px 0 6px;font-size:13px;font-weight:500">${esc(r.label)}${r.date ? ` · ${esc(short(r.date))}` : ""} · ${esc(r.status)}`
+      + `${r.reason ? ` <span class="meta">· «${esc(r.reason)}»</span>` : ""}</h3>`
+      + asArr(r.units).map(unit).join("")
+      + (asArr(r.ungrouped).length ? `<div class="meta">Ej grupperat: ${r.ungrouped.map((f) => esc(f.type ? `${f.name} (${f.type})` : f.name)).join(", ")}</div>` : "")
+      + (!asArr(r.units).length && !asArr(r.ungrouped).length ? `<div class="meta">Inget material i rundan än.</div>` : "")).join("")
+      + `<h3 style="margin:12px 0 6px;font-size:13px;font-weight:500">Alla filer och texter</h3>`;
+  }
   function materialCard(t, s, first = false) {
     const from = (id) => !id ? "lagd på uppgiften"
       : s && id === s.step ? "från det här steget" : `från «${esc(stepOf(t, id)?.label || "ett steg som inte finns i metoden längre")}»`;
@@ -2285,7 +2319,7 @@ a.btn { text-decoration: none; color: var(--text); }
       + missing.map((n) => `<div class="meta">${esc(n.need.label)}: inte lämnat än${n.from.length ? ` — kommer från «${n.from.map((x) => esc(x.label)).join("», «")}»` : ""}.</div>`).join("")
       + `</div>`;
     // Högst upp i uppgiften och steget (Daniel P 2026-09-25: *"Texter/material i projektet borde synas högst upp"*).
-    return `<div class="card section" style="${first ? "margin-bottom:16px" : "margin-top:16px"}"><h2>Material i uppgiften${!s ? ` <span class="meta">· ${esc(taskName(t))}</span>` : ""}</h2>` + neededHtml
+    return `<div class="card section" style="${first ? "margin-bottom:16px" : "margin-top:16px"}"><h2>Material i uppgiften${!s ? ` <span class="meta">· ${esc(taskName(t))}</span>` : ""}</h2>` + mirrorsHtml(t) + roundsHtml(t) + neededHtml
       + (rest.length ? (neededHtml ? `<h3 style="margin:0 0 6px;font-size:13px;font-weight:500">Övrigt material</h3>` : "") + rest.map((r) => r.html).join("")
         + (files.length >= MATERIAL_MAX ? `<p class="meta">Här står de ${MATERIAL_MAX} senaste filerna. Alla finns under Filer, hos ${esc(lbl(t.customer, "kunden"))}.</p>` : "")
         : !top.length ? `<div class="meta">Inget material än. Det stegen lämnar hamnar här: filer som läggs in på uppgiften och texter som sparas till ett steg.</div>` : "")
@@ -3958,6 +3992,43 @@ a.btn { text-decoration: none; color: var(--text); }
       + `<p class="meta">Bara i den här uppgiften. Metoden ändras inte.</p>`
       + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-take-task-yes="${esc(tk.id)}">Ta över</button></div>`);
   }
+  /**
+   * Spegeln (docs/plan-leveransen.md, avsnitt 4). Planen och agendan läser
+   * aldrig systemen; de bär senaste läsningen med tid (tasks[].mirrors). När
+   * en uppgift öppnas läses spegeln i bakgrunden (servern läser högst var
+   * femte minut, och inte när ingenting är ute), och «Läs om» läser alltid.
+   */
+  const mirrorOpened = new Map();
+  function openMirror(taskId) {
+    if (!mcp || Date.now() - (mirrorOpened.get(taskId) || 0) < 300_000) return;
+    mirrorOpened.set(taskId, Date.now());
+    call("read_call", { call: "mirror.call.read", args: { task: taskId } })
+      .then((d) => { if (asArr(d?.mirrors).some((m) => m.read_at && !m.skipped)) refreshPlan(); })
+      .catch(() => { /* det senast lästa står kvar */ });
+  }
+  function rereadMirror(btn, taskId) {
+    return busy(btn, async () => {
+      try {
+        mirrorOpened.set(taskId, Date.now());
+        await call("read_call", { call: "mirror.call.read", args: { task: taskId, fresh: true } });
+        await Promise.all([refreshPlan(), refreshAgenda()]);
+        toast("Läst om.");
+      } catch (e) { fail("Det gick inte att läsa om", e); }
+    });
+  }
+  /** Lästiden: "14:02" i dag, annars "25 sep 14:02". */
+  const readClock = (iso) => { const x = new Date(iso); const hm = x.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+    return x.toDateString() === new Date().toDateString() ? hm : `${x.getDate()} ${MON[x.getMonth()]} ${hm}`; };
+  /** En rad per speglat system: lästid, läget och «Läs om». */
+  function mirrorsHtml(t) {
+    const ms = asArr(t?.mirrors);
+    if (!ms.length) return "";
+    openMirror(t.id);
+    return ms.map((m) => `<div class="meta" style="margin:0 0 8px">${esc(m.system)}: ${m.read_at ? `läst ${esc(readClock(m.read_at))}` : "inte läst än"}`
+      + `${m.stale ? " · ändrat genom dirigenten efter läsningen" : ""}${m.error ? ` · ${esc(m.error)}` : ""}`
+      + `${asArr(m.drift).length ? ` · ${m.drift.length} ändrat utanför dirigenten` : m.read_at ? " · inget ändrat utanför dirigenten" : ""}`
+      + ` <button class="btn sm" data-mirror-reread="${esc(t.id)}">Läs om</button></div>`).join("");
+  }
   function takeTask(btn, id) {
     return busy(btn, async () => {
       try { await call("execute_step", { task: id, take_over: true }); closeDialog(); await load(); toast("Uppgiften är din."); }
@@ -5187,6 +5258,7 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.confirmNode) return confirmNodeDialog(ds.confirmNode);
     if (ds.confirmNodeYes) return confirmNode(t, ds.confirmNodeYes);
     if (ds.ahead !== undefined) { store.ahead = Number(ds.ahead); save(); render(); return load(); }
+    if (ds.mirrorReread) return rereadMirror(t, ds.mirrorReread);
     if (ds.takeTask) return takeTaskDialog(ds.takeTask);
     if (ds.takeTaskYes) return takeTask(t, ds.takeTaskYes);
     if (ds.toggleSoon) { store.showSoon = !store.showSoon; save(); return render(); }
