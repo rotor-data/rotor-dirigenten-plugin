@@ -216,7 +216,6 @@ ol.moments input { flex: 1; min-width: 0; border: 1px solid var(--line-strong); 
 .opt { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--bg); cursor: pointer; font: inherit; text-align: left; }
 .opt[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-weak); }
 .opt small { display: block; color: var(--text-2); font-size: 11.5px; }
-.origin
 
 /* ── lista och rader ─────────────────── */
 .card { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg); box-shadow: var(--shadow-card); overflow: hidden; }
@@ -559,10 +558,12 @@ a.btn { text-decoration: none; color: var(--text); }
 .lv-sec h2 { font-size: var(--fs-section); font-weight: 700; margin: 0; }
 .lv-sec .n { color: var(--text-2); font-size: var(--fs-meta); }
 .lv-sub { color: var(--text-2); margin: -8px 0 var(--s4); }
-.lv-card { margin-bottom: var(--s4); }
+.lv-card { margin-bottom: var(--s5); }
+.lv-card > .head { flex-wrap: wrap; }
 .lv-card > .head h2 { font-size: var(--fs-section); margin: 0; }
-.lv-card > .head a { color: inherit; text-decoration: none; }
+.lv-card > .head a { color: var(--accent-ink); text-decoration: none; }
 .lv-card > .head a:hover { text-decoration: underline; }
+.lv-card > .foot { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .lv-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .lv-fact { padding: var(--s3) var(--s4); border-right: 1px solid var(--line); min-width: 0; }
 .lv-fact:last-child { border-right: 0; }
@@ -583,6 +584,8 @@ a.btn { text-decoration: none; color: var(--text); }
 .lv-li { display: grid; grid-template-columns: 18px 140px minmax(0, 1fr); gap: 8px; align-items: center; font-size: 13px; }
 .lv-li .k { color: var(--text-2); font-size: var(--fs-meta); }
 .lv-li .v { min-width: 0; overflow-wrap: anywhere; }
+.lv-li .v a, .lv-trow a, .lv-edge a { color: var(--accent-ink); text-decoration: none; }
+.lv-li .v a:hover, .lv-edge a:hover { text-decoration: underline; }
 .lv-now { fill: var(--accent); stroke: var(--bg); stroke-width: 2; }
 .lv-next { fill: var(--bg); stroke: var(--accent); stroke-width: 2; }
 .lv-end { fill: var(--text); }
@@ -733,7 +736,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "8bff62c", published: "2026-09-26" };
+  const SIDA = { version: "42a9af3", published: "2026-09-27" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -3531,6 +3534,8 @@ a.btn { text-decoration: none; color: var(--text); }
   }
 
   /* ── tidslinjen: samma på Idag och i läget ── */
+  /** Ett namn på en rad i kortet: ett ärendes ämnesrad kan vara hundra tecken. */
+  const clipped = (x, n = 60) => { const t = String(x || ""); return t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t; };
   const svgNow = (n = 18) => `<svg width="${n}" height="${n}" viewBox="0 0 18 18" aria-hidden="true"><circle class="lv-now" cx="9" cy="9" r="7"/></svg>`;
   const svgNext = (n = 18) => `<svg width="${n}" height="${n}" viewBox="0 0 18 18" aria-hidden="true"><rect class="lv-next" x="4" y="4" width="10" height="10" transform="rotate(45 9 9)"/></svg>`;
   const svgLikely = (n = 18) => `<svg width="${n}" height="${n}" viewBox="0 0 18 18" aria-hidden="true"><circle class="lv-likelymk" cx="9" cy="9" r="6"/></svg>`;
@@ -3551,8 +3556,12 @@ a.btn { text-decoration: none; color: var(--text); }
     const where = lvWhere(d, ts);
     const next = d.next_part && isDay(d.next_part.date) ? d.next_part : null;
     const likely = isDay(d.earliest_finish_likely) ? day10(d.earliest_finish_likely) : null;
-    const starts = ts.flatMap((t) => roundSteps(t).map((s) => day10(s.start))).filter(isDay).sort();
-    const points = [starts[0], end, TODAY, where?.date, next?.date, likely].filter(isDay).sort();
+    const starts = ts.flatMap((t) => roundSteps(t).map((s) => day10(s.done?.at || s.start))).filter(isDay).sort();
+    // Linjen börjar där leveransen började: när den öppnades, eller det första
+    // gjorda steget om det är tidigare — inte i dag (skissen: «start 22/9»).
+    const opened = day10(asArr(d.history)[0]?.at);
+    const liveDays = ts.map((t) => day10(t.live?.at)).filter(isDay);
+    const points = [starts[0], opened, ...liveDays, end, TODAY, where?.date, next?.date, likely].filter(isDay).sort();
     const from = points[0]; let to = points.at(-1); if (diff(to, from) < 7) to = add(from, 7);
     const pos = (x) => Math.max(0, Math.min(100, diff(x, from) / diff(to, from) * 100)).toFixed(1);
     const dd = (x) => `${d_(x)}`;
@@ -3572,10 +3581,10 @@ a.btn { text-decoration: none; color: var(--text); }
       + (next ? `<div class="lv-mk" style="left:calc(${pos(next.date)}% - ${next.date === end ? 12 : 0}px)">${svgNext(20)}<span class="d">${next.date === end ? "&nbsp;" : dd(next.date)}</span></div>` : "")
       + `<div class="lv-mk lv-endmk" style="left:${pos(out && liveAt ? liveAt : end)}%">${svgEnd(20)}<span class="d">${endLabel}</span></div>`
       + (showLikely ? `<div class="lv-mk lv-likely" style="left:${pos(likely)}%">${svgLikely(20)}<span class="d">troligt ${dd(likely)}</span></div>` : "") + `</div>`
-      + `<div class="lv-ends">från ${short(from)}</div></div>`
+      + `<div class="lv-ends">start ${short(from)}</div></div>`
       + `<div class="lv-legend">`
-      + `<div class="lv-li">${svgNow()}<span class="k">Där vi är</span><span class="v">${where ? `<a href="${H.delivery(d.id, where.task, where.step)}"><b>${esc(where.label)}</b></a>${where.who ? ` · ${esc(where.who)}` : ""}${where.date ? ` · ${short(where.date)}` : ""}` : "Alla steg är klara"}</span></div>`
-      + `<div class="lv-li">${svgNext()}<span class="k">Nästa delleverans</span><span class="v">${next ? `<a href="${H.delivery(d.id, next.task)}"><b>${esc(next.label)}</b></a> · ${short(next.date)}` : "Ingen med datum"}</span></div>`
+      + `<div class="lv-li">${svgNow()}<span class="k">Där vi är</span><span class="v">${where ? `<a href="${H.delivery(d.id, where.task, where.step)}" title="${esc(where.label)}"><b>${esc(clipped(where.label, 90))}</b></a>${where.who ? ` · ${esc(where.who)}` : ""}${where.date ? ` · ${short(where.date)}` : ""}` : "Alla steg är klara"}</span></div>`
+      + `<div class="lv-li">${svgNext()}<span class="k">Nästa delleverans</span><span class="v">${next ? `<a href="${H.delivery(d.id, next.task)}" title="${esc(next.label)}"><b>${esc(clipped(next.label, 90))}</b></a> · ${short(next.date)}` : "Ingen med datum"}</span></div>`
       + (out ? `<div class="lv-li">${svgEnd()}<span class="k">Ute</span><span class="v"><b>${liveAt ? `ute sedan ${short(liveAt)}` : "ute"}</b>${where ? " · efterkontroll kvar" : ""} · kunden fick ${short(d.due)}</span></div>`
         : `<div class="lv-li">${svgEnd()}<span class="k">Leveransen slutar</span><span class="v"><b${passed ? ' class="late"' : ""}>${short(end)}${passed ? " · passerat" : ""}</b>${likely && where ? ` · troligt klart ${short(likely)}` : ""}</span></div>`)
       + (showLikely ? `<div class="lv-li">${svgLikely()}<span class="k">Troligt klart</span><span class="v"><b>${short(likely)}</b> · ${plural(diff(likely, end), "dag", "dagar")} efter leveransdagen</span></div>` : "") + `</div>`;
@@ -3997,10 +4006,9 @@ a.btn { text-decoration: none; color: var(--text); }
     const loose = tasks().filter((t) => t.customer?.id === id && !ds.some((x) => asArr(x.tasks).includes(t.id)));
     return `<div class="pagehead"><h1>${esc(lbl(c, "Kunden"))}</h1><div class="actions"><a class="btn" href="${H.files(id)}">Filbiblioteket</a></div></div>`
       + `<div class="lv-sec"><h2>Leveranser</h2><span class="n">${plural(ds.length, "leverans", "leveranser")}</span></div>`
-      + `<div class="card">${ds.length ? ds.map((x) => { const ts = lvTasks(x), late = ts.some((t) => t.late);
-          return `<div class="row" data-lv-href="${H.delivery(x.id)}" tabindex="0"><span class="kindcell">${toneChip(x.closed ? { word: "avslutad", tone: "" } : late ? { word: "sen", tone: "red" } : { word: "pågår", tone: "blue" })}</span><span></span>`
-            + `<span class="txt"><span class="t"><a href="${H.delivery(x.id)}">${esc(x.label)}</a></span><span class="why">${plural(ts.length, "uppgift", "uppgifter")} · ${esc(x.position?.text || "")}</span></span><span class="s when">${short(x.moved?.to || x.due)}</span><span class="acts"></span></div>`; }).join("")
-        : `<div class="empty">Ingen leverans hos ${esc(lbl(c, "kunden"))} än. En uppgift läggs i en leverans från uppgiftens sida.</div>`}</div>`
+      // Samma kort som på Idag, en ruta per leverans (Daniel P 2026-09-27: «Det var mycket tydligare när de var riktiga rutor»).
+      + (ds.filter((x) => lvTasks(x).length).length ? ds.filter((x) => lvTasks(x).length).map(lvDeliveryCard).join("")
+        : `<div class="card"><div class="empty">Ingen leverans hos ${esc(lbl(c, "kunden"))} än. En uppgift läggs i en leverans från uppgiftens sida.</div></div>`)
       + `<div class="lv-sec"><h2>Uppgifter utan leverans</h2><span class="n">${plural(loose.length, "uppgift", "uppgifter")}</span></div>`
       + `<div class="card">${loose.length ? loose.map((t) => { const cur = currentStep(t);
           return `<div class="row" data-lv-href="${H.delivery(t.id)}" tabindex="0"><span class="kindcell">${toneChip(taskState(t))}</span><span></span>`
@@ -4057,23 +4065,33 @@ a.btn { text-decoration: none; color: var(--text); }
     });
   }
 
+  /* ── Leveransen som kort med tidslinje: på Idag och på kundsidan (skissen) ──
+     En ruta per leverans: huvudet med namnet som länk, kunden, antalet
+     uppgifter, märkena och slutdatumet; tidslinjen och de tre raderna i ord;
+     «Stegen per uppgift» att fälla ut; foten med Öppna leveransen. */
+  function lvDeliveryCard(d) {
+    const ts = lvTasks(d), late = ts.filter((t) => t.late).length, k = `idag|${d.id}`, o = !!LV.open[k], ot = LV.open[`idagtask|${d.id}`];
+    const outside = ts.some((t) => t.outside_contract);
+    // Sammanfattningen på en rad: tre uppgifter, resten räknas (en månad har femton).
+    const sum = ts.slice(0, 3).map((t) => `${esc(clipped(taskTitle(t), 48))} ${lvCount(t).replace(" klara", "")}`).join(" · ")
+      + (ts.length > 3 ? ` · och ${plural(ts.length - 3, "uppgift", "uppgifter")} till` : "");
+    return `<div class="card lv-card"><div class="head"><a href="${H.delivery(d.id)}"><h2>${esc(d.label)}</h2></a><span class="meta">${esc(lbl(custOf(d), ""))} · ${plural(ts.length, "uppgift", "uppgifter")}</span>`
+      + `<span class="right">${late ? `<span class="chip red">${plural(late, "uppgift sen", "uppgifter sena")}</span>` : ""}${outside ? `<span class="chip amber">utanför avtalet</span>` : ""}`
+      + `${d.closed ? `<span class="chip">avslutad</span>` : ""}<span class="meta">slutar ${short(d.moved?.to || d.due)}</span></span></div>`
+      + lvTimeline(d, ts)
+      + `<button class="lv-sum" data-lv-toggle="${esc(k)}" aria-expanded="${o}"><span class="lv-fold ${o ? "open" : ""}">›</span>Stegen per uppgift · ${sum}</button>`
+      + (o ? ts.map((t) => { const x = ot === t.id;
+        return `<button class="lv-trow" data-lv-idagtask="${esc(d.id)}|${esc(t.id)}" aria-expanded="${x}"><span class="lv-fold ${x ? "open" : ""}">›</span>`
+          + `<span><span class="t">${esc(taskTitle(t))}</span><span class="s">väntar på: ${esc(waitsText(t))}</span></span><span class="end">${lvDots(t)}<span class="meta">${lvCount(t)}</span>${toneChip(taskState(t))}</span></button>`
+          + (x ? `<div class="lv-nest">${lvStepList(d, t, roundSteps(t))}<div class="lv-edge"><a href="${H.delivery(d.id, t.id)}">Öppna uppgiften i leveransen ›</a></div></div>` : ""); }).join("") : "")
+      + `<div class="foot"><a class="btn sm" href="${H.delivery(d.id)}">Öppna leveransen</a></div></div>`;
+  }
   /* ── Idag: leveranserna som kort med tidslinje ── */
   function lvIdag() {
     const ds = realDeliveries().filter((x) => !x.closed && lvTasks(x).length);
     if (!ds.length) return "";
     return `<div class="lv-sec" style="margin-top:0"><h2>Leveranser</h2><span class="n">${plural(ds.length, "pågår", "pågår")}</span></div>`
-      + ds.map((d) => {
-        const ts = lvTasks(d), late = ts.filter((t) => t.late).length, k = `idag|${d.id}`, o = !!LV.open[k], ot = LV.open[`idagtask|${d.id}`];
-        return `<div class="card lv-card"><div class="head"><a href="${H.delivery(d.id)}"><h2>${esc(d.label)}</h2></a><span class="meta">${esc(lbl(custOf(d), ""))} · ${plural(ts.length, "uppgift", "uppgifter")}</span>`
-          + `<span class="right">${late ? `<span class="chip red">${plural(late, "uppgift sen", "uppgifter sena")}</span>` : ""}<span class="meta">slutar ${short(d.moved?.to || d.due)}</span></span></div>`
-          + lvTimeline(d, ts)
-          + `<button class="lv-sum" data-lv-toggle="${esc(k)}" aria-expanded="${o}"><span class="lv-fold ${o ? "open" : ""}">›</span>Stegen per uppgift · ${ts.map((t) => `${esc(taskTitle(t))} ${lvCount(t).replace(" klara", "")}`).join(" · ")}</button>`
-          + (o ? ts.map((t) => { const x = ot === t.id;
-            return `<button class="lv-trow" data-lv-idagtask="${esc(d.id)}|${esc(t.id)}" aria-expanded="${x}"><span class="lv-fold ${x ? "open" : ""}">›</span>`
-              + `<span><span class="t">${esc(taskTitle(t))}</span><span class="s">väntar på: ${esc(waitsText(t))}</span></span><span class="end">${lvDots(t)}<span class="meta">${lvCount(t)}</span>${toneChip(taskState(t))}</span></button>`
-              + (x ? `<div class="lv-nest">${lvStepList(d, t, roundSteps(t))}<div class="lv-edge"><a href="${H.delivery(d.id, t.id)}">Öppna uppgiften i leveransen ›</a></div></div>` : ""); }).join("") : "")
-          + `<div class="foot"><a class="btn sm" href="${H.delivery(d.id)}">Öppna leveransen</a></div></div>`;
-      }).join("");
+      + ds.map(lvDeliveryCard).join("");
   }
 
   /* ── filbiblioteket: filerna per enhet, de som används först ── */
