@@ -886,7 +886,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "df9d8e4", published: "2026-09-28" };
+  const SIDA = { version: "72a111c", published: "2026-09-28" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -990,7 +990,7 @@ a.btn { text-decoration: none; color: var(--text); }
   /** Leveranstyperna ett ärende kan bli: guide, annars det metoderna levererar. */
   async function deliverableTypes() {
     if (S.types) return S.types;
-    try { const d = await call("guide", {});
+    try { const d = await call("guide", { format: "full" });
       S.types = (d?.guide?.topics || []).filter((t) => t.kind === "deliverable").map((t) => ({ id: t.key, label: t.label })); }
     catch { S.types = []; }
     if (!S.types.length) S.types = [...new Map((S.lib?.entries || []).filter((e) => e.kind === "method")
@@ -4723,7 +4723,7 @@ a.btn { text-decoration: none; color: var(--text); }
    * har verktyget än — då bygger vyn underlaget själv som förut.
    */
   async function serverContext(args) {
-    try { const d = await withTimeout(call("context", args), 45000, "Lägesbilden"); return typeof d?.context === "string" ? d.context : null; }
+    try { const d = await withTimeout(call("context", { ...args, format: "full" }), 45000, "Lägesbilden"); return typeof d?.context === "string" ? d.context : null; }
     catch { return null; }
   }
   const contextArgs = () => state.obj?.type === "step" ? { task: state.obj.task, step: state.obj.step }
