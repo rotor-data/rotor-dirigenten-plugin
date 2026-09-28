@@ -463,6 +463,19 @@ body.panel-closed .panel { display: none; }
 .md li { margin: 2px 0; }
 .md code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: var(--bg-subtle); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
 .md strong { font-weight: 600; }
+.md h1, .md h2, .md h3, .md h5, .md h6 { font-weight: 600; line-height: 1.3; margin: 14px 0 6px; }
+.md h1 { font-size: 17px; } .md h2 { font-size: 15.5px; } .md h3 { font-size: 14.5px; } .md h5, .md h6 { font-size: 13px; }
+.md > :first-child { margin-top: 0; }
+.md ul ul, .md ol ol, .md ul ol, .md ol ul { margin: 2px 0 0; }
+.md pre { background: var(--bg-subtle); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; overflow-x: auto; margin: 0 0 8px; white-space: pre; }
+.md pre code { border: 0; padding: 0; background: none; }
+.md blockquote { margin: 0 0 8px; padding: 0 10px; border-left: 3px solid var(--line); color: var(--text-2); }
+.md table { border-collapse: collapse; display: block; overflow-x: auto; margin: 0 0 8px; font-size: 13px; }
+.md th, .md td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
+.md th { background: var(--bg-subtle); font-weight: 600; }
+.md hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
+.md del { color: var(--text-3); }
+.lv-text.md, .mitem .body.md, .preview.md { white-space: normal; }
 .msg.ai .who { color: var(--claude); font-size: 12px; font-weight: 500; }
 .msg.ai .foot { display: flex; gap: 4px; }
 .rate { display: flex; gap: 6px; align-items: center; }
@@ -873,7 +886,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "f8033f7", published: "2026-09-27" };
+  const SIDA = { version: "df9d8e4", published: "2026-09-28" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -992,7 +1005,7 @@ a.btn { text-decoration: none; color: var(--text); }
   function loadLib() {
     if (S.libLoading || !mcp) return;
     S.libLoading = true;
-    withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"] }), 45000, "Biblioteket")
+    withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort" }), 45000, "Biblioteket")
       // Metoder ritas om när biblioteket kommit; andra ytor behöver det inte
       // och ritas inte om medan någon skriver där.
       .then((lib) => { S.lib = lib; S.libError = null; S.at.lib = Date.now(); }).catch((e) => { S.libError = e; })
@@ -1011,10 +1024,10 @@ a.btn { text-decoration: none; color: var(--text); }
       if (!a?.agenda) throw new Error("servern skickade ingen agenda — den kan vara en äldre version");
       S.agenda = a.agenda; S.at.agenda = Date.now();
       S.phase = "Hämtar planen…"; render();
-      const p = await withTimeout(call("plan_state", { weeks: state.horizon }), 45000, "Planen");
+      const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "full" }), 45000, "Planen");
       if (!p?.plan) throw new Error("servern skickade ingen plan");
       S.plan = p.plan; S.meetings = p.meetings ?? {}; S.error = null;
-      S.serverVersion = p.views?.version ?? null;
+      S.serverVersion = p.views?.version ?? null; S.viewsUrl = p.views?.url ?? S.viewsUrl ?? null;
       S.fetchedAt = new Date(); S.phase = null; S.at.plan = Date.now();
       render();
       // Resten behövs inte för Idag och får inte hålla den. Biblioteket med
@@ -1038,8 +1051,8 @@ a.btn { text-decoration: none; color: var(--text); }
       if (a?.agenda) { S.agenda = a.agenda; S.at.agenda = Date.now(); render(); } } catch { /* det gamla står kvar */ }
   }
   async function refreshPlan() {
-    try { const p = await withTimeout(call("plan_state", { weeks: state.horizon }), 45000, "Planen");
-      if (p?.plan) { S.plan = p.plan; S.meetings = p.meetings ?? {}; S.serverVersion = p.views?.version ?? null;
+    try { const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "full" }), 45000, "Planen");
+      if (p?.plan) { S.plan = p.plan; S.meetings = p.meetings ?? {}; S.serverVersion = p.views?.version ?? null; S.viewsUrl = p.views?.url ?? S.viewsUrl ?? null;
         S.fetchedAt = new Date(); S.at.plan = Date.now(); render(); } } catch { /* det gamla står kvar */ }
   }
   /** Bara det som blivit gammalt hämtas; resten står kvar. */
@@ -1130,7 +1143,7 @@ a.btn { text-decoration: none; color: var(--text); }
   }
   const ensureLeadTimes = () => { if (!S.lead) loadLeadTimes(); };
   const ensureLib = () => { if (!S.lib && !S.libError) return;
-    if (!S.lib) { S.libError = null; withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"] }), 45000, "Biblioteket")
+    if (!S.lib) { S.libError = null; withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort" }), 45000, "Biblioteket")
       .then((lib) => { S.lib = lib; }).catch((e) => { S.libError = e; }).finally(() => render()); } };
 
   /** Det som går att ändra på ett steg, som det står i dag. */
@@ -1622,7 +1635,7 @@ a.btn { text-decoration: none; color: var(--text); }
         const { screen, obj, filter, planMode, horizon, tlFrom, tlWeeks, inTab, metTab, weekFrom } = state;
         snapStore().setItem(SNAP_KEY, JSON.stringify({ at: S.fetchedAt ? new Date(S.fetchedAt).getTime() : Date.now(),
           state: { screen, obj, filter, planMode, horizon, tlFrom, tlWeeks, inTab, metTab, weekFrom }, lvOpen: LV.open,
-          data: S.plan ? { agenda: S.agenda, plan: S.plan, meetings: S.meetings, queue: S.queue ?? null, serverVersion: S.serverVersion ?? null,
+          data: S.plan ? { agenda: S.agenda, plan: S.plan, meetings: S.meetings, queue: S.queue ?? null, serverVersion: S.serverVersion ?? null, viewsUrl: S.viewsUrl ?? null,
             settings: S.settings ?? null, at: S.at } : null }));
       } catch { /* full eller avstängd lagring: då hämtas allt som förut */ }
     }, 400);
@@ -1635,7 +1648,7 @@ a.btn { text-decoration: none; color: var(--text); }
       Object.assign(LV.open, snap.lvOpen || {});
       if (snap.data?.plan) {
         S.agenda = snap.data.agenda; S.plan = snap.data.plan; S.meetings = snap.data.meetings || {};
-        S.queue = snap.data.queue; S.serverVersion = snap.data.serverVersion; S.fetchedAt = new Date(snap.at);
+        S.queue = snap.data.queue; S.serverVersion = snap.data.serverVersion; S.viewsUrl = snap.data.viewsUrl ?? null; S.fetchedAt = new Date(snap.at);
         if (snap.data.settings) { S.settings = snap.data.settings; S.setDraft = draftOf(S.settings); }
         S.at = { ...(snap.data.at || { agenda: snap.at, plan: snap.at, queue: snap.at }) };
       }
@@ -1839,6 +1852,14 @@ a.btn { text-decoration: none; color: var(--text); }
           + (d ? `<a class="btn sm" href="${H.delivery(d.id, x.task)}">Öppna uppgiften ›</a>` : ""),
         meta: chip("sen", "red") + chip("utan metod", "amber") + tail });
     }
+    // Väntan på ett externt besked (src/plan/waits.ts): påminn i dag, eller besked kom inte.
+    if (x.kind === "wait") {
+      const d = x.project?.kind === "delivery" ? x.project : null, href = H.delivery(d ? d.id : x.task, d ? x.task : null);
+      return trow({ cls: hot ? "burn" : "mine", icon: "user", icls: "q", title: x.headline, attrs: `data-lv-href="${href}"`, more: false,
+        acts: (x.next ? `<button class="btn sm ai" data-lv-copy="${esc(JSON.stringify({ task: x.task, next: x.next, text: x.reason }))}">${SP} Kopiera till Claude</button>` : "")
+          + `<a class="btn sm" href="${href}">Öppna uppgiften ›</a>`,
+        meta: (hot ? chip("besked kom inte", "red") : chip("påminn", "amber")) + esc(x.reason) + (tail ? ` · ${tail}` : "") });
+    }
     if (x.kind === "drift")
       return trow({ cls: hot ? "burn" : "mine", icon: "alert", icls: "q", title: x.headline,
         attrs: t?.steps?.[0] ? `data-open-step="${esc(x.task)}|${esc((t.steps.find((s) => !s.done) || t.steps[0]).step)}"` : "",
@@ -1864,9 +1885,10 @@ a.btn { text-decoration: none; color: var(--text); }
     return trow({ cls: "other", icon: x.kind === "question" ? "help" : "user", title,
       attrs: x.step ? `data-open-step="${esc(x.task)}|${esc(x.step)}"` : x.open ? `data-open-q="${esc(x.open)}"` : "",
       acts: take + remind, more: false,
-      meta: chip(x.kind === "handover_out" ? `väntar på att ${waitsOn(x)} tar emot` : `väntar på ${waitsOn(x)}`)
+      meta: chip(x.kind === "handover_out" ? `väntar på att ${waitsOn(x)} tar emot` : x.kind === "wait" ? `väntar på besked från ${waitsOn(x)}` : `väntar på ${waitsOn(x)}`)
         + (x.kind === "colleague" && x.step_named ? stepTag(x.step_named.label) : "")
-        + [deliveryTag(x, t), byWhen(x.due, x.kind === "waiting" ? "svar senast" : "senast")].filter(Boolean).join(" · ") });
+        + (x.kind === "wait" ? `${esc(x.reason)} · ` : "")
+        + [deliveryTag(x, t), x.kind === "wait" ? "" : byWhen(x.due, x.kind === "waiting" ? "svar senast" : "senast")].filter(Boolean).join(" · ") });
   }
   const LEVEL_NAME = { hot: "brinner", today: "i dag", soon: "snart" };
   const LEVEL_RANK = { hot: 0, today: 1, soon: 2 };
@@ -2410,14 +2432,22 @@ a.btn { text-decoration: none; color: var(--text); }
     + `<div class="t" title="${esc(f.name)}">${esc(f.name)}</div>`
     + `<div class="meta">${f.width && f.height ? `${f.width}×${f.height} · ` : ""}${fsize(f.size)}${f.ersatt_av ? ` · <span title="Nyare version: ${esc(f.ersatt_av.name)}">äldre version</span>` : ""}</div>`
     + `<button class="btn sm" data-fget="${esc(f.ref)}" data-fname="${esc(f.name)}">Ladda ned</button>`
+    + fileShareButton(f)
     + `<button class="btn sm quiet" data-frm="${esc(f.ref)}" data-fname="${esc(f.name)}">Ta bort</button></div>`;
+  /** Länk… på en fil, när kunden är känd: filens sida i filbiblioteket, i en ruta med Kopiera och Mejla. */
+  function fileShareButton(f) {
+    const cust = state.obj?.type === "files" ? state.obj.id : null, sha = f.sha256 || shaOf(f.ref);
+    return cust && sha ? `<button class="btn sm quiet" data-fshare="${esc(JSON.stringify({ h: H.files(cust, sha), what: f.name, cust: custLabelOf(cust) }))}">Länk…</button>` : "";
+  }
   function fileRow(f, where = "") {
     const ext = /\.([a-z0-9]{1,5})$/i.exec(f.name)?.[1]?.toUpperCase() || "";
     const why = [where, ext, fsize(f.size), f.ersatt_av ? `nyare version: ${f.ersatt_av.name}` : ""].filter(Boolean).map(esc).join(" · ");
     return `<div class="row frow"><span class="kindcell"><span class="kind human" title="Fil">${FILE_IC}</span></span><span></span>`
       + `<span class="txt"><span class="t" title="${esc(f.name)}">${esc(f.name)}</span><span class="why">${why}</span></span>`
       + `<span class="s when" title="Inlagd">${short(f.registered_at)}</span>`
-      + `<span class="acts"><button class="btn sm" data-fget="${esc(f.ref)}" data-fname="${esc(f.name)}">Ladda ned</button>`
+      + `<span class="acts">${isMarkdownName(f.name) ? `<button class="btn sm" data-fshow="${esc(f.ref)}" data-fname="${esc(f.name)}">Visa</button>` : ""}`
+      + `<button class="btn sm" data-fget="${esc(f.ref)}" data-fname="${esc(f.name)}">Ladda ned</button>`
+      + fileShareButton(f)
       + `<button class="btn sm quiet" data-frm="${esc(f.ref)}" data-fname="${esc(f.name)}">Ta bort</button></span></div>`;
   }
   /**
@@ -2608,6 +2638,77 @@ a.btn { text-decoration: none; color: var(--text); }
   }
 
   /**
+   * En markdownfil i Filer, formaterad (Daniel P 2026-09-27: "kan vi också se
+   * till att markdownfiler blir formatterade?"). Filen hämtas som den är;
+   * en stor fil kommer som länk, och servern visar den formaterad där.
+   */
+  const isMarkdownName = (name) => /\.(md|markdown)$/i.test(String(name || ""));
+  function showMarkdownFile(btn, ref, name) {
+    return busy(btn, async () => {
+      try {
+        const d = await call("asset_get", { ref });
+        if (d?.inline && d.data_base64) {
+          const text = new TextDecoder().decode(Uint8Array.from(atob(d.data_base64), (c) => c.charCodeAt(0)));
+          return dialog(`<h2>${esc(d.name || name)}</h2>`
+            + `<div class="preview md" style="max-height:60vh;overflow:auto;padding:12px 14px">${md(text)}</div>`
+            + `<div class="bar-actions"><button class="btn" data-fget="${esc(ref)}" data-fname="${esc(d.name || name)}">Ladda ned råfilen</button><button class="btn quiet" data-close="1">Stäng</button></div>`);
+        }
+        const l = d?.download_url ? d : await call("asset_get", { ref, as_link: true });
+        if (l?.download_url) return linkDialog(l);
+        toast(`${name}: filen kom inte med i svaret, och ingen länk kom tillbaka.`, null, true);
+      } catch (e) { fail(`${name} kunde inte visas`, e); }
+    });
+  }
+
+  /**
+   * En länk till en kollega (Daniel P 2026-09-27: "Det vore fint att kunna
+   * mejla en länk till ett material tex till en kollega."). Länken är
+   * dirigentens egen sida /vy med sidans # (#/leverans/…/material): kollegan
+   * loggar in med sitt Google-konto, och # följer med genom inloggningen
+   * (src/web/vy.ts, viewHash). Artefaktens adress med samma # (registrets
+   * views.url) står som alternativet «Öppna i Claude-appen» — på claude.ai
+   * i webbläsaren landar den på Idag, i appen på rätt sida. Båda visar bara
+   * det kollegan redan får se. Inget skickas av systemet: Mejla länk öppnar
+   * ett nytt mejl i ens eget mejlprogram.
+   */
+  function shareLinks(bases, hash, what, customer) {
+    const artifact = /^https:\/\/\S+$/.test(bases.artifact || "") ? bases.artifact.replace(/#.*$/, "") : null;
+    const url = `${bases.web}${hash}`, app = artifact ? `${artifact}${hash}` : null;
+    const subject = `${what}${customer ? ` – ${customer}` : ""}`;
+    const body = ["Hej,", "", `här är «${what}»${customer ? ` hos ${customer}` : ""} i dirigenten:`, url,
+      "Du loggar in med ditt Google-konto på jobbet.", "",
+      ...(app ? ["Har du dirigentens vy i Claude-appen går den här direkt dit:", app, ""] : []),
+      "Du ser bara det du redan har tillgång till."].join("\n");
+    return { url, app, mailto: `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}` };
+  }
+  const shareBases = () => ({ artifact: S.viewsUrl || null, web: WEB.on ? `${location.origin}/vy` : WEB_VIEW_URL });
+  /** Kopiera länk och Mejla länk, för en sida i vyn. */
+  function shareButtons(hash, what, customer, cls = "btn sm quiet") {
+    const l = shareLinks(shareBases(), hash, what, customer);
+    return `<button class="${cls}" data-share-copy="${esc(l.url)}">Kopiera länk</button>`
+      + `<a class="${cls}" href="${esc(l.mailto)}" target="_blank" rel="noopener">Mejla länk</a>`
+      + (l.app ? `<a class="${cls}" href="${esc(l.app)}" target="_blank" rel="noopener">Öppna i Claude-appen</a>` : "");
+  }
+  /** Samma, i en ruta — för raderna i en lista, där fler knappar blir för trångt. */
+  function shareDialog(hash, what, customer) {
+    const l = shareLinks(shareBases(), hash, what, customer);
+    dialog(`<h2>Länk till ${esc(what)}</h2><p class="meta">Kollegan loggar in med sitt Google-konto på jobbet och ser bara det hen redan har tillgång till.</p>`
+      + `<input class="flink" readonly value="${esc(l.url)}" aria-label="Länken">`
+      + `<div class="bar-actions"><button class="btn primary" data-share-copy="${esc(l.url)}">Kopiera länk</button>`
+      + `<a class="btn" href="${esc(l.mailto)}" target="_blank" rel="noopener">Mejla länk</a>`
+      + (l.app ? `<a class="btn" href="${esc(l.app)}" target="_blank" rel="noopener">Öppna i Claude-appen</a>` : "")
+      + `<button class="btn quiet" data-close="1">Stäng</button></div>`
+      + `<p class="meta" style="margin-top:8px">Har kollegan redan vyn öppen: klistra in länken i sökrutan (⌘K), så hoppar vyn dit.</p>`);
+    $("#layer .flink")?.select();
+  }
+  function copyShareLink(url) {
+    return (navigator.clipboard?.writeText(url) ?? Promise.reject(new Error("urklippet går inte att nå här")))
+      .then(() => toast("Länken är kopierad. Klistra in den där du vill."),
+        () => { dialog(`<h2>Kopiera länken</h2><p class="meta">Urklippet gick inte att nå härifrån. Länken är markerad — kopiera med ⌘C.</p><input class="flink" readonly value="${esc(url)}" aria-label="Länken"><div class="bar-actions"><button class="btn quiet" data-close="1">Stäng</button></div>`);
+          $("#layer .flink")?.select(); });
+  }
+
+  /**
    * Materialet uppgiften lämnat (kvar 32): filerna ur planen (tasks[].outputs)
    * och texterna sparade till stegen (steps[].drafts) — vad, från vilket steg
    * och när. I projektet står hela uppgiftens material.
@@ -2677,7 +2778,7 @@ a.btn { text-decoration: none; color: var(--text); }
     const box = d.querySelector("[data-utext]");
     try {
       const c = await call("content_get", { id: d.dataset.unit });
-      if (box) box.innerHTML = `<div class="preview" style="white-space:pre-wrap">${esc(c?.markdown || "(tom)")}</div>`;
+      if (box) box.innerHTML = `<div class="preview md">${md(c?.markdown || "(tom)")}</div>`;
     } catch (err) { if (box) box.innerHTML = `<span class="meta">Texten kunde inte hämtas.</span>`; delete d.dataset.loaded; }
   }, true);
   function materialCard(t, s, first = false) {
@@ -2734,7 +2835,7 @@ a.btn { text-decoration: none; color: var(--text); }
       try {
         const d = await call("content_get", { id });
         dialog(`<h2>${esc(d?.title || name)}</h2><p class="meta">${d?.kontroll === "inte_kontrollerad" ? "Kanalen svarade inte — det här är den sparade kopian." : "Den senast sparade versionen."}</p>`
-          + `<div class="preview" style="white-space:pre-wrap">${esc(d?.markdown || "(tom)")}</div>`
+          + `<div class="preview md">${md(d?.markdown || "(tom)")}</div>`
           + `<div class="bar-actions"><button class="btn quiet" data-close="1">Stäng</button></div>`);
       } catch (e) { fail(`${name} kunde inte hämtas`, e); }
     });
@@ -3624,10 +3725,25 @@ a.btn { text-decoration: none; color: var(--text); }
     if (s.started || (s === currentStep(t) && day10(s.start) <= TODAY)) return turOf(s);
     return { word: "inte påbörjad", tone: "" };
   }
+  /**
+   * Väntan på ett externt besked (src/plan/waits.ts): «Väntar på besked från
+   * Sven Sahle (SGL Noterat), påminn 6/10, sista dag 13/11». Öppen, stängd
+   * (nej, eller inget besked före sista dagen) eller besvarad.
+   */
+  const openWait = (t) => asArr(t?.waits).find((w) => w.state === "waiting" || w.state === "remind") || null;
+  const goneWait = (t) => asArr(t?.waits).find((w) => w.step == null && (w.state === "no" || w.state === "expired")) || null;
+  const waitNote = (w) => w.state === "waiting" || w.state === "remind"
+    ? `Väntar på besked från ${lbl(w.on, "någon utanför Rotor")}, påminn ${short(w.remind)}${w.last_day ? `, sista dag ${short(w.last_day)}` : ""}: ${w.question}`
+    : w.closed_reason || w.text;
+  const waitEdges = (t) => asArr(t?.waits).map((w) => `<div class="lv-edge">${esc(waitNote(w))}${w.state === "remind" ? ` ${chip("påminn i dag", "amber")}` : ""}</div>`).join("");
   function taskState(t) {
     if (t.delivered_externally) return { word: "klar", tone: "green" };
-    // En uppgift utan steg är inte klar: den har ingen metod än. Det är en upplysning, inte en status.
-    if (!liveSteps(t).length) return { word: "inte påbörjad", tone: "" };
+    const gone = goneWait(t), held = openWait(t);
+    if (gone) return { word: gone.state === "no" ? "stängd" : "besked kom inte", tone: "", note: gone.closed_reason || "" };
+    if (held && (held.step == null || held.step === currentStep(t)?.step))
+      return { word: `väntar på besked från ${lbl(held.on, "någon utanför Rotor")}`, tone: "", note: `påminn ${short(held.remind)}${held.last_day ? `, sista dag ${short(held.last_day)}` : ""}` };
+    // En uppgift utan steg är inte klar (blindprovet F19: «klar 0/0»): den har inga steg än.
+    if (!liveSteps(t).length) return { word: "utan steg", tone: "amber" };
     if (t.late) return { word: "sen", tone: "red" };
     const left = liveSteps(t).filter((s) => !s.done && !s.assumed_approved);
     if (!left.length) return { word: "klar", tone: "green" };
@@ -3887,7 +4003,7 @@ a.btn { text-decoration: none; color: var(--text); }
       call("content_get", { id }).then((c) => { LV.texts.set(id, c || { markdown: "" }); render(); }, () => { LV.texts.set(id, { error: true }); render(); }); }
     const c = LV.texts.get(id);
     return !c ? `<span class="meta">Hämtar texten…</span>` : c.error ? `<span class="meta">Texten kunde inte hämtas.</span>`
-      : `<div class="lv-text">${c.title ? `<b style="display:block;margin-bottom:6px">${esc(c.title)}</b>` : ""}${esc(c.markdown || "(tom)")}</div>`;
+      : `<div class="lv-text md">${c.title ? `<b style="display:block;margin-bottom:6px">${esc(c.title)}</b>` : ""}${md(c.markdown || "(tom)")}</div>`;
   }
   function lvUnitDetail(d, u) {
     const cust = custOf(d)?.id, now = asArr(u.parts).filter((p) => p.kind === "file" && !p.superseded), old = asArr(u.parts).filter((p) => p.superseded);
@@ -3902,6 +4018,7 @@ a.btn { text-decoration: none; color: var(--text); }
       + (missingOf(u).length ? `<div class="meta" style="margin-top:6px;color:var(--amber)">Saknas: ${missingOf(u).map(esc).join(", ")}</div>` : "")
       + `<div class="lv-acts" style="justify-content:flex-start;margin-top:8px"><a class="btn sm primary" href="${H.unit(d.id, u.key)}">Öppna ›</a>`
       + `<a class="btn sm" href="${H.change(d.id, d.implicit ? "" : u.key)}">Ändra efter leverans…</a>`
+      + shareButtons(H.unit(d.id, u.key), unitName(d, u), lbl(custOf(d), ""))
       + (asArr(u.missing).length || (u.text && !u.text.approved) ? `<button class="btn sm ai" data-lv-copy="${esc(JSON.stringify({ task: lvTasks(d)[0]?.id, text: unitAsk(d, u) }))}">${SP} Kopiera till Claude</button>` : "")
       + `</div></div></div>`;
   }
@@ -4098,7 +4215,8 @@ a.btn { text-decoration: none; color: var(--text); }
     const projects = [...new Set(ts.map((t) => lbl(t.commitment_named, "")).filter(Boolean))];
     return `<div class="pagehead" style="margin-bottom:8px"><span class="kbox lev">${ic("lev")}</span><h1>${esc(d.label)}</h1>${late ? `<span class="chip red">${plural(late, "uppgift sen", "uppgifter sena")}</span>` : ""}${ts.some((t) => t.outside_contract) ? `<span class="chip amber">utanför avtalet</span>` : ""}${d.closed ? `<span class="chip">avslutad</span>` : ""}</div>`
       + `<div class="lv-sub">${custOf(d)?.id ? `<a href="${H.customer(custOf(d).id)}">${esc(lbl(custOf(d)))}</a>` : ""}`
-      + (d.implicit ? ` · uppgift utan leverans · ${methodLine(ts[0])}` : ` · ${plural(ts.length, "uppgift", "uppgifter")}${projects.length ? ` från ${projects.map(esc).join(" och ")}` : ""}`) + `</div>`;
+      + (d.implicit ? ` · uppgift utan leverans · ${methodLine(ts[0])}` : ` · ${plural(ts.length, "uppgift", "uppgifter")}${projects.length ? ` från ${projects.map(esc).join(" och ")}` : ""}`) + `</div>`
+      + (d.implicit ? waitEdges(ts[0]) : "");
   }
   function lvFacts(d, ts) {
     const end = day10(d.moved?.to || d.due);
@@ -4121,7 +4239,8 @@ a.btn { text-decoration: none; color: var(--text); }
   }
   function lvTaskRows(d, ts, hitTask, hitStep) {
     // Uppgifter utan metod slås ihop till en rad (UX-genomgången, problem 4).
-    const bare = ts.filter((t) => !liveSteps(t).length && !t.delivered_externally), real = ts.filter((t) => !bare.includes(t));
+    // En uppgift som väntar på ett besked står på egen rad, med väntan (src/plan/waits.ts).
+    const bare = ts.filter((t) => !liveSteps(t).length && !t.delivered_externally && !asArr(t.waits).length), real = ts.filter((t) => !bare.includes(t));
     const counts = [...bare.reduce((m, t) => m.set(taskTitle(t), (m.get(taskTitle(t)) || 0) + 1), new Map())];
     return real.map((t, i) => {
       const o = hitTask === t.id, st = taskState(t);
@@ -4132,14 +4251,16 @@ a.btn { text-decoration: none; color: var(--text); }
         + `<span class="s">${esc(lbl(t.method_named, "ingen metod"))} · slutdatum ${short(due)}${dd && due && dd !== due && !d.implicit ? ` (leveransen: ${short(dd)})` : ""}${t.revision ? ` · runda ${Number(t.revision.number) + 1}` : ""}</span></span>`
         + `<span class="end">${lvDots(t)}<span class="meta">${lvCount(t)}</span>${toneChip(st)}</span></button>`
         + (real.length > 1 ? `<div style="text-align:right;padding:0 16px 4px">${lvOrderButtons("task", d.id, t.id, taskTitle(t))}</div>` : "")
+        + (!o && asArr(t.waits).length ? waitEdges(t) : "")
         + (o ? `<div class="lv-nest"><div class="lv-edge">Metod: ${methodLine(t)}${t.live ? ` · ute sedan ${short(t.live.at)}` : ""}${t.moved?.reason ? ` · flyttat: «${esc(t.moved.reason)}»` : ""}</div>`
+          + waitEdges(t)
           + lvRounds(d, t, hitStep)
           + asArr(t.steps).filter((s) => asArr(s.waits_on).some((w) => !w.done)).slice(0, 1).map((s) => `<div class="lv-edge">${esc(s.waits_on.find((w) => !w.done).text)}.</div>`).join("")
           + `</div>` : "");
     }).join("")
       + (bare.length ? `<div class="lv-trow ${real.length ? "" : "first"}" style="cursor:default"><span></span><span class="kbox upp sm">${ic("upp")}</span>`
-        + `<span class="nm"><span class="t">${plural(bare.length, "uppgift", "uppgifter")} utan metod</span><span class="s">${counts.map(([n, k]) => `${esc(n)}${k > 1 ? ` ×${k}` : ""}`).join(", ")}</span></span>`
-        + `<span class="end"><span class="chip amber">utan metod</span><button class="btn sm" data-go="metoder">Välj metod ›</button></span></div>` : "");
+        + `<span class="nm"><span class="t">${plural(bare.length, "uppgift", "uppgifter")} utan steg</span><span class="s">${counts.map(([n, k]) => `${esc(n)}${k > 1 ? ` ×${k}` : ""}`).join(", ")} · ingen metod, och inga steg tillagda</span></span>`
+        + `<span class="end"><span class="chip amber">utan steg</span><button class="btn sm" data-go="metoder">Välj metod ›</button></span></div>` : "");
   }
   function pageDelivery() {
     const o = state.obj, d = lvDelivery(o.id);
@@ -4159,7 +4280,8 @@ a.btn { text-decoration: none; color: var(--text); }
       + `<div class="lv-sec"><h2>Att göra nu</h2><span class="n">${plural(asArr(d.todo).length, "sak", "saker")} · från alla uppgifter</span></div><div class="card lv-card">${lvTodoRows(d, false)}</div>`
       + `<div class="lv-sec"><h2>${ic("upp")} ${d.implicit ? "Stegen" : "Uppgifter"}</h2><span class="n">${d.implicit ? esc(lvCount(ts[0])) : `${plural(ts.length, "uppgift", "uppgifter")} · en utfälld i taget`}</span></div>`
       + `<div class="card lv-card">${d.implicit ? `<div style="padding:4px 16px 12px">${lvRounds(d, ts[0], o.step)}</div>` : lvTaskRows(d, ts, openTask, o.step)}</div>`
-      + `<div class="lv-sec" id="lv-material"><h2>${ic("mat")} Material</h2><span class="n">${plural(lvUnits(d).length, "enhet", "enheter")} · det som saknas något först</span></div>${lvMaterial(d)}`
+      + `<div class="lv-sec" id="lv-material"><h2>${ic("mat")} Material</h2><span class="n">${plural(lvUnits(d).length, "enhet", "enheter")} · det som saknas något först</span>`
+      + `<span class="lv-acts" style="margin-left:auto">${shareButtons(H.material(d.id), `materialet i ${d.label}`, lbl(custOf(d), ""))}</span></div>${lvMaterial(d)}`
       + `<div class="lv-sec"><h2>${ic("ute")} Ute i systemen</h2><span class="n">det senast lästa, inte läget just nu</span></div>${lvOut(d)}`
       + `<div class="lv-sec"><h2>Historik</h2><span class="right" style="margin-left:auto;display:flex;gap:8px">${o.sub === "andra" ? "" : `<a class="btn sm" href="${H.change(d.id)}">Ändra efter leverans…</a>`}</span></div>${lvHistory(d, ts)}`
       + `<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap" id="lv-changes">${lvBindForm(d)}</div>`
@@ -4175,7 +4297,8 @@ a.btn { text-decoration: none; color: var(--text); }
     CRUMBS = pathCrumbs(d, t, null, [[unitName(d, u), null]]);
     const now = asArr(u.parts).filter((p) => p.kind === "file" && !p.superseded), old = asArr(u.parts).filter((p) => p.superseded);
     const out = asArr(u.out_as);
-    return `<div class="pagehead" style="margin-bottom:8px"><span class="kbox mat">${ic("mat")}</span><h1>${esc(unitName(d, u))}</h1>${unitChips(d, u).map(toneChip).join("")}</div>`
+    return `<div class="pagehead" style="margin-bottom:8px"><span class="kbox mat">${ic("mat")}</span><h1>${esc(unitName(d, u))}</h1>${unitChips(d, u).map(toneChip).join("")}`
+      + `<div class="actions">${shareButtons(H.unit(d.id, u.key), unitName(d, u), lbl(custOf(d), ""), "btn sm")}</div></div>`
       + `<div class="lv-sub">${esc(kindLabel(u))} · del av «${esc(d.label)}»${u.template ? ` · gjord ur mallen «${esc(u.template.label)}»` : ""}</div>`
       + `<div class="lv-sec"><h2>Rundor</h2><span class="n">${plural(rounds.length, "runda", "rundor")}</span></div><div class="card"><div style="padding:8px 16px 12px">`
       + rounds.map((r) => { const x = r.units.find((y) => y.key === u.key), before = asArr(x.parts).filter((p) => p.superseded), cur = asArr(x.parts).filter((p) => p.kind === "file" && !p.superseded);
@@ -4357,7 +4480,8 @@ a.btn { text-decoration: none; color: var(--text); }
       + `<span class="k">Status</span><span>${where ? (where.p.superseded ? `<span class="chip">ersatt</span>` : `<span class="chip green">i bruk</span>`) : `<span class="chip">inte i någon enhet</span>`}${f?.ersatt_av ? ` · nyare version: ${esc(f.ersatt_av.name)}` : ""}</span>`
       + (where ? `<span class="k">Hör till</span><span><a href="${H.unit(d.id, where.u.key)}">${esc(where.u.label)}</a> · ${esc(d.label)}</span>` : "")
       + (f?.folder ? `<span class="k">Mapp</span><span>${esc(f.folder)}</span>` : "")
-      + `<span class="k">Hämta</span><span>${ref ? `<button class="btn sm" data-fget="${esc(ref)}" data-fname="${esc(name)}">Ladda ned</button>` : ""}</span></div></div></div>`;
+      + `<span class="k">Hämta</span><span>${ref && isMarkdownName(name) ? `<button class="btn sm" data-fshow="${esc(ref)}" data-fname="${esc(name)}">Visa</button> ` : ""}${ref ? `<button class="btn sm" data-fget="${esc(ref)}" data-fname="${esc(name)}">Ladda ned</button>` : ""}</span>`
+      + `<span class="k">Dela</span><span class="lv-acts" style="justify-content:flex-start">${shareButtons(H.files(cust, sha), name, custLabelOf(cust))}</span></div></div></div>`;
   }
 
   /* ── adresserna ── */
@@ -4666,37 +4790,118 @@ a.btn { text-decoration: none; color: var(--text); }
   const hereLabel = () => state.obj ? state.obj.title : ({ idag: "Idag", meddelanden: "Meddelanden", in: "In", planen: "Planen", metoder: "Metoder", filer: "Filer", installningar: "Inställningar" }[state.screen]);
 
   /**
-   * Claudes svar som läsbar text (B-241). Daniel P: "svaren borde vara mycket
-   * bättre formatterade så att de är läsbara". En liten markdown: stycken,
-   * rubriker, fetstil, kursiv, kod, länkar och listor. Texten tvättas FÖRST —
-   * ingenting ur svaret kan bli HTML som körs.
+   * Markdown som läsbar text (B-241, och Daniel P 2026-09-27: "kan vi också se
+   * till att markdownfiler blir formatterade?"). Claudes svar, texterna i
+   * materialet, meddelandena och .md-filerna i Filer. Rubriker, stycken,
+   * fetstil, kursiv, överstruket, kod, länkar, listor i flera nivåer, citat,
+   * tabeller och linjer.
+   *
+   * Texten tvättas FÖRST — ingenting ur den kan bli HTML som körs. Länkar
+   * släpps bara igenom till http(s), mailto och vyns egna adresser (#…);
+   * javascript: och allt annat blir text. Bilder hämtas aldrig, de blir länkar.
+   * Samma renderare finns på servern (src/content/markdown-html.ts), och
+   * provet kör båda på samma texter: ändras den ena ändras den andra.
    */
   function md(text) {
-    const inline = (t) => esc(t)
-      .replace(/`([^`]+)`/g, "<code>$1</code>")
-      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-      .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>")
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-    const rader = String(text).replace(/\r/g, "").split("\n");
-    const ut = []; let lista = null, stycke = [];
-    const tömStycke = () => { if (stycke.length) { ut.push(`<p>${stycke.map(inline).join("<br>")}</p>`); stycke = []; } };
-    const tömLista = () => { if (lista) { ut.push(`<${lista.typ}${lista.start > 1 ? ` start="${lista.start}"` : ""}>${lista.rader.map((r) => `<li>${r.map(inline).join("<br>")}</li>`).join("")}</${lista.typ}>`); lista = null; } };
-    for (const rad of rader) {
-      const r = rad.trimEnd();
-      const h = /^(#{1,4})\s+(.*)$/.exec(r);
-      const ul = /^\s*[-*•]\s+(.*)$/.exec(r);
-      const ol = /^\s*\d+[.)]\s+(.*)$/.exec(r);
-      if (!r.trim()) { tömStycke(); tömLista(); continue; }
-      if (h) { tömStycke(); tömLista(); ut.push(`<h4>${inline(h[2])}</h4>`); continue; }
-      if (ul || ol) { tömStycke(); const typ = ul ? "ul" : "ol";
-        if (lista && lista.typ !== typ) tömLista();
-        (lista ||= { typ, rader: [], start: ol ? Number(/^\s*(\d+)/.exec(r)[1]) : 1 }).rader.push([(ul || ol)[1]]); continue; }
-      // En indragen rad under en punkt hör till punkten, och listan fortsätter.
-      if (lista && /^\s{2,}\S/.test(rad)) { lista.rader[lista.rader.length - 1].push(r.trim()); continue; }
-      tömLista(); stycke.push(r);
-    }
-    tömStycke(); tömLista();
-    return ut.join("");
+    const safeHref = (u) => /^(https?:\/\/|mailto:|#)/i.test(u) ? u : null;
+    const emph = (s) => s
+      .replace(/\*\*(?=\S)([^*]*?\S)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[^\w])__(?=\S)([^_]*?\S)__(?!\w)/g, "$1<strong>$2</strong>")
+      .replace(/(^|[^*\w])\*(?=[^*\s])([^*]*?[^*\s])\*(?![*\w])/g, "$1<em>$2</em>")
+      .replace(/(^|[^\w])_(?=[^_\s])([^_]*?[^_\s])_(?!\w)/g, "$1<em>$2</em>")
+      .replace(/~~(?=\S)([^~]*?\S)~~/g, "<del>$1</del>");
+    const inline = (src) => {
+      const keep = [];
+      const put = (html) => `\u0000${keep.push(html) - 1}\u0000`;
+      let s = esc(String(src).replace(/\u0000/g, ""));
+      s = s.replace(/`([^`]+)`/g, (_, c) => put(`<code>${c}</code>`));
+      s = s.replace(/(!?)\[([^\]]*)\]\(\s*([^\s)]+)\s*\)/g, (_, bang, label, url) => {
+        const href = safeHref(url);
+        const shown = emph(label) || (bang ? "bild" : url);
+        if (!href) return put(shown);
+        const out = /^https?:/i.test(href) ? ' target="_blank" rel="noopener noreferrer"' : "";
+        return put(`<a href="${href}"${out}>${bang ? `Bild: ${shown}` : shown}</a>`);
+      });
+      s = emph(s);
+      while (/\u0000\d+\u0000/.test(s)) s = s.replace(/\u0000(\d+)\u0000/g, (_, n) => keep[Number(n)] ?? "");
+      return s;
+    };
+    const cells = (row) => row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((c) => c.trim());
+    const isSep = (row) => !!row && /\|/.test(row) && /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/.test(row);
+    const item = /^( {0,3})([-*+•]|\d{1,9}[.)])\s+(.*)$/;
+    const fence = /^ {0,3}(```|~~~)/;
+    const hr = /^ {0,3}([-*_])( *\1){2,} *$/;
+    const heading = /^ {0,3}(#{1,6})\s+(.*?)(\s+#+)?\s*$/;
+    const startsBlock = (l, next) =>
+      fence.test(l) || heading.test(l) || hr.test(l) || /^ {0,3}>/.test(l) || item.test(l) || (/\|/.test(l) && isSep(next));
+    const block = (lines) => {
+      const out = [];
+      let i = 0;
+      while (i < lines.length) {
+        const l = lines[i];
+        if (!l.trim()) { i++; continue; }
+        if (fence.test(l)) {
+          const mark = fence.exec(l)[1], code = [];
+          for (i++; i < lines.length && !new RegExp(`^ {0,3}${mark}`).test(lines[i]); i++) code.push(lines[i]);
+          i++;
+          out.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`);
+          continue;
+        }
+        const h = heading.exec(l);
+        if (h) { out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); i++; continue; }
+        if (hr.test(l)) { out.push("<hr>"); i++; continue; }
+        if (/\|/.test(l) && isSep(lines[i + 1])) {
+          const head = cells(l), rows = [];
+          for (i += 2; i < lines.length && lines[i].trim() && /\|/.test(lines[i]); i++) rows.push(cells(lines[i]));
+          out.push(`<table><thead><tr>${head.map((c) => `<th>${inline(c)}</th>`).join("")}</tr></thead>`
+            + `<tbody>${rows.map((r) => `<tr>${head.map((_, k) => `<td>${inline(r[k] ?? "")}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+          continue;
+        }
+        if (/^ {0,3}>/.test(l)) {
+          const q = [];
+          for (; i < lines.length && /^ {0,3}>/.test(lines[i]); i++) q.push(lines[i].replace(/^ {0,3}> ?/, ""));
+          out.push(`<blockquote>${block(q)}</blockquote>`);
+          continue;
+        }
+        const m = item.exec(l);
+        if (m) {
+          const ordered = /\d/.test(m[2]), start = ordered ? parseInt(m[2], 10) : 1;
+          const items = [];
+          while (i < lines.length) {
+            const x = item.exec(lines[i]);
+            if (!x || /\d/.test(x[2]) !== ordered) break;
+            const body = [x[3]];
+            for (i++; i < lines.length; i++) {
+              const n = lines[i];
+              if (!n.trim()) {
+                // En tom rad fortsätter punkten bara om nästa rad är indragen.
+                if (/^\s{2,}\S/.test(lines[i + 1] ?? "")) { body.push(""); continue; }
+                break;
+              }
+              if (/^\s{2,}\S/.test(n)) { body.push(n.replace(/^ {2,4}/, "")); continue; }
+              break;
+            }
+            items.push(body);
+            if (i < lines.length && !lines[i].trim()) {
+              const after = lines[i + 1];
+              if (after !== undefined && item.test(after) && /\d/.test(item.exec(after)[2]) === ordered) i++;
+            }
+          }
+          const tag = ordered ? "ol" : "ul";
+          out.push(`<${tag}${ordered && start !== 1 ? ` start="${start}"` : ""}>${items.map((b) => {
+            const html = block(b);
+            const tight = /^<p>((?:(?!<\/?p>)[\s\S])*)<\/p>((?:<(?:ul|ol)[\s>][\s\S]*)?)$/.exec(html);
+            return `<li>${tight ? `${tight[1]}${tight[2]}` : html}</li>`;
+          }).join("")}</${tag}>`);
+          continue;
+        }
+        const para = [];
+        for (; i < lines.length && lines[i].trim() && !(para.length && startsBlock(lines[i], lines[i + 1])); i++) para.push(lines[i].trim());
+        out.push(`<p>${para.map(inline).join("<br>")}</p>`);
+      }
+      return out.join("");
+    };
+    return block(String(text ?? "").replace(/\r\n?/g, "\n").replace(/\t/g, "    ").split("\n"));
   }
   /**
    * Tumme upp och ner på Claudes svar (docs/kvar.md 25). Daniel P 2026-09-25:
@@ -5112,7 +5317,7 @@ a.btn { text-decoration: none; color: var(--text); }
    * instruktioner till vanliga chatten."
    */
   const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till Claude under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan. Ber användaren dig rapportera ett fel: gör det med skriv → rotor-dirigenten bug_report { text, where, conversation }. Ber användaren dig markera ett steg klart: gör det med markera_klart.";
-  const HUNT_HINT = "Leta med search först (B-257): EN fråga med 2–5 formuleringar — kundens ord och husets ord — och inbox när ärendet har en adress. Svaret är högst tio rader; hämta bara det en rad pekar på (fetch). Ramens steg står i svaret — hämta inte hela metoden med guide. maybe är antaganden: säg att de är det. Står det inget självklart: fråga användaren vad det kan handla om; vet hen inte, föreslå en fråga till den som skrev. Sluta leta när du har svaret, och svara kort. Långa listor: read_call { call, hitta: \"sökord\" } filtrerar på servern. Ser du hur något hänger ihop (ett workflow skickar ett fält, ett mejl kommer från ett flöde): notera det med note_link, så vet nästa ärende det. Saknas en förmåga i dirigenten — kod som kan göra en ändring som behövs: säg vad som saknas; atomförslaget skrivs i vanliga chatten. Leta effektivt: börja i kundens systemkarta. I HubSpot räknar och filtrerar query_crm_data i ETT anrop (hur många affärer som har ett fält ifyllt, vilka värden som förekommer, vilka produkter som finns på affärerna) — använd den i stället för många sökningar. get_properties ger ett fälts definition och tillåtna värden. Sök inte på samma sak två gånger.";
+  const HUNT_HINT = "Leta med search först (B-257): EN fråga med 2–5 formuleringar — kundens ord och husets ord — och inbox när ärendet har en adress. Svaret är högst tio rader; hämta bara det en rad pekar på (anropet efter →). Ramens steg står i svaret — hämta inte hela metoden med guide. Raderna under Kanske är antaganden: säg att de är det. Står det inget självklart: fråga användaren vad det kan handla om; vet hen inte, föreslå en fråga till den som skrev. Sluta leta när du har svaret, och svara kort. Långa listor: read_call { call, hitta: \"sökord\" } filtrerar på servern. Ser du hur något hänger ihop (ett workflow skickar ett fält, ett mejl kommer från ett flöde): notera det med note_link, så vet nästa ärende det. Saknas en förmåga i dirigenten — kod som kan göra en ändring som behövs: säg vad som saknas; atomförslaget skrivs i vanliga chatten. Leta effektivt: börja i kundens systemkarta. I HubSpot räknar och filtrerar query_crm_data i ETT anrop (hur många affärer som har ett fält ifyllt, vilka värden som förekommer, vilka produkter som finns på affärerna) — använd den i stället för många sökningar. get_properties ger ett fälts definition och tillåtna värden. Sök inte på samma sak två gånger.";
   let catalogCache = null;
   /** Kopplingarnas läsverktyg med sina argument, ur kopplingarnas egna listor — så att Claude inte gissar. */
   async function toolCatalog() {
@@ -5398,7 +5603,7 @@ a.btn { text-decoration: none; color: var(--text); }
   function confirmNode(btn, id) {
     const c = (S.agenda?.pending_confirmation ?? []).find((x) => x.id === id);
     return busy(btn, async () => {
-      try { await call("registry_define", { confirm: id, user_approval: `Ja, bekräftat i vyn: ${c?.label ?? id}` }); closeDialog(); await load(); toast("Bekräftat."); }
+      try { await call("registry_define", { confirm: id, confirmed: true, user_approval: `Ja, bekräftat i vyn: ${c?.label ?? id}` }); closeDialog(); await load(); toast("Bekräftat."); }
       catch (e) { fail("Bekräftelsen gick inte igenom", e); }
     });
   }
@@ -5709,7 +5914,9 @@ a.btn { text-decoration: none; color: var(--text); }
     return busy(btn, async () => {
       let r;
       // Dialogen står kvar med det som skrivits, så att inget går förlorat.
-      try { r = await call("intake_submit", input); }
+      // Knappen är människans ja: det människan skrivit i dialogen är det som läggs in.
+      try { r = await call("intake_submit", { ...input, confirmed: true,
+        user_approval: `Ja, lägg in beställningen (i vyn): ${input.deliverable_type} till ${input.customer}` }); }
       catch (e) { return say(`Beställningen lades inte in: ${e?.message || e}`); }
       closeDialogOnly();
       await load();
@@ -5774,7 +5981,7 @@ a.btn { text-decoration: none; color: var(--text); }
     });
   }
   async function refreshLib() {
-    try { S.lib = await withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"] }), 45000, "Biblioteket"); } catch { /* står kvar */ }
+    try { S.lib = await withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort" }), 45000, "Biblioteket"); } catch { /* står kvar */ }
   }
   /** Byt vem som gör en del. Människa byts här; Claude och kod resoneras fram i vanliga chatten. */
   function peKind(i, kind) {
@@ -6278,7 +6485,7 @@ a.btn { text-decoration: none; color: var(--text); }
     if (!a) return; if (!label) return toast("Skriv vad som ska göras.", null, true);
     return busy(btn, async () => {
       try { await call("task_lock", { task: a.task, add_step: { after: a.after, label, ...(who ? { who } : {}), ...(note ? { note } : {}),
-          ...(min > 0 ? { estimate_minutes: Math.round(min) } : {}) } });
+          ...(min > 0 ? { estimate_minutes: Math.round(min) } : {}) }, confirmed: true });
         state.addStep = null; closeDialog(); await afterWrite(`«${label}» står nu i uppgiften. Metoden är orörd.`); }
       catch (e) { fail("Steget lades inte till", e); }
     });
@@ -6292,7 +6499,7 @@ a.btn { text-decoration: none; color: var(--text); }
   function sendRemoveAdded(btn) {
     const r = state.removeAdded; if (!r) return;
     return busy(btn, async () => {
-      try { await call("task_lock", { task: r.task, add_step: { remove: r.step } });
+      try { await call("task_lock", { task: r.task, add_step: { remove: r.step }, confirmed: true });
         state.removeAdded = null; closeDialog(); if (state.obj?.step === r.step) state.obj = null; await afterWrite("Steget är borttaget ur uppgiften."); }
       catch (e) { fail("Steget togs inte bort", e); }
     });
@@ -6324,7 +6531,7 @@ a.btn { text-decoration: none; color: var(--text); }
   }
   async function lvMoveStep(task, step, after) {
     if (after === undefined) return;
-    try { const r = await call("task_lock", { task, move_step: { step, after } });
+    try { const r = await call("task_lock", { task, move_step: { step, after }, confirmed: true });
       await afterWrite(r?.written === false ? "Steget står redan där." : "Steget är flyttat — bara i den här uppgiften, metoden är orörd."); }
     catch (e) { fail("Steget flyttades inte", e); }
   }
@@ -6541,7 +6748,7 @@ a.btn { text-decoration: none; color: var(--text); }
   function sendInsert(btn) {
     const x = state.insert; if (!x) return;
     return busy(btn, async () => {
-      try { const r = await call("task_lock", { task: x.task, add_step: { ...x.payload, with_prerequisites: true } });
+      try { const r = await call("task_lock", { task: x.task, add_step: { ...x.payload, with_prerequisites: true }, confirmed: true });
         const n = (r?.inserted || []).length;
         state.insert = null; state.pal = null; closeDialog();
         await afterWrite(n > 1 ? `«${x.label}» och ${n - 1} steg före det står nu i uppgiften. Metoden är orörd.` : `«${x.label}» står nu i uppgiften. Metoden är orörd.`); }
@@ -6613,7 +6820,7 @@ a.btn { text-decoration: none; color: var(--text); }
     if (!to.length) return toast("Välj minst en kollega.", null, true);
     if (!text) return toast("Skriv meddelandet först.", null, true);
     return busy(btn, async () => {
-      try { await call("message", { to, text, ...(state.message?.about ? { about: state.message.about } : {}) });
+      try { await call("message", { to, text, ...(state.message?.about ? { about: state.message.about } : {}), confirmed: true });
         state.message = null; closeDialog(); toast(`Skickat till ${to.map(personName).join(", ")}.`); loadMessages(); }
       catch (e) { fail("Meddelandet skickades inte", e); }
     });
@@ -6678,11 +6885,29 @@ a.btn { text-decoration: none; color: var(--text); }
     // Uppgifterna ur planen (B-222): den som väljs öppnar sitt nästa steg.
     const objs = [...tasks().map((t) => ({ t, n: nextStep(t) })).filter((x) => x.n).sort((a, b) => a.n.start.localeCompare(b.n.start)).slice(0, 6)
       .map(({ t, n }) => ({ label: `${n.label} — ${taskName(t)}${t.customer ? ` · ${lbl(t.customer)}` : ""}`, go: `step:${t.id}|${n.step}` })), ...libEntries("method").slice(0, 4).map((m) => ({ label: m.label, go: `method:${m.id}` }))];
-    dialog(`<input placeholder="Sök, eller skriv vad du vill göra …" id="pal-in">`
+    dialog(`<input placeholder="Sök, skriv vad du vill göra, eller klistra in en länk till vyn …" id="pal-in">`
       + `<div class="grp">Gör</div>${FUNCS.slice(0, 6).map((f, i) => `<div class="item${i ? "" : " sel"}" data-func="${f.id}"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/><path d='M19 16v4M17 18h4'/></svg> ${esc(f.label)}<span class="meta">${TIERNAME[f.tier]}</span></div>`).join("")}`
       + `<div class="grp">Hitta</div>${objs.map((o) => `<div class="item" data-pal="${esc(o.go)}">${esc(o.label)}</div>`).join("")}`);
     $("#layer .dialog").classList.add("palette");
   }
+  /**
+   * En länk till en sida i vyn, inklistrad i sökrutan (⌘K): vyn hoppar dit
+   * (Daniel P 2026-09-27). Fungerar alltid inne i artefakten, också när
+   * claude.ai inte skickar adressens # vidare. Bara det efter # används —
+   * vyn lämnar aldrig sig själv, vilken sida länken än pekar på.
+   */
+  function hashFromLink(text) {
+    const m = /^(?:https?:\/\/[^\s#]*)?(#\/[^\s<>"'\\`]{1,500})$/.exec(String(text || "").trim());
+    return m ? m[1] : null;
+  }
+  document.addEventListener("input", (e) => {
+    if (e.target?.id !== "pal-in") return;
+    const h = hashFromLink(e.target.value);
+    if (!h) return;
+    closeDialog();
+    if (location.hash === h) { hashNav = true; try { applyHash(h); render(); } finally { hashNav = false; } }
+    else location.hash = h;
+  });
 
 
   /* ── Meddelanden (UX-genomgången 2026-09-27) ────────────────────────────
@@ -6774,7 +6999,7 @@ a.btn { text-decoration: none; color: var(--text); }
       + `<span class="from">${m.direction === "out" ? `Du → ${esc(asArr(m.to).map((x) => lbl(x)).join(", "))}` : esc(lbl(m.from, "En kollega"))}${m.read ? "" : ` ${chip("oläst", "accent")}`}`
       + `${m.direction === "out" && asArr(m.read_by).length ? ` <span class="meta">läst av ${esc(m.read_by.map((x) => lbl(x)).join(", "))}</span>` : ""}${m.reply_to ? ` <span class="meta">svar</span>` : ""}</span>`
       + `<span class="wh">${short(m.at)} ${String(new Date(m.at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }))}</span>`
-      + `<span class="body${m.text == null ? " err" : ""}">${esc(m.text == null ? MSG_ERR : m.text)}</span>`
+      + (m.text == null ? `<span class="body err">${esc(MSG_ERR)}</span>` : `<div class="body md">${md(m.text)}</div>`)
       + `<span class="ma"><button class="btn sm${m.direction === "out" ? "" : " primary"}" data-msg-reply="${esc(m.id)}">Svara</button>`
       + (m.direction !== "out" && !m.read ? `<button class="btn sm" data-msg-read="${esc(m.id)}">Läst</button>` : "")
       + (aboutHref(m) ? `<a class="btn sm quiet" href="${esc(aboutHref(m))}">${openWord(m)}</a>` : "") + `</span></div>`;
@@ -6807,7 +7032,7 @@ a.btn { text-decoration: none; color: var(--text); }
     const text = $("#reply-text")?.value.trim(), id = state.reply;
     if (!text) return toast("Skriv svaret först.", null, true);
     return busy(btn, async () => {
-      try { await call("message", { reply_to: id, text }); state.reply = null; closeDialog(); toast("Svaret är skickat.");
+      try { await call("message", { reply_to: id, text, confirmed: true }); state.reply = null; closeDialog(); toast("Svaret är skickat.");
         const m = (S.msgs || []).find((x) => x.id === id);
         if (m && !m.read && m.direction !== "out") await call("message", { read: id }).catch(() => null);
         await Promise.all([loadMessages(), refreshAgenda()]); }
@@ -6914,7 +7139,7 @@ a.btn { text-decoration: none; color: var(--text); }
     return busy(btn, async () => {
       try {
         let k = 0;
-        for (const x of c.draft) await call("execute_step", { task, schedule: { step, session: `pass_${Date.now()}_${k++}`, start: `${x.day}T${x.time}`, minutes: x.minutes } });
+        for (const x of c.draft) await call("execute_step", { task, schedule: { step, session: `pass_${Date.now()}_${k++}`, start: `${x.day}T${x.time}`, minutes: x.minutes }, confirmed: true });
         closeDialog(); await afterWrite(`${c.draft.length} pass för ${c.item.title} ligger i kalendern.`);
       } catch (e) { fail("Passen lades inte", e); }
     });
@@ -7097,7 +7322,7 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.ltset) return busy(t, async () => { try { await setLeadTime(ds.ltset); } catch (e) { fail("Ledtiden sattes inte", e); } });
     if (ds.ltsetall) return setAllLeadTimes(t);
     if (ds.reloadLib) { S.lib = null; S.libError = null; render();
-      return withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"] }), 45000, "Biblioteket")
+      return withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort" }), 45000, "Biblioteket")
         .then((lib) => { S.lib = lib; }).catch((e) => { S.libError = e; }).finally(render); }
     if (ds.copybuild) { const cmd = `npm run build:atom -- --from-proposal ${ds.copybuild}`;
       return (navigator.clipboard?.writeText(cmd) ?? Promise.reject(new Error("urklippet går inte att nå här")))
@@ -7183,6 +7408,9 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.ffolder !== undefined && t.hasAttribute("data-ffolder") && state.obj?.type === "files") { state.obj.folder = ds.ffolder; render(); $("#main").scrollTop = 0; return; }
     if (ds.fpick) return $("#fpick")?.click();
     if (ds.fget) return downloadFile(t, ds.fget, ds.fname || "Filen");
+    if (ds.fshow) return showMarkdownFile(t, ds.fshow, ds.fname || "Filen");
+    if (ds.fshare) { try { const x = JSON.parse(ds.fshare); return shareDialog(x.h, x.what, x.cust); } catch { return; } }
+    if (ds.shareCopy) return copyShareLink(ds.shareCopy);
     if (ds.frm) return removeFileDialog(ds.frm, ds.fname || "filen");
     if (ds.frmOk) return confirmRemoveFile(t);
     if (ds.frestore) return restoreFile(t, ds.frestore, ds.fname || "Filen");
@@ -7247,12 +7475,20 @@ a.btn { text-decoration: none; color: var(--text); }
       + `<button class="btn" data-reload-page="1">Ladda om sidan</button></div>`
       + `<div class="meta" style="margin-top:10px">Läge: ${esc(S.mcpState || "okänt")}</div></div>`;
   }
+  /**
+   * Inloggningen tar med sidan man stod på (en länk från en kollega,
+   * #/leverans/…): adressen efter # når aldrig servern, så den följer med
+   * som `to` och läggs tillbaka efter Google (src/web/vy.ts, viewHash).
+   */
+  function loginHref(hash) {
+    return /^#\/[^\s<>"'\\`]{1,500}$/.test(hash || "") ? `${WEB.loginUrl}?to=${encodeURIComponent(hash)}` : WEB.loginUrl;
+  }
   /** På dirigentens egen adress: utan inloggning, eller med ett konto som inte är internt. */
   function loginHtml(e) {
     const shut = e.code === "FORBIDDEN";
     return `<div class="empty"><b>${shut ? "Du kommer inte in i dirigenten med det här kontot." : "Logga in för att se dirigenten."}</b>`
       + esc(shut ? e.message : "Använd ditt Google-konto på jobbet, samma adress som står på dig i dirigenten.")
-      + `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn primary" href="${WEB.loginUrl}">Logga in med Google</a>`
+      + `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn primary" href="${esc(loginHref(location.hash))}">Logga in med Google</a>`
       + (shut ? `<a class="btn" href="${WEB.logoutUrl}">Logga ut</a>` : "") + `</div></div>`;
   }
   async function readMcpState() {
