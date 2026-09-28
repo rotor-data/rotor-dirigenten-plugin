@@ -2,7 +2,10 @@
   "mcpServers": {
     "rotor-dirigenten": {
       "type": "http",
-      "url": "https://rotor-dirigenten.netlify.app/mcp?plugin=0.5.970"
+      "url": "https://rotor-dirigenten.netlify.app/mcp",
+      "headers": {
+        "Rotor-Plugin-Version": "0.5.975"
+      }
     }
   }
 }

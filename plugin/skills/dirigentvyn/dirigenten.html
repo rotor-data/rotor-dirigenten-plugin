@@ -592,6 +592,10 @@ a.btn { text-decoration: none; color: var(--text); }
 .lv-sec h2 { font-size: var(--fs-section); font-weight: 700; margin: 0; }
 .lv-sec .n { color: var(--text-2); font-size: var(--fs-meta); }
 .lv-sub { color: var(--text-2); margin: -8px 0 var(--s4); }
+.lv-status { padding: 14px 16px; margin-bottom: var(--s4); }
+.lv-sentence { font-size: var(--fs-section); font-weight: 600; }
+.lv-holding { margin-top: 4px; color: var(--text-2); }
+.lv-factline { margin-top: 12px; color: var(--text-2); font-size: var(--fs-meta); }
 .lv-card { margin-bottom: var(--s5); }
 .lv-card > .head { flex-wrap: wrap; }
 .lv-card > .head h2 { font-size: var(--fs-section); margin: 0; }
@@ -892,7 +896,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "4b2a20a", published: "2026-09-28" };
+  const SIDA = { version: "b6c7c8a", published: "2026-09-28" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1857,7 +1861,7 @@ a.btn { text-decoration: none; color: var(--text); }
   /** En rad i Din tur: ett steg, en fråga, en överlämning eller en skillnad i ett system. */
   function turRow(x) {
     const t = taskById(x.task), hot = x.level === "hot";
-    const lead = hot ? chip("brinner", "red") : chip("din tur", "accent");
+    const lead = whyChip(x);
     const tail = [deliveryTag(x, t), byWhen(x.due)].filter(Boolean).join(" · ");
     if (x.kind === "step") {
       const st = stepOf(t, x.step), k = kindOf(st), key = `${x.task}|${x.step}`;
@@ -1879,7 +1883,7 @@ a.btn { text-decoration: none; color: var(--text); }
         attrs: d ? `data-lv-href="${H.delivery(d.id, x.task)}"` : "", more: false,
         acts: (x.next ? `<button class="btn sm ai" data-lv-copy="${esc(JSON.stringify({ task: x.task, next: x.next, text: x.reason }))}">${SP} Kopiera till Claude</button>` : "")
           + (d ? `<a class="btn sm" href="${H.delivery(d.id, x.task)}">Öppna uppgiften ›</a>` : ""),
-        meta: chip("sen", "red") + chip("utan metod", "amber") + tail });
+        meta: whyChip(x) + chip("utan metod", "amber") + tail });
     }
     // Väntan på ett externt besked (src/plan/waits.ts): påminn i dag, eller besked kom inte.
     if (x.kind === "wait") {
@@ -1920,6 +1924,16 @@ a.btn { text-decoration: none; color: var(--text); }
         + [deliveryTag(x, t), x.kind === "wait" ? "" : byWhen(x.due, x.kind === "waiting" ? "svar senast" : "senast")].filter(Boolean).join(" · ") });
   }
   const LEVEL_NAME = { hot: "brinner", today: "i dag", soon: "snart" };
+  /**
+   * Varför raden står i Att göra (Daniel P 2026-09-28: *"Idagvyn innehåller nu
+   * både 'brinner' och 'planerat idag' vilket är förvirrande"*). Ur agendans
+   * nivå och dag, som servern satt dem: hot med en dag som varit är sen, hot
+   * annars ska vara klart i dag, today är planerat i dag.
+   */
+  const isLate = (x) => x.level === "hot" && isDay(day10(x.due)) && day10(x.due) < TODAY;
+  const todoRank = (x) => (isLate(x) ? 0 : x.level === "hot" ? 1 : x.level === "today" ? 2 : 3);
+  const whyChip = (x) => isLate(x) ? chip(`sen ${plural(diff(TODAY, day10(x.due)), "dag", "dagar")}`, "red")
+    : x.level === "hot" ? chip("i dag", "amber") : x.level === "today" ? chip("planerat i dag", "accent") : chip(`snart · ${short(x.due)}`);
   const LEVEL_RANK = { hot: 0, today: 1, soon: 2 };
   /** Mitt, det som är min tur: inte det som ligger hos en kollega (B-271) eller väntar på att någon tar emot det. */
   const myTurn = () => agenda().filter((x) => x.kind !== "colleague" && x.kind !== "handover_out");
@@ -1936,23 +1950,23 @@ a.btn { text-decoration: none; color: var(--text); }
     const isWork = (x) => x.kind === "step" || x.kind === "colleague" || x.kind === "handover_out" || x.kind === "drift";
     const vis = all.filter((x) => f === "all" || (f === "work" && isWork(x)) || (f === "q" && !isWork(x)));
     const rowOf = (x) => (x.kind === "colleague" || x.kind === "handover_out" ? otherRow(x) : turRow(x));
-    const now = vis.filter((x) => x.level !== "soon").length;
-    const levels = [["hot", "Brinner", "görs i dag, annars spricker ett datum"], ["today", "Nu", "planerat i dag"], ["soon", "Snart", "de närmaste dagarna"]];
-    const body = levels.map(([lvl, name, hint]) => {
-      const xs = vis.filter((x) => x.level === lvl);
-      if (!xs.length) return "";
-      const head = `<div class="zgrp ${lvl === "hot" ? "hot" : ""}"><b>${name}</b><span class="hint">${hint}</span></div>`;
-      if (lvl === "soon" && !store.showSoon)
-        return head + `<div class="zmore">Fällt ihop: ${plural(xs.length, "sak", "saker")}, först ${short(xs[0].due)}. <button class="linkbtn" data-toggle-soon="1">Visa</button></div>`;
-      return head + xs.map(rowOf).join("") + (lvl === "soon" ? `<div class="zmore"><button class="linkbtn" data-toggle-soon="1">Fäll ihop Snart</button></div>` : "");
-    }).join("");
+    // En lista, Att göra: först det sena, sedan det som ska vara klart i dag, sedan det planerade i dag.
+    // Snart står för sig, ihopfälld. Ordningen är agendans nivå och dag (servern), inga egna regler.
+    const todo = vis.filter((x) => x.level !== "soon")
+      .sort((a, b) => todoRank(a) - todoRank(b) || String(a.due).localeCompare(String(b.due)));
+    const soon = vis.filter((x) => x.level === "soon");
+    const now = todo.length, late = todo.filter(isLate).length;
+    const body = todo.map(rowOf).join("")
+      + (soon.length ? `<div class="zgrp"><b>Snart</b><span class="hint">${plural(soon.length, "sak", "saker")} de närmaste dagarna</span></div>`
+        + (store.showSoon ? soon.map(rowOf).join("") + `<div class="zmore"><button class="linkbtn" data-toggle-soon="1">Fäll ihop Snart</button></div>`
+          : `<div class="zmore">Fällt ihop, först ${short(soon[0].due)}. <button class="linkbtn" data-toggle-soon="1">Visa</button></div>`) : "");
     const filters = `<div class="filters${store.showFilters ? " open" : ""}"><div class="seg">`
       + [["mine", "Mina"], ["others", "Andras"], ["all", "Alla"]].map(([k, l]) => `<button data-who="${k}" aria-pressed="${who === k}">${l}</button>`).join("")
       + `</div><div class="seg" title="Hur långt fram listan visar">`
       + [[1, "Veckan"], [2, "2 v"], [3, "3 v"], [4, "4 v"], [0, "Allt"]].map(([k, l]) => `<button data-ahead="${k}" aria-pressed="${aheadWeeks() === k}">${l}</button>`).join("")
       + `</div><div class="seg">` + [["all", "Allt"], ["work", "Arbete"], ["q", "Frågor"]].map(([k, l]) => `<button data-filter="${k}" aria-pressed="${f === k}">${l}</button>`).join("") + `</div></div>`;
-    return `<div class="zone"><div class="zone-h"><h2>${who === "others" ? "Andras tur" : who === "all" ? "Allas" : "Din tur"}</h2><span class="n">${now}</span>`
-      + `<span class="hint">det du kan göra nu, det som brinner först</span><span class="right">`
+    return `<div class="zone"><div class="zone-h"><h2>Att göra ${now}${late ? ` · <span style="color:var(--red)">${late} ${late === 1 ? "sen" : "sena"}</span>` : ""}</h2>`
+      + `<span class="right">`
       + `<button class="btn sm quiet vis" data-show-filters="1" aria-expanded="${!!store.showFilters}">Visa: ${WHO_NAME[who]} · ${AHEAD_NAME[aheadWeeks()]} · ${FILTER_NAME[f]} ▾</button>${filters}</span></div>`
       + `<div class="card">${body || `<div class="empty"><b>Inget är din tur just nu.</b>Allt som kommit in är bedömt, och inget steg ligger på dig i dag.</div>`}</div></div>`;
   }
@@ -2092,8 +2106,7 @@ a.btn { text-decoration: none; color: var(--text); }
 
   const SCREENS = {
     idag() {
-      const n = turCount(), hot = myTurn().filter((x) => x.level === "hot").length;
-      return `<div class="pagehead"><h1>Idag</h1><span class="sub">${wday(TODAY)} · <b style="color:var(--accent-ink)">${plural(n, "sak är", "saker är")} din tur</b>${hot ? ` · <span style="color:var(--red)">${hot} brinner</span>` : ""}</span></div>`
+      return `<div class="pagehead"><h1>Idag</h1><span class="sub">${wday(TODAY)}</span></div>`
         + zoneAbsence() + zoneTur() + lvIdag()
         + `<div class="zones2">${zoneWaiting()}${zoneConfirm()}</div>`
         + zoneWeek();
@@ -2306,7 +2319,7 @@ a.btn { text-decoration: none; color: var(--text); }
     const t = S.tools;
     const tools = !t ? "" : `<div class="setrow"><div class="txt"><div class="t">Dirigenten i claude.ai ${t.error ? `<span class="chip amber">går inte att läsa</span>` : t.missing.length ? `<span class="chip amber">gammal verktygslista</span>` : `<span class="chip green">${t.count} verktyg</span>`}</div>`
       + (t.error ? `<div class="meta">${esc(t.error)}</div>`
-        : t.missing.length ? `<div class="warnnote">Vyn använder verktyg som din koppling inte känner: ${esc(t.missing.join(", "))}. Koppla om rotor-dirigenten i claude.ais inställningar — listan läses bara när kopplingen görs.</div>`
+        : t.missing.length ? `<div class="warnnote">Vyn använder verktyg som din koppling inte känner: ${esc(t.missing.join(", "))}. Välj «Refresh tools» på rotor-dirigenten i claude.ais inställningar (Settings → Connectors). Lägg inte till kopplingen igen.</div>`
           : `<div class="meta">Kopplingen har alla verktyg vyn använder.</div>`) + `</div></div>`;
     const web = !WEB.on ? "" : `<div class="setrow"><div class="txt"><div class="t">Dirigentens egen adress <span class="chip green">inloggad</span></div>`
       + `<div class="meta">Du är inloggad med Google här. Claude i panelen och HubSpot finns bara när vyn är öppen i claude.ai.</div></div>`
@@ -3896,7 +3909,8 @@ a.btn { text-decoration: none; color: var(--text); }
   const taskTitle = (t) => (t?.thread && threadSubject(t.thread)) || t?.occasion || taskName(t);
   const lvDelivery = (id) => realDeliveries().find((d) => d.id === id) || implicitDelivery(taskById(id));
   const deliveryOfTask = (t) => (t?.delivery && realDeliveries().find((d) => d.id === t.delivery)) || implicitDelivery(t);
-  const lvTasks = (d) => asArr(d?.tasks).map(taskById).filter(Boolean);
+  // En löpande leverans (2026-09-28) visar bara de öppna ärendena; de klara räknas i d.ongoing.done_by_month.
+  const lvTasks = (d) => (d?.ongoing ? asArr(d.position?.tasks).map((p) => p.task) : asArr(d?.tasks)).map(taskById).filter(Boolean);
   const custOf = (d) => d?.customer?.id ? d.customer : lvTasks(d)[0]?.customer || null;
 
   /* ── status i ord ── */
@@ -4354,11 +4368,13 @@ a.btn { text-decoration: none; color: var(--text); }
 
   /* ── Lägg i leverans (en uppgift utan leverans) ── */
   function lvBindForm(d) {
-    if (!d.implicit) return "";
-    const b = LV.bind?.task === d.id ? LV.bind : null;
+    // En uppgift i en leverans kan läggas i en egen (när den slutar efter leveransdagen); formen står då i överdelen.
+    const member = !d.implicit && LV.bind && asArr(d.tasks).includes(LV.bind.task);
+    if (!d.implicit && !member) return "";
+    const b = LV.bind?.task === d.id || member ? LV.bind : null;
     const same = realDeliveries().filter((x) => !x.closed && x.customer?.id === custOf(d)?.id);
     if (!b) return `<button class="btn" data-lv-bind="${esc(d.id)}">Lägg i en leverans</button>`;
-    return `<div class="card" style="border-color:var(--accent)"><div class="head"><h2 style="font-size:var(--fs-section);margin:0">Lägg i en leverans</h2><span class="right"><button class="btn quiet sm" data-lv-bind-close="1">Stäng</button></span></div>`
+    return `<div class="card" style="border-color:var(--accent)"><div class="head"><h2 style="font-size:var(--fs-section);margin:0">${member ? `Lägg «${esc(clipped(taskTitle(taskById(b.task)), 40))}» i en egen leverans` : "Lägg i en leverans"}</h2><span class="right"><button class="btn quiet sm" data-lv-bind-close="1">Stäng</button></span></div>`
       + `<div class="lv-form" style="padding:12px 16px"><label class="f">Leveransen: en som finns, eller ett nytt namn<input list="lv-bind-list" data-lv-bind-f="name" value="${esc(b.name)}"><datalist id="lv-bind-list">${same.map((x) => `<option value="${esc(x.label)}">`).join("")}</datalist></label>`
       + `<label class="f" style="max-width:220px">Leveransdag, för en ny<input type="date" data-lv-bind-f="due" value="${esc(b.due)}"></label>`
       + `<div class="lv-acts" style="justify-content:flex-start"><button class="btn" data-lv-bind-preview="1">Visa vad som händer</button></div>`
@@ -4405,32 +4421,153 @@ a.btn { text-decoration: none; color: var(--text); }
   }
 
   /* ── sidorna ── */
-  function lvHead(d, ts) {
-    const late = ts.filter((t) => t.late).length;
-    const projects = [...new Set(ts.map((t) => lbl(t.commitment_named, "")).filter(Boolean))];
-    return `<div class="pagehead" style="margin-bottom:8px"><span class="kbox lev">${ic("lev")}</span><h1>${esc(d.label)}</h1>${late ? `<span class="chip red">${plural(late, "uppgift sen", "uppgifter sena")}</span>` : ""}${ts.some((t) => t.outside_contract) ? `<span class="chip amber">utanför avtalet</span>` : ""}${d.closed ? `<span class="chip">avslutad</span>` : ""}</div>`
-      + `<div class="lv-sub">${custOf(d)?.id ? `<a href="${H.customer(custOf(d).id)}">${esc(lbl(custOf(d)))}</a>` : ""}`
-      + (d.implicit ? ` · uppgift utan leverans · ${methodLine(ts[0])}` : ` · ${plural(ts.length, "uppgift", "uppgifter")}${projects.length ? ` från ${projects.map(esc).join(" och ")}` : ""}`) + `</div>`
-      + (d.implicit ? waitEdges(ts[0]) : "");
+  /**
+   * Leveranssidans överdel (Daniel P 2026-09-28: *"Det är en massa text högst
+   * upp av oklara skäl som inte går att agera på. 'Lägetboxen' är mycket
+   * förvirrande"*): rubriken med ett märke, en mening om läget, knapparna som
+   * går att använda och tre fakta på en rad. Slutsatserna är serverns
+   * (`d.status`, src/plan/delivery.ts deliveryStatus); vyn räknar inga egna.
+   */
+  const STATUS_CHIP = { late: ["sen", "red"], on_time: ["i tid", "green"], ongoing: ["pågående", ""], delivered: ["levererad", "green"] };
+  /** Serverns läge. En uppgift utan leverans har inget eget: dess sen och troligt klart är ändå serverns. */
+  function statusOf(d) {
+    if (d.status) return d.status;
+    const t = d.implicit ? taskById(d.id) : null, promised = day10(d.moved?.to || d.due);
+    const likely = [t?.earliest_finish_likely, t?.capacity_late?.finish].map(day10).filter(isDay).sort().at(-1) || null;
+    const cur = t ? currentStep(t) : null;
+    const step = cur && !cur.external ? { task: t.id, step: cur.step, label: cur.label, who: cur.responsible || null, date: day10(cur.end), waiting: false } : null;
+    const kind = t && (t.delivered_externally || (liveSteps(t).length && !cur)) ? "delivered" : t?.late ? "late" : "on_time";
+    const at = kind === "delivered" ? (day10(t.delivered_externally?.at) || liveSteps(t).map((s) => day10(s.done?.at)).filter(isDay).sort().at(-1) || null) : null;
+    return { kind, promised, likely: kind === "delivered" ? null : likely, days_late: kind === "late" && likely && likely > promised ? diff(likely, promised) : kind === "delivered" && at && at > promised ? diff(at, promised) : null,
+      delivered_at: at, holding: kind === "late" ? step : null, next: kind === "delivered" ? null : step, due_conflicts: [] };
   }
-  function lvFacts(d, ts) {
-    const end = day10(d.moved?.to || d.due);
-    const late = ts.filter((t) => t.late);
-    const units = lvUnits(d), outUnits = units.filter(({ u }) => asArr(u.out_as).some((o) => !o.replaced_by));
-    const pubs = outUnits.flatMap(({ u }) => asArr(u.out_as).filter((o) => !o.replaced_by));
-    const kinds = [...new Set(outUnits.map(({ u }) => kindLabel(u).toLowerCase()))];
-    const syss = [...new Set(pubs.map((o) => systemName(d, o.channel)))];
-    const left = ts.flatMap((t) => liveSteps(t).filter((s) => !s.done && !s.assumed_approved));
-    const checks = left.length && left.every((s) => s.after_check), none = !ts.some((t) => liveSteps(t).length);
-    // Förklaringarna står bakom «?» (titeln), inte som meningar i rutan.
-    const q = (why) => why ? ` <span class="meta" title="${esc(why)}" style="cursor:help">?</span>` : "";
-    return `<div class="lv-facts">`
-      + `<div class="lv-fact"><div class="k">Kunden fick</div><div class="v">${isDay(d.due) ? short(d.due) : "–"}</div><div class="meta">${d.moved ? `flyttat till ${short(end)}${d.moved.reason ? `: «${esc(d.moved.reason)}»` : ""}` : "slutdatum"}</div></div>`
-      + `<div class="lv-fact"><div class="k">Troligt klart${q(checks ? "Bara efterkontroll kvar: det räknas aldrig som sent." : "")}</div><div class="v">${none ? "–" : !left.length ? "Klart" : isDay(d.earliest_finish_likely) ? short(d.earliest_finish_likely) : "–"}</div><div class="meta">${none ? "utan metod"
-        : !left.length ? "alla steg är gjorda" : checks ? "efterkontroll kvar"
-        : d.margin_days == null ? "" : d.margin_days >= 0 ? `${plural(d.margin_days, "dag", "dagar")} före` : `${plural(-d.margin_days, "dag", "dagar")} efter slutdatum`}</div></div>`
-      + `<div class="lv-fact"><div class="k">Sen</div>${late.length ? `<div class="v late">Ja</div><div class="meta">${late.map((t) => esc(taskTitle(t))).join(", ")}</div>` : `<div class="v" style="color:var(--green)">Nej</div><div class="meta">&nbsp;</div>`}</div>`
-      + `<div class="lv-fact"><div class="k">Ute nu</div><div class="v">${outUnits.length ? plural(outUnits.length, "sak", "saker") : "Inget ute än"}</div><div class="meta">${outUnits.length ? esc([kinds.join(", "), syss.length ? `i ${syss.join(", ")}` : "", plural(pubs.length, "publicering", "publiceringar")].filter(Boolean).join(" · ")) : "&nbsp;"}</div></div></div>`;
+  /** Vem, i ord: «du» för den som tittar. */
+  const whoWord = (w) => !w ? "" : (w.id ?? w) === me() ? "du" : lbl(w, "");
+  const stepWhen = (x) => [whoWord(x.who), short(x.date)].filter(Boolean).join(", ");
+  function lvHead(d, ts) {
+    const st = statusOf(d), [word, tone] = STATUS_CHIP[st.kind] || STATUS_CHIP.on_time;
+    const c = custOf(d);
+    const how = d.implicit ? methodLine(ts[0])
+      : d.template ? `mallen «${esc(lbl(d.template))}»`
+      : [...new Set(ts.map((t) => lbl(t.method_named, "")).filter(Boolean))].map((m) => esc(m)).join(", ") || "ingen metod";
+    return `<div class="pagehead" style="margin-bottom:8px"><span class="kbox lev">${ic("lev")}</span><h1>${esc(d.label)}</h1>${chip(word, tone)}</div>`
+      + `<div class="lv-sub">${c?.id ? `<a href="${H.customer(c.id)}">${esc(lbl(c))}</a> · ` : ""}${how}</div>`;
+  }
+  /** Meningen om läget, i klartext. */
+  function lvSentence(d) {
+    const st = statusOf(d), o = d.ongoing;
+    if (st.kind === "ongoing" && o) {
+      const who = st.next && st.next.task === o.next?.task ? whoWord(st.next.who) : "";
+      return `${plural(o.open, "öppet ärende", "öppna ärenden")}${o.late ? `, ${plural(o.late, "sent", "sena")}` : ""}.`
+        + (o.next ? ` Nästa: «${esc(clipped(o.next.label))}» ${short(o.next.date)}${who ? ` (${esc(who)})` : ""}.` : " Inget på tur.");
+    }
+    if (st.kind === "delivered") return `Levererad ${short(st.delivered_at)}${st.promised ? (st.days_late ? `, ${plural(st.days_late, "dag", "dagar")} sen.` : ", i tid.") : "."}`;
+    if (st.kind === "late") return (st.likely ? `Blir klar ${short(st.likely)} — kunden är lovad ${short(st.promised)}` : `Sen — kunden är lovad ${short(st.promised)}`)
+      + (st.days_late ? ` (${plural(st.days_late, "dag", "dagar")} sen).` : ".");
+    return st.likely ? `I tid: klar ${short(st.likely)}, kunden är lovad ${short(st.promised)}.` : `Kunden är lovad ${short(st.promised)}.`;
+  }
+  /** Planens förslag för leveransens uppgifter, med sin plats i hela listan (suggestionDialog tar den). */
+  const deliverySuggestions = (d) => capacitySuggestions().map((x, i) => ({ x, i }))
+    .filter(({ x }) => x.next_call && asArr(d.tasks).includes(x.task));
+  /** Knapparna under meningen: bara de som går att göra. */
+  function lvButtons(d, ts) {
+    const st = statusOf(d), out = [];
+    if (st.kind === "late" || st.kind === "on_time") {
+      const conflicts = asArr(st.due_conflicts);
+      if (conflicts.length && !d.implicit) {
+        const last = conflicts.map((x) => x.due).sort().at(-1);
+        out.push(`<button class="btn sm" data-lv-promise="delivery|${esc(d.id)}|${esc(last)}">Flytta leveransdagen</button>`);
+        // Fler än två: en knapp per uppgift blir en vägg; leveransdagen är handlingen (en löpande mall är den andra).
+        if (conflicts.length <= 2) for (const x of conflicts) out.push(`<button class="btn sm" data-lv-own="${esc(x.task)}">Lägg ${conflicts.length > 1 ? `«${esc(clipped(x.label, 40))}»` : "uppgiften"} i en egen leverans</button>`);
+      } else {
+        // En uppgift ensam: kundens datum på uppgiften (values.promised), som tar leveransen med sig. Flera: leveransens datum.
+        const one = ts.length === 1 ? ts[0] : null;
+        const to = st.likely && st.promised && st.likely > st.promised ? st.likely : st.promised || "";
+        out.push(`<button class="btn sm${st.kind === "late" ? " primary" : ""}" data-lv-promise="${one ? `task|${esc(one.id)}` : `delivery|${esc(d.id)}`}|${esc(to)}">Flytta kundens datum</button>`);
+      }
+      const h = st.kind === "late" ? st.holding : null;
+      const hs = h && !h.waiting ? stepOf(taskById(h.task), h.step) : null;
+      if (hs && (hs.responsible?.id ?? hs.responsible) === me())
+        out.push(`<button class="btn sm" data-absence-handover="${esc(h.task)}|${esc(h.step)}" title="Steget blir kollegans när kollegan tagit emot det.">Lämna över «${esc(clipped(h.label, 40))}»</button>`);
+    }
+    for (const { x, i } of deliverySuggestions(d))
+      out.push(`<button class="btn sm" data-suggestion="${i}" title="${esc(x.text)}">${x.kind === "push" ? "Trycka på…" : x.kind === "handover" ? `Lämna över till ${esc(x.to_label)}…` : "Granska förslaget…"}</button>`);
+    return out.length ? `<div class="lv-acts" style="justify-content:flex-start;margin-top:10px">${out.join("")}</div>` : "";
+  }
+  /** Tre fakta på en rad. Bara det som gäller; «Ute» bara när något verkligen har gått ut. */
+  function lvFactLine(d) {
+    const st = statusOf(d), o = d.ongoing, bits = [];
+    if (st.kind === "ongoing" && o) {
+      if (o.latest) bits.push(`Senast in ${short(o.latest.at)}`);
+      const months = asArr(o.done_by_month);
+      if (months.length) bits.push(`Klara: ${months.map((m) => `${esc(monthWord(m.month).slice(0, 3))} ${m.count}`).join(", ")}`);
+    } else {
+      if (st.promised) bits.push(`Lovat kunden ${short(st.promised)}`);
+      if (st.kind === "delivered") { if (st.delivered_at) bits.push(`Levererad ${short(st.delivered_at)}`); }
+      else {
+        if (st.likely) bits.push(`Beräknat klart ${short(st.likely)}`);
+        if (st.next) bits.push(`Nästa: ${esc(stepWhen(st.next))}`);
+      }
+    }
+    const outUnits = lvUnits(d).filter(({ u }) => asArr(u.out_as).some((x) => !x.replaced_by));
+    if (outUnits.length) bits.push(`Ute: ${plural(outUnits.length, "sak", "saker")}`);
+    return bits.length ? `<div class="lv-factline">${bits.join(" · ")}</div>` : "";
+  }
+  function lvStatus(d, ts) {
+    const st = statusOf(d), h = st.kind === "late" ? st.holding : null;
+    return `<div class="card lv-card lv-status"><div class="lv-sentence">${lvSentence(d)}</div>`
+      + (h ? `<div class="lv-holding">Det som håller uppe: «${esc(h.label)}» (${esc(stepWhen(h))})</div>` : "")
+      + lvButtons(d, ts) + lvPromiseForm(d) + (d.implicit ? "" : lvBindForm(d)) + lvFactLine(d) + `</div>`;
+  }
+  /* ── Flytta kundens datum / leveransdagen: serverns förhandsvisning och Bekräfta ── */
+  function lvPromiseForm(d) {
+    const f = LV.promise?.delivery === d.id ? LV.promise : null;
+    if (!f) return "";
+    const title = f.mode === "delivery" && asArr(statusOf(d).due_conflicts).length ? "Flytta leveransdagen" : "Flytta kundens datum";
+    return `<div class="lv-form" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)"><b>${title}</b>`
+      + `<label class="f" style="max-width:220px">Nytt datum<input type="date" data-lv-promise-f="to" min="${esc(TODAY)}" value="${esc(f.to)}"></label>`
+      + (f.mode === "task" ? `<label class="f">Vem gav eller godtog datumet<input data-lv-promise-f="by" value="${esc(f.by)}" placeholder="till exempel kundens projektledare i mejl 27/9"></label>` : "")
+      + `<label class="f">Varför<input data-lv-promise-f="reason" value="${esc(f.reason)}" maxlength="200"></label>`
+      + `<div class="lv-acts" style="justify-content:flex-start"><button class="btn" data-lv-promise-preview="1">Visa vad som händer</button><button class="btn quiet" data-lv-promise-close="1">Stäng</button></div>`
+      + (f.error ? `<div class="warnnote">${esc(f.error)}</div>` : "")
+      + (f.preview ? `<div class="lv-previewbox"><b>Förhandsvisning · inget är skrivet</b><div>${esc(f.preview)}</div><div class="lv-acts" style="justify-content:flex-start"><button class="btn primary" data-lv-promise-yes="1">Bekräfta</button></div></div>` : "")
+      + `</div>`;
+  }
+  const promiseArgs = (f) => f.mode === "task"
+    ? { task: f.id, values: { promised: f.to, promised_by: f.by.trim() }, reason: f.reason.trim() }
+    : { task: f.id, values: { due: f.to }, reason: f.reason.trim() };
+  /** Förhandsvisningen i ord, ur serverns svar. */
+  function promisePreviewText(f, r) {
+    const p = r?.preview;
+    if (!p) return null;
+    if (f.mode === "task") {
+      const dl = p.places?.delivery;
+      return `Kundens datum flyttas från ${short(p.from)} till ${short(p.to)}. ${p.late ? "Uppgiften är ändå sen mot det nya datumet." : "Uppgiften är inte sen mot det nya datumet."}`
+        + (dl ? dl.changes ? ` Leveransen «${dl.label}» flyttas också till ${short(dl.to)}.` : dl.to !== p.to ? ` Leveransen «${dl.label}» har kvar ${short(dl.to)}.` : "" : "");
+    }
+    const ns = p.delivery?.status;
+    return `Leveransdagen blir ${short(f.to)}.` + (ns ? ns.kind === "late" ? ` Den är ändå sen: blir klar ${short(ns.likely)}.` : ` Den blir i tid${ns.likely ? `: klar ${short(ns.likely)}` : ""}.` : "")
+      + (ns && asArr(ns.due_conflicts).length ? ` ${plural(ns.due_conflicts.length, "uppgift slutar", "uppgifter slutar")} fortfarande efter den.` : "");
+  }
+  function promisePreview(btn) {
+    const f = LV.promise; if (!f) return;
+    f.error = !isDay(f.to) ? "Välj ett datum." : !f.reason.trim() ? "Skriv varför datumet flyttas." : f.mode === "task" && !f.by.trim() ? "Skriv vem som gav eller godtog datumet." : null;
+    if (f.error) return render();
+    return busy(btn, async () => {
+      try { const r = await call("execute_step", promiseArgs(f));
+        f.preview = r?.written === false ? promisePreviewText(f, r) : null;
+        f.error = f.preview ? null : "Datumet är redan det, eller servern svarade utan förhandsvisning."; }
+      catch (e) { f.preview = null; f.error = e.message || String(e); }
+      render();
+    });
+  }
+  function promiseConfirm(btn) {
+    const f = LV.promise; if (!f?.preview) return toast("Visa förhandsvisningen först.", null, true);
+    return busy(btn, async () => {
+      try { await call("execute_step", { ...promiseArgs(f), confirmed: true, user_approval: `Ja, bekräfta (i vyn): ${f.preview}`.slice(0, 500) });
+        LV.promise = null; await load(); toast(`Datumet är ${short(f.to)}. Det är ett nytt löfte — säg till beställaren.`); }
+      catch (e) { fail("Datumet flyttades inte", e); }
+    });
   }
   function lvTaskRows(d, ts, hitTask, hitStep) {
     // Uppgifter utan metod slås ihop till en rad (UX-genomgången, problem 4).
@@ -4468,9 +4605,8 @@ a.btn { text-decoration: none; color: var(--text); }
     if (o.sub === "andra" && (!LV.change || LV.change.id !== d.id || LV.change.unit !== (o.unit || ""))) LV.change = newChange(d, o.unit);
     CRUMBS = pathCrumbs(d, t, s, o.sub === "andra" ? [["Ändra efter leverans", null]] : o.sub === "material" ? [["Material", null]] : []);
     if (t) openMirror(t.id); else if (ts[0]) openMirror(ts[0].id);
-    return lvHead(d, ts)
-      + (asArr(d.warnings).length ? `<div class="warnnote" style="margin-bottom:12px">${d.warnings.map(esc).join("<br>")}</div>` : "")
-      + `<div class="lv-sec"><h2>Läget</h2></div><div class="card lv-card">${lvFacts(d, ts)}${lvTimeline(d, ts)}</div>`
+    // Överdelen (Daniel P 2026-09-28): rubriken, meningen, knapparna och tre fakta. Ingen varning, ingen tidslinje.
+    return lvHead(d, ts) + lvStatus(d, ts)
       // Det enda stället med handlingsknappar på sidan (UX-genomgången, problem 5).
       + `<div class="lv-sec"><h2>Att göra nu</h2><span class="n">${plural(asArr(d.todo).length, "sak", "saker")} · från alla uppgifter</span></div><div class="card lv-card">${lvTodoRows(d, false)}</div>`
       + `<div class="lv-sec"><h2>${ic("upp")} ${d.implicit ? "Stegen" : "Uppgifter"}</h2><span class="n">${d.implicit ? esc(lvCount(ts[0])) : `${plural(ts.length, "uppgift", "uppgifter")} · en utfälld i taget`}</span></div>`
@@ -4643,7 +4779,36 @@ a.btn { text-decoration: none; color: var(--text); }
      En ruta per leverans: huvudet med namnet som länk, kunden, antalet
      uppgifter, märkena och slutdatumet; tidslinjen och de tre raderna i ord;
      «Stegen per uppgift» att fälla ut; foten med Öppna leveransen. */
+  /** Månaden i historiken: «september», med året när det inte är i år. */
+  const monthWord = (m) => `${MONTHS[Number(String(m).slice(5, 7)) - 1] || m}${String(m).slice(0, 4) !== TODAY.slice(0, 4) ? ` ${String(m).slice(0, 4)}` : ""}`;
+  /**
+   * Läget för en löpande leverans (Daniel P 2026-09-28: *"Det är ju en samlad,
+   * pågående leverans"*): öppna och sena, nästa på tur, senast inkommet och
+   * klara per månad. I stället för slutdatum och tidslinje, som inte gäller här.
+   */
+  function lvOngoingRows(d) {
+    const o = d.ongoing, months = asArr(o.done_by_month);
+    const row = (k, v) => `<span class="k">${k}</span><span class="v">${v}</span>`;
+    return `<div class="dc-where">`
+      + row("Öppna", `<b>${plural(o.open, "ärende", "ärenden")}</b>${o.late ? ` · <span style="color:var(--red)">${plural(o.late, "sent", "sena")}</span>` : ""}`)
+      + row("Nästa", o.next ? `${short(o.next.date)} · <b>${esc(clipped(o.next.label))}</b>` : "inget på tur")
+      + row("Senast in", o.latest ? `${short(o.latest.at)} · ${esc(clipped(o.latest.label))}` : "inget än")
+      + row("Klara", months.length ? months.map((m) => `${esc(monthWord(m.month))} ${m.count}`).join(" · ") : "inga än")
+      + `</div>`;
+  }
+  function lvOngoingCard(d) {
+    const ts = lvTasks(d), late = Number(d.ongoing.late) || 0;
+    const mine = ts.some((t) => { const c = currentStep(t); return c && !c.external && (c.responsible?.id ?? c.responsible) === me(); });
+    const chips = [late ? chip(plural(late, "ärende sent", "ärenden sena"), "red") : "", mine ? chip("din tur", "accent") : "",
+      d.closed ? chip("avslutad") : ""].join("");
+    return `<div class="card lv-card" data-lv-href="${H.delivery(d.id)}" tabindex="0">`
+      + `<div class="dc-head"><span class="kbox lev">${ic("lev")}</span><div style="min-width:0;flex:1"><h3><a href="${H.delivery(d.id)}">${esc(d.label)}</a></h3>`
+      + `<div class="who">${esc(lbl(custOf(d), ""))} · pågående</div></div></div>`
+      + lvOngoingRows(d)
+      + `<div class="dc-foot">${chips}<a class="go" href="${H.delivery(d.id)}">Öppna leveransen ›</a></div></div>`;
+  }
   function lvDeliveryCard(d) {
+    if (d.ongoing) return lvOngoingCard(d);
     // Daniel P 2026-09-27: «Leveranssidan behöver väl inte ha en kopia på idag? Korten ser fina ut.»
     // Rutan sammanfattar: namn, kund, slutdatum, tidslinjen, var man är, märken och Öppna leveransen.
     // Stegen per uppgift är en rad per uppgift med bara det pågående steget; det du ska göra står i Din tur.
@@ -4673,6 +4838,8 @@ a.btn { text-decoration: none; color: var(--text); }
    * gjort eller påbörjat, inget brinner och inget behöver börja den här veckan.
    */
   function deliveryPhase(d) {
+    // En löpande leverans står under Pågående tills någon stänger den.
+    if (d.ongoing) return d.closed ? "delivered" : "active";
     const ts = lvTasks(d);
     if (d.closed || (ts.length && ts.every((t) => t.delivered_externally || (liveSteps(t).length && !liveSteps(t).some((s) => !s.done && !s.assumed_approved))))) return "delivered";
     // Planen lägger varje steg så tidigt det går (B-184), så starten säger inte om den börjat: det gör de
@@ -4702,7 +4869,7 @@ a.btn { text-decoration: none; color: var(--text); }
   }
   /* ── Idag: leveranserna som rutor ── */
   function lvIdag() {
-    const ds = realDeliveries().filter((x) => lvTasks(x).length);
+    const ds = realDeliveries().filter((x) => lvTasks(x).length || x.ongoing);
     if (!ds.length) return "";
     const g = deliveryGrid(ds, "");
     return `<div class="zone"><div class="zone-h"><h2>${ic("lev")} Leveranser</h2><span class="right">${g.chips}</span></div>` + g.html + `</div>`;
@@ -4855,7 +5022,7 @@ a.btn { text-decoration: none; color: var(--text); }
   });
   /* Leveransens egna knappar. Länkarna är vanliga adresser (#/…) och går genom hashchange. */
   document.addEventListener("click", (e) => {
-    const t = e.target.closest?.("[data-lv-phase], [data-lv-href], [data-lv-toggle], [data-lv-task], [data-lv-unit], [data-lv-idagtask], [data-lv-copy], [data-lv-do], [data-lv-done], [data-lv-done-send], [data-lv-chg-preview], [data-lv-chg-yes], [data-lv-bind], [data-lv-bind-close], [data-lv-bind-preview], [data-lv-bind-yes], [data-lv-preview], [data-lv-preview-yes]");
+    const t = e.target.closest?.("[data-lv-phase], [data-lv-href], [data-lv-toggle], [data-lv-task], [data-lv-unit], [data-lv-idagtask], [data-lv-copy], [data-lv-do], [data-lv-done], [data-lv-done-send], [data-lv-chg-preview], [data-lv-chg-yes], [data-lv-bind], [data-lv-bind-close], [data-lv-bind-preview], [data-lv-bind-yes], [data-lv-own], [data-lv-promise], [data-lv-promise-close], [data-lv-promise-preview], [data-lv-promise-yes], [data-lv-preview], [data-lv-preview-yes]");
     if (!t) return;
     const ds = t.dataset;
     // En rad som länk: knappar och länkar på raden gör sitt eget.
@@ -4877,6 +5044,12 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.lvChgYes) return changeConfirm(t);
     if (ds.lvBind) { LV.bind = { task: ds.lvBind, name: "", due: add(TODAY, 7), preview: null, error: null }; return render(); }
     if (ds.lvBindClose) { LV.bind = null; return render(); }
+    if (ds.lvOwn) { const x = taskById(ds.lvOwn); LV.bind = { task: ds.lvOwn, name: x ? taskTitle(x) : "", due: day10(x?.due) || add(TODAY, 7), preview: null, error: null }; return render(); }
+    if (ds.lvPromise) { const [mode, id, to] = ds.lvPromise.split("|"); const o = state.obj;
+      LV.promise = { delivery: o?.id, mode, id, to: to && to >= TODAY ? to : TODAY, by: "", reason: "", preview: null, error: null }; return render(); }
+    if (ds.lvPromiseClose) { LV.promise = null; return render(); }
+    if (ds.lvPromisePreview) return promisePreview(t);
+    if (ds.lvPromiseYes) return promiseConfirm(t);
     if (ds.lvBindPreview) return bindPreview(t);
     if (ds.lvBindYes) return bindConfirm(t);
     if (ds.lvPreview) return loadPreview(t, ds.lvPreview);
@@ -4892,6 +5065,7 @@ a.btn { text-decoration: none; color: var(--text); }
     if (c && x.dataset.lvChg) { c[x.dataset.lvChg] = x.value; c.preview = null; return; }
     if (c && x.dataset.lvChgWhy) { const [task, step] = x.dataset.lvChgWhy.split("|"); c.parts[task].skip[step] = x.value; c.preview = null; return; }
     if (b && x.dataset.lvBindF) { b[x.dataset.lvBindF] = x.value; b.preview = null; }
+    if (LV.promise && x.dataset.lvPromiseF) { LV.promise[x.dataset.lvPromiseF] = x.value; LV.promise.preview = null; }
   });
   document.addEventListener("change", (e) => {
     const x = e.target, c = LV.change; if (!c) return;

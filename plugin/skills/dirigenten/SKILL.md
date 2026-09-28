@@ -82,4 +82,4 @@ Swedish, plain language. No ids, no node names, no internal terms. Explain where
 
 ## When something is missing
 
-If a tool you need is absent, the cached tool list may be old. Say so, and that a new session or reconnecting the connector fetches the current list. Do not work around it on your own.
+If a tool you need is absent, the cached tool list may be old. Say so, and ask the user to choose «Refresh tools» on the existing rotor-dirigenten connector. If that does not help, the connector is removed and then added again — never just added, which leaves a duplicate. Do not work around it on your own.
