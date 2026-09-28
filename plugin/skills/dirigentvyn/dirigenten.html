@@ -390,6 +390,12 @@ ol.moments input { flex: 1; min-width: 0; border: 1px solid var(--line-strong); 
 .need:first-of-type { border-top: 0; }
 .need .ok { color: var(--green); } .need .no { color: var(--text-3); }
 .need .t { flex: 1; min-width: 0; }
+/* Förhandsbilden på en fil i en lista (felrapport c96d2186): bilden om filen är en bild, annars filens symbol. */
+.fthumb { display: inline-grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 5px; overflow: hidden; border: 1px solid var(--line); background: var(--gray-weak); color: var(--text-3); }
+.fthumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fthumb .i { width: 16px; height: 16px; }
+.bankrow { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+.bankrow .linkbtn { text-align: left; flex: 1; min-width: 0; }
 ol.how { margin: 0; padding-left: 20px; } ol.how li { padding: 3px 0; }
 .check { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; } .check input { margin-top: 3px; }
 .doarea { padding: var(--s4); display: flex; flex-direction: column; gap: var(--s3); }
@@ -886,7 +892,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "72a111c", published: "2026-09-28" };
+  const SIDA = { version: "4b2a20a", published: "2026-09-28" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1020,7 +1026,7 @@ a.btn { text-decoration: none; color: var(--text); }
       // svarade med båda i ett (B-213).
       S.phase = "Hämtar din lista…"; render();
       // Hur långt fram listan räcker (Daniel P 2026-09-25): 1 = resten av veckan, 0 = allt.
-      const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks() }), 45000, "Listan");
+      const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks(), format: "full" }), 45000, "Listan");
       if (!a?.agenda) throw new Error("servern skickade ingen agenda — den kan vara en äldre version");
       S.agenda = a.agenda; S.at.agenda = Date.now();
       S.phase = "Hämtar planen…"; render();
@@ -1047,7 +1053,7 @@ a.btn { text-decoration: none; color: var(--text); }
   const TTL = { agenda: 60_000, queue: 180_000, plan: 600_000, lib: 1_800_000, settings: 3_600_000 };
   const stale = (k) => !S.at[k] || Date.now() - S.at[k] > TTL[k];
   async function refreshAgenda() {
-    try { const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks() }), 45000, "Listan");
+    try { const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks(), format: "full" }), 45000, "Listan");
       if (a?.agenda) { S.agenda = a.agenda; S.at.agenda = Date.now(); render(); } } catch { /* det gamla står kvar */ }
   }
   async function refreshPlan() {
@@ -1585,6 +1591,29 @@ a.btn { text-decoration: none; color: var(--text); }
   const agenda = () => S.agenda?.items ?? [];
   /** Namn på en person ur planen: belastningen bär bara id. */
   const personName = (id) => { const c = (S.agenda?.colleagues ?? []).find((x) => x.id === id); if (c) return c.label; for (const t of tasks()) for (const st of t.steps) if ((st.responsible?.id ?? st.responsible) === id && st.responsible?.label) return st.responsible.label; return id; };
+  /**
+   * Krockar med frånvaro (omprovet 2026-09-28, F17): planen säger i
+   * `conflicts[].absence` att ett steg ligger på en dag då den som gör det är
+   * borta. Planen flyttar inget; det gör en människa, genom att lämna över
+   * eller flytta. Ett steg som krockar flera veckor blir en rad.
+   */
+  function absenceClashes() {
+    const m = new Map();
+    for (const c of asArr(S.plan?.conflicts)) for (const a of asArr(c?.absence)) {
+      const k = `${a.task}|${a.step}|${c.person}`, x = m.get(k) || { task: a.task, step: a.step, person: c.person, days: [] };
+      x.days = [...new Set([...x.days, ...asArr(a.days)])].sort();
+      m.set(k, x);
+    }
+    return [...m.values()].sort((a, b) => String(a.days[0] || "").localeCompare(String(b.days[0] || "")));
+  }
+  const absenceOf = (task, step) => absenceClashes().filter((a) => a.task === task && a.step === step);
+  /** «2 okt», «2 okt och 5 okt», «2 okt, 5 okt och 3 dagar till». */
+  const dayList = (days) => days.length > 3 ? `${days.slice(0, 2).map(short).join(", ")} och ${days.length - 2} dagar till`
+    : days.map(short).join(", ").replace(/, ([^,]*)$/, " och $1");
+  /** Markeringen: vem som är borta vilka dagar, och vad man gör åt det. */
+  const absenceText = (a) => `${a.person === me() ? "Du är" : `${personName(a.person)} är`} borta ${dayList(a.days)} — lämna över eller flytta`;
+  /** «Lämna över» öppnar överlämningen som redan finns (execute_step handover_to). */
+  const absenceBtn = (a, cls = "btn sm") => `<button class="${cls}" data-absence-handover="${esc(a.task)}|${esc(a.step)}" title="Öppnar överlämningen. Steget blir kollegans när kollegan tagit emot det.">Lämna över</button>`;
 
   /* ── funktionsregistret (avsnitt 9.3) ── */
   /**
@@ -1841,7 +1870,7 @@ a.btn { text-decoration: none; color: var(--text); }
         : `<button class="btn sm primary" data-step="${esc(key)}">Öppna steget ›</button>`;
       return trow({ cls: hot ? "burn" : "mine", icon: k === "llm" ? "sparkles" : "ring", icls: k === "llm" ? "cl" : "",
         title: workTitle(t, x), attrs: `data-open-step="${esc(key)}"`, acts,
-        meta: lead + (st?.critical && !hot ? chip("utan marginal", "red") : "") + qs + ms + stepTag(x.headline) + tail });
+        meta: lead + (absenceOf(x.task, x.step).length ? chip("borta den dagen", "red") : "") + (st?.critical && !hot ? chip("utan marginal", "red") : "") + qs + ms + stepTag(x.headline) + tail });
     }
     // Sen, utan metod (B-275): inget steg att följa. Registrera att den gått ut, avbryt den eller ge den en metod.
     if (x.kind === "late_without_method") {
@@ -1927,6 +1956,21 @@ a.btn { text-decoration: none; color: var(--text); }
       + `<button class="btn sm quiet vis" data-show-filters="1" aria-expanded="${!!store.showFilters}">Visa: ${WHO_NAME[who]} · ${AHEAD_NAME[aheadWeeks()]} · ${FILTER_NAME[f]} ▾</button>${filters}</span></div>`
       + `<div class="card">${body || `<div class="empty"><b>Inget är din tur just nu.</b>Allt som kommit in är bedömt, och inget steg ligger på dig i dag.</div>`}</div></div>`;
   }
+  /**
+   * Borta den dagen (F17): steg som ligger på en dag då den som gör dem är
+   * borta. Följer Mina · Andras · Alla. Syns bara när något krockar.
+   */
+  function zoneAbsence() {
+    const who = store.who || "mine", mine = me();
+    const xs = absenceClashes().filter((a) => stepOf(taskById(a.task), a.step))
+      .filter((a) => who === "all" || (who === "others" ? a.person !== mine : a.person === mine));
+    if (!xs.length) return "";
+    return `<div class="zone"><div class="zone-h"><h2>${ic("alert")} Borta den dagen</h2><span class="n">${xs.length}</span><span class="hint">steg som ligger på en dag då den som gör dem är borta</span></div>`
+      + `<div class="card">${xs.map((a) => { const t = taskById(a.task), s = stepOf(t, a.step);
+        return trow({ cls: "burn", icon: "alert", icls: "q", title: s.label, attrs: `data-open-step="${esc(a.task)}|${esc(a.step)}"`, more: false,
+          acts: absenceBtn(a) + `<button class="btn sm" data-step="${esc(a.task)}|${esc(a.step)}" title="På steget kan det också senareläggas">Öppna steget ›</button>`,
+          meta: chip(absenceText(a), "red") + esc(taskName(t)) }); }).join("")}</div></div>`;
+  }
   function zoneWaiting() {
     const xs = [...agenda().filter((x) => x.kind === "colleague"), ...(S.agenda?.waiting_on_others ?? [])]
       .sort((a, b) => String(a.due).localeCompare(String(b.due)));
@@ -1934,15 +1978,58 @@ a.btn { text-decoration: none; color: var(--text); }
       + `<div class="card">${xs.length ? xs.slice(0, 8).map(otherRow).join("") + (xs.length > 8 ? `<div class="zmore">och ${plural(xs.length - 8, "sak", "saker")} till, längre fram.</div>` : "")
         : `<div class="empty"><b>Inget väntar på andra.</b>Steg hos en kollega, kunden eller en partner står här.</div>`}</div></div>`;
   }
+  /**
+   * Förslagen när tiden inte räcker (Daniel P 2026-09-28): trycka på eller lämna
+   * över. Planen gör ingenting av dem själv; nej ändrar ingenting.
+   */
+  const capacitySuggestions = () => (S.agenda?.capacity_suggestions ?? []).filter((x, i) => !dismissedSuggestion(x, i));
+  const suggestionKey = (x) => `${x.kind}|${x.task || ""}|${x.step || ""}|${x.to || ""}|${x.share || ""}`;
+  const dismissedSuggestion = (x) => (S.dismissed ||= new Set()).has(suggestionKey(x));
+  const suggestionRow = (x, i) => trow({ cls: "", icon: x.kind === "handover" ? "user" : "calendar",
+    title: x.kind === "handover" ? `Lämna över till ${x.to_label}?` : x.kind === "push" ? "Trycka på?" : "Hinns inte",
+    attrs: `data-suggestion="${i}"`, more: false,
+    acts: x.next_call ? `<button class="btn sm" data-suggestion="${i}">Granska ›</button>` : "",
+    meta: chip("förslag från planen", "blue") + esc(x.text) });
+  function suggestionDialog(i) {
+    const x = capacitySuggestions()[Number(i)];
+    if (!x) return toast("Förslaget gäller inte längre.", null, true);
+    dialog(`<h2>${x.kind === "handover" ? `Lämna över till ${esc(x.to_label)}` : "Trycka på"}</h2><p>${esc(x.text)}</p>`
+      + `<p class="meta">${x.kind === "handover"
+        ? `${esc(x.to_label)} får frågan och tar över först efter sitt ja. Planen räknar om när steget har bytt ägare.`
+        : "Andelen gäller bara perioden och går sedan tillbaka av sig själv. Nej ändrar ingenting; det som inte hinns står kvar som sent."}</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-suggestion-no="${i}">Nej</button>`
+      + (x.next_call ? `<button class="btn primary" data-suggestion-yes="${i}">Ja</button>` : "") + `</div>`);
+  }
+  function suggestionYes(btn, i) {
+    const x = capacitySuggestions()[Number(i)];
+    if (!x?.next_call) return;
+    // Att trycka på förhandsvisades i rutan; en överlämning är ett förslag per steg till mottagaren.
+    const calls = x.kind === "handover" ? (x.next_calls ?? [x.next_call]) : [x.next_call];
+    const approval = `Ja i vyn: ${x.text}`.slice(0, 500);
+    return busy(btn, async () => {
+      try {
+        for (const c of calls)
+          await call(c.tool, { ...c.args, ...(x.kind === "push" ? { confirmed: true } : {}), user_approval: approval });
+        closeDialog(); await load();
+        toast(x.kind === "handover" ? `Förslaget har gått till ${x.to_label}.` : "Du trycker på under perioden."); }
+      catch (e) { fail("Det gick inte att spara", e); }
+    });
+  }
+  function suggestionNo(i) {
+    const x = capacitySuggestions()[Number(i)];
+    if (x) (S.dismissed ||= new Set()).add(suggestionKey(x));
+    closeDialog(); render();
+  }
   function zoneConfirm() {
     // Förslag som väntar på ett ja (felrapport 2026-09-25). Det som måste rättas står i rutan bakom Granska.
     const pc = S.agenda?.pending_confirmation ?? [];
-    return `<div class="zone"><div class="zone-h"><h2>Att bekräfta</h2><span class="n">${pc.length}</span><span class="hint">förslag som väntar på ditt ja</span></div>`
-      + `<div class="card">${pc.length ? pc.map((c) => { const v = c.vetting || { ok: true };
+    const cs = capacitySuggestions();
+    return `<div class="zone"><div class="zone-h"><h2>Att bekräfta</h2><span class="n">${pc.length + cs.length}</span><span class="hint">förslag som väntar på ditt ja</span></div>`
+      + `<div class="card">${cs.map(suggestionRow).join("")}${pc.length ? pc.map((c) => { const v = c.vetting || { ok: true };
         return trow({ cls: "", icon: c.kind === "commitment" || !c.kind ? "help" : "upp", title: c.label, attrs: `data-confirm-node="${esc(c.id)}"`, more: false,
           acts: `<button class="btn sm" data-confirm-node="${esc(c.id)}">Granska ›</button>`,
           meta: chip("förslag", "blue") + (v.ok ? "" : chip("behöver rättas", "red")) + esc([PROPOSAL_KIND[c.kind] || "Vad vi lovat", lbl(c.customer, "")].filter(Boolean).join(" · ")) }); }).join("")
-        : `<div class="empty"><b>Inget att bekräfta.</b>Förslag på metoder och annat som väntar på ditt ja står här.</div>`}</div></div>`;
+        : cs.length ? "" : `<div class="empty"><b>Inget att bekräfta.</b>Förslag på metoder och annat som väntar på ditt ja står här.</div>`}</div></div>`;
   }
   function zoneWeek() {
     const utanPass = myTurn().filter((x) => x.kind === "step" && !(stepOf(taskById(x.task), x.step)?.sessions || []).length).length;
@@ -1997,7 +2084,7 @@ a.btn { text-decoration: none; color: var(--text); }
       const v = `${TODAY.slice(0, 4)}-W${String(week(TODAY)).padStart(2, "0")}`;
       const rows = (S.plan?.load || []).filter((l) => l.week === v);
       return `<div class="card"><div class="head"><h2>Teamet i korthet</h2><span class="meta">v${week(TODAY)}</span></div>`
-        + (rows.length ? `<div class="section">` + rows.map((l) => `<div class="meta">${esc(personName(l.person))}: ${Math.round(l.hours)} h av ${Math.round(l.capacity_hours ?? 0)} h${l.capacity_guessed ? " (gissad kapacitet)" : ""}</div>`).join("") + `</div>`
+        + (rows.length ? `<div class="section">` + rows.map((l) => `<div class="meta"><a href="${H.person(l.person)}">${esc(personName(l.person))}</a>: ${Math.round(l.hours)} h av ${Math.round(l.capacity_hours ?? 0)} h${l.capacity_guessed ? " (gissad kapacitet)" : ""}</div>`).join("") + `</div>`
           : `<div class="empty"><b>Ingen belastning räknad för veckan.</b></div>`) + `</div>`;
     } },
   };
@@ -2007,7 +2094,7 @@ a.btn { text-decoration: none; color: var(--text); }
     idag() {
       const n = turCount(), hot = myTurn().filter((x) => x.level === "hot").length;
       return `<div class="pagehead"><h1>Idag</h1><span class="sub">${wday(TODAY)} · <b style="color:var(--accent-ink)">${plural(n, "sak är", "saker är")} din tur</b>${hot ? ` · <span style="color:var(--red)">${hot} brinner</span>` : ""}</span></div>`
-        + zoneTur() + lvIdag()
+        + zoneAbsence() + zoneTur() + lvIdag()
         + `<div class="zones2">${zoneWaiting()}${zoneConfirm()}</div>`
         + zoneWeek();
     },
@@ -2067,7 +2154,7 @@ a.btn { text-decoration: none; color: var(--text); }
         : `<div class="empty"><b>Hämtar dina inställningar…</b></div>`);
       const ch = settingsChanged();
       return head + (S.settingsError ? `<div class="warnnote" style="margin-bottom:12px">Kunde inte hämta igen: ${esc(S.settingsError.message || S.settingsError)}. Det du ser är från förra hämtningen.</div>` : "")
-        + `<div class="stack" data-settings="1">${[connectionsCard, calendarCard, mailCard, workdayCard, myAreaCard].map((f) => {
+        + `<div class="stack" data-settings="1">${[connectionsCard, calendarCard, mailCard, workdayCard, planningCard, myAreaCard].map((f) => {
           // En trasig ruta tar inte med sig de andra.
           try { return f(); } catch (e) { console.error(e); return `<div class="card"><div class="empty"><b>Den här delen kunde inte visas.</b>${esc(e.message)}</div></div>`; }
         }).join("")}`
@@ -2098,7 +2185,7 @@ a.btn { text-decoration: none; color: var(--text); }
    * på posten (`node.view`), och läses där.
    */
   function normalizeSettings(raw) {
-    const r = asObj(raw), k = asObj(r.calendar), m = asObj(r.mail), w = asObj(r.workday), node = asObj(r.node);
+    const r = asObj(raw), k = asObj(r.calendar), m = asObj(r.mail), w = asObj(r.workday), node = asObj(r.node), pl = asObj(r.planning);
     return {
       node, label: typeof r.label === "string" ? r.label : "",
       connections: asArr(r.connections), options: asObj(r.options),
@@ -2114,13 +2201,23 @@ a.btn { text-decoration: none; color: var(--text); }
         from: Number.isFinite(w.from) ? w.from : 8, to: Number.isFinite(w.to) ? w.to : 18,
         timezone: typeof w.timezone === "string" && w.timezone ? w.timezone : "Europe/Stockholm",
       },
+      // Tiden för dirigentens arbete (src/plan/capacity.ts). Servern skickar förvalen
+      // ifyllda; filled säger om personen själv har sparat dem.
+      planning: {
+        breaks_minutes: Number.isFinite(pl.breaks_minutes) ? pl.breaks_minutes : 60,
+        other_hours_per_week: Number.isFinite(pl.other_hours_per_week) ? pl.other_hours_per_week : 0,
+        plannable_share: Number.isFinite(pl.plannable_share) ? pl.plannable_share : 0.8,
+        share_deliberate: pl.share_deliberate === true,
+        filled: pl.filled === true,
+        pushes: asArr(pl.pushes).filter((x) => x && x.from && x.to),
+      },
       view: {
         grouping: asObj(r.view).grouping || asObj(node.view).grouping || "area",
         auto_triage: asObj(node.view).auto_triage === true || asObj(r.view).auto_triage === true,
       },
     };
   }
-  const draftOf = (s) => structuredClone({ calendar: s.calendar, mail: s.mail, workday: s.workday, view: s.view });
+  const draftOf = (s) => structuredClone({ calendar: s.calendar, mail: s.mail, workday: s.workday, planning: s.planning, view: s.view });
   const settingsChanged = () => !!S.settings && JSON.stringify(S.setDraft) !== JSON.stringify(draftOf(S.settings));
 
   /** Namnet under menyn (B-209): inställningarna bär personens egen post. */
@@ -2251,6 +2348,56 @@ a.btn { text-decoration: none; color: var(--text); }
       + `</div></div>`;
   }
 
+  /** Timmar om dagen för dirigentens arbete, före möten: samma regel som src/plan/capacity.ts. */
+  const planningHours = (w, p) => Math.max(0, ((w.to ?? 0) - (w.from ?? 0) - p.breaks_minutes / 60 - p.other_hours_per_week / 5) * p.plannable_share);
+  const planningText = (w, p) => {
+    const h = String(Math.round(planningHours(w, p) * 10) / 10).replace(".", ",");
+    return `Planen lägger högst ${h} timmar om dagen på dig, innan möten i kalendern dras av.`
+      + (p.filled ? "" : " Du har inte sparat din egen tid, så förvalen gäller och kapaciteten visas som gissad.");
+  };
+  function planningCard() {
+    const w = S.setDraft.workday, p = S.setDraft.planning, pct = Math.round(p.plannable_share * 100);
+    return `<div class="card"><div class="head"><h2>Tid för dirigentens arbete</h2><span class="meta">Används när planen lägger ut arbetet</span></div><div class="section">`
+      + `<div class="meta" style="margin-bottom:8px">Kapaciteten per dag är arbetsdagen minus lunch och pauser, möten och annat arbete, gånger den andel av dagen som får planeras.</div>`
+      + `<div class="settime"><label class="field"><span>Lunch och pauser, minuter per dag</span><input type="number" min="0" max="600" step="5" data-setbreaks="1" value="${esc(String(p.breaks_minutes))}"></label>`
+      + `<label class="field"><span>Annat arbete, timmar per vecka</span><input type="number" min="0" max="100" step="0.5" data-setother="1" value="${esc(String(p.other_hours_per_week))}"></label>`
+      + `<label class="field"><span>Andel av dagen som får planeras, %</span><input type="number" min="10" max="100" step="5" data-setshare="1" value="${esc(String(pct))}"></label></div>`
+      + `<div id="set-deliberate" style="margin-top:8px">${deliberateBox(p)}</div>`
+      + (p.filled ? "" : `<label class="check" style="margin-top:8px"><input type="checkbox" data-setplanok="1"> Förvalen stämmer för mig</label>`)
+      + `<div class="meta" id="set-planhours" style="margin-top:8px">${planningText(w, p)}</div></div>`
+      + pushSection(p) + `</div>`;
+  }
+  /**
+   * Tryck på under en period (Daniel P 2026-09-28): en högre andel från–till,
+   * med skäl. Gäller bara perioden och går sedan tillbaka av sig själv.
+   */
+  function pushSection(p) {
+    const now = p.pushes.map((x, i) => ({ x, i })).filter(({ x }) => x.to >= TODAY);
+    return `<div class="section"><b>Tryck på under en period</b>`
+      + `<div class="meta" style="margin:4px 0 8px">En högre andel en tid, med skäl. Efter perioden gäller ${Math.round(p.plannable_share * 100)} % igen av sig själv.</div>`
+      + now.map(({ x, i }) => `<div class="row2"><span>${esc(short(x.from))}–${esc(short(x.to))}: ${Math.round(x.share * 100)} % — ${esc(x.reason)}</span>`
+        + `<button class="btn sm quiet" data-push-remove="${i}">Ta bort</button></div>`).join("")
+      + `<div class="settime"><label class="field"><span>Från</span><input type="date" id="push-from" value="${esc(TODAY)}"></label>`
+      + `<label class="field"><span>Till</span><input type="date" id="push-to" value="${esc(add(monday(TODAY), 4))}"></label>`
+      + `<label class="field"><span>Andel, %</span><input type="number" id="push-share" min="10" max="100" step="5" value="100"></label>`
+      + `<label class="field"><span>Skäl</span><input type="text" id="push-reason" maxlength="200" placeholder="till exempel leverans till kunden"></label>`
+      + `<button class="btn sm" data-push-add="1">Lägg till</button></div></div>`;
+  }
+  function addPush() {
+    const v = (id) => ($(`#${id}`)?.value ?? "").trim();
+    const from = v("push-from"), to = v("push-to"), share = Number(v("push-share")) / 100, reason = v("push-reason");
+    if (!from || !to || to < from) return toast("Perioden behöver ett från och ett till, i ordning.", null, true);
+    if (!(share >= 0.1 && share <= 1)) return toast("Andelen är mellan 10 och 100 %.", null, true);
+    if (!reason) return toast("Skriv varför du trycker på.", null, true);
+    S.setDraft.planning.pushes.push({ from, to, share, reason });
+    render(); patchSettings();
+  }
+  /** Över 80 % är ett medvetet val (Daniel P 2026-09-28): rutan syns bara då. */
+  const deliberateBox = (p) => p.plannable_share > 0.8
+    ? `<label class="check"><input type="checkbox" data-setdeliberate="1" ${p.share_deliberate ? "checked" : ""}> Jag planerar mer än 80 % av dagen — medvetet</label>`
+      + `<div class="meta">Utan krysset sparas inte en andel över 80 %.</div>`
+    : "";
+
   function workdayCard() {
     const w = S.setDraft.workday;
     return `<div class="card"><div class="head"><h2>Arbetsdag</h2><span class="meta">Används av kalenderberäkningen</span></div><div class="section">`
@@ -2281,6 +2428,10 @@ a.btn { text-decoration: none; color: var(--text); }
     if (!s || !settingsChanged()) return;
     if (!Object.keys(s.node).length) return toast("Servern skickade ingen post att skriva tillbaka, så ändringarna går inte att spara härifrån.", null, true);
     if (dr.workday.to <= dr.workday.from) return toast("Arbetsdagen måste sluta efter att den börjat.", null, true);
+    if (dr.planning.plannable_share > 0.8 && !dr.planning.share_deliberate)
+      return toast("Mer än 80 % av dagen kräver att du kryssar i att det är ett medvetet val.", null, true);
+    if (dr.planning.breaks_minutes / 60 >= dr.workday.to - dr.workday.from)
+      return toast("Lunch och pauser måste vara kortare än arbetsdagen.", null, true);
     const before = structuredClone(s.node), node = structuredClone(s.node), orig = draftOf(s);
     const differs = (k) => JSON.stringify(dr[k]) !== JSON.stringify(orig[k]);
     // Bara fälten som visas här ändras. Resten av posten står kvar — också
@@ -2301,6 +2452,16 @@ a.btn { text-decoration: none; color: var(--text); }
     if (dr.mail.never_labels.length) mail.never_labels = dr.mail.never_labels;
     if (Object.keys(mail).length) node.mail = mail; else delete node.mail;
     if (node.workday || differs("workday")) node.workday = { ...dr.workday };
+    // Tiden skrivs när personen ändrat den eller sagt att förvalen stämmer. Då är
+    // kapaciteten inte längre gissad.
+    if (node.planning || differs("planning")) {
+      const p = dr.planning;
+      // Perioder som tagit slut följer inte med: de gäller inte längre.
+      const pushes = p.pushes.filter((x) => x.to >= TODAY);
+      node.planning = { breaks_minutes: p.breaks_minutes, other_hours_per_week: p.other_hours_per_week,
+        plannable_share: p.plannable_share, ...(p.plannable_share > 0.8 && p.share_deliberate ? { share_deliberate: true } : {}),
+        ...(pushes.length ? { pushes } : {}) };
+    }
     if (node.view || differs("view")) {
       const view = { ...asObj(node.view), grouping: dr.view.grouping };
       if (dr.view.auto_triage) view.auto_triage = true; else delete view.auto_triage;
@@ -2331,11 +2492,29 @@ a.btn { text-decoration: none; color: var(--text); }
     else if (ds.setauto !== undefined) dr.view.auto_triage = t.checked;
     else if (ds.setgrouping !== undefined) dr.view.grouping = t.value;
     else if (ds.setzone !== undefined) dr.workday.timezone = t.value;
+    else if (ds.setbreaks !== undefined || ds.setother !== undefined || ds.setshare !== undefined) {
+      // Ett halvskrivet tal skriver inte över det som står.
+      const v = Number(String(t.value).replace(",", "."));
+      if (t.value === "" || !Number.isFinite(v) || v < 0) return;
+      const p = dr.planning;
+      if (ds.setbreaks !== undefined) p.breaks_minutes = Math.min(600, v);
+      else if (ds.setother !== undefined) p.other_hours_per_week = Math.min(100, v);
+      else {
+        if (v < 10 || v > 100) return;
+        p.plannable_share = Math.round(v) / 100;
+        if (p.plannable_share <= 0.8) p.share_deliberate = false;
+        const box = $("#set-deliberate"); if (box) box.innerHTML = deliberateBox(p);
+      }
+      const el = $("#set-planhours"); if (el) el.innerHTML = planningText(dr.workday, p);
+    }
+    else if (ds.setdeliberate !== undefined) dr.planning.share_deliberate = t.checked;
+    else if (ds.setplanok !== undefined) dr.planning.filled = t.checked;
     else if (ds.setfrom !== undefined || ds.setto !== undefined) {
       // Ett halvskrivet klockslag skriver inte över det som står.
       const h = clockToHour(t.value); if (h === null) return;
       dr.workday[ds.setfrom !== undefined ? "from" : "to"] = h;
       const el = $("#set-daylen"); if (el) el.innerHTML = dayLength(dr.workday);
+      const ph = $("#set-planhours"); if (ph) ph.innerHTML = planningText(dr.workday, dr.planning);
     } else return;
     patchSettings();
   };
@@ -2756,7 +2935,7 @@ a.btn { text-decoration: none; color: var(--text); }
       const detail = `<div class="udetail">`
         + (u.text ? `<div class="utext" data-utext="${esc(u.key)}"><span class="meta">Hämtar texten…</span></div>` : "")
         + (outs.length ? `<div class="meta" style="margin-top:6px">${outs.map((o) => `${esc(o.name || o.id)} · ${esc(o.campaign || "")}${o.status ? ` · ${esc(statusWord(o.status))}` : ""}`).join("<br>")}</div>` : "")
-        + (now.length ? `<div class="meta" style="margin-top:6px">${now.map((p) => `${esc(p.part)}: ${esc(p.name || "")}`).join("<br>")}</div>` : "")
+        + (now.length ? `<div class="meta" style="margin-top:6px">${now.map((p) => `${esc(p.part)}: ${esc(p.name || "")}${p.ref && t.customer?.id ? ` · <a href="${H.files(t.customer.id, shaOf(p.ref))}">Öppna i Filer</a>` : ""}`).join("<br>")}</div>` : "")
         + (old.length ? `<div class="meta" style="margin-top:6px">Ersatt: ${old.map((p) => esc(p.name || p.part)).join(", ")}</div>` : "")
         + `</div>`;
       const dd = deliveryOfTask(t);
@@ -2781,6 +2960,15 @@ a.btn { text-decoration: none; color: var(--text); }
       if (box) box.innerHTML = `<div class="preview md">${md(c?.markdown || "(tom)")}</div>`;
     } catch (err) { if (box) box.innerHTML = `<span class="meta">Texten kunde inte hämtas.</span>`; delete d.dataset.loaded; }
   }, true);
+  /**
+   * En fils förhandsbild i en lista (felrapport c96d2186, Daniel P: *"man
+   * skulle ju vilja se thumbnails direkt och få en länk till filbiblioteket"*).
+   * Bilden hämtas med asset_get { refs, forhandsbilder }, en gång per ritning;
+   * servern ger förhandsbild bara för bilder, och en annan fil behåller sin symbol.
+   */
+  const fileThumb = (ref) => { wantThumb(ref); return `<span class="fthumb" data-thumb="${esc(ref)}">${thumbImg({ ref })}</span>`; };
+  /** «Öppna i Filer»: filen i filbiblioteket, med vyns egen adress. */
+  const fileLibLink = (cust, ref, cls = "btn sm quiet") => cust && ref ? `<a class="${cls}" href="${H.files(cust, shaOf(ref))}">Öppna i Filer</a>` : "";
   function materialCard(t, s, first = false) {
     const from = (id) => !id ? "lagd på uppgiften"
       : s && id === s.step ? "från det här steget" : `från «${esc(stepOf(t, id)?.label || "ett steg som inte finns i metoden längre")}»`;
@@ -2796,9 +2984,10 @@ a.btn { text-decoration: none; color: var(--text); }
       ...files.map((o) => {
         const ext = o.external ? String(o.ref).replace(/^extern:/, "") : "";
         const name = o.file || o.type;
-        const act = !o.external ? `<button class="btn sm" data-fget="${esc(o.ref)}" data-fname="${esc(name)}">Ladda ned</button>`
+        // Förhandsbilden och «Öppna i Filer» (felrapport c96d2186): bilden hämtas med asset_get, som i Filer.
+        const act = !o.external ? `${fileLibLink(t.customer?.id, o.ref)}<button class="btn sm" data-fget="${esc(o.ref)}" data-fname="${esc(name)}">Ladda ned</button>`
           : link(ext) ? `<a class="btn sm" href="${esc(ext)}" target="_blank" rel="noopener">Öppna länken</a>` : "";
-        return { at: o.at, step: o.step, type: o.type, group: unitRefs.has(o.ref) ? "" : oldRefs.has(o.ref) ? "Ersatta bilder" : "Filer", inUnit: unitRefs.has(o.ref), needed: producers.has(o.step) || neededLabels.has(o.type), html: `<div class="need"><span class="no">${FILE_IC}</span><span class="t">${esc(name)} <span class="meta">· `
+        return { at: o.at, step: o.step, type: o.type, group: unitRefs.has(o.ref) ? "" : oldRefs.has(o.ref) ? "Ersatta bilder" : "Filer", inUnit: unitRefs.has(o.ref), needed: producers.has(o.step) || neededLabels.has(o.type), html: `<div class="need">${o.external ? `<span class="no">${FILE_IC}</span>` : fileThumb(o.ref)}<span class="t">${esc(name)} <span class="meta">· `
           + `${o.file ? `${esc(o.type)} · ` : ""}${o.external ? (link(ext) ? "finns utanför filbanken · " : `finns utanför filbanken: ${esc(ext)} · `) : ""}${from(o.step)} · ${short(o.at)}</span></span>${act}</div>` };
       }),
       ...t.steps.flatMap((x) => asArr(x.drafts).map((dr) => ({ at: dr.at, step: x.step, needed: producers.has(x.step),
@@ -3044,8 +3233,8 @@ a.btn { text-decoration: none; color: var(--text); }
         + `<div class="meta"${over ? ' style="color:var(--red)"' : ""}>${h(l.hours)} h av ${h(cap)} h${l.busy_hours ? ` · möten ${h(l.busy_hours)} h` : ""}${l.guessed_hours ? ` · ${h(l.guessed_hours)} h gissade` : ""}</div>`; };
     const lw = (id, w) => load.find((l) => l.person === id && l.week === `${d(w).getUTCFullYear()}-W${String(week(w)).padStart(2, "0")}`);
     return `<div class="teamgrid" style="grid-template-columns:160px repeat(${wk.length},minmax(0,1fr))"><div class="h"></div>${wk.map((w) => `<div class="h">v${week(w)}</div>`).join("")}`
-      + ids.map((id) => `<div><b style="font-weight:500">${esc(personName(id))}</b>${load.some((l) => l.person === id && l.capacity_guessed) ? `<div class="meta">kapaciteten är gissad</div>` : ""}</div>${wk.map((w) => `<div>${cell(lw(id, w))}</div>`).join("")}`).join("")
-      + `</div><p class="meta">Timmar i veckan mot personens tid. Möten du tackat ja till dras av och är den mörka delen. Gissade timmar är standardtid för steg utan uppskattning.</p>`;
+      + ids.map((id) => `<div><a href="${H.person(id)}" style="font-weight:500" title="Vad har ${esc(personName(id))} de närmaste veckorna">${esc(personName(id))}</a>${load.some((l) => l.person === id && l.capacity_guessed) ? `<div class="meta">kapaciteten är gissad</div>` : ""}</div>${wk.map((w) => `<div>${cell(lw(id, w))}</div>`).join("")}`).join("")
+      + `</div><p class="meta">Klicka på ett namn för personens steg dag för dag. Timmar i veckan mot personens tid. Möten du tackat ja till dras av och är den mörka delen. Gissade timmar är standardtid för steg utan uppskattning.</p>`;
   }
   function customers() {
     const cs = customerList();
@@ -3465,6 +3654,9 @@ a.btn { text-decoration: none; color: var(--text); }
         + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="meta">kan flyttas ${plural(s.float_days, "dag", "dagar")}</span>`)
           + assumeChips(s)
           + (s.added ? ` · <span class="chip">Bara i den här uppgiften</span> <button class="linkbtn" data-remove-added="${esc(t.id)}|${esc(s.step)}">Ta bort ur uppgiften</button>` : "") + (s.done ? ` · <span class="chip green">${ic("check")} ${doneText(s)}</span>` : "") + (started ? ` · ${started}` : "") + `</div></div></div>`
+        // Borta den dagen (F17): markeringen och handlingen bredvid, före allt annat.
+        + (s.done ? "" : absenceOf(t.id, s.step).map((a) => `<div class="warnnote" style="margin:4px 0 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${ic("alert")} ${esc(absenceText(a))}.</span>`
+          + `${absenceBtn(a)}${(s.postpone_options || []).length ? `<button class="btn sm quiet" data-postpone="1">Senarelägg…</button>` : ""}</div>`).join(""))
         // Markera klart står överst (Daniel P 2026-09-25: "markera klart måste vara högst upp").
         + (s.done ? "" : `<div class="bar-actions" style="margin:4px 0 16px"><button class="btn primary" data-done="1">Klart, till nästa ›</button>`
           + `<span class="right"><button class="btn quiet" data-calstep="${esc(t.id)}|${esc(s.step)}">${ic("calendar")} Lägg i kalendern</button>${(s.postpone_options || []).length ? `<button class="btn quiet" data-postpone="1">Senarelägg…</button>` : ""}<button class="btn quiet" data-handover-to="1">Ge steget till…</button>${t.steps.some((x) => !x.done && !x.external && (x.responsible?.id ?? x.responsible) !== me()) ? `<button class="btn quiet" data-take-task="${esc(t.id)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över</button>` : ""}${msgBtn({ task: t.id, step: s.step }, s.label)}</span></div>`)
@@ -3653,6 +3845,7 @@ a.btn { text-decoration: none; color: var(--text); }
     files: (cust, sha) => `#/filer/${enc(cust)}${sha ? `/${enc(sha)}` : ""}`,
     preview: (task, step) => `#/forhandsvisning/${enc(task)}/${enc(step)}`,
     step: (task, step) => `#/steg/${enc(task)}/${enc(step)}`,
+    person: (id) => `#/person/${enc(id)}`,
   };
   const day10 = (x) => String(x || "").slice(0, 10);
   const isDay = (x) => /^\d{4}-\d{2}-\d{2}$/.test(day10(x));
@@ -3906,9 +4099,11 @@ a.btn { text-decoration: none; color: var(--text); }
     return `<li class="lv-step ${s.done ? "done" : cur ? "now" : ""} ${s.step === hit ? "hit" : ""}" id="lv-step-${esc(t.id)}-${esc(s.step)}"${s.done ? "" : lvOrderAttrs("step", t.id, s.step)}>`
       + `<span class="mark" aria-hidden="true"></span>`
       + `<span class="nm"><a href="${H.delivery(d.id, t.id, s.step)}">${esc(s.label)}</a>${lvStepSub(t, s)}`
+      + (s.done ? "" : absenceOf(t.id, s.step).map((a) => `<span class="sub" style="color:var(--red)">${esc(absenceText(a))}.</span>`).join(""))
       + (writes ? `<a class="sub" href="${H.preview(t.id, s.step)}">Visa vad som ändras ›</a>` : "") + `</span>`
       + `<span class="right">${toneChip(st)}<span class="meta">${esc(s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, ""))}${s.done ? ` · ${short(s.done.at)}` : ` · senast ${short(s.end)}`}</span>`
       + (s.done ? "" : lvOrderButtons("step", t.id, s.step, s.label))
+      + (s.done ? "" : absenceOf(t.id, s.step).slice(0, 1).map((a) => absenceBtn(a, "btn sm")).join(""))
       + `<a class="btn sm quiet" href="${H.step(t.id, s.step)}">Öppna steget ›</a></span></li>`;
   }
   function lvStepList(d, t, steps, hit) {
@@ -4340,7 +4535,7 @@ a.btn { text-decoration: none; color: var(--text); }
       const pics = imgs.length ? `<div class="lv-imgs">${imgs.map((i) => { const href = String(i.library || "").replace(/^[^#]*/, "") || "#/filer";
         const ratio = i.width && i.height ? (i.height / i.width > 1.5 ? "tall" : Math.abs(i.height / i.width - 1) < 0.05 ? "sq" : "") : "";
         return `<figure><a class="lv-th ${big ? "big" : "mid"} ${ratio}" href="${esc(href)}" title="${esc(i.name)} — öppna i filbiblioteket">${i.thumbnail_base64 ? `<img alt="${esc(i.name)}" src="data:${esc(i.thumbnail_mime || "image/webp")};base64,${esc(i.thumbnail_base64)}">` : esc(i.name)}</a>`
-          + `<figcaption>${esc(i.name)}${i.width && i.height ? ` · ${i.width}×${i.height}` : ""}</figcaption></figure>`; }).join("")}</div>` : "";
+          + `<figcaption>${esc(i.name)}${i.width && i.height ? ` · ${i.width}×${i.height}` : ""} · <a href="${esc(href)}">Öppna i Filer</a></figcaption></figure>`; }).join("")}</div>` : "";
       return pics + rows;
     }).join("<hr>");
   }
@@ -4377,6 +4572,71 @@ a.btn { text-decoration: none; color: var(--text); }
         LV.previews.delete(key); await codeResult(s?.label || "Steget", r); history.back(); }
       catch (e) { fail("Steget utfördes inte", e); }
     });
+  }
+
+  /* ── En persons steg per dag (omprovet 2026-09-28, F17) ──
+     «Vad har X de närmaste veckorna»: plan_state { party, weeks } i den korta
+     formen, bara personens arbetsdagar med uppgift, kund och marginal, och
+     veckans timmar mot tiden. Inte hela planen. Öppnas från Planen › Teamet
+     och Teamet i korthet. Svaret sparas per person och antal veckor. */
+  const PERSON_WEEKS = [1, 2, 4];
+  const PA = { data: new Map(), weeks: 2 };
+  function loadPersonAgenda(id, weeks, force = false) {
+    const k = `${id}|${weeks}`, cur = PA.data.get(k);
+    if (cur?.loading || (cur && !force && (cur.agenda || cur.error))) return;
+    PA.data.set(k, { ...(cur || {}), loading: true });
+    withTimeout(call("plan_state", { party: id, weeks }), 45000, "Personens dagar")
+      .then((r) => { if (!r?.person_agenda) throw new Error("servern skickade inga dagar — den kan vara en äldre version");
+        PA.data.set(k, { agenda: r.person_agenda, suggestions: asArr(r.capacity_suggestions) }); })
+      .catch((e) => PA.data.set(k, { ...(PA.data.get(k) || {}), loading: false, error: e }))
+      .finally(() => { if (state.obj?.type === "person" && state.obj.id === id) render(); });
+  }
+  const weekNo = (w) => `v. ${Number(String(w).slice(-2))}`;
+  const hours = (x) => `${Math.round((x || 0) * 10) / 10}`.replace(".", ",");
+  /**
+   * Ett steg på en dag: länk till steget, uppgiften och kunden, marginalen i ord,
+   * timmarna planen lagt den dagen; en krock med Lämna över, och det som inte
+   * ryms före kundens datum (src/plan/level.ts).
+   */
+  function personStepRow(a, s) {
+    const key = `${s.task}|${s.step}`;
+    return trow({ cls: s.absence_clash || s.over_due ? "burn" : "", icon: "ring", title: s.label, attrs: `data-open-step="${esc(key)}"`, more: false,
+      acts: (s.absence_clash ? absenceBtn(s) : "") + `<button class="btn sm" data-step="${esc(key)}">Öppna steget ›</button>`,
+      meta: (s.absence_clash ? chip("borta den dagen — lämna över eller flytta", "red") : "")
+        + (s.over_due ? chip(`ryms inte: klart ${short(s.over_due.finish)}, senast ${short(s.over_due.deadline)}`, "red") : "")
+        + (s.proposed ? chip(`lämnat till ${lbl(a.person, "personen")}, inte mottaget än`, "blue") : "")
+        + (s.critical ? chip("utan marginal", "amber") : `<span class="meta">kan flyttas ${plural(s.float_days, "dag", "dagar")} · </span>`)
+        + esc([s.task_label, s.customer, s.hours ? `${hours(s.hours)} h` : null].filter(Boolean).join(" · ")) });
+  }
+  function pagePerson() {
+    const o = state.obj, weeks = PERSON_WEEKS.includes(PA.weeks) ? PA.weeks : 2, x = PA.data.get(`${o.id}|${weeks}`), a = x?.agenda;
+    const name = lbl(a?.person, "") || personName(o.id);
+    CRUMBS = [screenCrumb(), [name, null]];
+    if (!x) loadPersonAgenda(o.id, weeks);
+    const head = `<div class="pagehead"><span class="kbox who">${ic("user")}</span><h1>Vad har ${esc(name)} de närmaste veckorna</h1>`
+      + `<div class="seg" title="Hur långt fram">${PERSON_WEEKS.map((w) => `<button data-pa-weeks="${w}" aria-pressed="${weeks === w}">${w === 1 ? "1 vecka" : `${w} veckor`}</button>`).join("")}</div>`
+      + `<div class="actions"><button class="btn quiet" data-pa-reload="1">Hämta igen</button></div></div>`;
+    if (!a) return head + (x?.error
+      ? `<div class="empty"><b>Dagarna kunde inte hämtas.</b>${esc(x.error.message || x.error)}<div style="margin-top:12px"><button class="btn" data-pa-reload="1">Försök igen</button></div></div>`
+      : `<div class="empty"><b>Hämtar dagarna…</b></div>`);
+    const days = asArr(a.days), all = days.reduce((n, d) => n + asArr(d.steps).length, 0);
+    const wk = asArr(a.weeks).map((w) => { const over = w.capacity_hours != null && w.hours > w.capacity_hours;
+      // Veckorubriken som i planens text (src/views/person-week.ts): gissad tid, och en period då personen trycker på.
+      return `<span${over ? ' style="color:var(--red)"' : ""}>${weekNo(w.week)}: ${hours(w.hours)} h av ${w.capacity_hours == null ? "okänd tid" : `${hours(w.capacity_hours)} h`}`
+        + `${w.capacity_guessed ? " (gissad)" : ""}${w.push ? ` (trycker på: ${Math.round(w.push.share * 100)} % ${short(w.push.from)}–${short(w.push.to)})`
+          : w.deliberate_share ? ` (${Math.round(w.deliberate_share * 100)} %, medvetet val)` : ""}</span>`; }).join(" · ");
+    const dayHtml = (d) => { const ss = asArr(d.steps);
+      return `<div class="zgrp${d.absent ? " hot" : ""}"><b>${esc(wday(d.day))}</b><span class="hint">${d.absent ? `borta${ss.length ? ` · ${plural(ss.length, "steg", "steg")} ligger ändå här` : ""}` : ss.length ? `${plural(ss.length, "steg", "steg")}${d.hours ? ` · ${hours(d.hours)} h` : ""}` : "inget planerat"}</span></div>`
+        + ss.map((s) => personStepRow(a, s)).join(""); };
+    return head
+      + `<div class="lv-sub">${plural(all, "steg", "steg")} på ${plural(days.length, "dag", "dagar")}, ${short(a.from)}–${short(days.at(-1)?.day || a.from)}${wk ? ` · ${wk}` : ""}. Planen lägger stegens timmar efter personens tid, det mest brådskande först; ett steg står på varje dag det fått timmar.</div>`
+      + (a.clashes ? `<div class="warnnote" style="margin:8px 0 12px">${ic("alert")} ${plural(a.clashes, "steg ligger", "steg ligger")} på en dag då ${esc(name)} är borta — lämna över eller flytta.</div>` : "")
+      + (a.over_due ? `<div class="warnnote" style="margin:8px 0 12px">${ic("alert")} ${plural(a.over_due, "steg ryms", "steg ryms")} inte före kundens datum med den tid ${esc(name)} har — lämna över eller flytta datumet.</div>` : "")
+      // Planens förslag när tiden inte räcker (plan_state { party }). De egna besvaras under
+      // Att bekräfta på Idag; för en kollega är de en fråga till kollegan.
+      + asArr(x.suggestions).map((sg) => `<div class="warnnote" style="margin:8px 0 12px">${chip("förslag från planen", "blue")}${esc(sg.text)}</div>`).join("")
+      + `<div class="card">${days.length ? days.map(dayHtml).join("") : `<div class="empty"><b>Inga dagar i spannet.</b></div>`}</div>`
+      + `<p class="meta">Stegen i uppgifter du ser. Timmarna gäller hela veckan, räknat på allt arbete.</p>`;
   }
 
   /* ── Leveransen som kort med tidslinje: på Idag och på kundsidan (skissen) ──
@@ -4501,6 +4761,7 @@ a.btn { text-decoration: none; color: var(--text); }
       case "unit": return H.unit(o.delivery, o.key);
       case "customer": return H.customer(o.id);
       case "preview": return H.preview(o.task, o.step);
+      case "person": return H.person(o.id);
       default: return null;
     }
   }
@@ -4520,6 +4781,7 @@ a.btn { text-decoration: none; color: var(--text); }
     }
     if (a === "enhet" && rest[1]) { state.screen = keepScreen(); state.obj = { type: "unit", delivery: rest[0], key: rest.slice(1).join("/") }; return; }
     if (a === "kund" && rest[0]) { state.screen = keepScreen(); state.obj = { type: "customer", id: rest[0] }; return; }
+    if (a === "person" && rest[0]) { state.screen = "planen"; state.obj = { type: "person", id: rest[0] }; return; }
     if (a === "forhandsvisning" && rest[1]) { state.screen = keepScreen(); state.obj = { type: "preview", task: rest[0], step: rest[1] }; return; }
     if (a === "steg" && rest[1]) { const st = stepOf(taskById(rest[0]), rest[1]); state.screen = keepScreen(); state.obj = { type: "step", task: rest[0], step: rest[1], title: st?.label || "" }; return; }
     if (a === "fraga" && rest[0]) { const q = opens().find((x) => x.id === rest[0]); state.obj = { type: "question", id: rest[0], title: q ? headlineForOpen(q) : "" }; return; }
@@ -4638,7 +4900,7 @@ a.btn { text-decoration: none; color: var(--text); }
     if (x.dataset.lvChgSkip) { const [task, step] = x.dataset.lvChgSkip.split("|"); const p = c.parts[task];
       if (x.checked) p.skip[step] = ""; else delete p.skip[step]; c.preview = null; return render(); }
   });
-  Object.assign(OBJ, { delivery: pageDelivery, unit: pageUnit, customer: pageCustomer, preview: pagePreview });
+  Object.assign(OBJ, { delivery: pageDelivery, unit: pageUnit, customer: pageCustomer, preview: pagePreview, person: pagePerson });
 
   /* ── panelen ── */
   // Prototypens exempelsamtal (CONVO) är borta: samtalet är riktig Claude (B-212).
@@ -5214,7 +5476,10 @@ a.btn { text-decoration: none; color: var(--text); }
     catch (e) { const el = $("#bank-list"); if (el) el.textContent = `Filerna gick inte att hämta: ${e.message || e}`; return; }
     const rita = () => { const q = ($("#bank-q")?.value || "").toLowerCase(); const el = $("#bank-list"); if (!el) return;
       const träff = filer.filter((f) => `${f.folder || ""}/${f.name || ""}`.toLowerCase().includes(q)).slice(0, 60);
-      el.innerHTML = träff.length ? träff.map((f) => `<button class="linkbtn" style="display:block;text-align:left;padding:4px 0" data-bank-pick="${esc(key)}|${esc(f.sha256)}|${esc(f.name || f.sha256.slice(0, 12))}">${esc(f.name || "fil")} <span class="meta">· ${esc(f.folder || "")}</span></button>`).join("") : "Inget passar."; };
+      // Förhandsbilden på varje bild, och «Öppna i Filer» (felrapport c96d2186).
+      el.innerHTML = träff.length ? träff.map((f) => `<div class="bankrow">${f.thumbnail ? fileThumb(f.ref) : `<span class="fthumb">${FILE_IC}</span>`}`
+        + `<button class="linkbtn" data-bank-pick="${esc(key)}|${esc(f.sha256)}|${esc(f.name || f.sha256.slice(0, 12))}">${esc(f.name || "fil")} <span class="meta">· ${esc(f.folder || "")}</span></button>`
+        + `<button class="btn sm quiet" data-open-files="${esc(id)}|${esc(f.sha256)}" title="Stänger rutan och öppnar filen i filbiblioteket">Öppna i Filer</button></div>`).join("") : "Inget passar."; };
     rita(); $("#bank-q")?.addEventListener("input", rita);
   }
   function markDone(btn, force) {
@@ -6059,10 +6324,10 @@ a.btn { text-decoration: none; color: var(--text); }
         `4. Efter mitt ja: markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s, "<resultatet på en rad>")}.`,
       ] : !tool && cs.length ? [
         `3. Gör steget med ${[...new Set(cs)].join(", ")} enligt instruktionen, och visa resultatet för mig.`,
-        `4. Efter mitt ja: spara det steget lämnar med content_save { customer: "${cust || "<kundens id>"}", for_task: "${t.id}", for_step: "${s.step}", kind, name, title, markdown }, och markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s)}.`,
+        `4. Efter mitt ja: spara det steget lämnar med content_save { customer: "${cust || "<kundens id>"}", for_task: "${t.id}", for_step: "${s.step}", kind, name, title, markdown, confirmed: true, user_approval: <det jag sa ja till> }, och markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s)}.`,
       ] : [
       "3. Skriv texten i Smyra (smyra_write) med kundens röst och persona, och visa den för mig.",
-      `4. Efter mitt ja: spara texten med content_save { customer: "${cust || "<kundens id>"}", for_task: "${t.id}", for_step: "${s.step}", kind, name, title, markdown }, och markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s)}.`]),
+      `4. Efter mitt ja: spara texten med content_save { customer: "${cust || "<kundens id>"}", for_task: "${t.id}", for_step: "${s.step}", kind, name, title, markdown, confirmed: true, user_approval: <det jag sa ja till> }, och markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s)}.`]),
       "", s.writes_to || (s.needs_values || []).length || (tool && tool !== "smyra_write") || (!tool && cs.length) ? CHAT_RULES.split("\n").filter((x) => !x.includes("Smyra")).join("\n") : CHAT_RULES].filter((x) => x !== null).join("\n");
   }
   /**
@@ -6190,7 +6455,8 @@ a.btn { text-decoration: none; color: var(--text); }
     return busy(btn, async () => {
       try {
         await call("content_save", { customer: m.customer, kind: "anteckning", name: `anteckning-${new Date().toISOString().slice(0, 16).replace(/[^0-9]/g, "")}`,
-          title: titel || text.split("\n")[0].slice(0, 80), markdown: text, ...(m.for_task ? { for_task: m.for_task } : {}) });
+          title: titel || text.split("\n")[0].slice(0, 80), markdown: text, ...(m.for_task ? { for_task: m.for_task } : {}),
+          confirmed: true, user_approval: `Ja, spara anteckningen (klickade Spara i vyn): ${titel || text.split("\n")[0].slice(0, 80)}` });
         closeDialog(); toast(`Anteckningen är sparad — ${m.key === "task" ? "på uppgiften" : m.key === "customer" ? "på kunden" : "som fri anteckning"}.`);
       } catch (e) { fail("Anteckningen sparades inte", e); }
     });
@@ -7169,6 +7435,8 @@ a.btn { text-decoration: none; color: var(--text); }
   document.addEventListener("click", (e) => {
     if (suppressNextClick) { suppressNextClick = false; e.preventDefault(); return; }
     if (!e.target.closest("#menu, [data-more]")) closeMenu();
+    // En länk i en ruta (till exempel «Öppna i Filer» under en förhandsbild) går vidare och stänger rutan.
+    if (e.target.closest("#layer a[href^='#/']")) { closeDialog(); return; }
     if (e.target.closest("a[href^='#/']")) return;
     const t = e.target.closest("button, [data-pal-card], [data-step-edit], [data-open-step], [data-open-project], [data-open-method], [data-open-case], [data-proj-task], [data-open-q], [data-edsel], [data-calcol], [data-fcust], [data-ffolder], .item, [data-close-overlay]");
     if (!t) return;
@@ -7185,11 +7453,17 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.filter) { state.filter = ds.filter; return render(); }
     if (ds.who) { store.who = ds.who; save(); return render(); }
     if (ds.lvbank !== undefined) return bankPickDialog(ds.lvbank);
+    if (ds.openFiles) { const [cust, sha] = ds.openFiles.split("|"); closeDialog(); location.hash = H.files(cust, sha); return; }
     if (ds.bankPick) { const [key, sha, ...namn] = ds.bankPick.split("|"); const inp = (state.obj.inputs ||= { parts: {}, files: {}, note: "" });
       (inp.bank ||= {})[key] = { sha256: sha, name: namn.join("|") };
       closeDialog(); const st = document.querySelector(`[data-lvstatus="${CSS.escape(key)}"]`); if (st) st.textContent = `Ur filbanken: ${namn.join("|")}`; return; }
     if (ds.confirmNode) return confirmNodeDialog(ds.confirmNode);
     if (ds.confirmNodeYes) return confirmNode(t, ds.confirmNodeYes);
+    if (ds.suggestionYes !== undefined) return suggestionYes(t, ds.suggestionYes);
+    if (ds.suggestionNo !== undefined) return suggestionNo(ds.suggestionNo);
+    if (ds.suggestion !== undefined) return suggestionDialog(ds.suggestion);
+    if (ds.pushRemove !== undefined) { S.setDraft.planning.pushes.splice(Number(ds.pushRemove), 1); render(); return patchSettings(); }
+    if (ds.pushAdd !== undefined) return addPush();
     if (ds.ahead !== undefined) { store.ahead = Number(ds.ahead); save(); render(); return load(); }
     if (ds.mirrorReread) return rereadMirror(t, ds.mirrorReread);
     if (ds.takeTask) return takeTaskDialog(ds.takeTask);
@@ -7231,6 +7505,9 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.menucal) { closeMenu(); const it = calItem(JSON.parse(ds.menucal)); return it ? calDialog(it) : toast("Bara steg kan läggas i kalendern än.", null, true); }
     if (ds.menuPostpone) { closeMenu(); const [task, step] = ds.menuPostpone.split("|"); const st = stepOf(taskById(task), step);
       if (!st) return; open({ type: "step", task, step, title: st.label }); return (st.postpone_options || []).length ? postponeDialog() : toast("Steget har inga alternativ att flytta till.", null, true); }
+    if (ds.paWeeks) { PA.weeks = Number(ds.paWeeks); return render(); }
+    if (ds.paReload && state.obj?.type === "person") { loadPersonAgenda(state.obj.id, PA.weeks, true); return render(); }
+    if (ds.absenceHandover) { const [task, step] = ds.absenceHandover.split("|"); return handoverDialog(task, step); }
     if (ds.menuHandover) { closeMenu(); const [task, step] = ds.menuHandover.split("|"); return handoverDialog(task, step); }
     if (ds.handoverTo) { const { t: tt, s: ss } = current(); return ss ? handoverDialog(tt.id, ss.step) : undefined; }
     if (ds.handoverSend) return sendHandover(t);
