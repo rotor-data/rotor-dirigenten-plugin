@@ -202,6 +202,16 @@ ol.moments input { flex: 1; min-width: 0; border: 1px solid var(--line-strong); 
 .row[draggable="true"] { cursor: grab; }
 /* Dra och släpp A (B-275, etapp 4): ordningen i en uppgift och i leveransen. */
 [data-lv-order] { cursor: grab; } [data-lv-order].lv-drop { box-shadow: inset 0 2px 0 var(--accent); }
+/* Flytten syns direkt (Daniel P 2026-09-28): raden står på sin nya plats medan servern sparar. */
+.lv-note { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-meta); color: var(--text-2); }
+.lv-note.err { color: var(--red); display: block; }
+.lv-note-row { padding: 0 var(--s4) 6px 58px; }
+.lv-saving { opacity: .75; } .lv-leaving { opacity: .45; }
+.lv-dropbar { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 60; max-width: min(760px, calc(100vw - 32px)); display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--bg); box-shadow: 0 6px 24px rgba(0,0,0,.12); font-size: var(--fs-meta); }
+.lv-dropbar b { font-weight: 600; color: var(--text); }
+.lv-target { border: 1px dashed var(--line-strong); border-radius: 999px; padding: 3px 10px; background: var(--bg); color: var(--text); font: inherit; font-size: var(--fs-meta); }
+.lv-target.lv-drop { border-style: solid; border-color: var(--accent); background: var(--accent-weak); }
+.lv-mini { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 2px var(--s4) 8px 58px; font-size: var(--fs-meta); color: var(--text-2); }
 .lv-ord { display: inline-flex; gap: 2px; } .lv-ord button { font: inherit; font-size: 11px; line-height: 1; padding: 2px 5px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text-2); cursor: pointer; }
 .edstep { display: grid; grid-template-columns: 22px 28px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid transparent; border-top-color: var(--line); cursor: pointer; }
 .edstep:first-child { border-top-color: transparent; }
@@ -896,7 +906,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "e07ae29", published: "2026-09-28" };
+  const SIDA = { version: "1c3024f", published: "2026-09-28" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1562,9 +1572,23 @@ a.btn { text-decoration: none; color: var(--text); }
     if (!m) return String(p || ""); return m[2] ? MONTHS[Number(m[2]) - 1] : m[3] ? `vecka ${Number(m[3])}` : m[4] ? `kvartal ${m[4]}` : m[1]; };
   /** Tilläggsbeställning: uppgiften hör till kundens "Utanför avtalet" och faktureras som tilläggsarbete. */
   const addonChip = (t) => t?.outside_contract ? ` <span class="chip amber" title="Utanför avtalet — faktureras som tilläggsarbete">tillägg</span>` : "";
+  /**
+   * Rubriken kort (2026-09-28): högst omkring 60 tecken, kapad vid ett ordslut.
+   * Servern bygger rubriken vid beställning och klassning (src/plan/headline.ts);
+   * här kortas det som lades in före regeln. Hela texten syns när raden fälls ut.
+   */
+  const HEAD_MAX = 60;
+  const shortHead = (s) => {
+    const line = String(s || "").replace(/\s+/g, " ").trim();
+    if (line.length <= HEAD_MAX) return line;
+    const cut = line.slice(0, HEAD_MAX), at = cut.lastIndexOf(" ");
+    return `${(at >= HEAD_MAX / 3 ? cut.slice(0, at) : cut).replace(/[\s,.;:–—-]+$/, "")}…`;
+  };
+  /** Hela texten bakom rubriken, när rubriken inte rymmer den. */
+  const fullOccasion = (t) => { const f = t?.description || t?.occasion || ""; return f && f !== shortHead(t?.occasion) ? f : ""; };
   const taskName = (t) => {
     const d = lbl(t?.deliverable, "Uppgift");
-    const ctx = (t?.thread && threadSubject(t.thread)) || t?.occasion;
+    const ctx = (t?.thread && threadSubject(t.thread)) || shortHead(t?.occasion);
     if (ctx) return `${d}: ${ctx}`;
     // Utan tillfälle och period skiljer bara leveransdagen två likadana åt.
     if (!t?.period) return tasks().filter((x) => x !== t && lbl(x.deliverable) === d && lbl(x.customer) === lbl(t?.customer) && !x.period).length
@@ -1580,7 +1604,7 @@ a.btn { text-decoration: none; color: var(--text); }
    * tag"). Rubriken är ärendets ämnesrad eller tillfället; steget blir en tagg.
    */
   // Utan uppgiften i planen (längre fram än planen räcker) står radens eget tillfälle eller sort.
-  const workTitle = (t, x) => (t?.thread && threadSubject(t.thread)) || t?.occasion || (t ? taskName(t) : x?.occasion || lbl(x?.deliverable, "Uppgift"));
+  const workTitle = (t, x) => (t?.thread && threadSubject(t.thread)) || shortHead(t?.occasion) || (t ? taskName(t) : shortHead(x?.occasion) || lbl(x?.deliverable, "Uppgift"));
   /** Veckor framåt på Idag; 1 = till och med söndag den här veckan, 0 = obegränsat. Tre som förut. */
   const aheadWeeks = () => [0, 1, 2, 3, 4].includes(store.ahead) ? store.ahead : 3;
   const stepTag = (label) => `<span class="chip steg">${esc(label)}</span>`;
@@ -2023,7 +2047,7 @@ a.btn { text-decoration: none; color: var(--text); }
     return busy(btn, async () => {
       try {
         for (const c of calls)
-          await call(c.tool, { ...c.args, ...(x.kind === "push" ? { confirmed: true } : {}), user_approval: approval });
+          await call(c.tool, { ...c.args, confirmed: true, user_approval: approval });
         closeDialog(); await load();
         toast(x.kind === "handover" ? `Förslaget har gått till ${x.to_label}.` : "Du trycker på under perioden."); }
       catch (e) { fail("Det gick inte att spara", e); }
@@ -2134,7 +2158,7 @@ a.btn { text-decoration: none; color: var(--text); }
       const modes = [["tidslinje", "Tidslinje"], ["projekt", "Projekt"], ["teamet", "Teamet"], ["kunder", "Kunder"]];
       const head = `<div class="pagehead"><h1>Planen</h1><div class="seg">${modes.map(([k, l]) => `<button data-planmode="${k}" aria-pressed="${state.planMode === k}">${l}</button>`).join("")}</div>`
         + (state.planMode === "tidslinje" ? "" : `<span class="meta">Horisont</span><div class="seg">${[4, 12, 26].map((w) => `<button data-horizon="${w}" aria-pressed="${state.horizon === w}">${w} v</button>`).join("")}</div>`)
-        + `<div class="actions"><button class="btn primary" data-order-open="1">Lägg in beställning</button></div></div>`;
+        + `<div class="actions"><button class="btn ai" data-rearrange-pick="1" title="Välj leveransen; Claude föreslår, och inget ändras utan ditt ja.">${SP} Be Claude möblera om…</button><button class="btn primary" data-order-open="1">Lägg in beställning</button></div></div>`;
       return head + ({ tidslinje: timeline, projekt: projects, teamet: team, kunder: customers }[state.planMode])();
     },
 
@@ -2884,7 +2908,7 @@ a.btn { text-decoration: none; color: var(--text); }
   /** Samma, i en ruta — för raderna i en lista, där fler knappar blir för trångt. */
   function shareDialog(hash, what, customer) {
     const l = shareLinks(shareBases(), hash, what, customer);
-    dialog(`<h2>Länk till ${esc(what)}</h2><p class="meta">Kollegan loggar in med sitt Google-konto på jobbet och ser bara det hen redan har tillgång till.</p>`
+    dialog(`<h2>Länk till ${esc(what)}</h2><p class="meta">Kollegan loggar in med sitt Google-konto på jobbet och ser bara det den personen redan har tillgång till.</p>`
       + `<input class="flink" readonly value="${esc(l.url)}" aria-label="Länken">`
       + `<div class="bar-actions"><button class="btn primary" data-share-copy="${esc(l.url)}">Kopiera länk</button>`
       + `<a class="btn" href="${esc(l.mailto)}" target="_blank" rel="noopener">Mejla länk</a>`
@@ -3846,7 +3870,7 @@ a.btn { text-decoration: none; color: var(--text); }
      Inget här vet vilket system något ligger ute i: namnet kommer ur spegeln
      (`out[].system`) eller ur publiceringens kanal, delarna ur tillgångens
      `part`, och länken till objektet ur `out_as[].url`. */
-  const LV = { open: {}, scroll: {}, change: null, bind: null, previews: new Map(), texts: new Map() };
+  const LV = { open: {}, scroll: {}, change: null, bind: null, previews: new Map(), texts: new Map(), pending: {}, saving: {} };
   const enc = encodeURIComponent;
   const H = {
     screen: (s) => `#/${s}`,
@@ -3906,7 +3930,7 @@ a.btn { text-decoration: none; color: var(--text); }
    * tillfället), och sorten bara när namnet saknas. Metoden står på raden under,
    * så att rubriken inte säger samma sak två gånger (Daniel P 2026-09-26).
    */
-  const taskTitle = (t) => (t?.thread && threadSubject(t.thread)) || t?.occasion || taskName(t);
+  const taskTitle = (t) => (t?.thread && threadSubject(t.thread)) || shortHead(t?.occasion) || taskName(t);
   const lvDelivery = (id) => realDeliveries().find((d) => d.id === id) || implicitDelivery(taskById(id));
   const deliveryOfTask = (t) => (t?.delivery && realDeliveries().find((d) => d.id === t.delivery)) || implicitDelivery(t);
   // En löpande leverans (2026-09-28) visar bara de öppna ärendena; de klara räknas i d.ongoing.done_by_month.
@@ -4110,9 +4134,10 @@ a.btn { text-decoration: none; color: var(--text); }
   function lvStepLi(d, t, s, hit) {
     const st = stepState(t, s), cur = s === currentStep(t);
     const writes = !s.done && kindOf(s) === "code" && s.runnable;
-    return `<li class="lv-step ${s.done ? "done" : cur ? "now" : ""} ${s.step === hit ? "hit" : ""}" id="lv-step-${esc(t.id)}-${esc(s.step)}"${s.done ? "" : lvOrderAttrs("step", t.id, s.step)}>`
+    const pend = LV.pending[`step|${t.id}|${s.step}`];
+    return `<li class="lv-step ${s.done ? "done" : cur ? "now" : ""} ${s.step === hit ? "hit" : ""}${pend && !pend.error ? " lv-saving" : ""}" id="lv-step-${esc(t.id)}-${esc(s.step)}"${s.done ? "" : lvOrderAttrs("step", t.id, s.step)}>`
       + `<span class="mark" aria-hidden="true"></span>`
-      + `<span class="nm"><a href="${H.delivery(d.id, t.id, s.step)}">${esc(s.label)}</a>${lvStepSub(t, s)}`
+      + `<span class="nm"><a href="${H.delivery(d.id, t.id, s.step)}">${esc(s.label)}</a>${lvStepSub(t, s)}${lvNote(pend)}`
       + (s.done ? "" : absenceOf(t.id, s.step).map((a) => `<span class="sub" style="color:var(--red)">${esc(absenceText(a))}.</span>`).join(""))
       + (writes ? `<a class="sub" href="${H.preview(t.id, s.step)}">Visa vad som ändras ›</a>` : "") + `</span>`
       + `<span class="right">${toneChip(st)}<span class="meta">${esc(s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, ""))}${s.done ? ` · ${short(s.done.at)}` : ` · senast ${short(s.end)}`}</span>`
@@ -4490,6 +4515,7 @@ a.btn { text-decoration: none; color: var(--text); }
       if (hs && (hs.responsible?.id ?? hs.responsible) === me())
         out.push(`<button class="btn sm" data-absence-handover="${esc(h.task)}|${esc(h.step)}" title="Steget blir kollegans när kollegan tagit emot det.">Lämna över «${esc(clipped(h.label, 40))}»</button>`);
     }
+    if (!d.closed && !d.ongoing) out.push(`<button class="btn sm ai" data-lv-rearrange="${esc(d.id)}" title="Öppnar Claudepanelen med frågan. Varje ändring visas som ett kort med Ja och Nej.">${SP} Be Claude möblera om…</button>`);
     for (const { x, i } of deliverySuggestions(d))
       out.push(`<button class="btn sm" data-suggestion="${i}" title="${esc(x.text)}">${x.kind === "push" ? "Trycka på…" : x.kind === "handover" ? `Lämna över till ${esc(x.to_label)}…` : "Granska förslaget…"}</button>`);
     return out.length ? `<div class="lv-acts" style="justify-content:flex-start;margin-top:10px">${out.join("")}</div>` : "";
@@ -4577,14 +4603,16 @@ a.btn { text-decoration: none; color: var(--text); }
     return real.map((t, i) => {
       const o = hitTask === t.id, st = taskState(t);
       const due = day10(t.external_due || t.due), dd = day10(d.due);
-      return `<button class="lv-trow ${i ? "" : "first"}" id="lv-task-${esc(t.id)}" data-lv-task="${esc(t.id)}" aria-expanded="${o}"${lvOrderAttrs("task", d.id, t.id)}><span class="lv-fold ${o ? "open" : ""}">›</span>`
+      const pend = LV.pending[`task|${t.id}`];
+      return `<button class="lv-trow ${i ? "" : "first"}${pend && !pend.error ? (pend.leaving ? " lv-leaving" : " lv-saving") : ""}" id="lv-task-${esc(t.id)}" data-lv-task="${esc(t.id)}" aria-expanded="${o}"${lvOrderAttrs("task", d.id, t.id)}><span class="lv-fold ${o ? "open" : ""}">›</span>`
         + `<span class="kbox upp sm">${ic("upp")}</span>`
         + `<span class="nm"><span class="t">${esc(taskTitle(t))}</span>`
         + `<span class="s">${esc(lbl(t.method_named, "ingen metod"))} · slutdatum ${short(due)}${dd && due && dd !== due && !d.implicit ? ` (leveransen: ${short(dd)})` : ""}${t.revision ? ` · runda ${Number(t.revision.number) + 1}` : ""}</span></span>`
         + `<span class="end">${lvDots(t)}<span class="meta">${lvCount(t)}</span>${toneChip(st)}</span></button>`
+        + (pend ? `<div class="lv-note-row">${lvNote(pend)}</div>` : "")
         + (real.length > 1 ? `<div style="text-align:right;padding:0 16px 4px">${lvOrderButtons("task", d.id, t.id, taskTitle(t))}</div>` : "")
         + (!o && asArr(t.waits).length ? waitEdges(t) : "")
-        + (o ? `<div class="lv-nest"><div class="lv-edge">Metod: ${methodLine(t)}${t.live ? ` · ute sedan ${short(t.live.at)}` : ""}${t.moved?.reason ? ` · flyttat: «${esc(t.moved.reason)}»` : ""}</div>`
+        + (o ? `<div class="lv-nest">${fullOccasion(t) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(t))}</div>` : ""}<div class="lv-edge">Metod: ${methodLine(t)}${t.live ? ` · ute sedan ${short(t.live.at)}` : ""}${t.moved?.reason ? ` · flyttat: «${esc(t.moved.reason)}»` : ""}</div>`
           + waitEdges(t)
           + lvRounds(d, t, hitStep)
           + asArr(t.steps).filter((s) => asArr(s.waits_on).some((w) => !w.done)).slice(0, 1).map((s) => `<div class="lv-edge">${esc(s.waits_on.find((w) => !w.done).text)}.</div>`).join("")
@@ -5108,7 +5136,7 @@ a.btn { text-decoration: none; color: var(--text); }
   }
   const samtal = loadSamtal();
   const lagrad = (m) => m.role === "user" ? { role: m.role, content: `Fråga: ${m.text}`, text: m.text, ...(m.step ? { step: m.step } : {}) }
-    : { role: m.role, content: String(m.content || m.text || "").slice(0, 8000), text: m.text, ...(m.error ? { error: true } : {}), ...(m.meter ? { meter: m.meter } : {}), ...(m.rating ? { rating: m.rating } : {}) };
+    : { role: m.role, content: String(m.content || m.text || "").slice(0, 8000), text: m.text, ...(m.error ? { error: true } : {}), ...(m.meter ? { meter: m.meter } : {}), ...(m.rating ? { rating: m.rating } : {}), ...(m.cards ? { cards: m.cards } : {}) };
   function saveSamtal() {
     try {
       const o = {};
@@ -5388,7 +5416,7 @@ a.btn { text-decoration: none; color: var(--text); }
     $("#pbody").innerHTML = `<div class="here">Här: <b>${esc(hereLabel() || "")}</b>${verktyg}</div>` + rensa + tidigare
       + (fns.length ? `<div><div class="label" style="margin-bottom:6px">Jag kan</div><div class="cans">${fns.map((f) => `<button class="can" data-func="${f.id}" title="${f.write === "none" ? "Läser, skriver ingenting" : "Visar ett förslag innan något skrivs"}">${SP} ${esc(f.label)} <span class="tier">${TIERNAME[f.tier]}</span></button>`).join("")}</div></div>` : "")
       + msgs.map((m) => m.role === "user" ? `<div class="msg user">${esc(m.text)}</div>`
-        : `<div class="msg ai${m.error ? " error" : ""}"><span class="who">${SP} Claude</span><div class="txt md">${md(utanTummar(m.text || ""))}</div>${m.meter ? `<div class="meta">${m.meter.fetches} hämtningar · ${Math.round(m.meter.bytes / 102.4) / 10} kB hämtat</div>` : ""}${rateHtml(m)}</div>`).join("")
+        : `<div class="msg ai${m.error ? " error" : ""}"><span class="who">${SP} Claude</span><div class="txt md">${md(utanTummar(m.text || ""))}</div>${cardsHtml(m, convo.indexOf(m))}${m.meter ? `<div class="meta">${m.meter.fetches} hämtningar · ${Math.round(m.meter.bytes / 102.4) / 10} kB hämtat</div>` : ""}${rateHtml(m)}</div>`).join("")
       + (!msgs.length ? `<div class="meta">Fråga om det du tittar på. Claude ser samma sak som du, och skriver ingenting utan att du bekräftar. Metodbygge, Claude-steg och långa texter görs i vanliga Claude-chatten: Kopiera till Claude under rutan.</div>` : "")
       + (sample === null ? `<div class="meta">${esc(noClaude())}</div>` : "");
     $("#pactivity").innerHTML = running
@@ -5442,7 +5470,7 @@ a.btn { text-decoration: none; color: var(--text); }
          ...inomTaket(convo.filter((m) => m !== reply).map((m) => ({ role: m.role, content: m.content })))],
         { signal: abort.signal, modelTier: "default", onText: ({ text: all }) => { reply.text = all; renderPanel(); },
           tools: [readTool((what) => { if (running) { running.label = `Claude läser ${what}`; renderPanel(); } },
-            budget), writeTool(), markDoneTool()] });
+            budget), writeTool(), markDoneTool(), proposeTool(reply)] });
       reply.text = r.text; reply.content = r.text;
       reply.meter = { fetches: Math.min(budget.used, budget.max), bytes: budget.bytes };
     } catch (e) {
@@ -5549,7 +5577,7 @@ a.btn { text-decoration: none; color: var(--text); }
           + (WEB.on ? "Ange var filen finns i stället." : `Öppna vyn på dirigentens egen adress${UPLOAD.home ? ` (${UPLOAD.home})` : ""} och ladda upp den där, eller ange var filen finns.`));
       const small = thumb && f.size + thumb.length * 0.75 <= INLINE_MAX ? thumb : null;
       return await call("asset_register", { ...fields, filename: f.name, mime, base64: await toBase64(f),
-        ...(small ? { thumbnail_base64: small } : {}) });
+        ...(small ? { thumbnail_base64: small } : {}), confirmed: true, user_approval: `Ja i vyn: ladda upp ${f.name}`.slice(0, 500) });
     } finally { note.done(); }
   }
   const busy = async (btn, fn) => { if (btn) btn.disabled = true; try { return await fn(); } finally { if (btn?.isConnected) btn.disabled = false; } };
@@ -5558,7 +5586,8 @@ a.btn { text-decoration: none; color: var(--text); }
   async function registerAsset(o, fields) {
     const t = taskById(o.task);
     return call("asset_register", { asset_type: o.about, acquisition: "provided", for_task: o.task,
-      ...(t?.customer?.id ? { customer: t.customer.id } : {}), ...fields });
+      ...(t?.customer?.id ? { customer: t.customer.id } : {}), ...fields,
+      confirmed: true, user_approval: `Ja i vyn: svaret på ${o.label || "frågan"}`.slice(0, 500) });
   }
   function answerQuestion(btn, id) {
     const o = opens().find((x) => x.id === id);
@@ -5670,7 +5699,8 @@ a.btn { text-decoration: none; color: var(--text); }
       try {
         for (const lv of leaves.filter(filled)) {
           const k = lv.name || lv.label, v = inp.parts[k] || {}, f = inp.files[k];
-          const base = { asset_type: lv.name, acquisition: "provided", for_task: t.id, for_step: s.step, ...(t.customer?.id ? { customer: t.customer.id } : {}) };
+          const base = { asset_type: lv.name, acquisition: "provided", for_task: t.id, for_step: s.step, ...(t.customer?.id ? { customer: t.customer.id } : {}),
+            confirmed: true, user_approval: `Ja i vyn: leveransen för ${s.label || "steget"}`.slice(0, 500) };
           if (f) await sendFile(f, base);
           // En fil som redan finns (Daniel P 2026-09-25): ingen uppladdning, samma fil.
           else if (inp.bank?.[k]) await call("asset_register", { ...base, from_ref: inp.bank[k].sha256 });
@@ -5755,8 +5785,8 @@ a.btn { text-decoration: none; color: var(--text); }
    * texter i högerchatten. Däremot ska den kunna kopiera prompts med
    * instruktioner till vanliga chatten."
    */
-  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till Claude under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan. Ber användaren dig rapportera ett fel: gör det med skriv → rotor-dirigenten bug_report { text, where, conversation }. Ber användaren dig markera ett steg klart: gör det med markera_klart.";
-  const HUNT_HINT = "Leta med search först (B-257): EN fråga med 2–5 formuleringar — kundens ord och husets ord — och inbox när ärendet har en adress. Svaret är högst tio rader; hämta bara det en rad pekar på (anropet efter →). Ramens steg står i svaret — hämta inte hela metoden med guide. Raderna under Kanske är antaganden: säg att de är det. Står det inget självklart: fråga användaren vad det kan handla om; vet hen inte, föreslå en fråga till den som skrev. Sluta leta när du har svaret, och svara kort. Långa listor: read_call { call, hitta: \"sökord\" } filtrerar på servern. Ser du hur något hänger ihop (ett workflow skickar ett fält, ett mejl kommer från ett flöde): notera det med note_link, så vet nästa ärende det. Saknas en förmåga i dirigenten — kod som kan göra en ändring som behövs: säg vad som saknas; atomförslaget skrivs i vanliga chatten. Leta effektivt: börja i kundens systemkarta. I HubSpot räknar och filtrerar query_crm_data i ETT anrop (hur många affärer som har ett fält ifyllt, vilka värden som förekommer, vilka produkter som finns på affärerna) — använd den i stället för många sökningar. get_properties ger ett fälts definition och tillåtna värden. Sök inte på samma sak två gånger.";
+  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till Claude under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan. Ber användaren dig rapportera ett fel: gör det med skriv → rotor-dirigenten bug_report { text, where, conversation }. Ber användaren dig markera ett steg klart: gör det med markera_klart. Ber användaren dig möblera om en leverans: läs den (plan_state { delivery, format: \"full\" }) och personernas läge, och lägg varje ändring som ett eget förslag med foresla — ny ordning, att vänta på ett steg, överlämning eller att trycka på. Skriv en kort mening om varför, och använd inte skriv för det.";
+  const HUNT_HINT = "Leta med search först (B-257): EN fråga med 2–5 formuleringar — kundens ord och husets ord — och inbox när ärendet har en adress. Svaret är högst tio rader; hämta bara det en rad pekar på (anropet efter →). Ramens steg står i svaret — hämta inte hela metoden med guide. Raderna under Kanske är antaganden: säg att de är det. Står det inget självklart: fråga användaren vad det kan handla om; vet användaren inte, föreslå en fråga till den som skrev. Sluta leta när du har svaret, och svara kort. Långa listor: read_call { call, hitta: \"sökord\" } filtrerar på servern. Ser du hur något hänger ihop (ett workflow skickar ett fält, ett mejl kommer från ett flöde): notera det med note_link, så vet nästa ärende det. Saknas en förmåga i dirigenten — kod som kan göra en ändring som behövs: säg vad som saknas; atomförslaget skrivs i vanliga chatten. Leta effektivt: börja i kundens systemkarta. I HubSpot räknar och filtrerar query_crm_data i ETT anrop (hur många affärer som har ett fält ifyllt, vilka värden som förekommer, vilka produkter som finns på affärerna) — använd den i stället för många sökningar. get_properties ger ett fälts definition och tillåtna värden. Sök inte på samma sak två gånger.";
   let catalogCache = null;
   /** Kopplingarnas läsverktyg med sina argument, ur kopplingarnas egna listor — så att Claude inte gissar. */
   async function toolCatalog() {
@@ -5823,6 +5853,99 @@ a.btn { text-decoration: none; color: var(--text); }
       toast(`${st.label} är klart (Claude).`, undoDone(t, st));
       return `${st.label} är markerat klart.`;
     } });
+  /**
+   * Möblera om med Claude (Daniel P 2026-09-28: *"och så vill man kunna säga
+   * åt claude att möblera om"*). Frågan är samma text i panelen och i
+   * vanliga chatten (Kopiera till Claude tar rutans fråga med sig).
+   */
+  const rearrangeText = (d) => `Möblera om «${d.label}» så att den hinns före ${short(d.moved?.to || d.due)}: föreslå ny ordning, överlämningar eller att trycka på. Visa förslaget innan något ändras.`;
+  function openRearrange(id) {
+    const d = lvDelivery(id); if (!d) return toast("Leveransen finns inte i planen längre.", null, true);
+    closeDialogOnly();
+    document.body.classList.remove("panel-closed"); if (innerWidth <= 1200) document.body.classList.add("panel-open");
+    renderPanel();
+    const box = $("#ask"); if (!box) return;
+    box.value = rearrangeText(d); box.focus();
+    toast(sample ? "Frågan står i rutan. Ändra den om du vill, och skicka." : "Frågan står i rutan. Kopiera till Claude under rutan tar den till vanliga chatten.");
+  }
+  /** I Planen: välj leveransen först. De som är sena står överst. */
+  function rearrangePick() {
+    const ds = realDeliveries().filter((d) => !d.closed && !d.ongoing && lvTasks(d).length)
+      .sort((a, b) => (statusOf(b).kind === "late") - (statusOf(a).kind === "late") || String(a.moved?.to || a.due).localeCompare(String(b.moved?.to || b.due)));
+    if (!ds.length) return toast("Det finns ingen öppen leverans att möblera om.", null, true);
+    dialog(`<h2>Be Claude möblera om</h2><p class="meta">Claude föreslår ny ordning, överlämningar eller att trycka på. Varje ändring visas som ett kort med Ja och Nej; inget ändras utan ditt ja.</p>`
+      + `<label class="field"><span>Vilken leverans?</span><select id="rearrange-d">${ds.map((d) => `<option value="${esc(d.id)}">${esc(d.label)} · ${esc(lbl(custOf(d), ""))} · ${short(d.moved?.to || d.due)}${statusOf(d).kind === "late" ? " · sen" : ""}</option>`).join("")}</select></label>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-rearrange-go="1">Öppna i panelen</button></div>`);
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest?.("[data-lv-rearrange], [data-rearrange-pick], [data-rearrange-go], [data-card-yes], [data-card-no]"); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    const ds = b.dataset;
+    if (ds.lvRearrange) return openRearrange(ds.lvRearrange);
+    if (ds.rearrangePick) return rearrangePick();
+    if (ds.rearrangeGo) return openRearrange($("#rearrange-d")?.value);
+    const [i, k] = String(ds.cardYes ?? ds.cardNo).split("|").map(Number);
+    return ds.cardYes !== undefined ? cardYes(b, i, k) : cardNo(i, k);
+  }, true);
+
+  /**
+   * Förslag som kort i panelen: samma mönster som planens förslag (ja kör
+   * anropet, nej ändrar ingenting), men ett kort per ändring och utan ruta
+   * som stoppar Claude. Förhandsvisningen hämtas när kortet läggs; ingenting
+   * skrivs förrän någon tryckt Ja.
+   */
+  const PROPOSE = { [SERVER]: ["task_lock", "execute_step", "registry_define"] };
+  const PREVIEW_KEYS = ["handover_to", "handover", "mark", "cancel_task", "delivered", "take_over", "acquire", "postpone", "schedule", "unschedule", "outcome"];
+  /** Går det att förhandsvisa utan att något skrivs? Bara där verktyget svarar med en förhandsvisning utan confirmed. */
+  function previewable(tool, a) {
+    if (tool === "task_lock") return !!(a.move_step || a.add_step);
+    if (tool === "execute_step") return !!a.values && !a.step && !PREVIEW_KEYS.some((k) => a[k] !== undefined);
+    if (tool === "registry_define") return a.node?.id === me() && Object.keys(a.node).every((k) => k === "id" || k === "planning");
+    return false;
+  }
+  const proposeTool = (reply) => ({ name: "foresla",
+    description: "Föreslår EN ändring som ett kort i panelen med Ja och Nej — inget skrivs förrän användaren tryckt Ja. Används när användaren ber dig möblera om: ny ordning i en uppgift (task_lock { task, move_step: { step, after } }), vänta på ett steg eller byta leverans (execute_step { task, values: { delivery, after } }), lämna över (execute_step { task, step, handover_to }) och att trycka på (registry_define ur capacity_suggestions, bara för användarens egen tid). vad = ändringen på vanlig svenska, med stegens och personernas namn. koppling, verktyg och argument som för hamta, utan confirmed. Svarar med förhandsvisningen, eller med varför det inte går. Ett anrop per ändring.",
+    inputSchema: { type: "object", properties: { vad: { type: "string" }, koppling: { type: "string" }, verktyg: { type: "string" }, argument: { type: "object" } }, required: ["vad", "verktyg", "argument"] },
+    execute: async (i) => {
+      const k = String(i.koppling || SERVER), v = String(i.verktyg || "");
+      if (!(PROPOSE[k] || []).includes(v)) throw new Error(`förslag går bara med: ${PROPOSE[SERVER].join(", ")}`);
+      const what = String(i.vad || "").trim(); if (!what) throw new Error("vad måste säga på vanlig svenska vad som ändras");
+      const { confirmed, user_approval, ...args } = asArgs(i.argument);
+      if (v === "registry_define" && !previewable(v, args)) throw new Error("registry_define går bara att föreslå för din egen tid (node: { id, planning })");
+      const card = { what, server: k, tool: v, args, state: "open", preview: null };
+      if (previewable(v, args)) {
+        try { const d = await callOn(k, v, args); card.preview = String(d?.summary || "").replace(/^Förhandsvisning:\s*/, ""); }
+        catch (e) { card.state = "bad"; card.preview = String(e?.message || e).split(" — ")[0]; }
+      } else if (args.handover_to) {
+        card.preview = `${personName(args.handover_to)} får frågan och tar över först efter sitt ja.`;
+      }
+      (reply.cards ||= []).push(card); renderPanel();
+      return card.state === "bad" ? `GÅR INTE: ${card.preview}. Kortet visas som ogiltigt; föreslå något annat.`
+        : `Förslaget står som kort i panelen${card.preview ? `: ${card.preview}` : ""}. Användaren svarar med Ja eller Nej. Inget är skrivet.`;
+    } });
+  const CARD_STATE = { done: "Gjort.", no: "Avböjt. Ingenting ändrades.", bad: "Går inte", failed: "Gick inte igenom" };
+  function cardsHtml(m, i) {
+    return asArr(m.cards).map((c, k) => `<div class="suggest"><div class="from">${SP} Förslag från Claude</div><div>${esc(c.what)}</div>`
+      + (c.preview ? `<div class="meta">${c.state === "bad" ? "Går inte: " : ""}${esc(c.preview)}</div>` : "")
+      + (c.state === "open" ? `<div class="bar-actions"><button class="btn sm quiet" data-card-no="${i}|${k}">Nej</button><button class="btn sm primary" data-card-yes="${i}|${k}">Ja</button></div>`
+        : c.state === "bad" ? "" : `<div class="meta">${esc(CARD_STATE[c.state] || "")}${c.error ? ` ${esc(c.error)}` : ""}</div>`)
+      + `</div>`).join("");
+  }
+  async function cardYes(btn, i, k) {
+    const c = convo[i]?.cards?.[k]; if (!c || c.state !== "open") return;
+    const args = { ...c.args, ...(previewable(c.tool, c.args) ? { confirmed: true } : {}), user_approval: `Ja i vyn (förslag från Claude): ${c.what}`.slice(0, 500) };
+    return busy(btn, async () => {
+      try { await callOn(c.server, c.tool, args); c.state = "done"; toast(`Gjort: ${c.what}`); }
+      catch (e) { c.state = "failed"; c.error = String(e?.message || e).split(" — ")[0]; }
+      saveSamtal(); renderPanel();
+      const task = c.args.task, d = task ? lvDeliveryOf(task) || lvDelivery(task) : null;
+      if (c.state === "done") lvRefresh(d && !d.implicit ? { delivery: d.id } : task ? { task } : {});
+    });
+  }
+  function cardNo(i, k) {
+    const c = convo[i]?.cards?.[k]; if (!c || c.state !== "open") return;
+    c.state = "no"; saveSamtal(); renderPanel();
+  }
   const WRITE_NO = "Användaren sa nej. Ingenting ändrades.";
   function confirmWrite(server, tool, args, what, signal) {
     state.write?.resolve(WRITE_NO);
@@ -6875,25 +6998,35 @@ a.btn { text-decoration: none; color: var(--text); }
     });
   }
 
-  /** Lämna över ett steg till en kollega (execute_step handover_to). Det är ett förslag tills hen tar emot det. */
-  function handoverDialog(task, step) {
-    const st = stepOf(taskById(task), step); if (!st) return;
+  /**
+   * Lämna över ett steg till en kollega (execute_step handover_to). Det är ett
+   * förslag tills personen tagit emot det. `to` är förvald när steget dragits till en
+   * person; rutan är förhandsvisningen, och det som skrivs står i den.
+   */
+  function handoverDialog(task, step, to = null) {
+    const t = taskById(task), st = stepOf(t, step); if (!st) return;
     state.handover = { task, step };
     const mine = st.responsible?.id ?? st.responsible;
+    const people = peopleList().filter((p) => p.id !== mine);
+    if (to && !people.some((p) => p.id === to)) people.unshift({ id: to, label: personName(to) });
     dialog(`<h2>Lämna över ${esc(st.label)}</h2>`
-      + `<label class="field"><span>Till</span><select id="ho-to">${peopleList().filter((p) => p.id !== mine).map((p) => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join("")}</select></label>`
-      + `<label class="field"><span>Vad behöver hen veta? · valfritt</span><textarea id="ho-note" rows="3"></textarea></label>`
-      + `<p class="meta">Steget blir hens först när hen tagit emot det. Tills dess står det hos dig.</p>`
+      + `<label class="field"><span>Till</span><select id="ho-to">${people.map((p) => `<option value="${esc(p.id)}"${p.id === to ? " selected" : ""}>${esc(p.label)}</option>`).join("")}</select></label>`
+      + `<label class="field"><span>Vad behöver <span class="ho-who">${esc(to || people[0]?.id ? personName(to || people[0].id) : "den som tar över")}</span> veta? · valfritt</span><textarea id="ho-note" rows="3"></textarea></label>`
+      + `<p class="meta">Det här skrivs: ett förslag till <b class="ho-who">${esc(personName(to || people[0]?.id))}</b> att ta över «${esc(st.label)}» i «${esc(taskTitle(t))}». Steget flyttas till <span class="ho-who">${esc(personName(to || people[0]?.id))}</span> först när <span class="ho-who">${esc(personName(to || people[0]?.id))}</span> har tagit emot det. Tills dess står det hos ${esc(lbl(st.responsible, "dig"))}.</p>`
       + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-handover-send="1">Lämna över</button></div>`);
   }
-  function sendHandover(btn) {
+  document.addEventListener("change", (e) => { if (e.target?.id === "ho-to") for (const x of document.querySelectorAll(".ho-who")) x.textContent = personName(e.target.value); });
+  /** Rutan stängs direkt; raden visar överlämningen och «sparar…» tills servern svarat. */
+  function sendHandover() {
     const h = state.handover, to = $("#ho-to")?.value, note = $("#ho-note")?.value.trim();
     if (!h || !to) return toast("Välj vem steget ska till.", null, true);
-    return busy(btn, async () => {
-      try { await call("execute_step", { task: h.task, step: h.step, handover_to: to, ...(note ? { note } : {}) });
-        state.handover = null; closeDialog(); await afterWrite(`Steget är lämnat till ${personName(to)} — det blir hens när hen tagit emot det.`); }
-      catch (e) { fail("Steget lämnades inte över", e); }
-    });
+    state.handover = null; closeDialog();
+    return lvSave({ key: `step|${h.task}|${h.step}`, what: "lämna över", text: `föreslaget för ${personName(to)} · sparar…`,
+      change: () => {}, undo: () => {},
+      save: () => call("execute_step", { task: h.task, step: h.step, handover_to: to, ...(note ? { note } : {}),
+        confirmed: true, user_approval: `Ja i vyn: lämna över till ${personName(to)}` }),
+      done: `Steget är föreslaget för ${personName(to)} och flyttas när ${personName(to)} har tagit emot det.`,
+      refresh: lvDeliveryOf(h.task) ? { delivery: lvDeliveryOf(h.task).id } : { task: h.task } });
   }
 
   /**
@@ -6969,24 +7102,165 @@ a.btn { text-decoration: none; color: var(--text); }
     if (j < 0 || j === i) return undefined;
     return j > i ? target : j > 0 ? ids[j - 1] : null;
   }
+  /**
+   * Flytten syns direkt (Daniel P 2026-09-28: *"Det gick väldigt segt att
+   * flytta"* — *"man skulle vilja se att det flyttades rent visuellt först,
+   * och sen någon sorts 'bearbetnings-spinner'"*).
+   *
+   * Förut väntade raden på skrivningen och sedan på att HELA planen och
+   * listan lästes om (plan_state två gånger, ett svar på 2,7 MB mot riktig
+   * data) innan något rörde sig. Nu flyttas raden i vyns egen kopia och ritas
+   * om på en gång, med en snurra och «sparar…». Svarar servern ja försvinner
+   * markeringen; svarar den nej glider raden tillbaka och skälet står på
+   * raden. Efteråt läses bara leveransen (eller uppgiften) om, i bakgrunden.
+   */
+  const lvNote = (p) => !p || p.leaving && !p.text ? "" : p.error
+    ? `<span class="lv-note err" role="alert">${esc(p.text)}</span>`
+    : `<span class="lv-note" role="status"><span class="spin" aria-hidden="true"></span>${esc(p.text)}</span>`;
+  const reducedMotion = () => { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; } };
+  /** Ändra vyns kopia och rita om; raderna glider från där de stod (FLIP). */
+  function lvFlip(change) {
+    const before = new Map([...document.querySelectorAll("#main [data-lv-order]")].map((el) => [el.id, el.getBoundingClientRect().top]));
+    change(); render();
+    if (reducedMotion()) return;
+    for (const el of document.querySelectorAll("#main [data-lv-order]")) {
+      const y = before.get(el.id); if (y === undefined) continue;
+      const dy = y - el.getBoundingClientRect().top;
+      if (Math.abs(dy) > 1) el.animate?.([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 240, easing: "cubic-bezier(.2,.7,.3,1)" });
+    }
+  }
+  /** Serverns skäl på raden: vad som stoppar, och var steget kan ligga. */
+  function lvReason(e) {
+    const text = String(e?.message || e).split(" — ")[0].replace(/\.$/, "");
+    const places = asArr(e?.context?.places).map((p) => p.label).filter(Boolean);
+    return places.length ? `${text}. Steget kan ligga ${places.join(", ")}.` : `${text}.`;
+  }
+  /** Tidtagningen: från släpp till att raden syns flyttad, och till att den är sparad. */
+  function lvClock(what) {
+    const t0 = performance.now(), r = { what, shown: null, saved: null };
+    requestAnimationFrame(() => { r.shown = Math.round(performance.now() - t0); });
+    return { done: (ok) => { r.saved = Math.round(performance.now() - t0); r.ok = ok; (LV.clock ||= []).push(r); if (LV.clock.length > 20) LV.clock.shift(); } };
+  }
+  /**
+   * Läs om bara det som ändrades: leveransen med sina uppgifter
+   * (plan_state { delivery }), eller uppgiften (plan_state { task }). Listan
+   * på Idag hämtas i bakgrunden.
+   */
+  async function lvRefresh({ delivery = null, task = null } = {}) {
+    try {
+      if (delivery && !lvDelivery(delivery)?.implicit) {
+        const r = await call("plan_state", { delivery, weeks: state.horizon, format: "full" });
+        const p = r?.plan; if (!p || !S.plan) return;
+        const byId = new Map(asArr(p.tasks).map((t) => [t.id, t]));
+        S.plan.tasks = S.plan.tasks.map((t) => byId.get(t.id) ?? t);
+        for (const t of byId.values()) if (!S.plan.tasks.some((x) => x.id === t.id)) S.plan.tasks.push(t);
+        for (const d of asArr(p.deliveries)) {
+          const i = asArr(S.plan.deliveries).findIndex((x) => x.id === d.id);
+          if (i >= 0) S.plan.deliveries[i] = d; else (S.plan.deliveries ||= []).push(d);
+        }
+      } else if (task) {
+        const r = await call("plan_state", { task, weeks: state.horizon, format: "full" });
+        const i = tasks().findIndex((t) => t.id === task);
+        if (r?.task && i >= 0) S.plan.tasks[i] = r.task;
+      }
+    } catch { /* det flyttade står kvar; nästa hämtning rättar */ }
+    render();
+    refreshAgenda();
+  }
+  /** Sparandet efter att raden redan flyttats. Nej: tillbaka, med skälet på raden. */
+  async function lvSave({ key, what, text, change, undo, save, refresh, done }) {
+    const clock = lvClock(what);
+    const owner = key.split("|")[1];
+    LV.saving[owner] = (LV.saving[owner] || 0) + 1;
+    lvFlip(() => { change(); LV.pending[key] = { ...LV.pending[key], error: false, text: text || "sparar…" }; });
+    let ok = false;
+    try {
+      const r = await save(); ok = true;
+      delete LV.pending[key]; render(); clock.done(true);
+      if (done) toast(typeof done === "function" ? done(r) : done);
+    } catch (e) {
+      clock.done(false);
+      lvFlip(() => { if (LV.saving[owner] === 1) undo(); LV.pending[key] = { error: true, text: lvReason(e) }; });
+      // Syns inte raden här (steget öppnat för sig), säger kvittot det i stället.
+      const [kind, a, b] = key.split("|");
+      if (!document.getElementById(kind === "step" ? `lv-step-${a}-${b}` : `lv-task-${a}`)) fail("Det sparades inte", e);
+      setTimeout(() => { if (LV.pending[key]?.error) { delete LV.pending[key]; render(); } }, 12000);
+    } finally {
+      LV.saving[owner] -= 1;
+      if (!LV.saving[owner] && refresh) lvRefresh(refresh);
+    }
+    return ok;
+  }
+  const lvDeliveryOf = (taskId) => realDeliveries().find((d) => asArr(d.tasks).includes(taskId)) || null;
   async function lvMoveStep(task, step, after) {
     if (after === undefined) return;
-    try { const r = await call("task_lock", { task, move_step: { step, after }, confirmed: true });
-      await afterWrite(r?.written === false ? "Steget står redan där." : "Steget är flyttat — bara i den här uppgiften, metoden är orörd."); }
-    catch (e) { fail("Steget flyttades inte", e); }
+    const t = taskById(task); if (!t) return;
+    const old = t.steps.slice(), moving = old.find((x) => x.step === step);
+    if (!moving) return;
+    const next = old.filter((x) => x !== moving);
+    next.splice(after === null ? 0 : next.findIndex((x) => x.step === after) + 1, 0, moving);
+    return lvSave({ key: `step|${task}|${step}`, what: "steg",
+      change: () => { t.steps = next; }, undo: () => { t.steps = old; },
+      save: () => call("task_lock", { task, move_step: { step, after }, confirmed: true }),
+      refresh: lvDeliveryOf(task) ? { delivery: lvDeliveryOf(task).id } : { task } });
   }
+  /** Leveransens egna after för en uppgift, med stegen (etapp 5) — så att en flytt inte tappar dem. */
+  function lvAfterOf(d, x) {
+    return asArr(d.order).filter((e) => e.via === "after" && e.to === x).map((e) => {
+      const last = taskById(e.from)?.steps?.at(-1)?.step;
+      return e.to_step || (e.from_step && e.from_step !== last)
+        ? { task: e.from, ...(e.from_step ? { step: e.from_step } : {}), ...(e.to_step ? { to_step: e.to_step } : {}) } : e.from;
+    });
+  }
+  const afterTask = (a) => typeof a === "string" ? a : a.task;
+  const uniqAfter = (xs) => [...new Map(xs.map((a) => [JSON.stringify(a), a])).values()];
   /** Uppgiften `task` ska göras efter `first` i leveransen: dess egna after behålls, och en omvänd kant tas bort. */
   async function lvMoveTask(delivery, task, first) {
     const d = lvDelivery(delivery); if (!d || !first || first === task) return;
-    const afterOf = (x) => asArr(d.order).filter((e) => e.via === "after" && e.to === x).map((e) => e.from);
     const label = (x) => taskTitle(taskById(x));
     const ok = `Ja (i vyn): «${label(task)}» efter «${label(first)}» i ${d.label}`;
-    try {
-      if (afterOf(first).includes(task))
-        await call("execute_step", { task: first, values: { delivery, after: afterOf(first).filter((x) => x !== task) }, confirmed: true, user_approval: ok });
-      await call("execute_step", { task, values: { delivery, after: [...new Set([...afterOf(task), first])] }, confirmed: true, user_approval: ok });
-      await afterWrite(`«${label(task)}» görs efter «${label(first)}».`);
-    } catch (e) { fail("Ordningen ändrades inte", e); }
+    const old = asArr(d.tasks).slice(), next = old.filter((x) => x !== task);
+    next.splice(next.indexOf(first) + 1, 0, task);
+    return lvSave({ key: `task|${task}`, what: "uppgift",
+      change: () => { d.tasks = next; }, undo: () => { d.tasks = old; },
+      save: async () => {
+        const back = lvAfterOf(d, first);
+        if (back.some((a) => afterTask(a) === task))
+          await call("execute_step", { task: first, values: { delivery, after: back.filter((a) => afterTask(a) !== task) }, confirmed: true, user_approval: ok });
+        return call("execute_step", { task, values: { delivery, after: uniqAfter([...lvAfterOf(d, task), first]) }, confirmed: true, user_approval: ok });
+      },
+      refresh: { delivery } });
+  }
+  /** Dra en uppgift till en annan leverans (values.delivery). Raden står kvar, blek, tills servern sagt ja. */
+  async function lvToDelivery(from, task, to) {
+    const d = lvDelivery(from), d2 = lvDelivery(to); if (!d || !d2 || from === to) return;
+    const label = taskTitle(taskById(task));
+    const ok = `Ja (i vyn): «${label}» flyttas från «${d.label}» till «${d2.label}»`;
+    const key = `task|${task}`;
+    const saved = await lvSave({ key, what: "leverans", text: `flyttas till «${d2.label}» · sparar…`,
+      change: () => { LV.pending[key] = { leaving: true }; }, undo: () => {},
+      save: () => call("execute_step", { task, values: { delivery: to }, confirmed: true, user_approval: ok }),
+      done: `«${label}» ligger nu i «${d2.label}».` });
+    if (!saved) return;
+    d.tasks = asArr(d.tasks).filter((x) => x !== task); d2.tasks = [...asArr(d2.tasks), task];
+    render();
+    lvRefresh({ delivery: from }); lvRefresh({ delivery: to });
+  }
+  /** Dra ett steg till ett steg i en annan uppgift: steget väntar på det (values.after med { task, step, to_step }, etapp 5). */
+  async function lvWaitOn(delivery, task, step, other, otherStep) {
+    const d = lvDelivery(delivery), t = taskById(task), o = taskById(other);
+    const s = stepOf(t, step), os = stepOf(o, otherStep);
+    if (!d || !s || !os || task === other) return;
+    const what = `väntar på «${os.label}» i «${taskTitle(o)}»`;
+    const ok = `Ja (i vyn): «${s.label}» ${what}`;
+    const waits = s.waits_on;
+    return lvSave({ key: `step|${task}|${step}`, what: "vänta på", text: `${what} · sparar…`,
+      change: () => { s.waits_on = [...asArr(waits), { text: what, done: false }]; },
+      undo: () => { s.waits_on = waits; },
+      save: () => call("execute_step", { task, values: { delivery, after: uniqAfter([
+        ...lvAfterOf(d, task).filter((a) => !(typeof a === "object" && a.task === other && a.to_step === step)),
+        { task: other, step: otherStep, to_step: step }]) }, confirmed: true, user_approval: ok }),
+      done: `«${s.label}» ${what}.`, refresh: { delivery } });
   }
   function lvShift(btn) {
     const kind = btn.dataset.lvKind, owner = btn.dataset.lvOwner, id = btn.dataset.lvId, dir = btn.dataset.lvShift;
@@ -6999,23 +7273,73 @@ a.btn { text-decoration: none; color: var(--text); }
     const b = e.target.closest?.("[data-lv-shift]"); if (!b) return;
     e.preventDefault(); e.stopPropagation(); lvShift(b);
   }, true);
+  /**
+   * Medan något dras: släppytorna för det som saknades (Daniel P 2026-09-28).
+   * Ett steg kan släppas på en kollega (lämna över) eller på ett steg i en
+   * annan uppgift i leveransen (vänta på det); en uppgift på en annan
+   * leverans hos samma kund. Ytorna läggs till efter att dragningen börjat
+   * och tas bort när den slutar.
+   */
+  function lvDropZones(src) {
+    const bar = document.createElement("div");
+    bar.className = "lv-dropbar"; bar.id = "lv-dropbar";
+    const target = (attr, value, text) => `<span class="lv-target" ${attr}="${esc(value)}">${esc(text)}</span>`;
+    if (src.kind === "step") {
+      const t = taskById(src.owner), s = stepOf(t, src.id), mine = s?.responsible?.id ?? s?.responsible;
+      const people = (S.agenda?.colleagues ?? []).filter((c) => c.id !== mine);
+      const d = lvDeliveryOf(src.owner);
+      let others = 0;
+      if (d) for (const id of asArr(d.tasks)) {
+        if (id === src.owner) continue;
+        const o = taskById(id), row = document.getElementById(`lv-task-${id}`); if (!o || !row) continue;
+        const open = liveSteps(o).filter((x) => !x.done); if (!open.length) continue;
+        const mini = document.createElement("div"); mini.className = "lv-mini"; mini.dataset.lvMini = "1";
+        mini.innerHTML = `<span>Vänta på:</span>${open.slice(0, 8).map((x) => target("data-lv-drop-wait", `${d.id}|${id}|${x.step}`, x.label)).join("")}`;
+        row.after(mini); others++;
+      }
+      if (!people.length && !others) return;
+      bar.innerHTML = (people.length ? `<b>Lämna över till</b>${people.map((c) => target("data-lv-drop-person", c.id, c.label)).join("")}` : "")
+        + (others ? `<span>${people.length ? "· eller s" : "S"}läpp på ett steg i en annan uppgift, så väntar steget på det</span>` : "");
+    } else {
+      const d = lvDelivery(src.owner), cust = custOf(d)?.id;
+      const others = realDeliveries().filter((x) => x.id !== src.owner && !x.closed && !x.ongoing && custOf(x)?.id === cust);
+      if (!others.length) return;
+      bar.innerHTML = `<b>Flytta till leveransen</b>${others.map((x) => target("data-lv-drop-delivery", x.id, `${x.label} · ${short(x.moved?.to || x.due)}`)).join("")}`;
+    }
+    document.body.append(bar);
+  }
+  function lvDropZonesOff() {
+    document.getElementById("lv-dropbar")?.remove();
+    for (const x of document.querySelectorAll("[data-lv-mini]")) x.remove();
+    for (const x of document.querySelectorAll(".lv-drop")) x.classList.remove("lv-drop");
+  }
+  let lvDragged = null;
   document.addEventListener("dragstart", (e) => {
     const r = e.target.closest?.("[data-lv-order]"); if (!r) return;
-    e.dataTransfer.setData("application/x-lv-order", JSON.stringify({ kind: r.dataset.lvOrder, owner: r.dataset.lvOwner, id: r.dataset.lvId }));
+    lvDragged = { kind: r.dataset.lvOrder, owner: r.dataset.lvOwner, id: r.dataset.lvId };
+    e.dataTransfer.setData("application/x-lv-order", JSON.stringify(lvDragged));
     e.dataTransfer.effectAllowed = "move";
+    // Efter dragningens början: en ändring i sidan under dragstart avbryter dragningen i Chrome.
+    setTimeout(() => { if (lvDragged) lvDropZones(lvDragged); }, 0);
   });
+  document.addEventListener("dragend", () => { lvDragged = null; lvDropZonesOff(); });
+  const lvDropAt = (e) => e.target.closest?.("[data-lv-drop-person], [data-lv-drop-wait], [data-lv-drop-delivery], [data-lv-order]");
   document.addEventListener("dragover", (e) => {
-    const r = e.target.closest?.("[data-lv-order]"); if (!r || !e.dataTransfer.types.includes("application/x-lv-order")) return;
+    const r = lvDropAt(e); if (!r || !e.dataTransfer.types.includes("application/x-lv-order")) return;
     e.preventDefault(); for (const x of document.querySelectorAll(".lv-drop")) x.classList.remove("lv-drop"); r.classList.add("lv-drop");
   });
   document.addEventListener("drop", (e) => {
-    const r = e.target.closest?.("[data-lv-order]"); if (!r) return;
+    const r = lvDropAt(e); if (!r) return;
     let src; try { src = JSON.parse(e.dataTransfer.getData("application/x-lv-order") || "null"); } catch { src = null; }
     if (!src) return;
-    e.preventDefault(); r.classList.remove("lv-drop");
-    if (src.kind !== r.dataset.lvOrder || src.owner !== r.dataset.lvOwner || src.id === r.dataset.lvId) return;
-    if (src.kind === "step") return lvMoveStep(src.owner, src.id, lvStepAfter(src.owner, src.id, r.dataset.lvId));
-    return lvMoveTask(src.owner, src.id, r.dataset.lvId);
+    e.preventDefault(); lvDragged = null; lvDropZonesOff();
+    const ds = r.dataset;
+    if (src.kind === "step" && ds.lvDropPerson) return handoverDialog(src.owner, src.id, ds.lvDropPerson);
+    if (src.kind === "step" && ds.lvDropWait) { const [d, task, step] = ds.lvDropWait.split("|"); return lvWaitOn(d, src.owner, src.id, task, step); }
+    if (src.kind === "task" && ds.lvDropDelivery) return lvToDelivery(src.owner, src.id, ds.lvDropDelivery);
+    if (!ds.lvOrder || src.kind !== ds.lvOrder || src.owner !== ds.lvOwner || src.id === ds.lvId) return;
+    if (src.kind === "step") return lvMoveStep(src.owner, src.id, lvStepAfter(src.owner, src.id, ds.lvId));
+    return lvMoveTask(src.owner, src.id, ds.lvId);
   });
 
   /**
@@ -7241,7 +7565,7 @@ a.btn { text-decoration: none; color: var(--text); }
   /**
    * Skicka till kollega (message, B-220). Till en eller flera; meddelandet
    * pekar på steget, frågan eller ärendet det gäller, och står under Till dig
-   * hos var och en tills hen markerat det läst.
+   * hos var och en tills personen markerat det läst.
    */
   const msgBtn = (about, title) => `<button class="btn quiet" data-msg='${esc(JSON.stringify({ about, title }))}'>Skicka meddelande…</button>`;
   function messageDialog(about, title, to = []) {
