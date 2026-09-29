@@ -965,7 +965,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "d761186", published: "2026-09-29" };
+  const SIDA = { version: "786c709", published: "2026-09-29" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -2193,6 +2193,12 @@ a.btn { text-decoration: none; color: var(--text); }
    */
   const byDelivery = () => !store.idagSeparate;
   const deliveryIdOf = (x, t) => x?.project?.kind === "delivery" ? x.project.id : t?.delivery || null;
+  /**
+   * Grupperingsnyckeln: leveransen, och saknas den åtagandet (Daniel P
+   * 2026-09-29: *"jag bad ju om att få uppgifter i samma leverans grupperade"*).
+   * Uppgifter utan leveranshuvud, som Freebos poster, föll förut utanför.
+   */
+  const groupIdOf = (x, t) => deliveryIdOf(x, t) || (x?.project?.id ? `atagande:${x.project.id}` : t?.commitment ? `atagande:${t.commitment}` : null);
   function groupByDelivery(xs, dOf) {
     const out = [], at = new Map();
     for (const x of xs) {
@@ -2212,7 +2218,7 @@ a.btn { text-decoration: none; color: var(--text); }
       if (g.sim) return similarHead(zone, g, o);
       const key = `${zone}|${g.d}`, open = !!state.openGroups?.[key];
       const d = realDeliveries().find((y) => y.id === g.d);
-      const name = d?.label || g.items.map((x) => x.project?.kind === "delivery" ? x.project.label : "").find(Boolean) || "Leveransen";
+      const name = d?.label || g.items.map((x) => x.project?.label || "").find(Boolean) || "Leveransen";
       const due = g.items.map(dueOf).filter(Boolean).map(day10).sort()[0];
       const head = `<div class="trow dgrp${open ? " open" : ""}" data-dgroup="${esc(key)}" role="button" aria-expanded="${open}" tabindex="0">`
         + `<span class="ico">${ic("lev")}</span><span class="t" title="${esc(name)}">${esc(name)}</span>`
@@ -2273,7 +2279,7 @@ a.btn { text-decoration: none; color: var(--text); }
       .sort((a, b) => todoRank(a) - todoRank(b) || String(a.due).localeCompare(String(b.due)));
     const soon = vis.filter((x) => x.level === "soon");
     const now = todo.length, late = todo.filter(isLate).length;
-    const dOf = (x) => deliveryIdOf(x, taskById(x.task));
+    const dOf = (x) => groupIdOf(x, taskById(x.task));
     const body = deliveryRows("todo", todo, { rowOf, dOf, worst: worstTodo })
       + (soon.length ? `<div class="zgrp"><b>Snart</b><span class="hint">${plural(soon.length, "sak", "saker")} de närmaste dagarna</span></div>`
         + (store.showSoon ? deliveryRows("soon", soon, { rowOf, dOf, worst: worstTodo }) + `<div class="zmore"><button class="linkbtn" data-toggle-soon="1">Fäll ihop Snart</button></div>`
@@ -2307,7 +2313,7 @@ a.btn { text-decoration: none; color: var(--text); }
     const xs = [...agenda().filter((x) => x.kind === "colleague"), ...(S.agenda?.waiting_on_others ?? [])]
       .sort((a, b) => String(a.due).localeCompare(String(b.due)));
     return `<div class="zone"><div class="zone-h"><h2>${ic("user")} Väntar på andra</h2><span class="n">${xs.length}</span></div>`
-      + `<div class="card">${xs.length ? deliveryRows("waiting", xs.slice(0, 8), { rowOf: otherRow, dOf: (x) => deliveryIdOf(x, taskById(x.task)),
+      + `<div class="card">${xs.length ? deliveryRows("waiting", xs.slice(0, 8), { rowOf: otherRow, dOf: (x) => groupIdOf(x, taskById(x.task)),
           worst: (g) => { const late = g.filter((x) => isDay(day10(x.due)) && day10(x.due) < TODAY).length; return late ? chip(`${late} ${late === 1 ? "sen" : "sena"}`, "red") : chip(`${g.length} väntar`); } }) + (xs.length > 8 ? `<div class="zmore">och ${plural(xs.length - 8, "sak", "saker")} till, längre fram.</div>` : "")
         : `<div class="empty"><b>Inget väntar på andra.</b>Steg hos en kollega, kunden eller en partner står här.</div>`}</div></div>`;
   }
@@ -2332,7 +2338,7 @@ a.btn { text-decoration: none; color: var(--text); }
     };
     return `<div class="zone no-method"><div class="zone-h"><h2>Saknar metod</h2><span class="n">${xs.length}</span>`
       + `<span class="hint">uppgifter utan steg att följa — ge dem en metod, eller registrera att de gått ut</span></div>`
-      + `<div class="card">${deliveryRows("nomethod", xs, { rowOf: row, dOf: (t) => t.delivery || null, worst: (g) => chip(`${g.length} saknar metod`, "amber") })}</div></div>`;
+      + `<div class="card">${deliveryRows("nomethod", xs, { rowOf: row, dOf: (t) => t.delivery || (t.commitment ? `atagande:${t.commitment}` : null), worst: (g) => chip(`${g.length} saknar metod`, "amber") })}</div></div>`;
   }
   /**
    * Förslagen när tiden inte räcker (Daniel P 2026-09-28): trycka på eller lämna
@@ -4182,7 +4188,7 @@ a.btn { text-decoration: none; color: var(--text); }
         + `<div class="ws2"><div class="card section"><h2>Behövs</h2>`
         + (qs.length ? qs.map((o) => `<div class="need" style="cursor:pointer" data-open-q="${esc(o.id)}"><span class="no">${ic(o.step === s.step ? "stop" : "help")}</span><span class="t">${esc(headlineForOpen(o))}${o.step && o.step !== s.step ? ` <span class="meta">· stoppar «${esc(lbl(o.step_named, ""))}»</span>` : ""}</span><button class="btn sm" data-open-q="${esc(o.id)}">Svara</button></div>`).join("")
           : `<div class="need"><span class="ok">${ic("check")}</span><span class="t">Allt som behövs finns</span></div>`)
-        + `</div><div class="card section"><h2>Så görs det <button class="btn quiet sm" data-sedit="${esc(t.id)}|${esc(s.step)}" title="Skriv om stegets prompt och moment här">Ändra texten</button>${eclBtn("step", `${t.id}|${s.step}`)}</h2>`
+        + `</div><div class="card section"><h2>Så görs det <button class="btn quiet sm" data-sedit="${esc(t.id)}|${esc(s.step)}" title="Skriv om stegets prompt och moment här">Ändra texten</button>${s.done || s.external ? "" : ` <button class="btn quiet sm" data-stype="${esc(t.id)}|${esc(s.step)}" title="Låt en människa, Claude eller kod göra steget">Byt typ</button>`}${eclBtn("step", `${t.id}|${s.step}`)}</h2>`
         + stepTextCard(t, s)
         + (s.instruktion?.syfte ? `<p style="margin:0 0 8px">${esc(s.instruktion.syfte)}</p>` : "")
         + (how ? `<ol class="how">${how.slice(0, 8).map((h) => `<li>${esc(h)}</li>`).join("")}</ol>` : `<div class="meta">Ingen beskrivning än.</div>`)
@@ -7277,6 +7283,53 @@ a.btn { text-decoration: none; color: var(--text); }
     });
   }
 
+  /* ── Byt typ på steget (Daniel P 2026-09-29) ──
+     «Man skulle också kunna vilja ändra från människa till Claude (eller mellan
+     olika stegtyper för övrigt) i ett steg.» Ett enkelt val bredvid Ändra texten.
+     Servern räknar bytet (registry_define change: true, node: { id,
+     switch_type: { to } }): utan confirmed visar den vad som byts och vad som
+     saknas, med confirmed skrivs det. Det som saknas fylls på underhand. */
+  const STYPE = { human: "En människa", llm: "Claude", code: "Kod" };
+  function stepTypeDialog(key) {
+    const [tk, st] = key.split("|"), s = stepOf(taskById(tk), st); if (!s) return;
+    const cur = kindOf(s);
+    state.stype = { step: s.step, label: s.label, cur, to: null, ok: false };
+    dialog(`<h2>Vem gör «${esc(s.label)}»?</h2>`
+      + `<div class="bar-actions" role="group" aria-label="Typ av steg">${Object.entries(STYPE).map(([k, v]) =>
+        `<button class="btn${k === cur ? " quiet" : ""}" data-stype-pick="${k}" aria-pressed="false"${k === cur ? " disabled" : ""}>${esc(v)}${k === cur ? " · nu" : ""}</button>`).join("")}</div>`
+      + `<div class="chg" id="st-out" style="margin:12px 0;color:var(--text-2)">Välj vem som ska göra steget så visas vad som ändras. Inget sparas än.</div>`
+      + `<p class="meta">Det gäller alla metoder och uppgifter som använder steget. Byt tillbaka när du vill; det som saknas för den nya typen fylls på underhand.</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-stype-save="1" disabled>Byt</button></div>`);
+  }
+  async function stepTypePick(btn, to) {
+    const x = state.stype; if (!x) return;
+    x.to = to; x.ok = false;
+    for (const b of document.querySelectorAll("[data-stype-pick]")) b.setAttribute("aria-pressed", String(b.dataset.stypePick === to));
+    const out = $("#st-out"), save = document.querySelector("[data-stype-save]");
+    if (save) save.disabled = true;
+    if (out) out.textContent = "Räknar …";
+    try {
+      const d = await call("registry_define", { change: true, node: { id: x.step, switch_type: { to } } });
+      if (state.stype !== x || x.to !== to) return;
+      const p = d?.preview;
+      if (!p) { if (out) out.textContent = d?.unchanged ? "Steget görs redan så." : "Inget att ändra."; return; }
+      x.ok = true;
+      if (out) out.innerHTML = (p.lines || []).map(esc).join("<br>")
+        + ((p.gaps || []).length ? `<div style="margin-top:8px"><b>Fylls på underhand</b><br>${p.gaps.map((g) => esc(g)).join("<br>")}</div>` : "");
+      if (save) save.disabled = false;
+    } catch (e) { if (out) out.textContent = e?.message || String(e); }
+  }
+  function stepTypeSave(btn) {
+    const x = state.stype; if (!x?.ok || !x.to) return;
+    return busy(btn, async () => {
+      try {
+        await call("registry_define", { change: true, confirmed: true, user_approval: `Ja, bytt i vyn: ${x.label} → ${STYPE[x.to]}`, node: { id: x.step, switch_type: { to: x.to } } });
+        state.stype = null; closeDialog(); await refreshLib(); await load();
+        toast(`«${x.label}» görs nu av ${STYPE[x.to].toLowerCase()}. Rätta det som är märkt (?).`);
+      } catch (e) { fail("Bytet sparades inte", e); }
+    });
+  }
+
   /** Stegets text på plats: prompten och momenten, som textrutor. Kräver biblioteket (hämtas först när man klickar). */
   async function stepTextEdit(key) {
     const [tk, st] = key.split("|"), s = stepOf(taskById(tk), st); if (!s) return;
@@ -8900,6 +8953,9 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.fedit) { const [k, ...r] = ds.fedit.split("|"); return fieldDialog(k, r.join("|")); }
     if (ds.feSave) return fieldSave(t);
     if (ds.sedit) return stepTextEdit(ds.sedit);
+    if (ds.stype) return stepTypeDialog(ds.stype);
+    if (ds.stypePick) return stepTypePick(t, ds.stypePick);
+    if (ds.stypeSave) return stepTypeSave(t);
     if (ds.seUndo) { state.sedit = null; return render(); }
     if (ds.seSave) return stepTextSave(t);
     if (ds.answerAll) { try { return answerAllDialog(JSON.parse(ds.answerAll)); } catch { return; } }
