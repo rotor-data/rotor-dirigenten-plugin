@@ -943,7 +943,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "4bc2036", published: "2026-09-29" };
+  const SIDA = { version: "b189e37", published: "2026-09-29" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1849,6 +1849,14 @@ a.btn { text-decoration: none; color: var(--text); }
    */
   const SNAP_KEY = "dirigenten-snap";
   const SNAP_MAX_MS = 12 * 3600_000;
+  /**
+   * Bygget: en kort hash av vyns egen kod. Det sparade läget gäller bara för
+   * samma bygge. Annars ritas listan och planen från före en ny version ur
+   * minnet (2026-09-29: frågor som besvarats stod kvar som saknas, och
+   * processen saknade dagen steget blir klart, fast servern svarade rätt).
+   */
+  const BUILD = (() => { const t = [...document.scripts].map((x) => x.textContent || "").join(""); let h = 5381;
+    for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) | 0; return `${t.length}:${h}`; })();
   /** Webbläsarens lagring överlever att appen river fönstret; annars flikens egen. */
   const snapStore = () => { try { localStorage.setItem("dirigenten-prov", "1"); localStorage.removeItem("dirigenten-prov"); return localStorage; } catch { return sessionStorage; } };
   let snapTimer = null;
@@ -1857,7 +1865,7 @@ a.btn { text-decoration: none; color: var(--text); }
     snapTimer = setTimeout(() => {
       try {
         const { screen, obj, filter, planMode, horizon, tlFrom, tlWeeks, inTab, metTab, weekFrom } = state;
-        snapStore().setItem(SNAP_KEY, JSON.stringify({ at: S.fetchedAt ? new Date(S.fetchedAt).getTime() : Date.now(),
+        snapStore().setItem(SNAP_KEY, JSON.stringify({ build: BUILD, at: S.fetchedAt ? new Date(S.fetchedAt).getTime() : Date.now(),
           state: { screen, obj, filter, planMode, horizon, tlFrom, tlWeeks, inTab, metTab, weekFrom }, lvOpen: LV.open,
           data: S.plan ? { agenda: S.agenda, plan: S.plan, meetings: S.meetings, queue: S.queue ?? null, serverVersion: S.serverVersion ?? null, viewsUrl: S.viewsUrl ?? null,
             settings: S.settings ?? null, at: S.at } : null }));
@@ -1867,7 +1875,7 @@ a.btn { text-decoration: none; color: var(--text); }
   function restoreSnap() {
     try {
       const snap = JSON.parse(snapStore().getItem(SNAP_KEY) || sessionStorage.getItem(SNAP_KEY) || "null");
-      if (!snap || Date.now() - snap.at > SNAP_MAX_MS) return false;
+      if (!snap || snap.build !== BUILD || Date.now() - snap.at > SNAP_MAX_MS) return false;
       Object.assign(state, snap.state || {});
       Object.assign(LV.open, snap.lvOpen || {});
       if (snap.data?.plan) {
