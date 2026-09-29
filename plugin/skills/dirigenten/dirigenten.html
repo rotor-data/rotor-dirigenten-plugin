@@ -566,6 +566,9 @@ body.panel-closed .panel { display: none; }
 a.btn { text-decoration: none; color: var(--text); }
 .settime { display: flex; gap: var(--s3); flex-wrap: wrap; align-items: flex-end; }
 .settime .field { min-width: 150px; }
+.admgrants { display: grid; gap: 6px; margin: 6px 0 2px; }
+.admgrants .g { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.admgrants .g .s { min-width: 90px; font-weight: 500; }
 .setbar { position: sticky; bottom: 0; background: var(--bg-page); padding: var(--s3) 0; margin-top: var(--s4); border-top: 1px solid var(--line); }
 
 /* Filer (B-217): mappar, rutnätet med förhandsbilder, och där en fil kan släppas. */
@@ -943,7 +946,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "9ddf054", published: "2026-09-29" };
+  const SIDA = { version: "622a019", published: "2026-09-29" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1297,7 +1300,7 @@ a.btn { text-decoration: none; color: var(--text); }
   const ORIGIN = { decided: "beslutad", measured: "mätt", derived: "uträknad", guessed: "gissad" };
   const originMark = (k) => `<span class="origin ${k}" title="Talet är ${ORIGIN[k]}"><i></i>${ORIGIN[k]}</span>`;
   const custDot = (c) => `<span class="dot" style="background:${esc(c || "#999")}"></span>`;
-  let state = { screen: "idag", obj: null, filter: "all", planMode: "tidslinje", horizon: 4, tlFrom: null, tlWeeks: 4, inTab: "bedoma", metTab: "bibliotek" };
+  let state = { screen: "idag", obj: null, filter: "all", planMode: "tidslinje", horizon: 4, tlFrom: null, tlWeeks: 4, inTab: "bedoma", metTab: "bibliotek", setTab: "mina" };
   let density = "airy";
   const store = (() => { try { return JSON.parse(localStorage.getItem("proto-dirigenten") || "{}"); } catch { return {}; } })();
   const save = () => { try { localStorage.setItem("proto-dirigenten", JSON.stringify(store)); } catch { /* privat läge */ } };
@@ -1760,7 +1763,8 @@ a.btn { text-decoration: none; color: var(--text); }
   const periodName = (p) => { const m = String(p || "").match(/^(\d{4})(?:-(\d{2})|-W(\d{1,2})|-Q(\d))?$/);
     if (!m) return String(p || ""); return m[2] ? MONTHS[Number(m[2]) - 1] : m[3] ? `vecka ${Number(m[3])}` : m[4] ? `kvartal ${m[4]}` : m[1]; };
   /** Tilläggsbeställning: uppgiften hör till kundens "Utanför avtalet" och faktureras som tilläggsarbete. */
-  const addonChip = (t) => t?.outside_contract ? ` <span class="chip amber" title="Utanför avtalet — faktureras som tilläggsarbete">tillägg</span>` : "";
+  const addonChip = (t) => t?.ongoing ? ` <span class="chip" title="Löpande arbete: en rytm hos kunden som ingen beställt. Inget kunddatum, räknas inte mot avtalet, faktureras inte">löpande</span>`
+    : t?.outside_contract ? ` <span class="chip amber" title="Utanför avtalet — faktureras som tilläggsarbete">tillägg</span>` : "";
   /**
    * Rubriken kort (2026-09-28): högst omkring 60 tecken, kapad vid ett ordslut.
    * Servern bygger rubriken vid beställning och klassning (src/plan/headline.ts);
@@ -2516,11 +2520,15 @@ a.btn { text-decoration: none; color: var(--text); }
         + `<div id="flist">${filesBody()}</div>`;
     },
     installningar() {
-      const head = `<div class="pagehead"><h1>Inställningar</h1><span class="sub">Dina val — gäller bara dig och sparas på dig i dirigenten</span>`
-        + `<div class="actions"><button class="btn" data-setreload="1">Hämta igen</button></div></div>`;
+      const admin = S.settings?.admin ?? null;
+      const tab = admin && state.setTab === "anvandare" ? "anvandare" : "mina";
+      const head = `<div class="pagehead"><h1>Inställningar</h1><span class="sub">${tab === "anvandare" ? "Vilka som finns i huset och vad de får göra — bara för superadmin" : "Dina val — gäller bara dig och sparas på dig i dirigenten"}</span>`
+        + `<div class="actions"><button class="btn" data-setreload="1">Hämta igen</button></div></div>`
+        + (admin ? `<div class="tabs" role="tablist">${[["mina", "Mina inställningar"], ["anvandare", "Användare och behörigheter"]].map(([k, l]) => `<button role="tab" data-settab="${k}" aria-selected="${tab === k}">${l}</button>`).join("")}</div>` : "");
       if (!S.settings) return head + (S.settingsError
         ? `<div class="empty"><b>Inställningarna kunde inte hämtas.</b>${esc(S.settingsError.message || S.settingsError)}. Inget är ändrat.</div>`
         : `<div class="empty"><b>Hämtar dina inställningar…</b></div>`);
+      if (tab === "anvandare") return head + adminTab();
       const ch = settingsChanged();
       return head + (S.settingsError ? `<div class="warnnote" style="margin-bottom:12px">Kunde inte hämta igen: ${esc(S.settingsError.message || S.settingsError)}. Det du ser är från förra hämtningen.</div>` : "")
         + `<div class="stack" data-settings="1">${[connectionsCard, calendarCard, mailCard, workdayCard, planningCard, myAreaCard].map((f) => {
@@ -2558,6 +2566,11 @@ a.btn { text-decoration: none; color: var(--text); }
     return {
       node, label: typeof r.label === "string" ? r.label : "",
       connections: asArr(r.connections), options: asObj(r.options),
+      // Bara en superadmin får den här delen av servern (Användare och behörigheter).
+      admin: r.admin && typeof r.admin === "object" ? {
+        people: asArr(r.admin.people), groups: asArr(r.admin.groups),
+        surfaces: asArr(r.admin.surfaces), levels: asArr(r.admin.levels).length ? r.admin.levels : ["read", "draft", "write", "admin"],
+      } : null,
       calendar: {
         calendars: Array.isArray(k.calendars) ? k.calendars : null,
         skip_colors: asArr(k.skip_colors),
@@ -2889,6 +2902,88 @@ a.btn { text-decoration: none; color: var(--text); }
   };
   document.addEventListener("input", onSettingsEdit);
   document.addEventListener("change", onSettingsEdit);
+
+  /* ── Användare och behörigheter (bara superadmin) ──────────────────────
+     Fliken läser samma settings-svar (plan_state { settings: true }) och
+     skriver med registry_define { change: true } — servern förhandsvisar vad
+     ändringen innebär, rutan visar det, och Ja skickar samma anrop med
+     kvittot. Loggen bär vem och när. Ingen egen skrivväg, inget nytt verktyg. */
+  const LEVEL_WORD = { read: "läsa", draft: "skriva utkast", write: "skriva", admin: "administrera" };
+  /** Personens grupper efter att en grupp slagits på eller av. */
+  const admMemberPatch = (person, groupId, on) => ({ id: person.id,
+    member_of: on ? [...new Set([...asArr(person.groups), groupId])] : asArr(person.groups).filter((g) => g !== groupId) });
+  /** Personens roller efter att superadmin slagits på eller av. */
+  const admRolesPatch = (person, on) => ({ id: person.id,
+    roles: [...asArr(person.roles).filter((r) => r !== "superadmin"), ...(on ? ["superadmin"] : [])] });
+  /** Gruppens rättigheter när en yta får en nivå; level tom tar bort ytan. */
+  const admGrantsPatch = (group, surface, level) => {
+    const have = asArr(group.grants), had = have.some((x) => x.surface === surface);
+    const grants = !level ? have.filter((x) => x.surface !== surface)
+      : had ? have.map((x) => x.surface === surface ? { surface, level } : x) : [...have, { surface, level }];
+    return { id: group.id, grants };
+  };
+  const connChip = (label, on) => `<span class="chip ${on === true ? "green" : ""}">${label} ${on === true ? "kopplad" : on === false ? "inte kopplad" : "okänt"}</span>`;
+  const changedText = (c) => c ? `Senast ändrad av ${esc(c.by)} ${esc(short(String(c.at).slice(0, 10)))}` : "";
+
+  function adminTab() {
+    const a = S.settings.admin, me = S.settings.node?.id;
+    const people = a.people.map((p) => {
+      const mine = p.id === me, locked = mine && p.superadmin;
+      return `<div class="setrow"><div class="txt"><div class="t">${esc(p.label)}${mine ? ` <span class="meta">du</span>` : ""}${p.superadmin ? ` <span class="chip blue">superadmin</span>` : ""}</div>`
+        + `<div class="meta">${connChip("Google Kalender", p.calendar)} ${connChip("Gmail", p.gmail)}</div>`
+        + `<div class="setchecks">${a.groups.map((g) => `<label class="check"><input type="checkbox" data-adm-member="${esc(p.id)}|${esc(g.id)}" ${asArr(p.groups).includes(g.id) ? "checked" : ""}> <span>${esc(g.label)}</span></label>`).join("") || `<span class="meta">Inga grupper finns.</span>`}</div>`
+        + `<label class="check"><input type="checkbox" data-adm-super="${esc(p.id)}" ${p.superadmin ? "checked" : ""} ${locked ? "disabled" : ""}> <span>Superadmin${locked ? ` <span class="meta">— du kan inte ta bort din egen</span>` : ""}</span></label>`
+        + (p.changed ? `<div class="meta">${changedText(p.changed)}</div>` : "") + `</div></div>`;
+    }).join("");
+    const groups = a.groups.map((g) => {
+      const free = a.surfaces.filter((x) => !asArr(g.grants).some((y) => y.surface === x));
+      const opts = (sel) => a.levels.map((l) => `<option value="${esc(l)}" ${l === sel ? "selected" : ""}>${esc(LEVEL_WORD[l] || l)}</option>`).join("");
+      const last = asArr(g.grants).length <= 1;
+      return `<div class="setrow"><div class="txt"><div class="t">${esc(g.label)} <span class="meta">${g.sees === "all" ? "ser alla kunder" : g.sees ? `ser ${g.sees} kunder` : "ser inga kunder"}</span></div>`
+        + `<div class="admgrants">${asArr(g.grants).map((x) => `<div class="g"><span class="s">${esc(x.surface)}</span><select data-adm-level="${esc(g.id)}|${esc(x.surface)}" aria-label="Nivå på ${esc(x.surface)}">${opts(x.level)}${last ? "" : `<option value="">ingen</option>`}</select></div>`).join("")}</div>`
+        + (free.length ? `<div class="g" style="display:flex;gap:8px;align-items:center;margin-top:6px"><select data-adm-newsurface="${esc(g.id)}" aria-label="Lägg till yta">${free.map((x) => `<option>${esc(x)}</option>`).join("")}</select><select data-adm-newlevel="${esc(g.id)}" aria-label="Nivå">${opts("read")}</select><button class="btn sm" data-adm-add="${esc(g.id)}">Lägg till</button></div>` : "")
+        + (g.changed ? `<div class="meta">${changedText(g.changed)}</div>` : "") + `</div></div>`;
+    }).join("");
+    return `<div class="stack" data-adm="1"><div class="meta">Varje ändring visas först, och sparas med ditt ja. Loggen bär vem som ändrade och när.</div>`
+      + `<div class="card"><div class="head"><h2>Personer</h2><span class="meta">${a.people.length} i huset</span></div>${people || `<div class="empty">Inga interna personer.</div>`}</div>`
+      + `<div class="card"><div class="head"><h2>Grupper och rättigheter</h2><span class="meta">Vad medlemmarna får göra, per yta</span></div>${groups || `<div class="empty">Inga grupper.</div>`}</div></div>`;
+  }
+
+  /** Förhandsvisa en ändring hos servern och fråga innan den sparas. */
+  async function admPropose(patch) {
+    render(); // tillbaka till det sparade tills ja:et är givet
+    try {
+      const d = await call("registry_define", { node: patch, change: true });
+      const next = d?.next_call, lines = asArr(d?.preview?.lines);
+      if (!next?.args || !lines.length) { await loadSettings(); return toast("Inget ändrades."); }
+      S.admPending = { next, lines };
+      dialog(`<h2>Spara ändringen?</h2><ul>${lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul><p class="meta">Inget annat ändras. Loggen sparar att det är du som ändrade, och när.</p>`
+        + `<div class="bar-actions"><button class="btn quiet" data-adm-no="1">Avbryt</button><button class="btn primary" data-adm-yes="1">Ja, spara</button></div>`);
+    } catch (e) { fail("Ändringen gick inte att förhandsvisa, ingenting är skrivet", e); }
+  }
+  function admConfirm(btn) {
+    const p = S.admPending; if (!p) return;
+    return busy(btn, async () => {
+      try {
+        await call(p.next.tool || "write", { ...p.next.args, confirmed: true, user_approval: `Ja i vyn: ${p.lines.join(" ")}`.slice(0, 500) });
+        S.admPending = null; closeDialog(); await loadSettings(); toast("Sparat. Loggen har vem och när.");
+      } catch (e) { fail("Ändringen sparades inte, ingenting är skrivet", e); }
+    });
+  }
+  const onAdminEdit = (e) => {
+    const t = e.target, ds = t.dataset || {}, a = S.settings?.admin;
+    if (!a || !t.closest?.("[data-adm]")) return;
+    const person = (id) => a.people.find((p) => p.id === id), group = (id) => a.groups.find((g) => g.id === id);
+    if (ds.admMember !== undefined) { const [p, g] = ds.admMember.split("|"); if (person(p)) admPropose(admMemberPatch(person(p), g, t.checked)); }
+    else if (ds.admSuper !== undefined) { if (person(ds.admSuper)) admPropose(admRolesPatch(person(ds.admSuper), t.checked)); }
+    else if (ds.admLevel !== undefined) { const [g, s] = ds.admLevel.split("|"); if (group(g)) admPropose(admGrantsPatch(group(g), s, t.value)); }
+  };
+  document.addEventListener("change", onAdminEdit);
+  const admAddGrant = (gid) => {
+    const g = S.settings?.admin?.groups.find((x) => x.id === gid);
+    const s = $(`[data-adm-newsurface="${gid}"]`)?.value, l = $(`[data-adm-newlevel="${gid}"]`)?.value;
+    if (g && s && l) admPropose(admGrantsPatch(g, s, l));
+  };
 
   /* ── Filer (B-217) ── */
   /**
@@ -8672,6 +8767,10 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.dueOk) return confirmDue(t);
     if (ds.moveLate) return confirmMove(t, true);
     if (ds.setsave) return saveSettings(t);
+    if (ds.settab) { state.setTab = ds.settab; return render(); }
+    if (ds.admYes) return admConfirm(t);
+    if (ds.admNo) { S.admPending = null; return closeDialog(); }
+    if (ds.admAdd) return admAddGrant(ds.admAdd);
     if (ds.setreload) { S.settingsError = null; render(); checkTools(); return loadSettings(); }
     if (ds.pal) { closeDialog(); const [k, id] = ds.pal.split(":"); if (k === "method") { state.screen = "metoder"; const m = methodById(id); if (!m) return toast("Metoden finns inte i biblioteket längre.", null, true); return open({ type: "method", id, title: m.label }); } const [task, step] = id.split("|"); const st = stepOf(taskById(task), step); if (!st) return toast("Uppgiften finns inte i planen längre.", null, true); return open({ type: "step", task, step, title: st.label }); }
     if (ds.func) { closeDialog(); const f = FUNCS.find((x) => x.id === ds.func);
