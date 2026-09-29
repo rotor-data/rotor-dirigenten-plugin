@@ -9,6 +9,20 @@ description: How the dirigenten registry, planning and delivery system fits toge
 
 **Talk to the user in Swedish**, unless they write in another language.
 
+## The tools
+
+Dirigenten has seven tools. Start with `search` (or `plan_state { agenda: true }` for what needs the person today).
+
+- `search` — find anything: methods, steps, customers, files, the plan. A sure hit is the answer; fetch only what a row points to.
+- `guide` — the topics, the methods with their steps, and the fields of every operation: `guide { topic: "verktyg:<op>" }`. The terms: `guide { topic: "begrepp" }`.
+- `read { op, … }` — every other read: `context` (a step, a task, a case or a thread in one answer), `asset_get` (files), `content_get`, `content_search`, `content_list`, `intake_status`, `read_call`, `library_check`, `library_debt`, `measure_debt`, `classify_propose`, `bug_report` (the open reports).
+- `write { op, … }` — every other write: `intake_order`, `intake_submit`, `registry_define`, `registry_append`, `method_build`, `method_variant_build`, `molecule_build`, `workflow_build`, `task_lock`, `message`, `question_answer`, `time_report`, `note_link`, `content_save`, `content_approve`, `content_published`, `classify_accept`, `bug_report` (report or resolve).
+- `plan_state` — the plan, a task, a delivery, a person's week, the agenda.
+- `execute_step` — run, mark, move or hand over a step. The only tool that reaches a customer's system.
+- `asset_register` — register a file; with `upload_sha256: "sida"` the upload box opens in the chat.
+
+The fields of an operation are checked against that operation. When they are wrong, the error lists the fields — fix them and call again. A write without `confirmed` only shows what would change; the user's yes goes in `user_approval`, in their own words. Anything that reaches a customer or another person, a promise or agreement, an order, a change after delivery or a change in a customer's system can only be confirmed with the `preview_id` from a preview of exactly the same call: show that preview, then send its next call unchanged with the user's words. One preview confirms one call. Marking your own internal step done, notes, time reports and answers need no preview. The old tool names (`context`, `asset_get`, `intake_submit` …) are not tools any more: call them as `read`/`write` with `op`.
+
 ## How it fits together
 
 A **commitment** is what the tenant has promised a customer: what they get, how often, and within what time. Commitments generate **tasks**, one per thing to be delivered. Each task follows a **method** — a base method shared across customers, plus a **method variant** holding what is specific to one customer.
@@ -17,7 +31,7 @@ A method is **steps** in order. A step has a responsible party, a performer (cod
 
 Beneath the steps are the building blocks. An **atom** is general code that does one thing against one surface. A **molecule** is a single effect: an atom bound to a concrete case, with a performer and a declared result. A **workflow** is molecules in sequence, and a method is a workflow that delivers something to a customer. This exists so the same thing is not built twice, and so the effect of a change can be seen.
 
-When a plan needs something the library cannot do, the gap becomes an **atom proposal**: a registry entry with one effect, the surface, its inputs and outputs, the access level the effect requires, how it is to be tested, and why it is needed — with the plan and the step that asked for it. A proposal is unbuilt until code exists and its test passes. It shows up in `search` and counts as debt (`library_check { do: "debt" }`). A method that rests on a proposal can be planned and saved, but not run all the way, and the answer says where it stops. **You may propose atoms; you never create them.** The gate enforces this: a molecule binding an atom no code implements is rejected when an AI writes it. A human builds the code from the proposal with `npm run build:atom --from-proposal <id>`, which produces the code template out of the declaration, so it is never written twice.
+When a plan needs something the library cannot do, the gap becomes an **atom proposal**: a registry entry with one effect, the surface, its inputs and outputs, the access level the effect requires, how it is to be tested, and why it is needed — with the plan and the step that asked for it. A proposal is unbuilt until code exists and its test passes. It shows up in `search` and counts as debt (`read { op: "library_debt" }`). A method that rests on a proposal can be planned and saved, but not run all the way, and the answer says where it stops. **You may propose atoms; you never create them.** The gate enforces this: a molecule binding an atom no code implements is rejected when an AI writes it. A human builds the code from the proposal with `npm run build:atom --from-proposal <id>`, which produces the code template out of the declaration, so it is never written twice.
 
 Time is computed backwards from delivery. A step has an earliest and a latest day, and the distance between them is its float. When a delivery has no fixed date it has a window, and work is placed where there is capacity. Moving within the window or the float changes nothing for the customer. Moving the delivery is a new promise and is confirmed by a human.
 
@@ -27,7 +41,7 @@ Access, visibility and decision rights are in the registry too. You see only wha
 
 ## Files
 
-Files live in the content bank, addressed as `bank://<tenant>/<sha256>`, and are reached through `asset_get`: the customer's files, which folder they came from, a preview, or a download link. Some tenants also keep copies elsewhere, for example in Drive; those are copies, not the source. Fetch a gallery in one call with previews, never one call per image.
+Files live in the content bank, addressed as `bank://<tenant>/<sha256>`, and are reached through `read { op: "asset_get" }`: the customer's files, which folder they came from, a preview, or a download link. Some tenants also keep copies elsewhere, for example in Drive; those are copies, not the source. Fetch a gallery in one call with previews, never one call per image.
 
 ## Start with the views
 
@@ -46,9 +60,9 @@ When the page is open, let the user act there — mark a step done, upload a mis
 
 `plan_state` with `agenda: true` is the person's list: what burns, what is today, what is soon, each row with the reason and the exact next call. It is the same list the views page shows. Start there when someone asks what to do, and when a session begins.
 
-- **Continue, never restart.** A step may be *started* by someone, with a note on where they stopped, and carry *drafts* saved to it. Read them (`content_get`) before doing the step again.
+- **Continue, never restart.** A step may be *started* by someone, with a note on where they stopped, and carry *drafts* saved to it. Read them (`read { op: "content_get", id }`) before doing the step again.
 - When you begin a step, say so: `execute_step` with `start: true`. When you stop before it is done, `start: false` with a `note` on where you are — the next person or session reads it.
-- Save what you write for a step with `content_save` and `for_task` + `for_step`, as you go. A draft that lives only in this chat is lost when the chat ends.
+- Save what you write for a step with `write { op: "content_save", for_task, for_step, … }`, as you go. A draft that lives only in this chat is lost when the chat ends.
 - A step done by hand leaves something (text, a file or a link): register it with `asset_register` and `for_task` before marking the step done, or the steps after it wait.
 
 ## Fetch guidance before you answer

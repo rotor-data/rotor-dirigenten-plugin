@@ -906,7 +906,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "5f2e737", published: "2026-09-28" };
+  const SIDA = { version: "11ff57b", published: "2026-09-29" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -976,16 +976,66 @@ a.btn { text-decoration: none; color: var(--text); }
   const noteError = (text) => { RECENT.errors.push({ at: new Date().toISOString(), text: String(text).slice(0, 500) }); if (RECENT.errors.length > 10) RECENT.errors.shift(); };
   window.addEventListener("error", (e) => noteError(`${e.message} (${e.filename?.split("/").pop() || "vyn"}:${e.lineno})`));
   window.addEventListener("unhandledrejection", (e) => noteError(`ohanterat: ${e.reason?.message || e.reason}`));
+  /**
+   * De gamla verktygsnamnen är operationer under read och write sedan etapp E
+   * (docs/plan-sok-och-verktyg.md): read { op: "context", … }. Vyns anrop
+   * står kvar med de gamla namnen, och callOn skriver om dem här. Listorna är
+   * serverns (src/mcp/ops.ts); test/tool-paths.test.ts prövar att de är lika.
+   */
+  const VIEW_OPS = {
+    read: ["context", "intake_status", "classify_propose", "library_check", "library_debt", "measure_debt",
+      "read_call", "content_search", "content_list", "asset_get", "content_get", "bug_report"],
+    write: ["registry_define", "registry_append", "intake_submit", "intake_order", "classify_accept",
+      "molecule_build", "workflow_build", "method_build", "method_variant_build",
+      "question_answer", "time_report", "task_lock", "message", "note_link",
+      "content_save", "content_approve", "content_published", "bug_report"],
+  };
+  const MODE_OPS = {
+    "intake_submit.order": "intake_order", "library_check.debt": "library_debt", "library_check.measure": "measure_debt",
+    "content_search.list": "content_list", "content_save.approve": "content_approve", "content_save.published": "content_published",
+    "registry_define.append": "registry_append", "method_build.variant": "method_variant_build", "molecule_build.workflow": "workflow_build",
+  };
+  /** Ett anrop med ett gammalt namn i den nya formen: [verktyg, argument]. Andra lämnas som de är. */
+  function newForm(tool, input) {
+    const a = input || {};
+    const mode = typeof a.do === "string" ? MODE_OPS[`${tool}.${a.do}`] : undefined;
+    const op = mode || tool;
+    const under = op === "bug_report" ? (a.text !== undefined || a.resolve !== undefined ? "write" : "read")
+      : VIEW_OPS.read.includes(op) ? "read" : VIEW_OPS.write.includes(op) ? "write" : null;
+    if (!under) return [tool, input];
+    const { do: _do, ...rest } = a;
+    return [under, { op, ...(mode ? rest : a) }];
+  }
   const call = (tool, input) => callOn(SERVER, tool, input);
+  /**
+   * Förhandsvisningens kvitto (src/mcp/preview-token.ts). I vyn är kortet
+   * med Ja förhandsvisningen: när servern ändå kräver preview_id skickas
+   * samma anrop en gång till med kvittot — bara om förhandsvisningen gällde
+   * exakt de fälten användaren sa ja till.
+   */
+  const APPROVAL_KEYS = ["confirmed", "user_approval", "preview_id", "tools_version", "acknowledge_commitment", "accept_late"];
+  const sameCall = (a, b) => { const norm = (v) => Array.isArray(v) ? v.map(norm) : v && typeof v === "object"
+    ? Object.fromEntries(Object.keys(v).sort().filter((k) => v[k] !== undefined).map((k) => [k, norm(v[k])])) : typeof v === "string" ? v.trim() : v;
+    const strip = (o) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => !APPROVAL_KEYS.includes(k)));
+    return JSON.stringify(norm(strip(a))) === JSON.stringify(norm(strip(b))); };
+  function previewRetry(input, d) {
+    const e = d?.error; const pid = e?.next_call?.args?.preview_id;
+    if (e?.code !== "PREVIEW_REQUIRED" || !input?.confirmed || input.preview_id || !pid || !sameCall(input, e.next_call.args)) return null;
+    return { ...input, preview_id: pid };
+  }
   /** Ett anrop till en koppling. Dirigenten är förvalet; Claude läser också ur HubSpot (B-229). */
   async function callOn(server, tool, input) {
     if (!mcp) throw Object.assign(new Error(`anslutningen ${server} är inte tillgänglig här — öppna vyn i claude.ai med kopplingen på`), { code: "NOT_CONNECTED" });
     let r;
-    const rec = { at: new Date().toISOString(), tool: server === SERVER ? tool : `${server}/${tool}`, keys: Object.keys(input || {}) };
+    if (server === SERVER) [tool, input] = newForm(tool, input);
+    const rec = { at: new Date().toISOString(), tool: server === SERVER ? (input?.op ? `${tool}:${input.op}` : tool) : `${server}/${tool}`, keys: Object.keys(input || {}) };
     RECENT.calls.push(rec); if (RECENT.calls.length > 15) RECENT.calls.shift();
     try { r = await mcp.callTool(server, tool, input); }
-    catch (e) { const f = data(e?.result)?.error; rec.error = f?.code || e?.code || String(e?.message || e).slice(0, 200); throw f ? Object.assign(new Error(f.message + (f.next_action ? " — " + f.next_action : "")), { code: f.code }) : e; }
+    catch (e) { const again = server === SERVER && previewRetry(input, data(e?.result)); if (again) return callOn(server, tool, again);
+      const f = data(e?.result)?.error; rec.error = f?.code || e?.code || String(e?.message || e).slice(0, 200); throw f ? Object.assign(new Error(f.message + (f.next_action ? " — " + f.next_action : "")), { code: f.code }) : e; }
     const d = data(r);
+    const again = server === SERVER && previewRetry(input, d);
+    if (again) return callOn(server, tool, again);
     if (d?.error?.message) { rec.error = d.error.code || "fel"; throw Object.assign(new Error(d.error.message + (d.error.next_action ? " — " + d.error.next_action : "")), { code: d.error.code, context: d.error.context }); }
     return d;
   }
@@ -2017,6 +2067,27 @@ a.btn { text-decoration: none; color: var(--text); }
         : `<div class="empty"><b>Inget väntar på andra.</b>Steg hos en kollega, kunden eller en partner står här.</div>`}</div></div>`;
   }
   /**
+   * Saknar metod (Daniel P 2026-09-29): en uppgift utan metod och utan steg är
+   * varken i tid eller klar — det finns inget att planera. De står underst på
+   * Idag, som en egen grupp med antal, och inte i Brinner.
+   */
+  const noMethodTasks = () => tasks().filter((t) => (t.status ? t.status === "no_method"
+    : !t.method && !(t.steps || []).length && !t.delivered_externally));
+  function zoneNoMethod() {
+    const xs = noMethodTasks().sort((a, b) => String(a.due).localeCompare(String(b.due)));
+    if (!xs.length) return "";
+    const row = (t) => {
+      const href = t.delivery ? H.delivery(t.delivery, t.id) : H.delivery(t.id);
+      return trow({ cls: "", icon: "upp", title: taskName(t), attrs: `data-lv-href="${href}"`, more: false,
+        acts: `<a class="btn sm" href="${href}">Öppna uppgiften ›</a>`,
+        meta: chip(t.no_method?.short ? `saknar metod — ${t.no_method.short}` : "saknar metod", "amber")
+          + (t.no_method?.text ? `<span title="${esc(t.no_method.text)}">${esc(t.no_method.text)}</span> · ` : "") + [deliveryTag(null, t), byWhen(t.due, "datum")].filter(Boolean).join(" · ") });
+    };
+    return `<div class="zone no-method"><div class="zone-h"><h2>Saknar metod</h2><span class="n">${xs.length}</span>`
+      + `<span class="hint">uppgifter utan steg att följa — ge dem en metod, eller registrera att de gått ut</span></div>`
+      + `<div class="card">${xs.map(row).join("")}</div></div>`;
+  }
+  /**
    * Förslagen när tiden inte räcker (Daniel P 2026-09-28): trycka på eller lämna
    * över. Planen gör ingenting av dem själv; nej ändrar ingenting.
    */
@@ -2058,16 +2129,49 @@ a.btn { text-decoration: none; color: var(--text); }
     if (x) (S.dismissed ||= new Set()).add(suggestionKey(x));
     closeDialog(); render();
   }
+  /**
+   * Förslag på sökord ur sökloggen (sökplanen etapp F). Daniel P 2026-09-28:
+   * "bara vi ser till att faktiskt använda detta också". Bara förslag som
+   * klarat guldprovet kommer hit. Ja lägger till orden genom grinden; nej
+   * sparas i den här webbläsaren och ändrar ingenting.
+   */
+  const kwKey = (x) => `${x.target}|${(x.words || []).join("|")}`;
+  const keywordSuggestions = () => (S.agenda?.keyword_suggestions ?? []).filter((x) => !(store.kwNo || {})[kwKey(x)]);
+  const keywordRow = (x, i) => trow({ cls: "", icon: "help", title: "Nytt sökord?", attrs: `data-kw="${i}"`, more: false,
+    acts: `<button class="btn sm" data-kw="${i}">Granska ›</button>`, meta: chip("förslag från sökningarna", "blue") + esc(x.text) });
+  function keywordDialog(i) {
+    const x = keywordSuggestions()[Number(i)];
+    if (!x) return toast("Förslaget gäller inte längre.", null, true);
+    const gold = x.check && x.check.first_before != null ? ` Provet med testfrågorna: ${x.check.first_before} % rätt första träff före, ${x.check.first_after} % efter.` : "";
+    dialog(`<h2>Lägg till ${x.words.length === 1 ? "sökordet" : "sökorden"} på ${esc(x.label)}</h2><p>${esc(x.text)}</p>`
+      + `<p class="meta">Orden läggs på «${esc(x.label)}», så att samma sökning hittar den nästa gång.${esc(gold)} Nej ändrar ingenting.</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-kw-no="${i}">Nej</button><button class="btn primary" data-kw-yes="${i}">Ja</button></div>`);
+  }
+  function keywordYes(btn, i) {
+    const x = keywordSuggestions()[Number(i)];
+    if (!x?.next_call) return;
+    return busy(btn, async () => {
+      try { await call(x.next_call.tool, { ...x.next_call.args, confirmed: true, user_approval: `Ja i vyn: ${x.text}`.slice(0, 500) });
+        closeDialog(); await load(); toast("Sökordet är tillagt."); }
+      catch (e) { fail("Sökordet lades inte till", e); }
+    });
+  }
+  function keywordNo(i) {
+    const x = keywordSuggestions()[Number(i)];
+    if (x) { store.kwNo = { ...(store.kwNo || {}), [kwKey(x)]: 1 }; save(); }
+    closeDialog(); render();
+  }
   function zoneConfirm() {
     // Förslag som väntar på ett ja (felrapport 2026-09-25). Det som måste rättas står i rutan bakom Granska.
     const pc = S.agenda?.pending_confirmation ?? [];
     const cs = capacitySuggestions();
-    return `<div class="zone"><div class="zone-h"><h2>Att bekräfta</h2><span class="n">${pc.length + cs.length}</span><span class="hint">förslag som väntar på ditt ja</span></div>`
-      + `<div class="card">${cs.map(suggestionRow).join("")}${pc.length ? pc.map((c) => { const v = c.vetting || { ok: true };
+    const ks = keywordSuggestions();
+    return `<div class="zone"><div class="zone-h"><h2>Att bekräfta</h2><span class="n">${pc.length + cs.length + ks.length}</span><span class="hint">förslag som väntar på ditt ja</span></div>`
+      + `<div class="card">${cs.map(suggestionRow).join("")}${ks.map(keywordRow).join("")}${pc.length ? pc.map((c) => { const v = c.vetting || { ok: true };
         return trow({ cls: "", icon: c.kind === "commitment" || !c.kind ? "help" : "upp", title: c.label, attrs: `data-confirm-node="${esc(c.id)}"`, more: false,
           acts: `<button class="btn sm" data-confirm-node="${esc(c.id)}">Granska ›</button>`,
           meta: chip("förslag", "blue") + (v.ok ? "" : chip("behöver rättas", "red")) + esc([PROPOSAL_KIND[c.kind] || "Vad vi lovat", lbl(c.customer, "")].filter(Boolean).join(" · ")) }); }).join("")
-        : cs.length ? "" : `<div class="empty"><b>Inget att bekräfta.</b>Förslag på metoder och annat som väntar på ditt ja står här.</div>`}</div></div>`;
+        : cs.length || ks.length ? "" : `<div class="empty"><b>Inget att bekräfta.</b>Förslag på metoder och annat som väntar på ditt ja står här.</div>`}</div></div>`;
   }
   function zoneWeek() {
     const utanPass = myTurn().filter((x) => x.kind === "step" && !(stepOf(taskById(x.task), x.step)?.sessions || []).length).length;
@@ -2133,7 +2237,8 @@ a.btn { text-decoration: none; color: var(--text); }
       return `<div class="pagehead"><h1>Idag</h1><span class="sub">${wday(TODAY)}</span></div>`
         + zoneAbsence() + zoneTur() + lvIdag()
         + `<div class="zones2">${zoneWaiting()}${zoneConfirm()}</div>`
-        + zoneWeek();
+        + zoneWeek()
+        + zoneNoMethod();
     },
     meddelanden() { return pageMessages(); },
 
@@ -2169,7 +2274,7 @@ a.btn { text-decoration: none; color: var(--text); }
       if (state.metTab === "ledtider") ensureLeadTimes();
       // Leveranstypernas namn (guide) behövs för "levererar …"; hämtas en gång.
       if (!S.types && !S.typesAsked) { S.typesAsked = true; deliverableTypes().then(() => { if (state.screen === "metoder" && !state.obj) render(); }); }
-      const gaps = libEntries("atom_proposal").filter((u) => u.unbuilt).length;
+      const gaps = libEntries("atom_proposal").filter((u) => u.unbuilt).length + (S.agenda?.search_misses?.proposals?.length || 0);
       const tabs = [["bibliotek", "Bibliotek", libEntries("method").length], ["forbattra", "Förbättra", improveCards().length], ["ledtider", "Ledtider", S.lead?.rows ? S.lead.rows.filter((r) => r.origin === "guessed").length || "" : ""], ["luckor", "Luckor", gaps || ""]];
       const body = { bibliotek: library, forbattra: improve, ledtider: leadTable, luckor: gapsList }[state.metTab] || library;
       return head
@@ -2212,8 +2317,8 @@ a.btn { text-decoration: none; color: var(--text); }
   const ZONES = ["Europe/Stockholm", "Europe/Helsinki", "Europe/London", "UTC"];
   const GROUPINGS = [["area", "Område"], ["customer", "Kund"], ["responsible", "Ansvarig"], ["urgency", "Brådska"]];
   /** Verktygen vyn anropar. Provet håller listan i takt med `call("…")` i koden. */
-  const TOOLS_USED = ["search", "task_lock", "asset_get", "asset_register", "bug_report", "content_get", "content_save", "context", "library_check", "note_link", "read_call", "classify_accept", "execute_step", "guide", "intake_status", "intake_submit",
-    "message", "method_build", "plan_state", "registry_define"];
+  // Verktygen vyn anropar (etapp E): sju, de gamla namnen är operationer under read och write.
+  const TOOLS_USED = ["search", "guide", "read", "write", "plan_state", "execute_step", "asset_register"];
 
   /**
    * Svaret som ytan arbetar med. Servern kan svara utan kopplingar eller val —
@@ -3383,16 +3488,35 @@ a.btn { text-decoration: none; color: var(--text); }
       for (const id of ids) { try { if (await setLeadTime(id, { quiet: true })) n++; } catch (e) { fail(`Ledtiden för ${leadOf(id)?.label || "steget"} sattes inte`, e); break; } }
       await loadLeadTimes(); await afterWrite(`${n} ledtid${n === 1 ? "" : "er"} satta. Planen räknas om på dem.`); });
   }
+  /**
+   * Sökningarna som missade (sökplanen etapp F), räknade när listan hämtades.
+   * Förslagen på sökord står här med guldprovets dom; de som klarat det står också på Idag.
+   */
+  const CHECK_LABEL = { passed: ["klarar provet", "green"], failed: ["sänker träffarna, läggs inte fram", "red"], unchecked: ["provas vid nästa utläggning", "amber"] };
+  function searchMisses() {
+    const m = S.agenda?.search_misses;
+    if (!m) return "";
+    if (m.error) return `<h3>Sökningar som missade</h3><div class="empty"><b>Sökningarna kunde inte läsas.</b>${esc(m.error)}</div>`;
+    const why = Object.entries(m.reasons || {}).filter(([, n]) => n).map(([k, n]) => `${n} ${{ unsure: "utan säker träff", other_call: "följdes av ett annat anrop än det föreslagna", error_then_search: "fel och ny sökning", searched_again: "sökte igen inom två minuter" }[k] || k}`).join(" · ");
+    return `<h3>Sökningar som missade</h3><p class="meta">${m.misses} av ${m.searches} sökningar de senaste ${m.days} dagarna${why ? ` — ${esc(why)}` : ""}. En sökning kan missa av flera skäl.</p>`
+      + ((m.proposals || []).length ? `<div class="card">${m.proposals.map((p) => { const [l, c] = CHECK_LABEL[p.check] || CHECK_LABEL.unchecked;
+        return row({ kind: `<span class="kind" title="Förslag">${ic("help")}</span>`, title: esc(p.text), why: chip(l, c) + ` ${esc(p.label)}`, act: "" }); }).join("")}</div>` : "")
+      + ((m.recent || []).length ? `<div class="card">${m.recent.map((x) => row({ kind: `<span class="kind warn" title="Miss">${ic("alert")}</span>`,
+        title: esc((x.queries || []).map((q) => `"${q}"`).join(", ") || "(sökning i en tråd)"),
+        why: `${esc(short(x.at))} · ${esc((x.reasons || []).join(", "))}${(x.after || []).length ? ` · sedan: ${esc(x.after.join(", "))}` : ""}`, act: "" })).join("")}</div>`
+        : `<div class="empty"><b>Inga missar.</b>Sökningar utan säker träff, eller som följdes av en ny sökning, står här.</div>`);
+  }
   /** Luckorna: obyggda atomförslag (B-107). Koden byggs av en människa ur förslaget. */
   function gapsList() {
     const us = libEntries("atom_proposal").filter((u) => u.unbuilt);
-    if (!us.length) return `<div class="empty"><b>Inga obyggda atomförslag.</b>Varje steg som vilar på kod har koden.</div>`;
+    if (!us.length) return `<div class="empty"><b>Inga obyggda atomförslag.</b>Varje steg som vilar på kod har koden.</div>` + searchMisses();
     const stopsIn = (u) => libEntries("method").filter((m) => stepIds(m).some((id) => stepBlockers(id).some((b) => b.id === u.id)));
     return `<div class="card">${us.map((u) => { const ms = stopsIn(u);
       return row({ kind: `<span class="kind warn" title="Behöver åtgärd">${ic("alert")}</span>`, title: `Bygg atomen: ${esc(u.label)}`,
         why: `Atomförslag · obyggt${u.surface ? ` · ${esc(u.surface)}` : ""} · ${ms.length ? `${ms.map((m) => `«${esc(m.label)}»`).join(", ")} stannar här` : u.used_by ? `används i ${u.used_by} molekyl${u.used_by === 1 ? "" : "er"}` : "ingen metod använder det än"}`,
         act: `<button class="btn sm" data-copybuild="${esc(u.id)}">Kopiera kommandot</button>` }); }).join("")}</div>`
-      + `<p class="meta">Kommandot bygger koden ur förslaget i en arbetskopia av repot. Atomen blir verklig först när koden finns och provet passerar.</p>`;
+      + `<p class="meta">Kommandot bygger koden ur förslaget i en arbetskopia av repot. Atomen blir verklig först när koden finns och provet passerar.</p>`
+      + searchMisses();
   }
 
   /* ── Bygg en metod: Claude tolkar texten till steg, method_build prövar (B-115, B-107) ── */
@@ -4027,7 +4151,7 @@ a.btn { text-decoration: none; color: var(--text); }
       t ? `Uppgift: ${taskTitle(t)} (id ${t.id}).` : null,
       s ? `Steg: ${s.label} (id ${s.step}).` : null, "",
       next ? `Anropet: rotor-dirigenten ${next.tool} ${JSON.stringify(next.args)}` : null,
-      next?.tool === "execute_step" && !next.args?.mark ? "Dirigenten visar först vad som ändras. Visa mig det på vanlig svenska, och kör samma anrop med confirmed: true och user_approval (mina ord) först när jag sagt ja." : null,
+      next?.tool === "execute_step" && !next.args?.mark ? "Dirigenten visar först vad som ändras. Visa mig det på vanlig svenska, och kör förhandsvisningens nästa anrop, med dess preview_id och user_approval (mina ord), först när jag sagt ja." : null,
       next?.args?.mark === "done" ? "Markera klart först när arbetet är gjort, och skriv vad som gjordes i note." : null,
       next && next.tool !== "execute_step" ? "Visa mig vad som skrivs innan du gör det, och gör det först när jag sagt ja." : null]
       .filter((x) => x !== null).join("\n");
@@ -4257,7 +4381,7 @@ a.btn { text-decoration: none; color: var(--text); }
       + `</div></div></div>`;
   }
   const unitAsk = (d, u) => [asArr(u.missing).length ? `Ta fram det som saknas i «${u.label}»: ${asArr(u.missing).join(", ")}.` : "",
-    u.text && !u.text.approved ? `Texten i «${u.label}» (innehållet ${u.key}) är inte godkänd: visa den för mig, och godkänn den med content_search { do: "approve", id: "${u.key}" } först när jag sagt ja.` : "",
+    u.text && !u.text.approved ? `Texten i «${u.label}» (innehållet ${u.key}) är inte godkänd: visa den för mig, och godkänn den med write { op: "content_approve", id: "${u.key}" } först när jag sagt ja.` : "",
     `Leveransen: ${d.label}${d.implicit ? "" : ` (id ${d.id})`}. Läs läget med plan_state { ${d.implicit ? `customer: "${lbl(custOf(d), "")}"` : `delivery: "${d.id}"`} } först.`].filter(Boolean).join(" ");
   function lvMaterial(d) {
     const us = lvUnits(d), ungrouped = asArr(d.material?.rounds).flatMap((r) => asArr(r.ungrouped));
@@ -5747,14 +5871,14 @@ a.btn { text-decoration: none; color: var(--text); }
   // Åtta hämtningar (B-257): med search räcker det, och varje hämtning läses om
   // i varje följande runda — femton gav omkring 250 000 tokens in per svar.
   const PANEL_BUDGET = { fetches: 8, ms: 210000 };
-  const AI_READ_TOOLS = ["search", "context", "asset_get", "intake_status", "guide", "plan_state"];
+  const AI_READ_TOOLS = ["search", "read", "guide", "plan_state"];
   /**
    * Det Claude får läsa, per koppling (B-229). Daniel P: "claude kan ju prata
    * med connectorn". Bara läsande verktyg: det som ändrar hos en kund går
    * genom ett steg där en människa säger ja. Namnen står också i manifestet.
    */
   const HUBSPOT = "HubSpot";
-  const CLAUDE_READS = { [SERVER]: [...AI_READ_TOOLS, "content_get", "content_search", "read_call", "note_link"],
+  const CLAUDE_READS = { [SERVER]: [...AI_READ_TOOLS],
     [HUBSPOT]: ["search_crm_objects", "get_crm_objects", "query_crm_data", "search_owners", "search_properties", "get_properties",
       "search_conversations", "get_conversation_channel_metadata", "discover_hubspot_schema", "get_organization_details", "get_user_details",
       "read_campaign_data", "get_campaign_attribution_reports", "get_content_analytics_report", "get_marketing_email_analytics", "tool_guidance"] };
@@ -5768,9 +5892,13 @@ a.btn { text-decoration: none; color: var(--text); }
   // (manage_onboarding): rättigheter i HubSpot ändras aldrig via API.
   const CLAUDE_WRITES = {
     // bug_report: panelen sa att den inte kunde felrapportera fast knappen finns (2026-09-25).
-    [SERVER]: ["execute_step", "asset_register", "message", "time_report", "question_answer", "bug_report"],
+    [SERVER]: ["execute_step", "asset_register", "write"],
     [HUBSPOT]: ["manage_crm_objects", "manage_campaign_objects", "manage_marketing_email", "manage_blog_post", "manage_landing_page",
       "manage_website_page", "manage_segment", "manage_saved_reports"] };
+  /** Det Claude i panelen får skriva med write, efter ja (etapp E): samma som före listbytet, och anteckningen. */
+  const CLAUDE_WRITE_OPS = ["message", "time_report", "question_answer", "bug_report"];
+  /** Det Claude i panelen skriver utan ja (B-243): en koppling är en observation, ingen ändring. */
+  const NO_ASK_WRITE_OPS = ["note_link"];
   /** Hur man letar effektivt i HubSpot (B-233): det agenten som gjorde Freebos karta gjorde. */
   /**
    * Hur vyn och dirigenten används (B-245): panelen svarar på "hur gör jag …".
@@ -5785,8 +5913,8 @@ a.btn { text-decoration: none; color: var(--text); }
    * texter i högerchatten. Däremot ska den kunna kopiera prompts med
    * instruktioner till vanliga chatten."
    */
-  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till Claude under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan. Ber användaren dig rapportera ett fel: gör det med skriv → rotor-dirigenten bug_report { text, where, conversation }. Ber användaren dig markera ett steg klart: gör det med markera_klart. Ber användaren dig möblera om en leverans: läs den (plan_state { delivery, format: \"full\" }) och personernas läge, och lägg varje ändring som ett eget förslag med foresla — ny ordning, att vänta på ett steg, överlämning eller att trycka på. Skriv en kort mening om varför, och använd inte skriv för det.";
-  const HUNT_HINT = "Leta med search först (B-257): EN fråga med 2–5 formuleringar — kundens ord och husets ord — och inbox när ärendet har en adress. Svaret är högst tio rader; hämta bara det en rad pekar på (anropet efter →). Ramens steg står i svaret — hämta inte hela metoden med guide. Raderna under Kanske är antaganden: säg att de är det. Står det inget självklart: fråga användaren vad det kan handla om; vet användaren inte, föreslå en fråga till den som skrev. Sluta leta när du har svaret, och svara kort. Långa listor: read_call { call, hitta: \"sökord\" } filtrerar på servern. Ser du hur något hänger ihop (ett workflow skickar ett fält, ett mejl kommer från ett flöde): notera det med note_link, så vet nästa ärende det. Saknas en förmåga i dirigenten — kod som kan göra en ändring som behövs: säg vad som saknas; atomförslaget skrivs i vanliga chatten. Leta effektivt: börja i kundens systemkarta. I HubSpot räknar och filtrerar query_crm_data i ETT anrop (hur många affärer som har ett fält ifyllt, vilka värden som förekommer, vilka produkter som finns på affärerna) — använd den i stället för många sökningar. get_properties ger ett fälts definition och tillåtna värden. Sök inte på samma sak två gånger.";
+  const PANEL_SCOPE = "Här i panelen svarar du, letar och pekar. Du bygger inga metoder eller delar, gör inga Claude-steg och skriver inga långa texter (utkast, mejl, artiklar, instruktioner) här — det görs i vanliga Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme. Ber användaren om något sådant: säg det i en mening, och att knappen Kopiera till Claude under rutan tar med samtalet och frågan som en färdig prompt. I ett steg finns samma knapp på stegets kort, med stegets instruktion. Undantag: börjar frågan med «Utför steget» gäller ett steg som ändrar i ett system (B-269, B-272) — det gör du här, med skriv, efter uppdraget i frågan. Ber användaren dig rapportera ett fel: gör det med skriv → rotor-dirigenten write { op: \"bug_report\", text, where, conversation }. Ber användaren dig markera ett steg klart: gör det med markera_klart. Ber användaren dig möblera om en leverans: läs den (plan_state { delivery }) och personernas läge, och lägg varje ändring som ett eget förslag med foresla — ny ordning, att vänta på ett steg, överlämning eller att trycka på. Skriv en kort mening om varför, och använd inte skriv för det.";
+  const HUNT_HINT = "Leta med search först (B-257): EN fråga med 2–5 formuleringar — kundens ord och husets ord — och inbox när ärendet har en adress. Svaret är högst tio rader; hämta bara det en rad pekar på (anropet efter →). Ramens steg står i svaret — hämta inte hela metoden med guide. Raderna under Kanske är antaganden: säg att de är det. Står det inget självklart: fråga användaren vad det kan handla om; vet användaren inte, föreslå en fråga till den som skrev. Sluta leta när du har svaret, och svara kort. Långa listor: read { op: \"read_call\", call, hitta: \"sökord\" } filtrerar på servern. Ser du hur något hänger ihop (ett workflow skickar ett fält, ett mejl kommer från ett flöde): notera det med hamta → write { op: \"note_link\" } (inget ja behövs), så vet nästa ärende det. Saknas en förmåga i dirigenten — kod som kan göra en ändring som behövs: säg vad som saknas; atomförslaget skrivs i vanliga chatten. Leta effektivt: börja i kundens systemkarta. I HubSpot räknar och filtrerar query_crm_data i ETT anrop (hur många affärer som har ett fält ifyllt, vilka värden som förekommer, vilka produkter som finns på affärerna) — använd den i stället för många sökningar. get_properties ger ett fälts definition och tillåtna värden. Sök inte på samma sak två gånger.";
   let catalogCache = null;
   /** Kopplingarnas läsverktyg med sina argument, ur kopplingarnas egna listor — så att Claude inte gissar. */
   async function toolCatalog() {
@@ -5832,6 +5960,9 @@ a.btn { text-decoration: none; color: var(--text); }
       const k = String(i.koppling || ""), v = String(i.verktyg || "");
       if (!(CLAUDE_WRITES[k] || []).includes(v))
         throw new Error(`det går bara att ändra med: ${Object.entries(CLAUDE_WRITES).map(([sv, n]) => `${sv}: ${n.join(", ")}`).join("; ")}`);
+      const wop = asArgs(i.argument).op;
+      if (k === SERVER && v === "write" && !CLAUDE_WRITE_OPS.includes(wop))
+        throw new Error(`write går bara härifrån med op: ${CLAUDE_WRITE_OPS.join(", ")}`);
       if (!String(i.vad || "").trim()) throw new Error("vad måste säga på vanlig svenska vad som ändras");
       return confirmWrite(k, v, asArgs(i.argument), String(i.vad), ctx?.signal);
     } });
@@ -5904,13 +6035,15 @@ a.btn { text-decoration: none; color: var(--text); }
     return false;
   }
   const proposeTool = (reply) => ({ name: "foresla",
-    description: "Föreslår EN ändring som ett kort i panelen med Ja och Nej — inget skrivs förrän användaren tryckt Ja. Används när användaren ber dig möblera om: ny ordning i en uppgift (task_lock { task, move_step: { step, after } }), vänta på ett steg eller byta leverans (execute_step { task, values: { delivery, after } }), lämna över (execute_step { task, step, handover_to }) och att trycka på (registry_define ur capacity_suggestions, bara för användarens egen tid). vad = ändringen på vanlig svenska, med stegens och personernas namn. koppling, verktyg och argument som för hamta, utan confirmed. Svarar med förhandsvisningen, eller med varför det inte går. Ett anrop per ändring.",
+    description: "Föreslår EN ändring som ett kort i panelen med Ja och Nej — inget skrivs förrän användaren tryckt Ja. Används när användaren ber dig möblera om: ny ordning i en uppgift (write { op: \"task_lock\", task, move_step: { step, after } }), vänta på ett steg eller byta leverans (execute_step { task, values: { delivery, after } }), lämna över (execute_step { task, step, handover_to }) och att trycka på (write { op: \"registry_define\" } ur capacity_suggestions, bara för användarens egen tid). vad = ändringen på vanlig svenska, med stegens och personernas namn. koppling, verktyg och argument som för hamta, utan confirmed. Svarar med förhandsvisningen, eller med varför det inte går. Ett anrop per ändring.",
     inputSchema: { type: "object", properties: { vad: { type: "string" }, koppling: { type: "string" }, verktyg: { type: "string" }, argument: { type: "object" } }, required: ["vad", "verktyg", "argument"] },
     execute: async (i) => {
-      const k = String(i.koppling || SERVER), v = String(i.verktyg || "");
+      const k = String(i.koppling || SERVER);
+      // write { op: "task_lock", … } och task_lock { … } är samma förslag (etapp E).
+      const { confirmed, user_approval, op, ...args } = asArgs(i.argument);
+      const v = String(i.verktyg === "write" && typeof op === "string" ? op : i.verktyg || "");
       if (!(PROPOSE[k] || []).includes(v)) throw new Error(`förslag går bara med: ${PROPOSE[SERVER].join(", ")}`);
       const what = String(i.vad || "").trim(); if (!what) throw new Error("vad måste säga på vanlig svenska vad som ändras");
-      const { confirmed, user_approval, ...args } = asArgs(i.argument);
       if (v === "registry_define" && !previewable(v, args)) throw new Error("registry_define går bara att föreslå för din egen tid (node: { id, planning })");
       const card = { what, server: k, tool: v, args, state: "open", preview: null };
       if (previewable(v, args)) {
@@ -5971,8 +6104,9 @@ a.btn { text-decoration: none; color: var(--text); }
     inputSchema: { type: "object", properties: { koppling: { type: "string" }, verktyg: { type: "string" }, argument: { type: "object" } }, required: ["koppling", "verktyg"] },
     execute: async (i, ctx) => {
       const k = String(i.koppling || SERVER), v = String(i.verktyg || "");
-      if (!(CLAUDE_READS[k] || []).includes(v))
-        throw new Error(`bara läsande verktyg går härifrån: ${Object.entries(CLAUDE_READS).map(([sv, n]) => `${sv}: ${n.join(", ")}`).join("; ")}`);
+      const noAsk = k === SERVER && v === "write" && NO_ASK_WRITE_OPS.includes(i.argument?.op);
+      if (!noAsk && !(CLAUDE_READS[k] || []).includes(v))
+        throw new Error(`bara läsande verktyg går härifrån, och write { op: "note_link" }: ${Object.entries(CLAUDE_READS).map(([sv, n]) => `${sv}: ${n.join(", ")}`).join("; ")}`);
       // Budgeten (B-231): utan den letade Claude tills körningen tog slut och lämnade ingenting.
       if (budget && (++budget.used > budget.max || Date.now() > budget.until))
         return "BUDGETEN ÄR SLUT. Hämta inget mer. Svara nu med det du har, och säg vad du inte hann kontrollera.";
@@ -6119,8 +6253,8 @@ a.btn { text-decoration: none; color: var(--text); }
       "1. Läs det tidigare steg lämnat i lägesbilden (till exempel urvalet). Läs fält och deras interna namn i kundens system med hamta när det behövs.",
       "2. Ta fram värdena. Bara de som står ovan behövs; ett värde som inte gäller lämnas som tom text \"\".",
       "   · Villkor för ett segment i HubSpot (filters) skrivs som en lista [{ property, operation: { operationType, operator, value | values } }] med fältens interna namn, till exempel { property: \"lifecyclestage\", operation: { operationType: \"ENUMERATION\", operator: \"IS_ANY_OF\", values: [\"customer\"] } }. Alla villkor i listan ska gälla. Är urvalet en uppräkning av kontakter utan fält att filtrera på: filters = { emails: [alla adresser] }, som ger en fast lista.",
-      "   · Ett marknadsmejl: subject, preview_text och body_html är den GODKÄNDA texten ur innehållsbanken — hitta den med rotor-dirigenten content_list och läs den med content_get; skriv inte om den. body_html är texten som HTML (stycken i <p>). segment_id är segmentets id som steget «Skapa segmentet i HubSpot» lämnade (lägesbilden eller stegets resultat). template_email_id är id på det mejl i HubSpot som ska klonas som mall, till exempel kundens förra utskick; läs mejlen i HubSpot med hamta. name är utkastets namn i HubSpot. from_name och reply_to lämnas tomma om mallens avsändare ska gälla. Har mallen flera textmoduler svarar dirigenten med deras nycklar; ange då body_html som { modulnyckel: html }.",
-      `3. Kör med skriv → rotor-dirigenten execute_step { task: "${t.id}", step: "${s.step}", values: { … }, confirmed: true, user_approval: <vad användaren sa ja till> }. I vad står på vanlig svenska exakt vad som skapas eller ändras: namnet och varje villkor, eller för ett mejl namn, ämnesrad, mall och segment. Ett mejl blir alltid ett utkast; dirigenten skickar det aldrig.`,
+      "   · Ett marknadsmejl: subject, preview_text och body_html är den GODKÄNDA texten ur innehållsbanken — hitta den med rotor-dirigenten read { op: \"content_list\" } och läs den med read { op: \"content_get\" }; skriv inte om den. body_html är texten som HTML (stycken i <p>). segment_id är segmentets id som steget «Skapa segmentet i HubSpot» lämnade (lägesbilden eller stegets resultat). template_email_id är id på det mejl i HubSpot som ska klonas som mall, till exempel kundens förra utskick; läs mejlen i HubSpot med hamta. name är utkastets namn i HubSpot. from_name och reply_to lämnas tomma om mallens avsändare ska gälla. Har mallen flera textmoduler svarar dirigenten med deras nycklar; ange då body_html som { modulnyckel: html }.",
+      `3. Kör med skriv → rotor-dirigenten execute_step { task: "${t.id}", step: "${s.step}", values: { … }, confirmed: true, preview_id: <ur förhandsvisningen av samma anrop>, user_approval: <vad användaren sa ja till> }. I vad står på vanlig svenska exakt vad som skapas eller ändras: namnet och varje villkor, eller för ett mejl namn, ämnesrad, mall och segment. Ett mejl blir alltid ett utkast; dirigenten skickar det aldrig.`,
       "4. Säger användaren nej: fråga vad som ska vara annorlunda. Svara efteråt med vad dirigenten svarade (id, antal eller länk till utkastet)."].join("\n");
   }
   /** Uppdraget när Utför trycks på ett steg som ändrar i ett system (B-269). */
@@ -6605,11 +6739,11 @@ a.btn { text-decoration: none; color: var(--text); }
       ogjorda.length ? `Inte gjorda än, fast de ligger före: ${ogjorda.map((x) => x.label).join(", ")}. Det de skulle lämna saknas.` : null,
       "", "Stegets instruktion:", ...instructionLines(s), "",
       "Så går du till väga:",
-      `1. Läs lägesbilden: context { task: "${t.id}", step: "${s.step}" }. Den har mejltråden, det tidigare steg lämnat och kundens systemkarta — sök inte efter det igen.`,
+      `1. Läs lägesbilden: read { op: "context", task: "${t.id}", step: "${s.step}" }. Den har mejltråden, det tidigare steg lämnat och kundens systemkarta — sök inte efter det igen.`,
       "2. Leta vidare med search bara om lägesbilden inte räcker. Resonera med mig där något är oklart.",
       ...((s.needs_values || []).length ? [
         `3. Steget görs av dirigenten med execute_step och behöver värdena ${(s.needs_values || []).join(", ")}. Ta fram dem ur uppgiften (villkor för ett HubSpot-segment som [{ property, operation: { operationType, operator, value | values } }] med fältens interna namn). Visa dem för mig på vanlig svenska och vänta på mitt ja.`,
-        `4. Efter mitt ja: execute_step { task: "${t.id}", step: "${s.step}", values: { … }, confirmed: true, user_approval: <det jag sa ja till> }.`,
+        `4. Efter mitt ja: execute_step { task: "${t.id}", step: "${s.step}", values: { … }, confirmed: true, preview_id: <ur förhandsvisningen av samma anrop>, user_approval: <det jag sa ja till> }.`,
       ] : s.writes_to ? [
         `3. Steget ändrar i ${(s.writes_to.connections || []).join(", ")} (${s.writes_to.verb} ${s.writes_to.object}). Ta fram ändringen och visa exakt vad som ändras — vilken post, vilka fält och värden — och vänta på mitt ja innan du anropar något verktyg som skriver. Ändra aldrig rättigheter, användare eller kontoinställningar.`,
         `4. Efter mitt ja: gör ändringen med kopplingen, och markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s, "<resultatet på en rad>")}.`,
@@ -6621,10 +6755,10 @@ a.btn { text-decoration: none; color: var(--text); }
         `4. Efter mitt ja: markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s, "<resultatet på en rad>")}.`,
       ] : !tool && cs.length ? [
         `3. Gör steget med ${[...new Set(cs)].join(", ")} enligt instruktionen, och visa resultatet för mig.`,
-        `4. Efter mitt ja: spara det steget lämnar med content_save { customer: "${cust || "<kundens id>"}", for_task: "${t.id}", for_step: "${s.step}", kind, name, title, markdown, confirmed: true, user_approval: <det jag sa ja till> }, och markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s)}.`,
+        `4. Efter mitt ja: spara det steget lämnar med write { op: "content_save", customer: "${cust || "<kundens id>"}", for_task: "${t.id}", for_step: "${s.step}", kind, name, title, markdown, confirmed: true, user_approval: <det jag sa ja till> }, och markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s)}.`,
       ] : [
       "3. Skriv texten i Smyra (smyra_write) med kundens röst och persona, och visa den för mig.",
-      `4. Efter mitt ja: spara texten med content_save { customer: "${cust || "<kundens id>"}", for_task: "${t.id}", for_step: "${s.step}", kind, name, title, markdown, confirmed: true, user_approval: <det jag sa ja till> }, och markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s)}.`]),
+      `4. Efter mitt ja: spara texten med write { op: "content_save", customer: "${cust || "<kundens id>"}", for_task: "${t.id}", for_step: "${s.step}", kind, name, title, markdown, confirmed: true, user_approval: <det jag sa ja till> }, och markera ${s.molecule ? "delen" : "steget"} klart med ${doneCall(t, s)}.`]),
       "", s.writes_to || (s.needs_values || []).length || (tool && tool !== "smyra_write") || (!tool && cs.length) ? CHAT_RULES.split("\n").filter((x) => !x.includes("Smyra")).join("\n") : CHAT_RULES].filter((x) => x !== null).join("\n");
   }
   /**
@@ -6659,11 +6793,11 @@ a.btn { text-decoration: none; color: var(--text); }
       const src = before.filter((x) => asArr(x.leaves).some((l) => needs.has(l.id)));
       const items = (src.length ? src : before.filter((x) => draft(x)).slice(-2)).map((x) => { const d = draft(x);
         const file = asArr(t.outputs).find((o) => o.step === x.step && !o.external);
-        if (d) return `«${x.label}» \`content_get { id: "${d.id}" }\`${approvedAt(x) ? ` (godkänd ${short(approvedAt(x))})` : ""}`;
-        if (file) return `«${x.label}» \`asset_get { ref: "${file.ref}" }\``;
+        if (d) return `«${x.label}» \`read { op: "content_get", id: "${d.id}" }\`${approvedAt(x) ? ` (godkänd ${short(approvedAt(x))})` : ""}`;
+        if (file) return `«${x.label}» \`read { op: "asset_get", ref: "${file.ref}" }\``;
         missing.push(`«${x.label}» har inte lämnat något än${x.done ? "" : ", och steget är inte gjort"}`); return null; }).filter(Boolean);
       text = [`${s.label} för ${lbl(t.customer, "kunden")}.`, "",
-        `**Hämta först:** ${[...items, `lägesbilden \`context { task: "${t.id}", step: "${s.step}" }\``].join("; ")}.`, "",
+        `**Hämta först:** ${[...items, `lägesbilden \`read { op: "context", task: "${t.id}", step: "${s.step}" }\``].join("; ")}.`, "",
         `**Gör sedan så här:** ${aiMoments(s).join(" ")}${s.instruktion?.svarsform ? ` Svaret: ${s.instruktion.svarsform}` : ""}`].join("\n");
     }
     return text + (missing.length ? `\n\n**Saknas:** ${missing.join("; ")}.` : "");
@@ -6673,13 +6807,13 @@ a.btn { text-decoration: none; color: var(--text); }
     const delar = o.calls.map((c, n) => { const e = partOf(c.call); return `  ${n + 1}. ${e.label} [${partKind(c.call)}] (id ${c.call})${(e.input || []).length ? ` · tar ${e.input.join(", ")}` : ""}${(e.output || []).length ? ` · lämnar ${e.output.join(", ")}` : ""}`; });
     const uppdrag = !kind ? "Jag vill lägga till en del i steget. Fråga vad delen ska göra om det är oklart. Sök i biblioteket med search och föreslå en befintlig del — eller en ny."
       : kind === "llm" ? `Gör del ${i + 1}, «${part.label}», till en del som Claude gör. Skriv delen: namn (verb först), en mening om vad den gör, och instruktionen med de sex fälten (syfte, läs först, så gör du, svarets form, får inte, fråga när), och connections för kopplingarna den använder (t.ex. Smyra). Behåll samma indata och utdata så att kedjan håller.`
-        : `Hitta kod i biblioteket (search) som kan göra del ${i + 1}, «${part.label}» — en del med performer code som lämnar samma sak. Finns ingen: skriv ett atomförslag (molecule_build med atom_proposal) och säg vad koden ska göra.`;
+        : `Hitta kod i biblioteket (search) som kan göra del ${i + 1}, «${part.label}» — en del med performer code som lämnar samma sak. Finns ingen: skriv ett atomförslag (write { op: "molecule_build" } med atom_proposal) och säg vad koden ska göra.`;
     return [`Ändra hur steget «${o.title}» görs i dirigenten (id ${o.id}, operationen ${o.op}).`, "", uppdrag, "",
       "Delarna i ordning nu:", ...delar, "",
       "Så går du till väga:",
       "1. Sök i biblioteket med search innan du föreslår något nytt.",
-      "2. En ny del prövas med molecule_build { molecule } eller { atom_proposal } utan commit, och skrivs med commit: true först efter mitt ja.",
-      `3. Den nya kedjan prövas med library_check och sparas som en ny version med registry_define { change: true, node: { id: "${o.op}", calls } } efter mitt ja. Bindningarna på delarna som står kvar ska vara kvar.`,
+      "2. En ny del prövas med write { op: \"molecule_build\", molecule } eller { op: \"molecule_build\", atom_proposal } utan commit, och skrivs med commit: true först efter mitt ja.",
+      `3. Den nya kedjan prövas med read { op: "library_check" } och sparas som en ny version med write { op: "registry_define", change: true, node: { id: "${o.op}", calls } } efter mitt ja. Bindningarna på delarna som står kvar ska vara kvar.`,
       "", CHAT_RULES].join("\n");
   }
   /** Prompten för en ny metod, byggd med byggaren i vanliga chatten. */
@@ -6688,7 +6822,7 @@ a.btn { text-decoration: none; color: var(--text); }
       text ? `Det jag vet om den:\n${text}` : "Fråga mig vad metoden ska leverera och hur den görs i dag, om det inte står här.", "",
       "Så går du till väga:",
       "1. Sök i biblioteket med search efter metoder och steg som redan finns.",
-      "2. Bygg med method_build { from_plan: { plan_text, label, summary, delivers, keywords, steps: [ { label, summary, keywords, performer, effect, instruktion, connections } ] } } — inte post för post med registry_define. keywords är 4–8 sökord per del som inte står i namnet.",
+      "2. Bygg med write { op: \"method_build\", from_plan: { plan_text, label, summary, delivers, keywords, steps: [ { label, summary, keywords, performer, effect, instruktion, connections } ] } } — inte post för post med write { op: \"registry_define\" }. keywords är 4–8 sökord per del som inte står i namnet.",
       "3. Byggaren kör torrt tills commit: true. Visa mig vad som skrivs, och skicka commit: true först efter mitt ja.",
       "4. Ett Claude-steg har performer llm, instruktionen med de sex fälten och connections för kopplingarna det använder (t.ex. Smyra). Fälten för ett verktyg: guide { topic: 'verktyg:<namn>' }.",
       "", CHAT_RULES].join("\n");
@@ -7957,6 +8091,9 @@ a.btn { text-decoration: none; color: var(--text); }
       closeDialog(); const st = document.querySelector(`[data-lvstatus="${CSS.escape(key)}"]`); if (st) st.textContent = `Ur filbanken: ${namn.join("|")}`; return; }
     if (ds.confirmNode) return confirmNodeDialog(ds.confirmNode);
     if (ds.confirmNodeYes) return confirmNode(t, ds.confirmNodeYes);
+    if (ds.kwYes !== undefined) return keywordYes(t, ds.kwYes);
+    if (ds.kwNo !== undefined) return keywordNo(ds.kwNo);
+    if (ds.kw !== undefined) return keywordDialog(ds.kw);
     if (ds.suggestionYes !== undefined) return suggestionYes(t, ds.suggestionYes);
     if (ds.suggestionNo !== undefined) return suggestionNo(ds.suggestionNo);
     if (ds.suggestion !== undefined) return suggestionDialog(ds.suggestion);

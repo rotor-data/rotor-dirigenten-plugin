@@ -14,6 +14,7 @@ In the Claude app (Cowork, Code) a page reaches connectors only for its **owner*
 1. Use the files that come with this skill, in the same folder as this SKILL.md: `manifest.json` (gives `title`, `version` and `capabilities`) and `dirigenten.html` (the page). No network is needed. Do not edit the page.
    - Only if those files are missing: fetch `https://rotor-dirigenten.netlify.app/vy/manifest` and the page at its `file`, and save the page unchanged as a local `.html` file.
 2. Publish `dirigenten.html` as an artifact **owned by the user**, with exactly the manifest's `capabilities` (the `mcp` servers and tools, `sample`, `downloads`) and the title "Dirigenten".
+   - The `rotor-dirigenten` tools in the manifest are the seven: `asset_register`, `execute_step`, `guide`, `plan_state`, `read`, `search`, `write`. A copy published with the older tool names (`context`, `asset_get`, `intake_submit` …) cannot reach dirigenten any more: update it with the manifest's capabilities.
    - If the user already has an artifact titled "Dirigenten" (list their artifacts), **update that one** so the link stays the same.
    - Otherwise publish a new one, and tell the user to pin it.
 3. Open it for the user. If the page asks to allow connectors ("Tillåt kopplingarna"), tell the user to allow.
