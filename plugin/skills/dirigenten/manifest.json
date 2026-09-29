@@ -1,6 +1,6 @@
 {
  "title": "Dirigenten",
- "version": "a3072a5",
+ "version": "0c0fd12",
  "file": "https://rotor-dirigenten.netlify.app/vy/fil",
  "capabilities": {
   "mcp": {
@@ -49,6 +49,7 @@
    ]
   },
   "sample": {},
-  "downloads": true
+  "downloads": true,
+  "artifact": {}
  }
 }

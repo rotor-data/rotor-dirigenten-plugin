@@ -940,7 +940,50 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "a3072a5", published: "2026-09-29" };
+  const SIDA = { version: "0c0fd12", published: "2026-09-29" };
+  /**
+   * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
+   * och lägger ut den som ny version av samma artefakt. Först direkt från
+   * dirigenten (/vy/fil), annars genom kopplingen (read { op: "view_file" }).
+   * state: null = knappen visas, "busy" = pågår, "no" = går inte här (raden med instruktion).
+   */
+  const SELF = { state: null, msg: "" };
+  const VIEW_FILE_URL = "https://rotor-dirigenten.netlify.app/vy/fil";
+  const wrapView = (text) => '<!doctype html><html lang="sv"><head><meta charset="utf-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1"><title>Dirigenten</title></head><body>\n'
+    + text + "\n</body></html>\n";
+  async function fetchViewText() {
+    try { const r = await fetch(VIEW_FILE_URL, { cache: "no-store" }); if (r.ok) { const t = await r.text(); if (t.includes("const SIDA")) return t; } }
+    catch { /* stoppad av sidans regler — prova kopplingen */ }
+    const d = await call("view_file", {});
+    if (typeof d?.html !== "string" || !d.html) throw new Error("dirigenten skickade ingen sida");
+    return d.html;
+  }
+  const SELF_ERRORS = {
+    not_granted: "Den här vyn har inte rätt att uppdatera sig själv.",
+    consent_required: "Den här vyn har inte rätt att uppdatera sig själv.",
+    capability_disabled: "Den här vyn har inte rätt att uppdatera sig själv.",
+    capability_removed: "Den här vyn har inte rätt att uppdatera sig själv.",
+    not_declared: "Den här vyn har inte rätt att uppdatera sig själv.",
+    not_writer: "Du kan läsa den här vyn men inte ändra den — bara den som äger den kan uppdatera den.",
+    conflict: "Någon uppdaterade vyn samtidigt. Sidan laddas om med den nya versionen.",
+    too_large: "Den nya sidan är för stor för att läggas ut.",
+    rate_limited: "Vyn har uppdaterats för ofta just nu. Vänta en stund och försök igen.",
+  };
+  async function selfUpdate() {
+    SELF.state = "busy"; SELF.msg = ""; render();
+    let a = null;
+    try { a = typeof claude !== "undefined" && claude.use ? await claude.use("artifact") : null; } catch { a = null; }
+    if (!a) { SELF.state = "no"; SELF.msg = "Vyn kan inte uppdatera sig själv här."; render(); return; }
+    try { await a.publish(wrapView(await fetchViewText())); }
+    catch (e) {
+      const code = e?.code;
+      SELF.state = code === "conflict" ? "busy" : code && SELF_ERRORS[code] && code !== "rate_limited" ? "no" : null;
+      SELF.msg = SELF_ERRORS[code] || `Uppdateringen gick inte: ${e?.message || e}.`;
+      render();
+    }
+  }
+  document.addEventListener("click", (ev) => { if (ev.target?.closest?.("#self-update")) selfUpdate(); });
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1018,7 +1061,7 @@ a.btn { text-decoration: none; color: var(--text); }
    */
   const VIEW_OPS = {
     read: ["context", "intake_status", "classify_propose", "library_check", "library_debt", "measure_debt",
-      "read_call", "content_search", "content_list", "asset_get", "content_get", "bug_report"],
+      "read_call", "content_search", "content_list", "asset_get", "content_get", "bug_report", "view_file"],
     write: ["registry_define", "registry_append", "intake_submit", "intake_order", "classify_accept",
       "molecule_build", "workflow_build", "method_build", "method_variant_build",
       "question_answer", "time_report", "task_lock", "message", "note_link",
@@ -1877,7 +1920,9 @@ a.btn { text-decoration: none; color: var(--text); }
     if (st) {
       const v = S.serverVersion, gammal = !!v && v !== SIDA.version;
       st.hidden = !gammal;
-      st.innerHTML = gammal ? `<i></i>Den här sidan är version ${esc(SIDA.version)}, men dirigenten kör ${esc(v)}. Ladda om sidan; syns raden kvar är den publicerade sidan äldre än servern.` : "";
+      st.innerHTML = !gammal ? "" : SELF.state === "no" || SELF.state === "busy" || SELF.msg
+        ? `<i></i>${SELF.msg ? `${esc(SELF.msg)} ` : ""}${SELF.state === "busy" ? "Uppdaterar vyn…" : `Den här sidan är version ${esc(SIDA.version)}, men dirigenten kör ${esc(v)}. Ladda om sidan; syns raden kvar är den publicerade sidan äldre än servern.`}`
+        : `<button class="btn sm" id="self-update">Uppdatera vyn</button>`;
     }
     // Samma yta eller objekt: rullningen står kvar. Bara ett byte börjar överst.
     const key = state.obj ? `${state.obj.type}:${state.obj.id || state.obj.key || `${state.obj.task}|${state.obj.step}`}` : state.screen;
