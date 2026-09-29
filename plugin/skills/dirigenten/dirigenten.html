@@ -943,7 +943,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "b189e37", published: "2026-09-29" };
+  const SIDA = { version: "b821b0f", published: "2026-09-29" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1142,7 +1142,7 @@ a.btn { text-decoration: none; color: var(--text); }
     setTimeout(() => bad(new Error(`${what} svarade inte på ${ms / 1000} s — godkänn kopplingen om sidan frågar, och tryck Hämta igen`)), ms))]);
   /** Posten (intake_status queue). Hämtas efter planen och när In öppnas. */
   async function loadQueue() {
-    try { const d = await withTimeout(call("intake_status", { queue: true, days: 60 }), 45000, "Posten");
+    try { const d = await withTimeout(call("intake_status", { queue: true, days: 60, format: "full" }), 45000, "Posten");
       S.queue = d?.queue ?? null; S.queueError = null; S.at.queue = Date.now(); }
     catch (e) { S.queueError = e; }
     render();
@@ -6719,10 +6719,11 @@ a.btn { text-decoration: none; color: var(--text); }
   function queueLists(q) {
     const toAssess = [...(q.untriaged || []), ...(q.by_rule || [])];
     const open = new Set(toAssess.map((x) => x.thread));
-    return { bedoma: toAssess, bedomt: (q.waiting || []).filter((x) => !open.has(x.thread)),
-      avklarat: [...(q.resolved || []), ...(q.closed_by_ack || [])] };
+    // Insorterade följs i planen (Bedömt); klara uppgifter, hanterade och tack är avklarade.
+    return { bedoma: toAssess, bedomt: [...(q.waiting || []).filter((x) => !open.has(x.thread)), ...(q.in_plan || [])],
+      avklarat: [...(q.task_closed || []), ...(q.resolved || []), ...(q.closed_by_ack || [])] };
   }
-  const allCases = () => { const q = S.queue || {}; return [...(q.waiting || []), ...(q.untriaged || []), ...(q.by_rule || []), ...(q.resolved || []), ...(q.closed_by_ack || [])]; };
+  const allCases = () => { const q = S.queue || {}; return [...(q.waiting || []), ...(q.untriaged || []), ...(q.by_rule || []), ...(q.in_plan || []), ...(q.task_closed || []), ...(q.resolved || []), ...(q.closed_by_ack || [])]; };
   const caseByThread = (thread) => allCases().find((y) => y.thread === thread) ?? null;
   function threadSubject(thread) { return caseByThread(thread)?.subject || S.threads?.get(thread)?.detail?.thread?.subject || null; }
   const OUTCOME = { delivery: "blir arbete", own_reply: "eget svar räcker", resolved: "avklarat", ignored: "ignoreras",
@@ -6762,10 +6763,11 @@ a.btn { text-decoration: none; color: var(--text); }
   function caseRow(x, tab) {
     const open = !x.triage || x.triage.outcome === "waiting";
     return row({ kind: `<span class="kind human" title="Mejl">${ic("mail")}</span>`, title: esc(x.subject || "utan ämnesrad"),
-      why: `${esc(x.party || "okänd avsändare")}${x.cc_only ? " · vi på kopia" : ""}${x.workdays != null ? ` · ${x.workdays} arbetsdagar` : ""} · ${triageChip(x)}${x.rule ? ` · <span class="chip">regel: ${esc(x.rule.label || "")}</span>` : ""}`,
+      why: `${esc(x.party || "okänd avsändare")}${x.cc_only ? " · vi på kopia" : ""}${x.workdays != null ? ` · ${x.workdays} arbetsdagar` : ""} · ${x.handled ? `<span class="chip green">${esc(x.handled.why)}</span>` : triageChip(x)}${x.returned ? ` · <span class="chip amber">kunden skrev igen</span>` : ""}${x.rule ? ` · <span class="chip">regel: ${esc(x.rule.label || "")}</span>` : ""}`,
       when: short(x.last_at || x.since), late: !!x.workdays && x.workdays >= 5 && tab === "bedoma",
       act: (open && tab === "bedoma" ? `<button class="btn sm ai" data-assess="${esc(x.thread)}">${SP} Bedöm</button>`
-        : `<button class="btn sm" data-open-case="${esc(x.thread)}">Öppna</button>`) + gmailLink(x.thread, "btn sm quiet"),
+        : `<button class="btn sm" data-open-case="${esc(x.thread)}">Öppna</button>`)
+        + (tab === "avklarat" ? "" : `<button class="btn sm quiet" data-handled="${esc(x.thread)}" title="Tråden väntar inte på oss längre. Du anger ett kort skäl.">Hanterad</button>`) + gmailLink(x.thread, "btn sm quiet"),
       attrs: `data-open-case="${esc(x.thread)}"` });
   }
   /** Förslagskortet (6.3): Claudes förslag i fält som går att ändra, Sätt upp eller Avvisa. */
@@ -6801,7 +6803,8 @@ a.btn { text-decoration: none; color: var(--text); }
     const t = x.triage;
     return (t && t.outcome !== "waiting" ? `<div class="meta" style="margin-bottom:8px">Bedömt: ${triageChip(x)}${t.reason ? ` — ${esc(t.reason)}` : ""}</div>` : "")
       + `<div class="bar-actions"><button class="btn ai" data-assess="${esc(x.thread)}">${SP} Låt Claude bedöma</button>`
-      + `<button class="btn" data-assess-own="${esc(x.thread)}">Bedöm själv</button></div>`;
+      + `<button class="btn" data-assess-own="${esc(x.thread)}">Bedöm själv</button>`
+      + (x.handled && x.handled.kind !== "in_plan" ? "" : `<button class="btn quiet" data-handled="${esc(x.thread)}">Hanterad</button>`) + `</div>`;
   }
 
   const ASSESSMENT_RULES = ["DIN UPPGIFT ÄR ATT VÄLJA ÅTGÄRD — vilken metod som gör ärendet, eller att inget arbete behövs. Inte att sortera i fack.", "",
@@ -8633,6 +8636,14 @@ a.btn { text-decoration: none; color: var(--text); }
       const x = caseByThread(ds.assessOwn);
       state.obj.proposal = { own: true, choice: "waiting", suggested: (x?.methods || []).map((m) => m.method) }; render(); });
     if (ds.assessCancel) { state.obj.proposal = null; return render(); }
+    /* Hanterad (2026-09-29): tråden väntar inte på oss längre. Ett kort skäl, som står i loggen; skriver kunden igen kommer tråden tillbaka. */
+    if (ds.handled) return dialog(`<h2>Markera som hanterad</h2><p class="meta">«${esc(threadSubject(ds.handled) || "ärendet")}» lämnar «väntar på oss». Skälet står kvar i loggen och går att läsa efteråt. Skriver kunden igen kommer tråden tillbaka.</p>`
+      + `<label class="field"><span>Skäl · kort</span><input id="hand-why" type="text" maxlength="200" placeholder="till exempel: besvarat per telefon"></label>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-handled-ok="${esc(ds.handled)}">Markera hanterad</button></div>`);
+    if (ds.handledOk) { const why = $("#hand-why")?.value.trim();
+      if (!why) return toast("Skriv ett kort skäl — det står kvar i loggen.", null, true);
+      return busy(t, async () => { try { await acceptAssessment(ds.handledOk, { outcome: "resolved", reason: why }, { quiet: true });
+        closeDialog(); state.obj = null; await load(); toast("Markerad som hanterad."); } catch (e) { fail("Markeringen sparades inte", e); } }); }
     if (ds.acceptOne !== undefined && t.hasAttribute("data-accept-one")) return busy(t, async () => { try { await acceptBatchItem(+ds.acceptOne); await load(); } catch (e) { fail("Förslaget sparades inte", e); } });
     if (ds.acceptAll) return busy(t, async () => { let n = 0;
       for (let k = 0; k < state.batch.items.length; k++) { const i = state.batch.items[k]; if (!i.p || i.saved) continue;
