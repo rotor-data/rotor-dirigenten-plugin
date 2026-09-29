@@ -649,6 +649,63 @@ a.btn { text-decoration: none; color: var(--text); }
 .lv-fact .v { font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
 .lv-fact .v.late { color: var(--red); }
 .lv-fact .meta { overflow-wrap: anywhere; }
+.fam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s3); padding: var(--s4); }
+.fam-card { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text); text-decoration: none; min-height: 44px; }
+.fam-card:hover, .fam-card:focus-visible { background: var(--bg-hover); }
+.fam-card .t { font-weight: 700; }
+.fam-card .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; }
+.fam-list { list-style: none; margin: 0; padding: 4px var(--s4) 12px; }
+.fam-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 9px 0; border-top: 1px solid var(--line); }
+.fam-list li:first-child { border-top: 0; }
+.fam-list .wait { grid-column: 1 / -1; font-size: 12px; color: var(--text-2); }
+.fam-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--s4); padding: 0 var(--s4) 12px; }
+.fam-two h3 { margin: 12px 0 4px; font-size: 13px; }
+.tlb { padding: 0 0 8px; }
+.tlb-bar { display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; padding: 8px var(--s4); }
+.tlb-bar label { display: inline-flex; gap: 6px; align-items: center; min-height: 32px; }
+.tlb-scroll { overflow-x: auto; overflow-y: hidden; padding-bottom: 6px; }
+.tlb-grid { position: relative; padding-bottom: 6px; overflow: hidden; }
+.tlb-head { position: relative; height: 22px; border-bottom: 1px solid var(--line); }
+.tlb-tick { position: absolute; top: 3px; font-size: 11px; color: var(--text-3); padding-left: 3px; }
+.tlb-we { position: absolute; top: 0; height: 9999px; background: var(--bg-subtle); opacity: .6; pointer-events: none; }
+.tlb-today, .tlb-endline { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--accent); pointer-events: none; z-index: 1; }
+.tlb-endline { border-left-color: var(--text-2); border-left-style: dashed; }
+.tlb-endline.crash { border-left-color: var(--red); }
+.tlb-today span, .tlb-endline span { position: absolute; top: 24px; left: 4px; font-size: 11px; white-space: nowrap; color: var(--accent-ink); background: var(--bg); padding: 0 3px; border-radius: 4px; }
+.tlb-endline span { color: var(--text-2); }
+.tlb-endline.crash span { color: var(--red); }
+.tlb-grp { display: flex; gap: 10px; align-items: baseline; padding: 10px var(--s4) 2px; position: sticky; left: 0; }
+.tlb-row { position: relative; height: 42px; }
+.tlb-blk { position: absolute; top: 5px; height: 32px; display: flex; align-items: center; border-radius: 8px; background: var(--accent-weak); border: 1.5px solid var(--accent); color: var(--accent-ink); font-size: 12.5px; font-weight: 600; cursor: grab; touch-action: none; user-select: none; z-index: 2; min-width: 30px; }
+.tlb-blk:active, .tlb-blk.drag { cursor: grabbing; }
+.tlb-blk.drag { box-shadow: var(--shadow); z-index: 4; }
+.tlb-blk.done { background: var(--green-weak); border-color: var(--green); color: var(--green); cursor: default; opacity: .75; }
+.tlb-blk.nomargin { background: var(--red-weak); border-color: var(--red); color: var(--red); }
+.tlb-blk.crash { background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(196, 49, 42, .22) 6px 9px); border-color: var(--red); }
+.tlb-blk.bad { border-style: dotted; outline: 2px solid var(--red); }
+.tlb-blk.moved { border-style: dashed; }
+.tlb-blk.sel { box-shadow: 0 0 0 3px var(--accent); }
+.tlb-t { padding: 0 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; pointer-events: none; }
+.tlb-h { position: absolute; top: 0; bottom: 0; width: 12px; cursor: ew-resize; }
+.tlb-h.l { left: -3px; } .tlb-h.r { right: -3px; }
+.tlb-h::after { content: ""; position: absolute; top: 9px; bottom: 9px; left: 4px; width: 3px; border-radius: 2px; background: currentColor; opacity: .35; }
+.tlb-cap { position: absolute; top: 12px; font-size: 12px; color: var(--text-2); white-space: nowrap; z-index: 1; }
+.tlb-cap b { color: var(--accent-ink); }
+.tlb[data-drag]::after { content: attr(data-drag); position: fixed; right: 24px; bottom: 90px; background: var(--text); color: var(--bg); padding: 4px 10px; border-radius: 999px; font-weight: 700; z-index: 30; }
+.tlb-mobile { display: none; }
+.tlb-list { list-style: none; margin: 0; padding: 0 var(--s4); }
+.tlb-list li { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 8px 0; border-top: 1px solid var(--line); }
+.tlb-list li .nm { display: flex; flex-direction: column; min-width: 0; flex: 1 1 160px; }
+.tlb-list li.nomargin b { color: var(--red); }
+.tlb-list li.moved { background: var(--accent-weak); }
+.tlb-pm { display: flex; gap: 8px; }
+.tlb-pm .btn { min-width: 76px; min-height: 44px; }
+.tlb-prev { position: sticky; bottom: 8px; z-index: 20; margin-top: 16px; padding: 12px var(--s4); box-shadow: var(--shadow); }
+.tlb-prev-a { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+.tlb-prev-a input { flex: 1 1 200px; min-height: 40px; }
+.tlb-prev-a .btn { min-height: 40px; }
+@media (max-width: 760px) { .tlb-scroll, .tlb-bar span { display: none; } .tlb-mobile { display: block; } }
+@media (prefers-reduced-motion: no-preference) { .tlb-blk:not(.drag) { transition: left .12s ease, width .12s ease; } }
 .lv-tl { padding: 22px 8px 4px; border-top: 1px solid var(--line); }
 .lv-track { position: relative; height: 36px; margin: 0 16px; }
 .lv-bar { position: absolute; left: 0; right: 0; top: 15px; height: 4px; border-radius: 4px; background: var(--line); }
@@ -965,7 +1022,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "786c709", published: "2026-09-29" };
+  const SIDA = { version: "94ae019", published: "2026-09-29" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1167,6 +1224,7 @@ a.btn { text-decoration: none; color: var(--text); }
     catch (e) { const again = server === SERVER && previewRetry(tool, input, data(e?.result)); if (again) return callOn(server, tool, again);
       const f = data(e?.result)?.error; rec.error = f?.code || e?.code || String(e?.message || e).slice(0, 200); throw f ? Object.assign(new Error(f.message + (f.next_action ? " — " + f.next_action : "")), { code: f.code }) : e; }
     const d = data(r);
+    try { rec.bytes = JSON.stringify(r ?? "").length; } catch { /* mätningen får inte stoppa anropet */ }
     const again = server === SERVER && previewRetry(tool, input, d);
     if (again) return callOn(server, tool, again);
     if (d?.error?.message) { rec.error = d.error.code || "fel"; throw Object.assign(new Error(d.error.message + (d.error.next_action ? " — " + d.error.next_action : "")), { code: d.error.code, context: d.error.context }); }
@@ -1248,7 +1306,7 @@ a.btn { text-decoration: none; color: var(--text); }
    * sällan"). Listan med meddelanden oftast, planen och biblioteket sällan.
    * Det man själv ändrar hämtas som förut direkt efteråt (load).
    */
-  const TTL = { agenda: 60_000, queue: 180_000, plan: 600_000, lib: 1_800_000, settings: 3_600_000 };
+  const TTL = { agenda: 300_000, queue: 300_000, plan: 300_000, lib: 1_800_000, settings: 3_600_000 };
   const stale = (k) => !S.at[k] || Date.now() - S.at[k] > TTL[k];
   async function refreshAgenda() {
     try { const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks(), format: "full" }), 45000, "Listan");
@@ -1264,12 +1322,13 @@ a.btn { text-decoration: none; color: var(--text); }
     if (!mcp || S.phase || document.visibilityState !== "visible") return;
     if (!S.plan) return load();
     if (stale("agenda")) refreshAgenda();
-    if (stale("plan")) refreshPlan();
+    // Hela planen (3,4 MB) hämtas i bakgrunden bara där den ritas: Planen och tidslinjerna.
+    if (stale("plan") && (state.screen === "planen" || state.obj?.type === "delivery")) refreshPlan();
     if (stale("queue")) loadQueue();
     if (state.screen === "metoder" && stale("lib")) loadLib();
     if (stale("settings")) loadSettings();
   }
-  setInterval(refreshStale, 60_000);
+  setInterval(refreshStale, 300_000);
   /**
    * Uppdatera (Daniel P 2026-09-29: «jag saknar en refreshknapp på själva
    * vyn»). Hämtar allt på nytt oavsett livslängd: listan, planen, posten,
@@ -1966,6 +2025,7 @@ a.btn { text-decoration: none; color: var(--text); }
     m.innerHTML = `<div class="page"${form ? ` data-form="${form}"` : ""}>${formBand(form, formLine)}${fn()}</div>`;
     renderCrumbs();
     placeTips(m);
+    tlbAfterRender();
     renderPanel();
     // Den riktiga tiden för hämtningen — prototypens klocka stod på 09:42.
     paintFresh();
@@ -2139,8 +2199,9 @@ a.btn { text-decoration: none; color: var(--text); }
       const d = x.project?.kind === "delivery" ? x.project : null, href = H.delivery(d ? d.id : x.task, d ? x.task : null);
       return trow({ cls: hot ? "burn" : "mine", icon: "user", icls: "q", title: x.headline, attrs: `data-lv-href="${href}"`, more: false,
         acts: (x.next ? `<button class="btn sm ai" data-lv-copy="${esc(JSON.stringify({ task: x.task, next: x.next, text: x.reason }))}">${SP} Kopiera till Claude</button>` : "")
+          + (!hot && waitOfItem(x)?.state === "remind" ? `<button class="btn sm primary" data-remind-open="${esc(x.task)}|${esc(x.step || "")}">Skriv påminnelse</button>` : "")
           + `<a class="btn sm" href="${href}">Öppna uppgiften ›</a>`,
-        meta: (hot ? chip("besked kom inte", "red") : chip("påminn", "amber")) + esc(x.reason) + (tail ? ` · ${tail}` : "") });
+        meta: (hot ? chip("besked kom inte", "red") : chip("påminn", "amber") + esc(waitWho(waitOfItem(x) || { on: x.holder })) + ". ") + esc(x.reason) + (tail ? ` · ${tail}` : "") });
     }
     if (x.kind === "drift")
       return trow({ cls: hot ? "burn" : "mine", icon: "alert", icls: "q", title: x.headline,
@@ -2155,19 +2216,37 @@ a.btn { text-decoration: none; color: var(--text); }
       acts: `<button class="btn sm primary" data-open-q="${esc(x.open)}">${handover ? "Ta emot" : asks ? "Svara" : "Öppna ›"}</button>`,
       meta: (handover ? lead : (hot ? lead : "") + (asks ? chip(`fråga till ${lbl(x.customer, "kunden")}`, "amber") : chip("saknas", "amber"))) + tail });
   }
+  const waitOfItem = (x) => waitOfStep(taskById(x.task), x.step ? { step: x.step } : null);
   /** Vem något väntar på, i ord: kollegan, kunden eller partnern. */
   const waitsOn = (x) => lbl(x.holder, "") || lbl(stepOf(taskById(x.task), x.step)?.waiting?.on, "") || lbl(x.customer, "någon utanför Rotor");
+  /** Stegen jag lämnat till mottagaren i uppgiften som mottagaren inte svarat på än. */
+  const pendingFrom = (x) => (taskById(x.task)?.steps || []).filter((s) => !s.done && s.handover
+    && s.handover.to === x.holder?.id && s.handover.by === me());
+  /** Dra tillbaka det jag lämnat över: ett anrop per steg, steget står kvar hos mig. */
+  function withdrawHandover(btn, key) {
+    const [task, to] = key.split("|");
+    const steps = (taskById(task)?.steps || []).filter((s) => !s.done && s.handover?.to === to && s.handover?.by === me());
+    if (!steps.length) return toast("Det finns inget att dra tillbaka. Hämta igen.", null, true);
+    return busy(btn, async () => {
+      try { for (const s of steps) await call("execute_step", { task, step: s.step, handover: "decline" });
+        await afterWrite(steps.length === 1 ? "Du drog tillbaka överlämningen. Steget är kvar hos dig." : `Du drog tillbaka ${steps.length} steg. De är kvar hos dig.`); }
+      catch (e) { fail("Överlämningen drogs inte tillbaka", e); }
+    });
+  }
   /** En rad i Väntar på andra: ligger hos en kollega, en kund eller en partner. */
   function otherRow(x) {
     const t = taskById(x.task);
     const title = x.kind === "colleague" || x.kind === "handover_out" ? workTitle(t, x) : (x.step_named?.label || x.headline);
     const remind = x.kind === "colleague" && x.holder?.id
       ? `<button class="btn sm quiet" data-msg='${esc(JSON.stringify({ about: { task: x.task, step: x.step }, title: lbl(x.step_named, title), to: [x.holder.id] }))}' title="Skicka ett meddelande om steget till ${esc(lbl(x.holder))}">Påminn</button>` : "";
+    const withdraw = x.kind === "handover_out" && pendingFrom(x).length
+      ? `<button class="btn sm quiet" data-withdraw="${esc(x.task)}|${esc(x.holder?.id || "")}" title="Steget är kvar hos dig">Dra tillbaka</button>` : "";
     const take = x.kind === "colleague" ? `<button class="btn sm" data-take-task="${esc(x.task)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över</button>` : "";
     return trow({ cls: "other", icon: x.kind === "question" ? "help" : "user", title,
       attrs: x.step ? `data-open-step="${esc(x.task)}|${esc(x.step)}"` : x.open ? `data-open-q="${esc(x.open)}"` : "",
-      acts: take + remind, more: false,
-      meta: chip(x.kind === "handover_out" ? `väntar på att ${waitsOn(x)} tar emot` : x.kind === "wait" ? `väntar på besked från ${waitsOn(x)}` : `väntar på ${waitsOn(x)}`)
+      acts: take + remind + withdraw, more: false,
+      meta: chip(x.kind === "handover_out" ? `väntar på att ${waitsOn(x)} tar emot` : x.kind === "wait" ? waitWho(waitOfItem(x) || { on: x.holder }).replace(/^V/, "v") : `väntar på ${waitsOn(x)}`)
+        + (x.kind === "wait" ? chip("inte sent hos oss", "green") : "")
         + (x.kind === "colleague" && x.step_named ? stepTag(x.step_named.label) : "")
         + (x.kind === "wait" ? `${esc(x.reason)} · ` : "")
         + [deliveryTag(x, t), x.kind === "wait" ? "" : byWhen(x.due, x.kind === "waiting" ? "svar senast" : "senast")].filter(Boolean).join(" · ") });
@@ -2202,7 +2281,8 @@ a.btn { text-decoration: none; color: var(--text); }
   function groupByDelivery(xs, dOf) {
     const out = [], at = new Map();
     for (const x of xs) {
-      const d = dOf(x);
+      // Ett förslag till dig och en väntan på mottagaren fälls aldrig in i en grupp: de ska synas.
+      const d = x.kind === "handover" || x.kind === "handover_out" ? null : dOf(x);
       if (!d) { out.push({ one: x }); continue; }
       if (at.has(d)) { out[at.get(d)].items.push(x); continue; }
       at.set(d, out.length); out.push({ d, items: [x] });
@@ -4163,6 +4243,7 @@ a.btn { text-decoration: none; color: var(--text); }
       return `<div class="wshead"><div class="titles"><span class="meta">${custDot(t.customer?.color)} ${t.customer?.id ? `<a href="${H.customer(t.customer.id)}">${esc(lbl(t.customer))}</a>` : esc(lbl(t.customer))}`
         + ` · i uppgiften <a href="${H.delivery(dv.id, dv.implicit ? null : t.id)}">${esc(taskTitle(t))}</a>${eclBtn("task", t.id)}${dv.implicit ? "" : ` · i leveransen <a href="${H.delivery(dv.id)}">${esc(dv.label)}</a>`} · leverans ${short(t.due)} · ${methodLine(t)}</span>`
         + `<h1><button class="fld" data-fedit="step-name|${esc(t.id)}|${esc(s.step)}" title="Byt stegets namn">${esc(s.label)}</button>${eclBtn("step", `${t.id}|${s.step}`)}</h1>`
+        + (!s.done && s.handover ? `<div class="warnnote" style="margin:4px 0 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${ic("user")} ${s.handover.to === me() ? `${esc(lbl(s.handover.by_named, "En kollega"))} vill lämna steget till dig` : `Överlämnat till ${esc(lbl(s.handover.to_named, personName(s.handover.to)))}, väntar på ja`}${s.handover.at ? ` · ${short(s.handover.at)}` : ""}.</span>${s.handover.by === me() ? `<button class="btn sm quiet" data-withdraw="${esc(t.id)}|${esc(s.handover.to)}">Dra tillbaka</button>` : ""}</div>` : "")
         + `<div class="line">${kindMark(k)} ${esc(kindTxt)} · ansvarig ${s.done ? esc(lbl(s.responsible, "–")) : `<button class="fld" data-handover-to="1" title="Ge steget till någon annan">${esc(lbl(s.responsible, "–"))}</button>`}`
         + ` · ${!s.done && (s.postpone_options || []).length ? `<button class="fld" data-postpone="1" title="Senarelägg steget">${short(s.start)}–${short(s.latest_end || s.end)}</button>` : `${short(s.start)}–${short(s.latest_end || s.end)}`}`
         + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="meta">kan flyttas ${plural(s.float_days, "dag", "dagar")}</span>`)
@@ -4185,10 +4266,11 @@ a.btn { text-decoration: none; color: var(--text); }
           + `<button class="addstep" data-add-step="${esc(t.id)}|${esc(x.step)}" title="Lägg till steg här" aria-label="Lägg till steg efter ${esc(x.label)}">+</button>`).join("")}</div>`
         + (state.pal?.task === t.id ? `<div id="stpal" class="stpal" role="region" aria-label="Lägg till steg">${palHtml(t)}</div>` : "") + `</div>`
         + (t.thread ? threadCard(t.thread) : "")
+        + stepWaitBanner(t, s)
         + `<div class="ws2"><div class="card section"><h2>Behövs</h2>`
         + (qs.length ? qs.map((o) => `<div class="need" style="cursor:pointer" data-open-q="${esc(o.id)}"><span class="no">${ic(o.step === s.step ? "stop" : "help")}</span><span class="t">${esc(headlineForOpen(o))}${o.step && o.step !== s.step ? ` <span class="meta">· stoppar «${esc(lbl(o.step_named, ""))}»</span>` : ""}</span><button class="btn sm" data-open-q="${esc(o.id)}">Svara</button></div>`).join("")
           : `<div class="need"><span class="ok">${ic("check")}</span><span class="t">Allt som behövs finns</span></div>`)
-        + `</div><div class="card section"><h2>Så görs det <button class="btn quiet sm" data-sedit="${esc(t.id)}|${esc(s.step)}" title="Skriv om stegets prompt och moment här">Ändra texten</button>${s.done || s.external ? "" : ` <button class="btn quiet sm" data-stype="${esc(t.id)}|${esc(s.step)}" title="Låt en människa, Claude eller kod göra steget">Byt typ</button>`}${eclBtn("step", `${t.id}|${s.step}`)}</h2>`
+        + `</div><div class="card section"><h2>Så görs det <button class="btn quiet sm" data-sedit="${esc(t.id)}|${esc(s.step)}" title="Skriv om stegets prompt och moment här">Ändra texten</button>${s.done || s.external ? "" : ` <button class="btn quiet sm" data-stype="${esc(t.id)}|${esc(s.step)}" title="Låt en människa, Claude eller kod göra steget">Byt typ</button>`}${s.done ? "" : ` <button class="btn quiet sm" data-wait-open="${esc(t.id)}|${esc(s.step)}" title="Steget väntar på ett besked utifrån: vem, frågan och när vi påminner">Väntar på …</button>`}${eclBtn("step", `${t.id}|${s.step}`)}</h2>`
         + stepTextCard(t, s)
         + (s.instruktion?.syfte ? `<p style="margin:0 0 8px">${esc(s.instruktion.syfte)}</p>` : "")
         + (how ? `<ol class="how">${how.slice(0, 8).map((h) => `<li>${esc(h)}</li>`).join("")}</ol>` : `<div class="meta">Ingen beskrivning än.</div>`)
@@ -4426,9 +4508,21 @@ a.btn { text-decoration: none; color: var(--text); }
    */
   const toneChip = (x) => `<span class="chip ${x.tone || ""}">${esc(x.word)}</span>${x.note ? ` <span class="meta">${esc(x.note)}</span>` : ""}`;
   const turOf = (s) => (s.responsible?.id ?? s.responsible) === me() ? { word: "din tur", tone: "accent" } : { word: `väntar på ${lbl(s.responsible, "en kollega")}`, tone: "" };
+  /** På steget: vem vi väntar på och sedan när, tydligt nog att ingen tror att vi dröjer. Från påminnelsedagen: Skriv påminnelse. */
+  function stepWaitBanner(t, s) {
+    const w = waitOfStep(t, s) || waitOfStep(t, null);
+    if (!w || s.done) return "";
+    return `<div class="card section" style="border-left:4px solid var(--line-strong, var(--line))"><h2>${esc(waitWho(w))} ${chip("inte sent hos oss", "green")}</h2>`
+      + `<p style="margin:0 0 8px">${esc(w.question)}</p><div class="meta">${w.state === "remind" ? "Påminnelsedagen är här." : `Påminn ${esc(short(w.remind))}.`}`
+      + `${w.last_day ? ` Sista dag ${esc(short(w.last_day))}.` : ""}${w.if_silent ? ` Utan svar: ${esc(w.if_silent)}` : ""}</div>`
+      + `<div class="bar-actions" style="margin-top:8px">${w.state === "remind" ? `<button class="btn sm primary" data-remind-open="${esc(t.id)}|${esc(w.step || "")}">Skriv påminnelse</button>` : ""}`
+      + `<button class="btn sm quiet" data-wait-open="${esc(t.id)}|${esc(w.step || "")}">Ändra väntan</button></div></div>`;
+  }
   function stepState(t, s) {
     if (s.done) return { word: "klar", tone: "green" };
     if (s.assumed_approved) return { word: "klar", tone: "green", note: "räknas som godkänd" };
+    const held = waitOfStep(t, s);
+    if (held) return { word: waitWho(held).replace(/^V/, "v"), tone: "", note: "inte sent hos oss" };
     if (s.external) return { word: `väntar på ${lbl(s.waiting?.on, "någon utanför Rotor")}`, tone: "" };
     if (s.after_check) return { word: "ute", tone: "green", note: "efterkontroll kvar" };
     if (day10(s.end) < TODAY) return { word: "sen", tone: "red" };
@@ -4442,16 +4536,20 @@ a.btn { text-decoration: none; color: var(--text); }
    */
   const openWait = (t) => asArr(t?.waits).find((w) => w.state === "waiting" || w.state === "remind") || null;
   const goneWait = (t) => asArr(t?.waits).find((w) => w.step == null && (w.state === "no" || w.state === "expired")) || null;
+  /** Väntan som står öppen på just det här steget (null: hela uppgiften). */
+  const waitOfStep = (t, s) => asArr(t?.waits).find((w) => (w.state === "waiting" || w.state === "remind") && (w.step ?? null) === (s ? s.step : null)) || null;
+  /** «Väntar på Piia Ringstad (Freebo) sedan 12 sep» — vem, och sedan när, så att ingen tror att det är vi som dröjer. */
+  const waitWho = (w) => `Väntar på ${lbl(w?.on, "någon utanför Rotor")}${w?.at ? ` sedan ${short(day10(w.at))}` : ""}`;
   const waitNote = (w) => w.state === "waiting" || w.state === "remind"
-    ? `Väntar på besked från ${lbl(w.on, "någon utanför Rotor")}, påminn ${short(w.remind)}${w.last_day ? `, sista dag ${short(w.last_day)}` : ""}: ${w.question}`
+    ? `${waitWho(w)}: ${w.question} · påminn ${short(w.remind)}${w.last_day ? `, sista dag ${short(w.last_day)}` : ""}`
     : w.closed_reason || w.text;
-  const waitEdges = (t) => asArr(t?.waits).map((w) => `<div class="lv-edge">${esc(waitNote(w))}${w.state === "remind" ? ` ${chip("påminn i dag", "amber")}` : ""}</div>`).join("");
+  const waitEdges = (t) => asArr(t?.waits).map((w) => `<div class="lv-edge">${esc(waitNote(w))}${w.state === "waiting" || w.state === "remind" ? ` ${chip("inte sent hos oss", "green")}` : ""}${w.state === "remind" ? ` ${chip("påminn i dag", "amber")}` : ""}</div>`).join("");
   function taskState(t) {
     if (t.delivered_externally) return { word: "klar", tone: "green" };
     const gone = goneWait(t), held = openWait(t);
     if (gone) return { word: gone.state === "no" ? "stängd" : "besked kom inte", tone: "", note: gone.closed_reason || "" };
     if (held && (held.step == null || held.step === currentStep(t)?.step))
-      return { word: `väntar på besked från ${lbl(held.on, "någon utanför Rotor")}`, tone: "", note: `påminn ${short(held.remind)}${held.last_day ? `, sista dag ${short(held.last_day)}` : ""}` };
+      return { word: waitWho(held).replace(/^V/, "v"), tone: "", note: `inte sent hos oss · påminn ${short(held.remind)}${held.last_day ? `, sista dag ${short(held.last_day)}` : ""}` };
     // En uppgift utan steg är inte klar (blindprovet F19: «klar 0/0»): den har inga steg än.
     if (!liveSteps(t).length) return { word: "utan steg", tone: "amber" };
     if (t.late) return { word: "sen", tone: "red" };
@@ -4526,8 +4624,7 @@ a.btn { text-decoration: none; color: var(--text); }
     const note = ($("#lv-note")?.value || "").trim().slice(0, 500);
     return busy(btn, async () => {
       try {
-        await call("execute_step", { task, step, mark: "done", ...(note ? { note } : {}) });
-        closeDialog(); await load();
+        closeDialog(); await doneFast(t, s, note ? { note } : {});
         toast(`${s.label} är klart.`, undoDone(t, s));
       } catch (e) { fail("Steget markerades inte klart", e); }
     });
@@ -5194,6 +5291,7 @@ a.btn { text-decoration: none; color: var(--text); }
         + (!o && asArr(t.waits).length ? waitEdges(t) : "")
         + (o ? `<div class="lv-nest">${fullOccasion(t) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(t))}</div>` : ""}<div class="lv-edge">Metod: ${methodLine(t)}${eclBtn("task", t.id)}${t.live ? ` · ute sedan ${short(t.live.at)}` : ""}${t.moved?.reason ? ` · flyttat: «${esc(t.moved.reason)}»` : ""}</div>`
           + waitEdges(t)
+          + tlbBlocks(d, [t])
           + lvRounds(d, t, hitStep)
           + asArr(t.steps).filter((s) => asArr(s.waits_on).some((w) => !w.done)).slice(0, 1).map((s) => `<div class="lv-edge">${esc(s.waits_on.find((w) => !w.done).text)}.</div>`).join("")
           + `</div>` : "");
@@ -5202,6 +5300,272 @@ a.btn { text-decoration: none; color: var(--text); }
         + `<span class="nm"><span class="t">${plural(bare.length, "uppgift", "uppgifter")} utan steg</span><span class="s">${counts.map(([n, k]) => `${esc(n)}${k > 1 ? ` ×${k}` : ""}`).join(", ")} · ingen metod, och inga steg tillagda</span></span>`
         + `<span class="end"><span class="chip amber">utan steg</span><button class="btn sm" data-go="metoder">Välj metod ›</button></span></div>` : "");
   }
+  /* ── sidformer per familj (Daniel P 2026-09-29) ──────────────────────────
+     Leveranssidan har samma huvud och samma «Var i processen», men det första
+     man ser efter rubriken beror på vad som levereras: poster (innehåll),
+     delar med beroenden (projekt), tråden (ärende) eller agenda och utfall
+     (möte). Familjen härleds ur leveranstypen. Ett fält `page_family` på
+     leveranstypen eller leveransen vinner om servern skickar det; annars
+     gäller tabellen här. Okänd typ med en enda uppgift ger sidan som förut. */
+  const PAGE_FAMILIES = ["content", "project", "case", "meeting"];
+  const FAMILY_TABLE = [
+    ["meeting", /avstämning|veckomöte|\bmöte|genomgång|workshop|styrgrupp/i],
+    ["case", /support|ärende|felanmälan|helpdesk/i],
+    ["content", /\bsome\b|sociala|vd-?post|vd-?inlägg|blogg|artikel|inlägg|nyhetsbrev|\bposter?\b/i],
+    ["project", /webbplats|webbsida|hemsida|website|projekt|lansering|onboarding|migrering|relansering/i]];
+  function pageFamily(dv, ts) {
+    const own = [dv.page_family, ...ts.flatMap((t) => [t.page_family, t.deliverable?.page_family])].find((x) => PAGE_FAMILIES.includes(x));
+    if (own) return own;
+    if (dv.ongoing) return "case";
+    const hay = [dv.label, dv.template?.label, ...ts.flatMap((t) => [t.deliverable_type, lbl(t.deliverable, ""), lbl(t.method_named, "")])].filter(Boolean).join(" ");
+    return FAMILY_TABLE.find(([, re]) => re.test(hay))?.[0] ?? (!dv.implicit && ts.length > 1 ? "project" : null);
+  }
+  /** Innehåll: posterna som kort. Finns ingen enhet i materialet är varje uppgift ett kort. */
+  function famContent(dv, ts) {
+    const us = lvUnits(dv);
+    const cards = us.length
+      ? us.map(({ u }) => `<a class="fam-card" href="${H.unit(dv.id, u.key)}"><span class="t">${esc(unitName(dv, u))}</span><span class="meta">${esc(kindLabel(u))}</span><span class="chips">${unitChips(dv, u).map(toneChip).join("")}</span></a>`)
+      : ts.map((t) => `<a class="fam-card" href="${H.delivery(dv.id, t.id)}"><span class="t">${esc(taskTitle(t))}</span><span class="meta">senast ${short(day10(t.external_due || t.due))}</span><span class="chips">${toneChip(taskState(t))}</span></a>`);
+    return `<div class="lv-sec"><h2>Posterna</h2><span class="n">${esc(plural(cards.length, "post", "poster"))}</span></div>`
+      + `<div class="card lv-card">${cards.length ? `<div class="fam-grid">${cards.join("")}</div>` : `<div class="meta" style="padding:12px 16px">Inga poster är gjorda än.</div>`}</div>`;
+  }
+  /** Ärende: tråden först, så att man ser vad kunden skrev innan man ser stegen. */
+  function famCase(dv, ts) {
+    const t = [...ts].sort((a, b) => String(day10(a.external_due || a.due) || "9").localeCompare(String(day10(b.external_due || b.due) || "9"))).find((x) => x.thread);
+    return t ? threadCard(t.thread) : "";
+  }
+  /** Möte: agendan (stegen som ska tas) och utfallet (det som är gjort, med anteckning). */
+  function famMeeting(dv, ts) {
+    const all = ts.flatMap((t) => roundSteps(t).map((s) => ({ t, s })));
+    const open = all.filter((x) => !x.s.done), done = all.filter((x) => x.s.done);
+    const row = ({ t, s }) => `<li><span><a href="${H.delivery(dv.id, t.id, s.step)}">${esc(s.label)}</a>${lvStepSub(t, s)}</span><span class="meta">${esc(s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, ""))}${s.done ? ` · ${short(s.done.at)}` : ` · ${short(s.end)}`}</span></li>`;
+    return `<div class="lv-sec"><h2>Agenda och utfall</h2><span class="n">${esc(lvCountAll(ts))}</span></div><div class="card lv-card"><div class="fam-two">`
+      + `<div><h3>Agenda</h3>${open.length ? `<ol class="fam-list" style="padding-left:18px;list-style:decimal">${open.map(row).join("")}</ol>` : `<div class="meta">Allt på agendan är gjort.</div>`}</div>`
+      + `<div><h3>Utfall</h3>${done.length ? `<ul class="fam-list">${done.map(row).join("")}</ul>` : `<div class="meta">Inget är avklarat än.</div>`}</div></div></div>`;
+  }
+  const lvCountAll = (ts) => { const r = ts.flatMap(roundSteps); return `${r.filter((s) => s.done).length} av ${plural(r.length, "steg", "steg")}`; };
+  /** Projekt: delarna (uppgifterna) och vad var och en väntar på, ur leveransens kanter. */
+  function famProject(dv, ts) {
+    const by = new Map(ts.map((t) => [t.id, t]));
+    const waits = (t) => asArr(dv.order).filter((e) => e.to === t.id && by.has(e.from)).map((e) => by.get(e.from)).filter((x) => x && !liveSteps(x).every((s) => s.done));
+    const rows = [...ts].sort((a, b) => String(a.steps?.[0]?.start || a.due).localeCompare(String(b.steps?.[0]?.start || b.due)));
+    return `<div class="lv-sec"><h2>Delar och beroenden</h2><span class="n">${esc(plural(rows.length, "del", "delar"))}</span></div>`
+      + `<div class="card lv-card"><ul class="fam-list">${rows.map((t) => { const w = waits(t);
+        return `<li><span><a href="${H.delivery(dv.id, t.id)}">${esc(taskTitle(t))}</a></span><span>${toneChip(taskState(t))} <span class="meta">${esc(lvCount(t))} · klart ${short(day10(t.external_due || t.due))}</span></span>`
+          + (w.length ? `<span class="wait">Väntar på ${w.map((x) => esc(taskTitle(x))).join(", ")}</span>` : "") + `</li>`; }).join("")}</ul></div>`
+      + `<div class="lv-sec"><h2>Tidslinje</h2><span class="n">ett block per steg</span></div><div class="card lv-card">${tlbBlocks(dv, ts)}</div>`;
+  }
+  const famBlock = (dv, ts) => { const f = pageFamily(dv, ts);
+    return f === "content" ? famContent(dv, ts) : f === "project" ? famProject(dv, ts) : f === "meeting" ? famMeeting(dv, ts) : ""; };
+  /* ── tidslinje med klossar (Daniel P 2026-09-29) ──────────────────────────
+     Ett block per steg på en dagsskala. Dra ett block för att flytta det,
+     dra i kanten för att välja dagen det ska börja respektive sluta; allt
+     snäpper till hela dagar. Steg som beror på det man flyttar följer med
+     (magnet) — Alt/Option, eller «Bara detta», flyttar bara ett. Markera flera
+     (Skift/Ctrl-klick, eller Mellanslag) och dra dem tillsammans.
+
+     Inget sparas under dragningen. Ändringarna samlas i en förhandsvisning
+     («flyttar N steg, leveransen påverkas/påverkas inte») med Spara och
+     Ångra. Spara skriver med den befintliga vägen, execute_step { postpone },
+     ett steg i taget; servern prövar varje flytt som förut (kedjan, i dag,
+     leveransen). Där finns inget sätt att ändra ett stegs längd, så en kant
+     är ett ankare: steget flyttas så att det börjar respektive slutar där man
+     släpper, och längden står kvar. På telefon är samma sak en lista med ±1 dag. */
+  const TLB = { moves: {}, sel: new Set(), only: false, reason: "", saving: false, scroll: {}, focus: null };
+  const tlbKey = (t, s) => `${t.id}|${s.step}`;
+  const tlbGroups = (ts) => ts.map((t) => ({ t, steps: roundSteps(t).filter((s) => isDay(s.start) && isDay(s.end)) })).filter((g) => g.steps.length);
+  /** Var steget ligger just nu i förslaget: flyttat, annars som planen har det. */
+  const tlbStart = (s, k) => TLB.moves[k]?.to ?? day10(s.start);
+  const tlbEnd = (s, k) => add(day10(s.end), diff(tlbStart(s, k), day10(s.start)));
+  const tlbLatest = (s) => isDay(s.latest_end) ? day10(s.latest_end) : add(day10(s.end), Number(s.float_days ?? 0));
+  /** Stegen som måste vara klara före det här: `after`, annars steget närmast före i listan. */
+  function tlbPreds(t, s) {
+    const steps = roundSteps(t), i = steps.findIndex((x) => x.step === s.step);
+    return steps.some((x) => Array.isArray(x.after)) ? steps.filter((x) => asArr(s.after).includes(x.step)) : (i > 0 ? [steps[i - 1]] : []);
+  }
+  /** Stegen som väntar på det här: samma uppgift, och kanterna mellan uppgifterna i leveransen. */
+  function tlbDependents(dv, t, s) {
+    const steps = roundSteps(t), chained = steps.some((x) => Array.isArray(x.after)), out = [];
+    steps.forEach((x, i) => { if (!x.done && x.step !== s.step && (chained ? asArr(x.after).includes(s.step) : steps[i - 1]?.step === s.step)) out.push({ t, s: x }); });
+    for (const e of asArr(dv?.order)) if (e.from === t.id && e.from_step === s.step && e.to_step) {
+      const t2 = taskById(e.to), x = stepOf(t2, e.to_step); if (x && !x.done) out.push({ t: t2, s: x }); }
+    return out;
+  }
+  function tlbClosure(dv, seeds, magnet) {
+    const seen = new Map(seeds.map((x) => [tlbKey(x.t, x.s), x]));
+    if (magnet) for (const q = [...seen.values()]; q.length;) { const c = q.shift();
+      for (const n of tlbDependents(dv, c.t, c.s)) { const k = tlbKey(n.t, n.s); if (!seen.has(k)) { seen.set(k, n); q.push(n); } } }
+    return [...seen.values()];
+  }
+  const tlbSeeds = (keys) => keys.map((k) => { const [tid, sid] = k.split("|"), t = taskById(tid); return { t, s: stepOf(t, sid) }; }).filter((x) => x.s && !x.s.done);
+  /** Flytta stegen (och de som följer med) `delta` dagar i förslaget. Inget skrivs. */
+  function tlbShift(dv, keys, delta, alt) {
+    for (const { t, s } of tlbClosure(dv, tlbSeeds(keys), !alt && !TLB.only)) {
+      const k = tlbKey(t, s), from = day10(s.start), to = add(tlbStart(s, k), delta);
+      if (to === from) delete TLB.moves[k]; else TLB.moves[k] = { task: t.id, step: s.step, from, to };
+    }
+  }
+  /** En flytt som planen gått ifrån (den lästes om) gäller inte längre. */
+  function tlbClean() {
+    for (const [k, m] of Object.entries(TLB.moves)) { const s = stepOf(taskById(m.task), m.step); if (!s || s.done || day10(s.start) !== m.from) delete TLB.moves[k]; }
+    for (const k of [...TLB.sel]) { const [tid, sid] = k.split("|"); if (!stepOf(taskById(tid), sid)) TLB.sel.delete(k); }
+  }
+  /** Vad förslaget gör: per steg vad som är fel eller trångt, och vad det gör med leveransen. */
+  function tlbAnalyse(dv) {
+    tlbClean();
+    const mine = new Set(lvTasks(dv).map((t) => t.id));
+    for (const [k, m] of Object.entries(TLB.moves)) if (!mine.has(m.task)) delete TLB.moves[k];
+    const endDay = day10(dv?.moved?.to || dv?.due), per = new Map(), bad = [];
+    let late = 0, over = false;
+    for (const [k, m] of Object.entries(TLB.moves)) {
+      const t = taskById(m.task), s = stepOf(t, m.step); if (!s) continue;
+      const newEnd = tlbEnd(s, k), lateBy = Math.max(0, diff(newEnd, tlbLatest(s))), crash = isDay(endDay) && newEnd > endDay;
+      let why = null;
+      if (m.to < TODAY) why = `${short(m.to)} har redan varit`;
+      else for (const p of tlbPreds(t, s)) { const pe = tlbEnd(p, tlbKey(t, p)); if (!p.done && pe > m.to) { why = `börjar före «${p.label}» är klart (${short(pe)})`; break; } }
+      per.set(k, { lateBy, crash, why });
+      late = Math.max(late, lateBy); over ||= crash;
+      if (why) bad.push(`${s.label}: ${why}`);
+    }
+    return { per, bad, n: per.size, affects: late > 0 || over, late, over, endDay };
+  }
+  /** Läget för ett block: ingen marginal (rött), krock med leveransdagen, eller ett fel. */
+  function tlbState(s, k, an) {
+    const p = an.per.get(k), margin = diff(tlbLatest(s), tlbEnd(s, k));
+    return { bad: p?.why || null, crash: !!(p?.crash || margin < 0), nomargin: !s.done && (margin <= 0 || (!p && s.critical)), margin };
+  }
+  const tlbDelta = (a, b) => { const n = diff(a, b); return n === 0 ? "" : `${n > 0 ? "+" : "−"}${Math.abs(n)} d`; };
+  function tlbBlocks(dv, ts) {
+    const groups = tlbGroups(ts); if (!groups.length) return "";
+    const an = tlbAnalyse(dv), endDay = an.endDay;
+    const all = groups.flatMap((g) => g.steps.map((s) => ({ t: g.t, s, k: tlbKey(g.t, s) })));
+    const days = [TODAY, isDay(endDay) ? endDay : null, ...all.flatMap((x) => [day10(x.s.start), day10(x.s.end), tlbStart(x.s, x.k), tlbEnd(x.s, x.k)])].filter(isDay).sort();
+    const from = add(days[0], -2), n = diff(add(days.at(-1), 3), from) + 1, dw = n > 90 ? 16 : n > 50 ? 22 : 30, x = (day) => diff(day, from) * dw;
+    const head = Array.from({ length: n }, (_, i) => { const day = add(from, i), wd = d(day).getUTCDay();
+      return `${wd === 0 || wd === 6 ? `<i class="tlb-we" style="left:${i * dw}px;width:${dw}px"></i>` : ""}${wd === 1 || i === 0 ? `<span class="tlb-tick" style="left:${i * dw}px">${d_(day)}</span>` : ""}`; }).join("");
+    const rows = groups.map((g) => `<div class="tlb-grp"><b>${esc(taskTitle(g.t))}</b><span class="meta">${esc(lvCount(g.t))}</span>`
+        + `<button class="btn sm quiet" data-tlb-all="${esc(g.t.id)}" title="Markera alla ogjorda steg i uppgiften, för att dra dem tillsammans">Markera alla</button></div>`
+      + g.steps.map((s) => { const k = tlbKey(g.t, s), st = tlbState(s, k, an), a = x(tlbStart(s, k)), w = Math.max(dw, (diff(tlbEnd(s, k), tlbStart(s, k)) + 1) * dw);
+        const moved = TLB.moves[k], who = s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, "");
+        const cls = `tlb-blk${s.done ? " done" : ""}${st.nomargin ? " nomargin" : ""}${st.crash ? " crash" : ""}${st.bad ? " bad" : ""}${moved ? " moved" : ""}${TLB.sel.has(k) ? " sel" : ""}`;
+        const say = `${s.label}, ${who ? `${who}, ` : ""}${short(tlbStart(s, k))} till ${short(tlbEnd(s, k))}${s.done ? ", klart" : st.nomargin ? ", ingen marginal" : `, ${plural(Math.max(0, st.margin), "dag", "dagar")} marginal`}${st.crash ? ", passerar leveransdagen" : ""}${st.bad ? `, går inte: ${st.bad}` : ""}${moved ? `, flyttat ${tlbDelta(moved.to, moved.from)}` : ""}`;
+        return `<div class="tlb-row"><div class="${cls}" ${s.done ? "" : `tabindex="0" role="button" aria-pressed="${TLB.sel.has(k)}"`} data-tlb="${esc(k)}" data-tlbd="${esc(dv.id)}" style="left:${a}px;width:${w}px" title="${esc(say)}" aria-label="${esc(say)}">`
+          + (s.done ? "" : `<i class="tlb-h l" title="Dra: steget börjar där du släpper"></i>`)
+          + `<span class="tlb-t">${esc(s.label)}</span>`
+          + (s.done ? "" : `<i class="tlb-h r" title="Dra: steget slutar där du släpper"></i>`) + `</div>`
+          + `<span class="tlb-cap" style="left:${a + w + 6}px">${moved ? `<b>${esc(tlbDelta(moved.to, moved.from))}</b> ` : ""}${esc(who)}</span></div>`; }).join("")).join("");
+    // Telefon: samma steg som en lista, med ±1 dag i stora knappar.
+    const list = groups.map((g) => `<div class="tlb-grp"><b>${esc(taskTitle(g.t))}</b><span class="meta">${esc(lvCount(g.t))}</span></div><ul class="tlb-list">`
+      + g.steps.map((s) => { const k = tlbKey(g.t, s), st = tlbState(s, k, an), moved = TLB.moves[k];
+        return `<li class="${st.nomargin ? "nomargin" : ""}${st.crash ? " crash" : ""}${st.bad ? " bad" : ""}${moved ? " moved" : ""}"><span class="nm"><b>${esc(s.label)}</b><span class="meta">${esc(short(tlbStart(s, k)))}–${esc(short(tlbEnd(s, k)))}${moved ? ` · flyttat ${esc(tlbDelta(moved.to, moved.from))}` : ""}${st.nomargin && !s.done ? " · ingen marginal" : ""}${st.crash ? " · passerar leveransdagen" : ""}${st.bad ? ` · går inte: ${esc(st.bad)}` : ""}</span></span>`
+          + (s.done ? `<span class="chip green">klart</span>` : `<span class="tlb-pm"><button class="btn" data-tlb-step="${esc(k)}|-1" aria-label="${esc(s.label)}: en dag tidigare">−1 dag</button><button class="btn" data-tlb-step="${esc(k)}|1" aria-label="${esc(s.label)}: en dag senare">+1 dag</button></span>`) + `</li>`; }).join("") + `</ul>`).join("");
+    return `<div class="tlb" data-dw="${dw}" data-from="${from}" data-tlbd="${esc(dv.id)}">`
+      + `<div class="tlb-bar meta"><label><input type="checkbox" data-tlb-only="1"${TLB.only ? " checked" : ""}> Bara detta steg (utan de som följer efter)</label>`
+      + `<span>Dra ett block · dra i kanten · Skift-klick markerar flera · Alt flyttar bara ett · pilarna flyttar en dag</span></div>`
+      + `<div class="tlb-scroll" data-tlb-scroll="${esc(dv.id)}"><div class="tlb-grid" style="width:${n * dw}px">`
+      + `<div class="tlb-head">${head}</div>`
+      + `<div class="tlb-today" style="left:${x(TODAY)}px" title="I dag"><span>i dag</span></div>`
+      + (isDay(endDay) ? `<div class="tlb-endline${an.over ? " crash" : ""}" style="left:${x(endDay) + dw}px" title="Leveransdagen"><span>leverans ${esc(short(endDay))}</span></div>` : "")
+      + rows + `</div></div><div class="tlb-mobile">${list}</div></div>`;
+  }
+  /** Förhandsvisningen: fast längst ner tills man sparat eller ångrat. Ingenting har skrivits än. */
+  function tlbPreview(dv) {
+    const an = tlbAnalyse(dv); if (!an.n) return "";
+    const lines = Object.entries(TLB.moves).map(([k, m]) => { const s = stepOf(taskById(m.task), m.step);
+      return `<li>${esc(s?.label || "Steget")}: ${esc(short(m.from))} → ${esc(short(m.to))} <span class="meta">(${esc(tlbDelta(m.to, m.from))})</span></li>`; }).join("");
+    return `<div class="tlb-prev card" role="region" aria-label="Förhandsvisning av flytten"><div class="tlb-prev-h"><b>Flyttar ${plural(an.n, "steg", "steg")}</b> · `
+      + (an.affects ? `<span class="chip red">Leveransen påverkas</span> <span class="meta">${an.late ? `${plural(an.late, "dag", "dagar")} sent · ` : ""}det är ett nytt löfte mot kunden — säg till beställaren</span>` : `<span class="chip green">Leveransen påverkas inte</span>`)
+      + ` <span class="meta">· Inget är sparat än.</span></div>`
+      + (an.bad.length ? `<div class="lv-note err" role="alert">${an.bad.map(esc).join(" · ")}</div>` : "")
+      + `<details><summary class="meta">Se stegen</summary><ul class="fam-list">${lines}</ul></details>`
+      + `<div class="tlb-prev-a"><input id="tlb-reason" class="field-inline" placeholder="Varför? (krävs)" value="${esc(TLB.reason)}" aria-label="Varför flyttas stegen"><button class="btn primary" data-tlb-save="${esc(dv.id)}"${an.bad.length || TLB.saving ? " disabled" : ""}>${TLB.saving ? "Sparar…" : an.affects ? "Spara och flytta leveransen" : "Spara"}</button><button class="btn quiet" data-tlb-undo="1"${TLB.saving ? " disabled" : ""}>Ångra</button></div></div>`;
+  }
+  /** Spara: ett execute_step { postpone } per steg, tidigast först. Servern prövar varje flytt. */
+  async function tlbSave(btn, dvId) {
+    const dv = lvDelivery(dvId), an = tlbAnalyse(dv), reason = ($("#tlb-reason")?.value ?? TLB.reason).trim();
+    if (!an.n || an.bad.length) return;
+    if (!reason) return toast("Skriv varför stegen flyttas.", null, true);
+    TLB.reason = reason; TLB.saving = true; render();
+    const list = Object.values(TLB.moves).sort((a, b) => a.from.localeCompare(b.from) || a.step.localeCompare(b.step)), done = [];
+    let failed = null;
+    for (const m of list) {
+      try {
+        await call("execute_step", { task: m.task, postpone: { step: m.step, to: m.to, reason, ...(an.affects ? { accept_late: true } : {}) },
+          ...(an.affects ? { user_approval: `Ja, nytt datum (i vyn): ${reason}`.slice(0, 500) } : {}) });
+        done.push(m);
+      } catch (e) {
+        // Steget ligger redan där (kedjan drog det dit när steget före flyttades): det är inget fel.
+        if (/ligger redan/.test(String(e?.message))) done.push(m); else { failed = { m, e }; break; }
+      }
+    }
+    TLB.saving = false; TLB.moves = {}; TLB.sel.clear(); TLB.reason = "";
+    await lvRefresh(dv?.implicit ? { task: dvId } : { delivery: dvId });
+    if (failed) return fail(`Sparade ${done.length} av ${list.length}. ${stepOf(taskById(failed.m.task), failed.m.step)?.label || "Ett steg"} flyttades inte`, failed.e);
+    toast(`${plural(done.length, "steg", "steg")} flyttat${an.affects ? ". Leveransen flyttades — det är ett nytt löfte" : ""}.`, async () => {
+      for (const m of [...done].reverse()) await call("execute_step", { task: m.task, postpone: { step: m.step, to: m.from, reason: "Ångrat direkt i vyn", ...(an.affects ? { accept_late: true } : {}) },
+        ...(an.affects ? { user_approval: "Ja, ångra flytten (klickade Ångra i vyn)" } : {}) }).catch((e) => { if (!/ligger redan/.test(String(e?.message))) throw e; });
+      await lvRefresh(dv?.implicit ? { task: dvId } : { delivery: dvId });
+    });
+  }
+  const tlbDeliveryOf = (el) => lvDelivery(el?.closest?.("[data-tlbd]")?.dataset.tlbd);
+  /** Efter varje ritning: rullningen och fokus står kvar, och första gången rullar tidslinjen till i dag. */
+  function tlbAfterRender() {
+    for (const el of document.querySelectorAll("[data-tlb-scroll]")) {
+      const id = el.dataset.tlbScroll, box = el.closest(".tlb");
+      el.scrollLeft = TLB.scroll[id] ?? Math.max(0, diff(TODAY, box.dataset.from) * Number(box.dataset.dw) - 120);
+      el.addEventListener("scroll", () => { TLB.scroll[id] = el.scrollLeft; }, { passive: true });
+    }
+    if (TLB.focus) { const el = [...document.querySelectorAll(".tlb-blk[data-tlb]")].find((x) => x.dataset.tlb === TLB.focus); TLB.focus = null; el?.focus({ preventScroll: true }); }
+  }
+  let tlbDrag = null;
+  document.addEventListener("pointerdown", (e) => {
+    const el = e.target.closest?.(".tlb-blk[data-tlb]:not(.done)"); if (!el || e.button > 0) return;
+    const box = el.closest(".tlb");
+    tlbDrag = { el, key: el.dataset.tlb, dw: Number(box.dataset.dw), x0: e.clientX, moved: false, delta: 0, id: e.pointerId, box };
+    try { el.setPointerCapture(e.pointerId); } catch { /* utan fångst följer dragningen ändå pekaren */ }
+  });
+  document.addEventListener("pointermove", (e) => {
+    const g = tlbDrag; if (!g || e.pointerId !== g.id) return;
+    const dx = e.clientX - g.x0; if (!g.moved && Math.abs(dx) < 5) return;
+    g.moved = true; g.delta = Math.round(dx / g.dw);
+    const dv = tlbDeliveryOf(g.el), keys = TLB.sel.has(g.key) ? [...TLB.sel] : [g.key];
+    const moving = new Set(tlbClosure(dv, tlbSeeds(keys), !e.altKey && !TLB.only).map((x) => tlbKey(x.t, x.s)));
+    for (const b of g.box.querySelectorAll(".tlb-blk[data-tlb]")) { const on = moving.has(b.dataset.tlb); b.style.transform = on ? `translateX(${g.delta * g.dw}px)` : ""; b.classList.toggle("drag", on); }
+    g.box.dataset.drag = g.delta ? `${g.delta > 0 ? "+" : "−"}${Math.abs(g.delta)} d` : "";
+  });
+  const tlbEnd_ = (e) => {
+    const g = tlbDrag; if (!g || e.pointerId !== g.id) return; tlbDrag = null;
+    for (const b of g.box.querySelectorAll(".tlb-blk")) { b.style.transform = ""; b.classList.remove("drag"); }
+    delete g.box.dataset.drag;
+    const dv = tlbDeliveryOf(g.el); if (!dv || e.type === "pointercancel") return;
+    if (!g.moved) { // ett klick markerar
+      if (e.shiftKey || e.ctrlKey || e.metaKey) { TLB.sel.has(g.key) ? TLB.sel.delete(g.key) : TLB.sel.add(g.key); }
+      else if (TLB.sel.size === 1 && TLB.sel.has(g.key)) TLB.sel.clear(); else TLB.sel = new Set([g.key]);
+      TLB.focus = g.key; return render();
+    }
+    if (!g.delta) return;
+    if (!TLB.sel.has(g.key)) TLB.sel = new Set([g.key]);
+    tlbShift(dv, [...TLB.sel], g.delta, e.altKey); TLB.focus = g.key; render();
+  };
+  document.addEventListener("pointerup", tlbEnd_); document.addEventListener("pointercancel", tlbEnd_);
+  document.addEventListener("keydown", (e) => {
+    const el = e.target.closest?.(".tlb-blk[data-tlb]:not(.done)"); if (!el) return;
+    const dv = tlbDeliveryOf(el), key = el.dataset.tlb;
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault();
+      tlbShift(dv, TLB.sel.has(key) ? [...TLB.sel] : [key], (e.key === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 7 : 1), e.altKey); TLB.focus = key; render(); }
+    else if (e.key === " " || e.key === "Enter") { e.preventDefault(); TLB.sel.has(key) ? TLB.sel.delete(key) : TLB.sel.add(key); TLB.focus = key; render(); }
+    else if (e.key === "Escape" && Object.keys(TLB.moves).length) { TLB.moves = {}; TLB.focus = key; render(); }
+  });
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest?.("[data-tlb-save],[data-tlb-undo],[data-tlb-all],[data-tlb-step],[data-tlb-only]"); if (!t) return;
+    if (t.dataset.tlbSave) return void tlbSave(t, t.dataset.tlbSave);
+    if (t.dataset.tlbUndo) { TLB.moves = {}; TLB.reason = ""; return render(); }
+    if (t.dataset.tlbAll) { for (const s of roundSteps(taskById(t.dataset.tlbAll))) if (!s.done) TLB.sel.add(`${t.dataset.tlbAll}|${s.step}`); return render(); }
+    if (t.dataset.tlbOnly) { TLB.only = t.checked; return render(); }
+    const [tid, sid, dl] = t.dataset.tlbStep.split("|");
+    tlbShift(tlbDeliveryOf(t), [`${tid}|${sid}`], Number(dl), false); render();
+  });
+  document.addEventListener("input", (e) => { if (e.target.id === "tlb-reason") TLB.reason = e.target.value; });
   function pageDelivery() {
     const o = state.obj, d = lvDelivery(o.id);
     if (!d) { CRUMBS = [screenCrumb(), ["Hittas inte", null]]; return `<div class="empty"><b>Leveransen finns inte i planen.</b>Den kan vara avslutad, eller ligga längre fram än planen räcker.<div style="margin-top:12px"><a class="btn" href="${H.screen(state.screen)}">Tillbaka</a></div></div>`; }
@@ -5215,22 +5579,27 @@ a.btn { text-decoration: none; color: var(--text); }
     if (t) openMirror(t.id); else if (ts[0]) openMirror(ts[0].id);
     // Ordningen (Daniel P 2026-09-29): rubriken, nästa handling, var i processen, och resten hopfällt.
     const focus = focusOf(d, ts, o), one = focus.length === 1 ? focus[0] : null;
-    const units = lvUnits(d).length, hist = d.implicit ? null : asArr(d.history).length;
+    // Materialet hör till sitt ärende (Daniel P 2026-09-29: «Material i supporten hamnar i varje supportärende»).
+    // I en löpande leverans är ärendena olika saker: med ett ärende öppet står bara dess material, utan står ingetdera.
+    const dm = d.ongoing ? (one ? { ...d, material: one.material || null } : null) : d;
+    const units = dm ? lvUnits(dm).length : 0, hist = d.implicit ? null : asArr(d.history).length;
     const proc = one
       ? `<div class="lv-sec"><h2>Var i processen</h2><span class="n">${esc(lvCount(one))}${!d.implicit && ts.length > 1 ? ` · ${esc(clipped(taskTitle(one), 50))}` : ""}</span></div><div class="card lv-card">${lvProcess(d, one, o.step)}</div>`
       : `<div class="lv-sec"><h2>Var i processen</h2><span class="n">${d.ongoing ? `${plural(ts.length, "öppet ärende", "öppna ärenden")}` : plural(ts.length, "uppgift", "uppgifter")} · fäll ut en uppgift för stegen</span></div><div class="card lv-card">${lvTaskRows(d, d.ongoing ? [...ts].sort((a, b) => String(day10(a.external_due || a.due) || "9").localeCompare(String(day10(b.external_due || b.due) || "9"))) : ts, openTask, o.step)}</div>`;
     // En uppgift: stegen med alla detaljer och handlingar. Flera: uppgifterna står redan i processen.
     const steps = one ? lvFold(d, "steps", `${ic("upp")} Alla steg, med detaljer`, esc(lvCount(one)),
-        () => `<div class="card lv-card"><div style="padding:4px 16px 12px">${fullOccasion(one) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(one))}</div>` : ""}${d.implicit ? "" : `<div class="lv-edge">Metod: ${methodLine(one)}${one.live ? ` · ute sedan ${short(one.live.at)}` : ""}</div>`}${waitEdges(one)}${lvRounds(d, one, o.step)}</div></div>`, !!o.step)
+        () => `<div class="card lv-card"><div style="padding:4px 16px 12px">${fullOccasion(one) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(one))}</div>` : ""}${d.implicit ? "" : `<div class="lv-edge">Metod: ${methodLine(one)}${one.live ? ` · ute sedan ${short(one.live.at)}` : ""}</div>`}${waitEdges(one)}${tlbBlocks(d, [one])}${lvRounds(d, one, o.step)}</div></div>`, !!o.step)
       + (!d.implicit && ts.length > 1 ? lvFold(d, "tasks", `${ic("upp")} Alla uppgifter i leveransen`, plural(ts.length, "uppgift", "uppgifter"), () => `<div class="card lv-card">${lvTaskRows(d, ts, openTask, o.step)}</div>`) : "")
       : "";
-    return lvHead(d, ts) + lvNow(d, ts, focus) + proc + steps
-      + lvFold(d, "material", `${ic("mat")} Material`, `${plural(units, "enhet", "enheter")} · det som saknas något först`, () => lvMaterial(d), o.sub === "material",
+    return lvHead(d, ts) + (pageFamily(d, ts) === "case" ? famCase(d, ts) : "") + lvNow(d, ts, focus) + famBlock(d, ts) + proc + steps
+      + lvFold(d, "material", `${ic("mat")} Material`, dm ? `${plural(units, "enhet", "enheter")} · det som saknas något först` : "hör till varje ärende", () => dm ? lvMaterial(dm)
+        : `<div class="card"><div class="empty"><b>Materialet hör till respektive ärende.</b>Öppna ett ärende för att se dess material.</div></div>`, o.sub === "material",
         units ? `<span class="lv-acts" style="margin-left:auto">${shareButtons(H.material(d.id), `materialet i ${d.label}`, lbl(custOf(d), ""))}</span>` : "")
       + lvFold(d, "out", `${ic("ute")} Ute i systemen`, "det senast lästa, inte läget just nu", () => lvOut(d))
       + lvFold(d, "history", "Historik", hist === null ? "" : plural(hist, "händelse", "händelser"), () => lvHistory(d, ts))
       + `<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap" id="lv-changes">${o.sub === "andra" ? "" : `<a class="btn sm" href="${H.change(d.id)}">Ändra efter leverans…</a>`}${lvBindForm(d)}</div>`
-      + (o.sub === "andra" ? lvChangeForm(d) : "");
+      + (o.sub === "andra" ? lvChangeForm(d) : "")
+      + tlbPreview(d);
   }
   function pageUnit() {
     const o = state.obj, d = lvDelivery(o.delivery);
@@ -6222,7 +6591,22 @@ a.btn { text-decoration: none; color: var(--text); }
    */
   const undoDone = (t, s) => () => call("execute_step", { task: t.id, step: s.step, mark: "undone", reason: "Ångrat direkt i vyn",
     ...(t.commitment ? { acknowledge_commitment: true, user_approval: `Ångra (klickade Ångra i vyn direkt efter att ${s.label} markerades klart)` } : {}) })
-    .then(load, (e) => fail("Klarmarkeringen ångrades inte", e));
+    .then(() => lvRefresh({ task: t.id }), (e) => fail("Klarmarkeringen ångrades inte", e));
+  /**
+   * Klar går snabbt: steget blir grönt i vyns egen kopia på en gång, skrivningen
+   * går i bakgrunden, och sedan läses bara den ändrade uppgiften om
+   * (plan_state { task }, några kilobyte) — inte hela planen (3,4 MB). Säger
+   * servern nej går steget tillbaka och felet kastas vidare till den som anropade.
+   */
+  async function doneFast(t, s, extra = {}) {
+    const local = stepOf(taskById(t.id), s.step), was = local ? { done: local.done, started: local.started } : null;
+    if (local) { local.done = true; render(); }
+    try {
+      const d = await call("execute_step", { task: t.id, step: s.step, mark: "done", ...extra });
+      lvRefresh({ task: t.id });
+      return d;
+    } catch (e) { if (local && was) { Object.assign(local, was); render(); } throw e; }
+  }
   /**
    * Snabb klarmarkering (Daniel P 2026-09-25: *"vi behöver också snabbare
    * kunna klarmarkera ett steg"*), från bocken på stapeln i Planen, på raden i
@@ -6246,8 +6630,7 @@ a.btn { text-decoration: none; color: var(--text); }
     closeDialog();
     return busy(btn, async () => {
       try {
-        const d = await call("execute_step", { task, step, mark: "done" });
-        await load();
+        const d = await doneFast(t, s);
         const missing = (d?.delivery_missing || []).map((o) => lbl(o.what, "")).filter(Boolean);
         toast(`${s.label} är klart.${missing.length ? ` Leverans saknas: ${missing.join(", ")}.` : ""}`, undoDone(t, s));
       } catch (e) { fail("Steget markerades inte klart", e); }
@@ -6296,9 +6679,8 @@ a.btn { text-decoration: none; color: var(--text); }
           else if (v.link?.trim()) await call("asset_register", { ...base, mime: /^https?:\/\//i.test(v.link) ? "text/uri-list" : "text/plain", external: v.link.trim() });
           else await call("asset_register", { ...base, mime: "text/plain", text: v.text.trim() });
         }
-        await call("execute_step", { task: t.id, step: s.step, mark: "done", ...(inp.note?.trim() ? { note: inp.note.trim().slice(0, 500) } : {}) });
+        await doneFast(t, s, inp.note?.trim() ? { note: inp.note.trim().slice(0, 500) } : {});
         const undo = undoDone(t, s);
-        await load();
         const next = nextStep(taskById(t.id));
         if (next) open({ type: "step", task: t.id, step: next.step, title: next.label }); else { state.obj = null; render(); }
         toast(`${s.label} är klart.`, undo);
@@ -6444,8 +6826,7 @@ a.btn { text-decoration: none; color: var(--text); }
       const t = taskById(String(i.task || "")), st = stepOf(t, String(i.step || ""));
       if (!t || !st) throw new Error("steget finns inte i planen — ta task och step ur sammanhanget");
       if (st.done) return `${st.label} var redan klart.`;
-      await call("execute_step", { task: t.id, step: st.step, mark: "done", ...(i.note ? { note: String(i.note).slice(0, 500) } : {}) });
-      await load();
+      await doneFast(t, st, i.note ? { note: String(i.note).slice(0, 500) } : {});
       toast(`${st.label} är klart (Claude).`, undoDone(t, st));
       return `${st.label} är markerat klart.`;
     } });
@@ -6663,7 +7044,7 @@ a.btn { text-decoration: none; color: var(--text); }
     return busy(btn, async () => {
       try {
         await call("execute_step", { task, step, molecule: id, mark: "done" });
-        await load();
+        await lvRefresh({ task });
         toast(`${lbl(m.named, "Delen")} är gjord.`);
       } catch (e) { fail("Delen markerades inte klar", e); }
     });
@@ -7329,6 +7710,184 @@ a.btn { text-decoration: none; color: var(--text); }
       } catch (e) { fail("Bytet sparades inte", e); }
     });
   }
+
+  /* ── Väntar på … (Daniel P 2026-09-29) ──
+     «Det är viktigt att man inte tror att det är vi som inte gjort det vi ska.»
+     Ett steg eller en uppgift som väntar på ett besked utifrån sätts här: vem, frågan,
+     påminnelsedagen och, om det finns, sista dag. Servern räknar (execute_step
+     values.wait, src/mcp/task-wait.ts): utan confirmed visar den vad som skulle
+     skrivas, med confirmed skrivs det. En öppen väntan gör aldrig steget sent. */
+  const wtVal = (id) => ($(`#${id}`)?.value ?? "").trim();
+  function waitFormArgs() {
+    const x = state.wait; if (!x) return null;
+    const on = wtVal("wt-name") || wtVal("wt-on");
+    return { task: x.task, ...(x.step ? { step: x.step } : {}),
+      values: { wait: { on, question: wtVal("wt-q"), remind: wtVal("wt-remind"),
+        ...(wtVal("wt-last") ? { last_day: wtVal("wt-last") } : {}), ...(wtVal("wt-silent") ? { if_silent: wtVal("wt-silent") } : {}) } } };
+  }
+  function waitDialog(key) {
+    const [tk, st] = key.split("|"), t = taskById(tk), s = st ? stepOf(t, st) : null; if (!t || (st && !s)) return;
+    const cur = waitOfStep(t, s), cust = t.customer?.id ?? t.customer;
+    const parties = [...(S.agenda?.wait_targets ?? [])].sort((a, b) => (b.id === cust) - (a.id === cust));
+    const house = S.agenda?.colleagues ?? [];
+    const pick = cur?.on?.id ?? parties.find((p) => p.id === cust)?.people?.[0]?.id ?? cust ?? "";
+    const opt = (id, label) => `<option value="${esc(id)}"${id === pick ? " selected" : ""}>${esc(label)}</option>`;
+    state.wait = { task: t.id, step: s ? s.step : "", ok: false, cur };
+    dialog(`<h2>Väntar på …</h2><p class="meta">${esc(s ? s.label : taskName(t))}. Det som väntar på ett besked utifrån räknas inte som sent hos oss.</p>`
+      + (cur ? `<div class="warnnote">${esc(waitNote(cur))} Det du sparar ersätter den väntan.</div>` : "")
+      + `<label class="field wide"><span>Vem väntar vi på</span><select id="wt-on">`
+      + parties.map((p) => `<optgroup label="${esc(p.label)}">${opt(p.id, `${p.label} (hela)`)}${asArr(p.people).map((q) => opt(q.id, q.label)).join("")}</optgroup>`).join("")
+      + (house.length ? `<optgroup label="I huset">${house.map((c) => opt(c.id, c.label)).join("")}</optgroup>` : "") + `</select></label>`
+      + `<label class="field wide"><span>Eller ett namn som inte finns här · valfritt</span><input id="wt-name" type="text" maxlength="120" placeholder="till exempel Sven Sahle, SGL Noterat"></label>`
+      + `<label class="field wide"><span>Frågan, på en rad</span><textarea id="wt-q" rows="2" maxlength="300">${esc(cur?.question || "")}</textarea></label>`
+      + `<div class="settime"><label class="field"><span>Påminn den</span><input type="date" id="wt-remind" min="${esc(TODAY)}" value="${esc(cur?.remind && cur.remind >= TODAY ? cur.remind : add(TODAY, 3))}"></label>`
+      + `<label class="field"><span>Sista dag · valfri</span><input type="date" id="wt-last" min="${esc(TODAY)}" value="${esc(cur?.last_day || "")}"></label></div>`
+      + `<label class="field wide"><span>Vad gäller om inget svar kommer · valfritt</span><input id="wt-silent" type="text" maxlength="300" placeholder="till exempel inget svar = nej" value="${esc(cur?.if_silent || "")}"></label>`
+      + (cur ? `<label class="field wide"><span>Om vi inte väntar längre: skälet på en rad</span><input id="wt-reason" type="text" maxlength="200" placeholder="till exempel beskedet kom per telefon"></label>` : "")
+      + `<div class="chg" id="wt-out" style="margin:12px 0;color:var(--text-2)">Fyll i och välj Visa. Inget sparas än.</div>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button>`
+      + (cur ? `<button class="btn quiet" data-wait-clear="1">Vi väntar inte längre</button>` : "")
+      + `<button class="btn" data-wait-preview="1">Visa</button><button class="btn primary" data-wait-save="1" disabled>Spara väntan</button></div>`);
+  }
+  async function waitPreview(btn) {
+    const x = state.wait, a = waitFormArgs(), out = $("#wt-out"), save = document.querySelector("[data-wait-save]");
+    if (!x || !a) return;
+    x.ok = false; if (save) save.disabled = true;
+    if (out) out.textContent = "Räknar …";
+    try {
+      const d = await call("execute_step", a);
+      if (state.wait !== x) return;
+      x.ok = true; x.args = a;
+      if (out) out.textContent = String(d?.summary || "").replace(/^Förhandsvisning: /, "");
+      if (save) save.disabled = false;
+    } catch (e) { if (out) out.textContent = e?.message || String(e); }
+  }
+  function waitSave(btn) {
+    const x = state.wait; if (!x?.ok || !x.args) return;
+    return busy(btn, async () => {
+      try {
+        await call("execute_step", { ...x.args, confirmed: true, user_approval: `Ja, väntan sparad i vyn: ${x.args.values.wait.question}`.slice(0, 500) });
+        const { task, step, cur } = x; state.wait = null; closeDialog(); await load();
+        toast("Väntan är sparad. Steget räknas inte som sent.", cur ? null : () => call("execute_step", { task, ...(step ? { step } : {}), values: { wait: null }, reason: "Ångrad direkt i vyn", confirmed: true, user_approval: "Ja, ångra väntan (vyn)" }).then(() => load()));
+      } catch (e) { fail("Väntan sparades inte", e); }
+    });
+  }
+  function waitClear(btn) {
+    const x = state.wait; if (!x?.cur) return;
+    const why = wtVal("wt-reason");
+    if (!why) return toast("Skriv skälet först: varför väntar vi inte längre?", null, true);
+    return busy(btn, async () => {
+      try {
+        await call("execute_step", { task: x.task, ...(x.step ? { step: x.step } : {}), values: { wait: null }, reason: why.trim(), confirmed: true, user_approval: `Ja, väntan borttagen i vyn: ${why.trim()}`.slice(0, 500) });
+        state.wait = null; closeDialog(); await load(); toast("Väntan är borttagen.");
+      } catch (e) { fail("Väntan togs inte bort", e); }
+    });
+  }
+
+  /* ── Skriv påminnelse (Daniel P 2026-09-29) ──
+     Från påminnelsedagen. Molekylen core.call.draft_reminder (registret, performer
+     llm) har den fasta prompten; vyn hämtar den därifrån och skriver ingen egen.
+     Claude skriver ett svar i samma mejltråd som frågan — finns ingen tråd, ett nytt
+     mejl till partens adress. Utkastet visas och kan ändras. Gmail har ingen skrivväg
+     härifrån (docs/kvar.md): en människa kopierar texten och skickar den i tråden,
+     eller som meddelande när det är en kollega. */
+  async function reminderPrompt() {
+    if (S.remindMol) return S.remindMol;
+    const d = await call("search", { do: "browse", kind: "call", q: "core.call.draft_reminder" });
+    const e = asArr(d?.entries).find((x) => x.name === "core.call.draft_reminder");
+    const i = e?.instruktion; if (!i) throw new Error("Prompten core.call.draft_reminder finns inte i biblioteket");
+    const list = (v) => asArr(v).map(String);
+    return (S.remindMol = { purpose: i.purpose ?? i.syfte, read_first: list(i.read_first ?? i.laes_foerst), how_to: list(i.how_to ?? i.saa_goer_du),
+      must_not: list(i.must_not ?? i.far_inte), answer_format: i.answer_format ?? i.svarsform });
+  }
+  function reminderBrief(m, t, w, posts) {
+    const subj = t.thread ? threadSubject(t.thread) : null;
+    return [`Syfte: ${m.purpose}`, `Läs först: ${m.read_first.join(" · ")}`, "Så gör du:", ...m.how_to.map((h, n) => `  ${n + 1}. ${h}`),
+      `Får inte: ${m.must_not.join(" · ")}`, `Svarets form: ${m.answer_format}`, "",
+      `Vi väntar på ${lbl(w.on, "någon utanför Rotor")} sedan ${short(day10(w.at))}.`, `Frågan i väntan: ${w.question}`,
+      `Vad som händer utan svar: ${w.if_silent || "inget har sagts"}${w.last_day ? ` · sista dag ${short(w.last_day)}` : " · ingen sista dag är satt"}`, "",
+      t.thread ? `Tråden${subj ? ` (ämnesrad: ${subj})` : ""}, äldst först:\n${posts || "(kunde inte läsas)"}` : "Ingen tråd finns: skriv ett nytt mejl, med en ämnesrad.",
+      "", 'Svara med ENBART JSON: {"subject":"<ämnesraden>","body":"<påminnelsen, bara texten>"}'].join("\n");
+  }
+  function remindDialog(key) {
+    const [tk, st] = key.split("|"), t = taskById(tk), w = t ? waitOfStep(t, st ? stepOf(t, st) : null) : null;
+    if (!t || !w) return toast("Väntan finns inte längre.", null, true);
+    state.remind = { key, task: t.id, w, text: "", subject: t.thread ? threadSubject(t.thread) || "" : "" };
+    if (t.thread) fetchThread(t.thread);
+    remindPaint();
+  }
+  function remindPaint() {
+    const x = state.remind; if (!x) return;
+    const t = taskById(x.task), w = x.w, house = (S.agenda?.colleagues ?? []).some((c) => c.id === w.on?.id);
+    const where = t.thread ? `Ett svar i samma mejltråd som frågan.` : w.on_contact ? `Ingen tråd finns. Ett nytt mejl till ${w.on_contact}.` : "Ingen tråd och ingen adress finns för personen. Lägg in adressen på personen först.";
+    dialog(`<h2>Påminn ${esc(lbl(w.on, "någon utanför Rotor"))}</h2>`
+      + `<p class="meta">Väntar sedan ${esc(short(day10(w.at)))}: ${esc(w.question)}${w.last_day ? ` · sista dag ${esc(short(w.last_day))}` : ""}${w.if_silent ? ` · utan svar: ${esc(w.if_silent)}` : ""}</p>`
+      + `<p class="meta">${esc(where)}${t.thread ? ` ${gmailLink(t.thread)}` : ""}</p>`
+      + (t.thread ? `<label class="field wide"><span>Ämnesrad · oförändrad</span><input type="text" value="${esc(x.subject)}" readonly></label>` : `<label class="field wide"><span>Ämnesrad</span><input id="rm-subject" type="text" value="${esc(x.subject)}"></label>`)
+      + `<label class="field wide"><span>Utkast · ändra fritt</span><textarea id="rm-text" rows="8" placeholder="Låt Claude skriva utkastet, eller skriv själv.">${esc(x.text)}</textarea></label>`
+      + `<div class="chg" id="rm-out" style="margin:8px 0;color:var(--text-2)">${x.err ? esc(x.err) : x.drafted ? "Utkast ligger i Gmail — öppna och skicka." : "Inget skickas härifrån. Mejl går bara ut efter att du läst och skickat det själv."}</div>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Stäng</button>`
+      + `<button class="btn ai" data-remind-write="1">${SP} ${x.text ? "Skriv om" : "Låt Claude skriva"}</button>`
+      + (t.thread || w.on_contact ? `<button class="btn primary" data-remind-draft="1"${x.text ? "" : " disabled"}>Lägg som utkast i Gmail</button>` : "")
+      + `<button class="btn" data-remind-copy="1"${x.text ? "" : " disabled"}>Kopiera texten</button>`
+      + (house ? `<button class="btn primary" data-remind-msg="1"${x.text ? "" : " disabled"}>Skicka som meddelande</button>` : "") + `</div>`);
+  }
+  async function remindWrite(btn) {
+    const x = state.remind; if (!x) return;
+    const t = taskById(x.task);
+    return busy(btn, async () => {
+      try {
+        const m = await reminderPrompt();
+        if (!sample) {
+          const posts = t.thread ? threadContext(t.thread) : "";
+          return copyToChat(reminderBrief(m, t, x.w, posts).replace(/\n\nSvara med ENBART JSON.*$/s, "\n\nSkriv utkastet och visa det. Skicka inget."), "Påminnelsen");
+        }
+        let posts = "";
+        if (t.thread) { await fetchThread(t.thread); posts = threadContext(t.thread).replace(/^[^\n]*\n/, ""); }
+        const r = await sample.json(reminderBrief(m, t, x.w, posts), { modelTier: "default" });
+        const body = String(r?.body || "").trim(); if (!body) throw new Error("Claude svarade inte med någon text");
+        x.text = body; if (!t.thread) x.subject = String(r?.subject || x.subject || "").trim(); x.err = "";
+        remindPaint();
+      } catch (e) { x.err = `Utkastet kom inte fram: ${e?.message || e}`; remindPaint(); }
+    });
+  }
+  const remindText = () => { const x = state.remind; if (x) { x.text = $("#rm-text")?.value ?? x.text; x.subject = $("#rm-subject")?.value ?? x.subject; } return x; };
+  /**
+   * Utkastet som Gmail-utkast i samma tråd, genom claude.ai-kopplingen Gmail
+   * (verktyget create_draft). Aldrig skicka: bara utkast, som en människa
+   * öppnar och skickar. Saknas kopplingen, eller svarar den nej, kopieras texten.
+   * Argumentnamnen (threadId, to, subject, body) är antagna (?): kopplingens
+   * schema ligger inte i repot.
+   */
+  const GMAIL = "Gmail";
+  function remindDraft(btn) {
+    const x = remindText(); if (!x?.text.trim()) return;
+    const t = taskById(x.task);
+    return busy(btn, async () => {
+      try {
+        await callOn(GMAIL, "create_draft", { ...(t.thread ? { threadId: t.thread } : { to: [x.w.on_contact], subject: x.subject }), body: x.text.trim() });
+        x.drafted = true; x.err = ""; remindPaint(); toast("Utkast ligger i Gmail — öppna och skicka.");
+      } catch (e) {
+        x.err = `Gmail-utkastet gick inte att lägga (${e?.message || e}). Kopiera texten i stället.`; remindPaint(); remindCopy();
+      }
+    });
+  }
+  function remindCopy() {
+    const x = remindText(); if (!x?.text.trim()) return;
+    return (navigator.clipboard?.writeText(x.text) ?? Promise.reject(new Error("urklippet går inte att nå här")))
+      .then(() => toast("Texten är kopierad. Klistra in den som svar i tråden och skicka."), (e) => fail("Kopieringen gick inte", e));
+  }
+  function remindMsg(btn) {
+    const x = remindText(); if (!x?.text.trim() || !x.w.on?.id) return;
+    const about = { task: x.task, ...(x.w.step ? { step: x.w.step } : {}) };
+    return busy(btn, async () => {
+      try { await call("message", { to: [x.w.on.id], text: x.text.trim(), about, confirmed: true, user_approval: `Ja, skicka (i vyn): ${x.text}`.slice(0, 500) });
+        state.remind = null; closeDialog(); await Promise.all([loadMessages(), refreshAgenda()]); toast("Påminnelsen är skickad som meddelande."); }
+      catch (e) { fail("Påminnelsen skickades inte", e); }
+    });
+  }
+  document.addEventListener("input", (e) => { if (e.target.id === "rm-text" || e.target.id === "rm-subject") { const x = state.remind; if (x) { x.text = $("#rm-text")?.value ?? x.text; const c = document.querySelector("[data-remind-copy]"), dr = document.querySelector("[data-remind-draft]"); if (dr) dr.disabled = !x.text.trim(); const m = document.querySelector("[data-remind-msg]"); if (c) c.disabled = !x.text.trim(); if (m) m.disabled = !x.text.trim(); } }
+    else if (e.target.closest?.("#wt-on, #wt-name, #wt-q, #wt-remind, #wt-last, #wt-silent") && state.wait) { state.wait.ok = false; const s = document.querySelector("[data-wait-save]"); if (s) s.disabled = true; } });
 
   /** Stegets text på plats: prompten och momenten, som textrutor. Kräver biblioteket (hämtas först när man klickar). */
   async function stepTextEdit(key) {
@@ -8953,6 +9512,15 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.fedit) { const [k, ...r] = ds.fedit.split("|"); return fieldDialog(k, r.join("|")); }
     if (ds.feSave) return fieldSave(t);
     if (ds.sedit) return stepTextEdit(ds.sedit);
+    if (ds.waitOpen) return waitDialog(ds.waitOpen);
+    if (ds.waitPreview) return waitPreview(t);
+    if (ds.waitSave) return waitSave(t);
+    if (ds.waitClear) return waitClear(t);
+    if (ds.remindOpen) return remindDialog(ds.remindOpen);
+    if (ds.remindWrite) return remindWrite(t);
+    if (ds.remindDraft) return remindDraft(t);
+    if (ds.remindCopy) return remindCopy();
+    if (ds.remindMsg) return remindMsg(t);
     if (ds.stype) return stepTypeDialog(ds.stype);
     if (ds.stypePick) return stepTypePick(t, ds.stypePick);
     if (ds.stypeSave) return stepTypeSave(t);
@@ -8987,6 +9555,7 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.ahead !== undefined) { store.ahead = Number(ds.ahead); save(); render(); return load(); }
     if (ds.mirrorReread) return rereadMirror(t, ds.mirrorReread);
     if (ds.takeTask) return takeTaskDialog(ds.takeTask);
+    if (ds.withdraw) return withdrawHandover(t, ds.withdraw);
     if (ds.takeTaskYes) return takeTask(t, ds.takeTaskYes);
     if (ds.idagSeparate !== undefined) { store.idagSeparate = ds.idagSeparate === "true"; save(); return render(); }
     if (ds.dgroup) { state.openGroups = { ...(state.openGroups || {}), [ds.dgroup]: !state.openGroups?.[ds.dgroup] }; return render(); }

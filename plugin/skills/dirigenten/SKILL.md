@@ -81,6 +81,26 @@ Dirigenten talks to HubSpot, Gmail, Google Calendar and the content bank **from 
 - **`HUBSPOT_TOKEN is not set` and the like mean you are in another repository** — usually the separate HubSpot CLI, which still keeps its own local secrets. That is not a setup fault to fix with a key: it is a capability that has not been moved into dirigenten yet. Say which command was missing and propose it as an atom and a molecule, so it can be run by everyone instead of by whoever has the token.
 - A tool here failing with an authorisation error is a server matter. Report it plainly — never route around it with a local script.
 
+## Sök och svara (på svenska)
+
+Det här är hur du söker och svarar. Det ersätter inte servern: fråga `guide` om det som gäller en kund eller en metod.
+
+**Sökmönster**
+- Sök först, med `search`. Ge 1–5 formuleringar i `q`: kundens egna ord och husets ord, och lägg till kundens namn. Ärendet har en mejladress eller en tråd: sök med den.
+- Vill du ha en lista, bläddra: `search { do: "browse", kind }`. Vet du den exakta etiketten: hämta hela posten.
+- Träffen bär det du ska hämta (`fetch`). Anropa bara det, och sluta när frågan är besvarad.
+- Ska du arbeta med ett steg, en uppgift eller ett ärende: läs `read { op: "context" }` först och sök sedan bara efter det som är okänt.
+- Vad som kräver personen i dag: `plan_state { agenda: true }`.
+
+**Svarsformer**
+- **Sammanhang före nummer.** Beskriv saken i ord: vad det gäller, för vilken kund och vad som ska göras. Nummer, id och koder får stå som ett tillägg, aldrig ensamma.
+- **Visa text innan den sparas.** Text som ska in i en mall, en fil eller ett system visas för användaren och godkänns först.
+- **Förhandsvisning före ja.** Det som skriver visar först vad som ändras. Användaren svarar ja, och först då skickar du förhandsvisningens nästa anrop oförändrat, med användarens egna ord.
+
+**När du inte hittar**
+- Saknas ett *faktum* (en uppgift om en kund, ett datum, en fil): formulera om och sök en gång till, bläddra på sort och kund, och fråga sedan användaren. Säg vad du försökt. Sök aldrig i en slinga.
+- Saknas en *förmåga* (en metod, ett steg, ett anrop): sök grundligt, med minst två formuleringar på metod, steg, anrop och atom. Återanvänd det som finns, helst en variant av en befintlig metod. Bygg först när inget passar, och visa förslaget för användaren innan det sparas.
+
 ## Never guess
 
 What is missing becomes a question or a task. If the answer is not in dirigenten, say so and propose what would need to be found out. Never invent dates, owners, decisions or files.
