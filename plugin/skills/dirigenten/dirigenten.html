@@ -910,7 +910,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "7eed987", published: "2026-09-29" };
+  const SIDA = { version: "c86f5fb", published: "2026-09-29" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -2048,6 +2048,29 @@ a.btn { text-decoration: none; color: var(--text); }
       return head + (open ? `<div class="dgrp-rows">${g.items.map(rowOf).join("")}</div>` : "");
     }).join("");
   }
+  /**
+   * Mina leveranser (Daniel P 2026-09-29: *"Jag ser att jag gärna vill filtrera
+   * bort leveranser som man själv inte är delaktig i också i startvyn."* och
+   * *"att filtret högst upp på sidan filtrerar mina 'att göra' OCH leveranser
+   * jag är delaktig i på samma vis."*). Ett filter: Mina · Andras · Alla styr
+   * både Att göra och leveranserna. En leverans är din när du är ansvarig för
+   * något steg i någon av dess uppgifter, eller när agendan har en rad till dig
+   * i den (din tur, en fråga, en väntan). Planen bär ansvarig per steg;
+   * uppgifter och leveranser har ingen egen. Det som gäller dig själv döljs
+   * aldrig. Valet sparas per tittare i den här webbläsaren (store).
+   */
+  function myDeliveryIds() {
+    const out = new Set(), who = me();
+    for (const t of tasks()) if (t.delivery && (t.steps || []).some((st) => (st.responsible?.id ?? st.responsible) === who)) out.add(t.delivery);
+    for (const x of [...agenda(), ...(S.agenda?.waiting_on_others ?? [])]) { const d = deliveryIdOf(x, taskById(x.task)); if (d) out.add(d); }
+    return out;
+  }
+  /** Om leveransen d syns med filtret; rader utan leverans syns alltid. De dolda samlas för raden under rubriken. */
+  const idagShows = (d, mine) => {
+    const who = store.who || "mine";
+    if (!d || who === "all" || mine.has(d) === (who === "mine")) return true;
+    (state.idagHidden ||= new Set()).add(d); return false;
+  };
   /** Gruppens värsta läge i Att göra: sena först, sedan i dag, planerat i dag, snart. */
   const worstTodo = (xs) => {
     const late = xs.filter(isLate).length, hot = xs.filter((x) => x.level === "hot").length, today = xs.filter((x) => x.level === "today").length;
@@ -2064,7 +2087,8 @@ a.btn { text-decoration: none; color: var(--text); }
   function zoneTur() {
     // Mina · Andras · Alla (Daniel P 2026-09-25). Andras är kollegornas steg; väntan står i egen zon.
     const who = store.who || "mine", f = state.filter || "all";
-    const mina = myTurn(), andras = S.agenda?.others ?? [];
+    const mina = myTurn();
+    const andras = S.agenda?.others ?? [];
     const all = who === "others" ? andras : who === "all" ? [...mina, ...andras.filter((x) => !mina.some((m) => m.key === x.key))] : mina;
     const isWork = (x) => x.kind === "step" || x.kind === "colleague" || x.kind === "handover_out" || x.kind === "drift";
     const vis = all.filter((x) => f === "all" || (f === "work" && isWork(x)) || (f === "q" && !isWork(x)));
@@ -2121,7 +2145,9 @@ a.btn { text-decoration: none; color: var(--text); }
   const noMethodTasks = () => tasks().filter((t) => (t.status ? t.status === "no_method"
     : !t.method && !(t.steps || []).length && !t.delivered_externally));
   function zoneNoMethod() {
-    const xs = noMethodTasks().sort((a, b) => String(a.due).localeCompare(String(b.due)));
+    const mineD = myDeliveryIds();
+    const xs = noMethodTasks().filter((t) => idagShows(t.delivery || null, mineD))
+      .sort((a, b) => String(a.due).localeCompare(String(b.due)));
     if (!xs.length) return "";
     const row = (t) => {
       const href = t.delivery ? H.delivery(t.delivery, t.id) : H.delivery(t.id);
@@ -2281,14 +2307,18 @@ a.btn { text-decoration: none; color: var(--text); }
 
   const SCREENS = {
     idag() {
+      state.idagHidden = new Set();
+      const body = "" + zoneAbsence() + zoneTur() + lvIdag()
+        + `<div class="zones2">${zoneWaiting()}${zoneConfirm()}</div>`
+        + zoneWeek()
+        + zoneNoMethod();
+      const hid = state.idagHidden.size, who = store.who || "mine";
       return `<div class="pagehead"><h1>Idag</h1><span class="sub">${wday(TODAY)}</span>`
         + `<span class="actions"><span class="seg" role="group" aria-label="Rader i samma leverans">`
         + [[false, "Per leverans"], [true, "Var för sig"]].map(([k, l]) => `<button data-idag-separate="${k}" aria-pressed="${!!store.idagSeparate === k}">${l}</button>`).join("")
         + `</span></span></div>`
-        + zoneAbsence() + zoneTur() + lvIdag()
-        + `<div class="zones2">${zoneWaiting()}${zoneConfirm()}</div>`
-        + zoneWeek()
-        + zoneNoMethod();
+        + (hid ? `<div class="zmore">${plural(hid, "leverans", "leveranser")} ${who === "mine" ? "där du inte är med" : "där du är med"} ${hid === 1 ? "är dold" : "är dolda"} · <button class="linkbtn" data-who="all">Visa alla</button></div>` : "")
+        + body;
     },
     meddelanden() { return pageMessages(); },
 
@@ -5071,7 +5101,9 @@ a.btn { text-decoration: none; color: var(--text); }
   }
   /* ── Idag: leveranserna som rutor ── */
   function lvIdag() {
-    const ds = realDeliveries().filter((x) => lvTasks(x).length || x.ongoing);
+    const mineD = myDeliveryIds();
+    const ds = realDeliveries().filter((x) => lvTasks(x).length || x.ongoing)
+      .filter((x) => idagShows(x.id, mineD));
     if (!ds.length) return "";
     const g = deliveryGrid(ds, "");
     return `<div class="zone"><div class="zone-h"><h2>${ic("lev")} Leveranser</h2><span class="right">${g.chips}</span></div>` + g.html + `</div>`;
