@@ -801,6 +801,25 @@ a.btn { text-decoration: none; color: var(--text); }
 .trow.mine { border-left-color: var(--accent); }
 .trow.burn { border-left-color: var(--red); }
 .trow .ico { color: var(--text-2); display: grid; place-items: center; grid-row: 1 / span 2; align-self: start; padding-top: 2px; }
+/* Ändra med Claude: en symbol, samma plats och form överallt (Daniel P 2026-09-29). */
+.ecl { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; margin-left: 6px; vertical-align: middle; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--bg); color: var(--accent); flex: none; }
+.ecl:hover { background: var(--accent-weak); }
+.ecl .i { width: 14px; height: 14px; }
+.fld { border: 0; background: none; padding: 0; font: inherit; color: inherit; border-bottom: 1px dotted var(--text-3); cursor: pointer; }
+.fld:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.fld.ro { cursor: default; border-bottom: 0; }
+.editbox { border: 1px solid var(--accent); border-radius: var(--r-sm); padding: var(--s3); background: var(--bg); }
+.editbox textarea { width: 100%; }
+.editbox .chg { margin: 8px 0; color: var(--text-2); font-size: var(--fs-meta); }
+/* Sidformer (Daniel P 2026-09-29): varje sida är en av fem former, med egen ram och en mening om vad man gör där. */
+.formline { display: flex; gap: 10px; align-items: baseline; margin: 0 0 var(--s4); color: var(--text-2); font-size: var(--fs-meta); }
+.formline .ftag { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; color: var(--form-c, var(--text-3)); }
+.page[data-form] { border-top: 3px solid var(--form-c, var(--line)); }
+.page[data-form="ko"] { --form-c: var(--accent); max-width: 860px; }
+.page[data-form="register"] { --form-c: var(--text-3); }
+.page[data-form="objekt"] { --form-c: var(--green, var(--accent)); }
+.page[data-form="arbetsyta"] { --form-c: var(--accent); border: 1px solid var(--accent); border-top-width: 3px; border-radius: var(--r-md, 12px); margin: var(--s3); background: var(--bg); }
+.page[data-form="tid"] { --form-c: var(--amber, var(--text-3)); max-width: none; }
 .trow.dgrp .act { display: flex; align-items: center; gap: 6px; }
 .trow.dgrp .caret { color: var(--text-2); width: 12px; text-align: center; }
 .dgrp-rows > .trow { padding-left: calc(var(--s4) + 18px); background: var(--bg-subtle); }
@@ -946,7 +965,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "9be09e8", published: "2026-09-29" };
+  const SIDA = { version: "4634a5e", published: "2026-09-29" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1919,7 +1938,7 @@ a.btn { text-decoration: none; color: var(--text); }
     noteMsgContext();
     if (state.screen === "metoder" && !S.lib && !S.libError) loadLib();
     // På leverans-, kund-, enhets- och förhandsvisningssidan är ingen yta markerad (UX-genomgången, problem 9).
-    const off = state.obj && ["delivery", "unit", "customer", "preview"].includes(state.obj.type);
+    const off = false;
     for (const b of document.querySelectorAll(".nav[data-go]")) b.setAttribute("aria-current", !off && b.dataset.go === state.screen ? "page" : "false");
     $("#c-idag").textContent = turCount() || "";
     paintMessageButton();
@@ -1943,7 +1962,8 @@ a.btn { text-decoration: none; color: var(--text); }
         return `<div class="empty"><b>Den här delen är inte flyttad till den nya vyn än.</b>Den finns i den nuvarande vyn tills vidare.<div class="meta" style="margin-top:6px">${esc(e.message)}</div></div>`;
       }
     };
-    m.innerHTML = `<div class="page">${fn()}</div>`;
+    const [form, formLine] = S.plan && !S.error ? formOf(state.screen, state.obj) : [null, ""];
+    m.innerHTML = `<div class="page"${form ? ` data-form="${form}"` : ""}>${formBand(form, formLine)}${fn()}</div>`;
     renderCrumbs();
     placeTips(m);
     renderPanel();
@@ -2186,8 +2206,10 @@ a.btn { text-decoration: none; color: var(--text); }
   /** Sektionens rader, per leverans eller var för sig. worst ger gruppens läge som chip. */
   function deliveryRows(zone, xs, { rowOf, dOf, worst, dueOf = (x) => x.due }) {
     if (!byDelivery()) return xs.map(rowOf).join("");
-    return groupByDelivery(xs, dOf).map((g) => {
+    const o = { rowOf, worst, dueOf };
+    return mergeSimilar(groupByDelivery(xs, dOf)).map((g) => {
       if (g.one) return rowOf(g.one);
+      if (g.sim) return similarHead(zone, g, o);
       const key = `${zone}|${g.d}`, open = !!state.openGroups?.[key];
       const d = realDeliveries().find((y) => y.id === g.d);
       const name = d?.label || g.items.map((x) => x.project?.kind === "delivery" ? x.project.label : "").find(Boolean) || "Leveransen";
@@ -2196,7 +2218,8 @@ a.btn { text-decoration: none; color: var(--text); }
         + `<span class="ico">${ic("lev")}</span><span class="t" title="${esc(name)}">${esc(name)}</span>`
         + `<span class="act"><span class="chip">${g.items.length}</span><span class="caret" aria-hidden="true">${open ? "▾" : "▸"}</span></span>`
         + `<span class="m">${worst(g.items)}${due ? byWhen(due, "närmast") : ""}</span></div>`;
-      return head + (open ? `<div class="dgrp-rows">${g.items.map(rowOf).join("")}</div>` : "");
+      const inner = mergeSimilar(g.items.map((x) => ({ one: x }))).map((e) => e.one ? rowOf(e.one) : similarHead(key, e, o)).join("");
+      return head + (open ? `<div class="dgrp-rows">${inner}</div>` : "");
     }).join("");
   }
   /**
@@ -4099,7 +4122,7 @@ a.btn { text-decoration: none; color: var(--text); }
           + `<div class="bar-actions"><button class="btn primary" data-answer="${esc(o.id)}">Spara svaret</button>`
           + `<label class="btn">${ic("upload")} Ladda upp<input type="file" hidden data-qfile="${esc(o.id)}"></label></div></div>`;
       return `<div class="wshead"><div class="titles"><span class="meta">${custDot(t?.customer?.color)} ${esc(lbl(t?.customer))} · ${handover ? "överlämning" : "fråga"}</span>`
-        + `<h1 class="qhead-q">${esc(headlineForOpen(o))}</h1><div class="line">${status}${stop ? ` · håller uppe <b>${esc(stop.label)}</b>` : ""}</div></div>`
+        + `<h1 class="qhead-q">${esc(headlineForOpen(o))}${eclBtn("question", o.id)}</h1><div class="line">${status}${stop ? ` · håller uppe <b>${esc(stop.label)}</b>` : ""}</div></div>`
         + `<div class="bar-actions">${msgBtn({ open: o.id, ...(t ? { task: t.id } : {}), ...(o.step ? { step: o.step } : {}) }, headlineForOpen(o))}</div></div>`
         + `<div class="ws2"><div class="card section"><h2>Var frågan hör hemma</h2><dl class="facts">`
         + `<dt>Projekt</dt><dd>${t ? esc(lbl(t.commitment_named, "–")) : "–"}</dd>`
@@ -4132,8 +4155,10 @@ a.btn { text-decoration: none; color: var(--text); }
       // Var steget hör hemma (etapp 5): «I uppgiften … · i leveransen …», som länkar.
       const dv = deliveryOfTask(t);
       return `<div class="wshead"><div class="titles"><span class="meta">${custDot(t.customer?.color)} ${t.customer?.id ? `<a href="${H.customer(t.customer.id)}">${esc(lbl(t.customer))}</a>` : esc(lbl(t.customer))}`
-        + ` · i uppgiften <a href="${H.delivery(dv.id, dv.implicit ? null : t.id, s.step)}">${esc(taskTitle(t))}</a>${dv.implicit ? "" : ` · i leveransen <a href="${H.delivery(dv.id)}">${esc(dv.label)}</a>`} · leverans ${short(t.due)} · ${methodLine(t)}</span>`
-        + `<h1>${esc(s.label)}</h1><div class="line">${kindMark(k)} ${esc(kindTxt)} · ansvarig ${esc(lbl(s.responsible, "–"))} · ${short(s.start)}–${short(s.latest_end || s.end)}`
+        + ` · i uppgiften <a href="${H.delivery(dv.id, dv.implicit ? null : t.id)}">${esc(taskTitle(t))}</a>${eclBtn("task", t.id)}${dv.implicit ? "" : ` · i leveransen <a href="${H.delivery(dv.id)}">${esc(dv.label)}</a>`} · leverans ${short(t.due)} · ${methodLine(t)}</span>`
+        + `<h1><button class="fld" data-fedit="step-name|${esc(t.id)}|${esc(s.step)}" title="Byt stegets namn">${esc(s.label)}</button>${eclBtn("step", `${t.id}|${s.step}`)}</h1>`
+        + `<div class="line">${kindMark(k)} ${esc(kindTxt)} · ansvarig ${s.done ? esc(lbl(s.responsible, "–")) : `<button class="fld" data-handover-to="1" title="Ge steget till någon annan">${esc(lbl(s.responsible, "–"))}</button>`}`
+        + ` · ${!s.done && (s.postpone_options || []).length ? `<button class="fld" data-postpone="1" title="Senarelägg steget">${short(s.start)}–${short(s.latest_end || s.end)}</button>` : `${short(s.start)}–${short(s.latest_end || s.end)}`}`
         + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="meta">kan flyttas ${plural(s.float_days, "dag", "dagar")}</span>`)
           + assumeChips(s)
           + (s.added ? ` · <span class="chip">Bara i den här uppgiften</span> <button class="linkbtn" data-remove-added="${esc(t.id)}|${esc(s.step)}">Ta bort ur uppgiften</button>` : "") + (s.done ? ` · <span class="chip green">${ic("check")} ${doneText(s)}</span>` : "") + (started ? ` · ${started}` : "") + `</div></div></div>`
@@ -4157,7 +4182,8 @@ a.btn { text-decoration: none; color: var(--text); }
         + `<div class="ws2"><div class="card section"><h2>Behövs</h2>`
         + (qs.length ? qs.map((o) => `<div class="need" style="cursor:pointer" data-open-q="${esc(o.id)}"><span class="no">${ic(o.step === s.step ? "stop" : "help")}</span><span class="t">${esc(headlineForOpen(o))}${o.step && o.step !== s.step ? ` <span class="meta">· stoppar «${esc(lbl(o.step_named, ""))}»</span>` : ""}</span><button class="btn sm" data-open-q="${esc(o.id)}">Svara</button></div>`).join("")
           : `<div class="need"><span class="ok">${ic("check")}</span><span class="t">Allt som behövs finns</span></div>`)
-        + `</div><div class="card section"><h2>Så görs det</h2>`
+        + `</div><div class="card section"><h2>Så görs det <button class="btn quiet sm" data-sedit="${esc(t.id)}|${esc(s.step)}" title="Skriv om stegets prompt och moment här">Ändra texten</button>${eclBtn("step", `${t.id}|${s.step}`)}</h2>`
+        + stepTextCard(t, s)
         + (s.instruktion?.syfte ? `<p style="margin:0 0 8px">${esc(s.instruktion.syfte)}</p>` : "")
         + (how ? `<ol class="how">${how.slice(0, 8).map((h) => `<li>${esc(h)}</li>`).join("")}</ol>` : `<div class="meta">Ingen beskrivning än.</div>`)
         + ((s.leaves || []).length ? `<div class="meta" style="margin-top:8px">Lämnar: ${s.leaves.map((lv) => esc(lbl(lv))).join(", ")}</div>` : "") + `</div></div>`
@@ -4223,7 +4249,7 @@ a.btn { text-decoration: none; color: var(--text); }
       if (state.obj.edit) return `<div class="wshead"><div class="titles"><span class="meta">Metod · ändra</span><h1>Ändra ${esc(m.label)}</h1></div></div>` + methodEditor(m);
       const ids = stepIds(m), ts = methodTasks(m), vs = methodVariants(m);
       const kindTxt = { code: "Kod gör det", llm: "Claude gör det, en människa godkänner", human: "En människa gör det", mixed: "Kod och människa", ext: "Kunden eller en partner" };
-      return `<div class="wshead"><div class="titles"><span class="meta">Metod${typeLabel(m.output?.[0]) ? ` · levererar ${esc(typeLabel(m.output[0]))}` : ""}</span><h1>${esc(m.label)}</h1>`
+      return `<div class="wshead"><div class="titles"><span class="meta">Metod${typeLabel(m.output?.[0]) ? ` · levererar ${esc(typeLabel(m.output[0]))}` : ""}</span><h1><button class="fld" data-fedit="method-name|${esc(m.id)}" title="Byt metodens namn">${esc(m.label)}</button>${eclBtn("method", m.id)}</h1>`
         + `<div class="line">${ids.length} steg · ${ts.length ? `${ts.length} uppgift${ts.length === 1 ? "" : "er"} i planen` : "inte i planen nu"} · ${vs.length ? `${vs.length} kundflöde${vs.length === 1 ? "" : "n"}` : "inget kundflöde"}</div></div>`
         + `<button class="btn primary" data-edstart="1">Ändra metoden</button><button class="btn" data-adapt="1">Anpassa för kund</button></div>`
         + `<div class="card section"><h2>Kedjan</h2><div class="chain">${(m.parts || []).map((s, i) => `${i ? `<span class="arrow">${ic("chev")}</span>` : ""}<span class="node ${stepBlockers(s.id).length ? "removed" : ""}">${kindMark(stepKind(s.id))}<span class="l">${esc(s.label)}</span></span>`).join("")}</div></div>`
@@ -4237,7 +4263,7 @@ a.btn { text-decoration: none; color: var(--text); }
             when: hasVerb(e?.label || "") ? "" : `<span style="color:var(--amber)">namnet saknar verb</span>` }); }).join("")
         + `</div>`
         + `<div class="card" style="margin-top:16px"><div class="head"><h2>Kundflöden</h2><span class="meta">${vs.length || ""}</span></div>`
-        + (vs.length ? vs.map((v) => row({ kind: `<span class="kind human" title="Kundflöde">${ic("building")}</span>`, title: esc(v.label), cust: custLabel(v.output?.[0]) })).join("")
+        + (vs.length ? vs.map((v) => row({ kind: `<span class="kind human" title="Kundflöde">${ic("building")}</span>`, title: esc(v.label), cust: custLabel(v.output?.[0]), act: eclBtn("variant", v.id) })).join("")
           : `<div class="empty"><b>Inget kundflöde.</b>Metoden används som den är hos alla kunder.</div>`) + `</div>`;
     },
     case() {
@@ -4321,7 +4347,8 @@ a.btn { text-decoration: none; color: var(--text); }
   const H = {
     screen: (s) => `#/${s}`,
     customer: (id) => `#/kund/${enc(id)}`,
-    delivery: (id, task, step) => `#/leverans/${enc(id)}${task ? `/uppgift/${enc(task)}${step ? `/steg/${enc(step)}` : ""}` : ""}`,
+    // Ett steg har en adress: #/steg. En leveransadress med steg omdirigeras dit (applyHash).
+    delivery: (id, task, step) => step && task ? H.step(task, step) : `#/leverans/${enc(id)}${task ? `/uppgift/${enc(task)}` : ""}`,
     material: (id) => `#/leverans/${enc(id)}/material`,
     change: (id, unit) => `#/leverans/${enc(id)}/andra${unit ? `/${enc(unit)}` : ""}`,
     unit: (id, key) => `#/enhet/${enc(id)}/${enc(key)}`,
@@ -4921,7 +4948,7 @@ a.btn { text-decoration: none; color: var(--text); }
     const how = d.implicit ? methodLine(ts[0])
       : d.template ? `mallen «${esc(lbl(d.template))}»`
       : [...new Set(ts.map((t) => lbl(t.method_named, "")).filter(Boolean))].map((m) => esc(m)).join(", ") || "ingen metod";
-    return `<div class="pagehead" style="margin-bottom:8px"><span class="kbox lev">${ic("lev")}</span><h1>${esc(d.label)}</h1>${chip(word, tone)}</div>`
+    return `<div class="pagehead" style="margin-bottom:8px"><span class="kbox lev">${ic("lev")}</span><h1>${esc(d.label)}</h1>${d.implicit ? "" : eclBtn("delivery", d.id)}${chip(word, tone)}</div>`
       + `<div class="lv-sub">${c?.id ? `<a href="${H.customer(c.id)}">${esc(lbl(c))}</a> · ` : ""}${how}</div>`;
   }
   /** Meningen om läget, i klartext. */
@@ -5159,7 +5186,7 @@ a.btn { text-decoration: none; color: var(--text); }
         + (pend ? `<div class="lv-note-row">${lvNote(pend)}</div>` : "")
         + (real.length > 1 ? `<div style="text-align:right;padding:0 16px 4px">${lvOrderButtons("task", d.id, t.id, taskTitle(t))}</div>` : "")
         + (!o && asArr(t.waits).length ? waitEdges(t) : "")
-        + (o ? `<div class="lv-nest">${fullOccasion(t) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(t))}</div>` : ""}<div class="lv-edge">Metod: ${methodLine(t)}${t.live ? ` · ute sedan ${short(t.live.at)}` : ""}${t.moved?.reason ? ` · flyttat: «${esc(t.moved.reason)}»` : ""}</div>`
+        + (o ? `<div class="lv-nest">${fullOccasion(t) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(t))}</div>` : ""}<div class="lv-edge">Metod: ${methodLine(t)}${eclBtn("task", t.id)}${t.live ? ` · ute sedan ${short(t.live.at)}` : ""}${t.moved?.reason ? ` · flyttat: «${esc(t.moved.reason)}»` : ""}</div>`
           + waitEdges(t)
           + lvRounds(d, t, hitStep)
           + asArr(t.steps).filter((s) => asArr(s.waits_on).some((w) => !w.done)).slice(0, 1).map((s) => `<div class="lv-edge">${esc(s.waits_on.find((w) => !w.done).text)}.</div>`).join("")
@@ -5525,7 +5552,8 @@ a.btn { text-decoration: none; color: var(--text); }
     if (a === "leverans" && rest[0]) {
       const [id, x, y, z, w] = rest;
       state.screen = keepScreen();
-      state.obj = { type: "delivery", id, ...(x === "uppgift" && y ? { task: y, ...(z === "steg" && w ? { step: w } : {}) } : x === "material" ? { sub: "material" } : x === "andra" ? { sub: "andra", unit: y || "" } : {}) };
+      if (x === "uppgift" && y && z === "steg" && w) { const st = stepOf(taskById(y), w); state.obj = { type: "step", task: y, step: w, title: st?.label || "" }; return; }
+      state.obj = { type: "delivery", id, ...(x === "uppgift" && y ? { task: y } : x === "material" ? { sub: "material" } : x === "andra" ? { sub: "andra", unit: y || "" } : {}) };
       if (state.obj.task) LV.open[`task|${id}`] = state.obj.task;
       return;
     }
@@ -7121,6 +7149,291 @@ a.btn { text-decoration: none; color: var(--text); }
     return copyToChat(partChatPrompt(o, { kind, i, part: e }), `«${e.label}» med ${kind === "llm" ? "Claude" : "kod"}`);
   }
 
+  /* ── Ändra med Claude och ändra själv (Daniel P 2026-09-29) ─────────────
+     «Allt ska man kunna få hjälp av Claude med (klicka, kopiera → id så den
+     vet var man är och nuvarande text → klistra in i Claude och så berättar
+     man hur man vill ändra).» «Man ska också kunna ändra själv genom att
+     skriva.» Symbolen är en enda, med samma ikon, plats och förklaring överallt.
+     Paketet byggs vid klicket ur det som redan är hämtat: vyn gör inga fler
+     eller större anrop vid laddning. Ändra själv går genom samma anrop som
+     Claude skulle göra (registry_define change: true), med en rad «Ändrar: X → Y»
+     och Spara/Ångra före, och Ångra en stund efter. */
+  const ECL_ICON = `<svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='M4 20h4L18.5 9.5l-4-4L4 16z'/><path d='M18 2.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z'/></svg>`;
+  const ECL_TIP = "Ändra med Claude";
+  const ECL_KIND = { step: "Steg", task: "Uppgift", delivery: "Leverans", method: "Metod", variant: "Metod för en kund", question: "Fråga" };
+  /** Symbolen. Sort och id räcker: paketet byggs när den klickas. */
+  const eclBtn = (kind, id) => `<button class="ecl" data-ecl="${esc(kind)}|${esc(id)}" title="${ECL_TIP}" aria-label="${ECL_TIP}">${ECL_ICON}</button>`;
+  /** Paketet som läggs i urklipp: vad det är, nuvarande text, hur en ändring sparas och raden att fylla i. */
+  function editPackText({ kind, id, name, path, current, save }) {
+    return [`Ändra i dirigenten: ${ECL_KIND[kind] || kind} «${name}».`,
+      `Sort: ${kind} · id: ${id}`,
+      `Var: ${path}`, "",
+      "Nuvarande text:", current || "(ingen text ännu)", "",
+      "Så sparas en ändring:", ...save,
+      "Visa mig först vad som ändras, på vanlig svenska, och spara efter mitt ja.", "",
+      "Beskriv hur du vill ändra:", ""].join("\n");
+  }
+  const EDIT_RECEIPT = "Kopierat — klistra in i Claude och säg hur du vill ändra.";
+  /** Sökvägen Kund › Leverans › Uppgift › Steg, så långt den finns. */
+  function editPath(t, s) {
+    const d = t && deliveryOfTask(t);
+    return [t ? lbl(t.customer, "") : "", d && !d.implicit ? d.label : "", t ? taskTitle(t) : "", s ? s.label : ""].filter(Boolean).join(" › ");
+  }
+  const molOf = (s) => (s?.instruktion?.molecule?.id || s?.recipe?.molecule?.id || s?.recipe_target?.id || s?.molecule?.id || null);
+  /** Stegets nuvarande text: prompten ordagrant, och momenten eller receptet. */
+  function stepCurrentText(t, s) {
+    const rows = [];
+    if (s.instruktion?.prompt) rows.push("Prompt:", s.instruktion.prompt, "");
+    rows.push(...instructionLines(s));
+    return rows.join("\n");
+  }
+  /** Det Claude ska veta om hur en ändring sparas, per sort. */
+  function editSpec(kind, id) {
+    if (kind === "step") {
+      const [tk, st] = String(id).split("|"), t = taskById(tk), s = stepOf(t, st);
+      if (!t || !s) return null;
+      const mol = molOf(s);
+      return { kind, id, name: s.label, path: editPath(t, s), current: stepCurrentText(t, s), save: [
+        `- Instruktion, prompt och moment: write { op: "registry_define", change: true, node: { id: "${mol || "<molekylens id, se read op context>"}", instruktion: { …alla sex fälten och prompt, med ändringen } } }.`,
+        `- Stegets namn eller ansvarig: write { op: "registry_define", change: true, node: { id: "${s.step}", label: "…", responsible: "<person>" } }. Det gäller alla uppgifter med steget.`,
+        ...((s.needs_values || []).length ? [`- Värdena steget körs med: execute_step { task: "${t.id}", step: "${s.step}", values: { ${(s.needs_values || []).join(", ")} }, confirmed: true, preview_id: <ur förhandsvisningen>, user_approval: <mitt ja> }.`] : [])] };
+    }
+    if (kind === "task") {
+      const t = taskById(id); if (!t) return null;
+      const who = [...new Set(liveSteps(t).map((x) => lbl(x.responsible, "")).filter(Boolean))].join(", ");
+      return { kind, id, name: taskTitle(t), path: editPath(t, null), current: [`Namn: ${taskTitle(t)}`, `Leverans senast: ${t.due}`, `Metod: ${lbl(t.method_named, "ingen")}`, `Ansvariga: ${who || "–"}`].join("\n"), save: [
+        `- Namnet härleds ur mejlets ämne eller tillfället och har inget eget fält än. Föreslå ett atomförslag för «byt namn på uppgift» (molecule_build med atom_proposal) i stället för att skriva ett anrop för hand.`,
+        `- Metod: write { op: "task_lock", task: "${t.id}", method: "<metodens id>", reason: "…" }.`,
+        `- Flytta ett steg: write { op: "task_lock", task: "${t.id}", move_step: { step: "<stegets id>", after: "<steg>" } }. Senarelägga: execute_step { task: "${t.id}", step: "<stegets id>", … } (visa förhandsvisningen).`] };
+    }
+    if (kind === "delivery") {
+      const d = realDeliveries().find((x) => x.id === id); if (!d) return null;
+      const ts = tasks().filter((x) => x.delivery === id);
+      return { kind, id, name: d.label, path: [ts[0] ? lbl(ts[0].customer, "") : "", d.label].filter(Boolean).join(" › "),
+        current: [`Namn: ${d.label}`, `Kundens datum: ${d.due || d.date || "–"}`, `Uppgifter: ${ts.map((x) => taskTitle(x)).join(" · ") || "–"}`].join("\n"), save: [
+        `- Leveransens namn och datum sitter på åtagandet (?). Läs det med read och ändra med write { op: "registry_define", change: true, node: { id: "<åtagandets id>", … } }.`,
+        `- Flytta en uppgift till leveransen: write { op: "task_lock", task: "<uppgiftens id>", … } (?).`] };
+    }
+    if (kind === "method" || kind === "variant") {
+      const m = libById(id) || methodById(id); if (!m) return null;
+      return { kind, id, name: m.label, path: `Metoder › ${m.label}`, current: [`Namn: ${m.label}`, m.summary ? `Beskrivning: ${m.summary}` : "", `Steg: ${(m.parts || []).map((p) => p.label).join(" → ")}`].filter(Boolean).join("\n"), save: [
+        `- Namn, beskrivning och stegens ordning: write { op: "registry_define", change: true, node: { id: "${m.id}", label: "…", steps: ["<stegets id>", …] } }. Det blir en ny version.`,
+        ...(kind === "variant" ? [`- Kundens flöde: method_variant_build { … } (visa förhandsvisningen).`] : [])] };
+    }
+    if (kind === "question") {
+      const o = opens().find((x) => x.id === id); if (!o) return null;
+      const t = taskById(o.task);
+      return { kind, id, name: headlineForOpen(o), path: t ? editPath(t, stepOf(t, o.step)) : "", current: o.question || headlineForOpen(o), save: [
+        `- Svara: asset_register { asset_type: "${o.about}", acquisition: "provided", for_task: "${o.task}", text: "…", mime: "text/plain", confirmed: true, user_approval: <mitt ja> }.`,
+        `- Ändra frågan: den kommer ur kravet i metoden, så ändra kravet med write { op: "registry_define", change: true, node: { id: "<kravets id>", … } } (?).`] };
+    }
+    return null;
+  }
+  function editWithClaude(kind, id) {
+    const spec = editSpec(kind, id);
+    if (!spec) return toast("Det finns inte längre i planen. Hämta igen.", null, true);
+    const text = editPackText(spec);
+    return (navigator.clipboard?.writeText(text) ?? Promise.reject(new Error("urklippet går inte att nå här")))
+      .then(() => toast(EDIT_RECEIPT), () => copyToChat(text, `Paketet för «${spec.name}»`));
+  }
+
+  /* Ändra själv: ett fält i taget, med förhandsvisningen «Ändrar: X → Y» och Spara/Ångra. */
+  const clip60 = (x) => { const v = String(x ?? "").replace(/\s+/g, " ").trim(); return v.length > 60 ? `${v.slice(0, 57)}…` : v; };
+  /** Raden före Spara. Tom när ingenting är ändrat. */
+  const changeLine = (what, from, to) => String(from ?? "").trim() === String(to ?? "").trim() ? "" : `Ändrar: ${what} «${clip60(from) || "tomt"}» → «${clip60(to) || "tomt"}»`;
+  /** Namnfälten som går att skriva över: steg och metod, via registry_define. Uppgift och leverans saknar väg i servern. */
+  function fieldOf(kind, id) {
+    if (kind === "step-name") { const [tk, st] = String(id).split("|"), s = stepOf(taskById(tk), st);
+      return s ? { node: s.step, field: "label", old: s.label, what: "Stegets namn", scope: "Gäller alla uppgifter med steget; det blir en ny version." } : null; }
+    if (kind === "method-name") { const m = methodById(id);
+      return m ? { node: m.id, field: "label", old: m.label, what: "Metodens namn", scope: "Det blir en ny version av metoden." } : null; }
+    return null;
+  }
+  function fieldDialog(kind, id) {
+    const f = fieldOf(kind, id);
+    if (!f) return toast("Det finns inte längre i planen. Hämta igen.", null, true);
+    state.fe = { kind, id };
+    dialog(`<h2>${esc(f.what)}</h2><label class="field wide"><span>Nytt namn</span><input id="fe-val" value="${esc(f.old)}" maxlength="120"></label>`
+      + `<div class="chg" id="fe-chg" style="margin:8px 0;color:var(--text-2)">Inget ändrat än.</div><p class="meta">${esc(f.scope)}</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Ångra</button><button class="btn primary" data-fe-save="1" disabled>Spara</button></div>`);
+    $("#fe-val")?.select();
+  }
+  function fieldPaint() {
+    const fe = state.fe, f = fe && fieldOf(fe.kind, fe.id), el = $("#fe-val"); if (!f || !el) return;
+    const line = changeLine(f.what, f.old, el.value), b = document.querySelector("[data-fe-save]");
+    $("#fe-chg").textContent = line || "Inget ändrat än.";
+    if (b) b.disabled = !line || !el.value.trim();
+  }
+  function fieldSave(btn) {
+    const fe = state.fe, f = fe && fieldOf(fe.kind, fe.id), val = $("#fe-val")?.value.trim();
+    if (!f || !val) return;
+    return busy(btn, async () => {
+      try {
+        await call("registry_define", { change: true, node: { id: f.node, [f.field]: val } });
+        const undo = () => call("registry_define", { change: true, node: { id: f.node, [f.field]: f.old } }).then(() => refreshLib()).then(load);
+        closeDialog(); await refreshLib(); await load();
+        toast(`${f.what} är ändrat till «${val}».`, undo);
+      } catch (e) { fail("Namnet sparades inte", e); }
+    });
+  }
+
+  /** Stegets text på plats: prompten och momenten, som textrutor. Kräver biblioteket (hämtas först när man klickar). */
+  async function stepTextEdit(key) {
+    const [tk, st] = key.split("|"), s = stepOf(taskById(tk), st); if (!s) return;
+    if (!S.lib) { await refreshLib(); }
+    const hi = houseInstruktion(s), mol = howTarget(s);
+    if (!hi || !mol) return toast("Steget har bara ett fritextrecept eller ingen text här. Använd Ändra med Claude.", null, true);
+    state.sedit = { key, mol, hi, prompt: hi.prompt ?? "", how: howNow(s), origPrompt: hi.prompt ?? "", origHow: howNow(s) };
+    render();
+  }
+  const countLines = (x) => String(x || "").split("\n").filter((y) => y.trim()).length;
+  function stepTextChanges() {
+    const e = state.sedit; if (!e) return [];
+    return [e.how.trim() !== e.origHow.trim() ? `Ändrar: Så gör du — ${plural(countLines(e.origHow), "moment", "moment")} → ${plural(countLines(e.how), "moment", "moment")}` : "",
+      e.prompt.trim() !== e.origPrompt.trim() ? `Ändrar: Prompten — ${e.origPrompt.length} → ${e.prompt.length} tecken` : ""].filter(Boolean);
+  }
+  function stepTextCard(t, s) {
+    const e = state.sedit;
+    if (!e || e.key !== `${t.id}|${s.step}`) return "";
+    const ch = stepTextChanges();
+    return `<div class="editbox" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:14px">Ändra stegets text</h3>`
+      + `<label class="field wide"><span>Prompt till verktyget · valfri</span><textarea id="se-prompt" rows="6">${esc(e.prompt)}</textarea></label>`
+      + `<label class="field wide"><span>Så gör du · ett moment per rad</span><textarea id="se-how" rows="6">${esc(e.how)}</textarea></label>`
+      + `<div class="chg" id="se-chg">${ch.length ? ch.map(esc).join("<br>") : "Inget ändrat än."}</div>`
+      + `<p class="meta">Gäller alla uppgifter med steget; det blir en ny version av stegets molekyl.</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-se-undo="1">Ångra</button><button class="btn primary" data-se-save="1"${ch.length ? "" : " disabled"}>Spara</button></div></div>`;
+  }
+  function stepTextPaint() {
+    const e = state.sedit; if (!e) return;
+    const p = $("#se-prompt"), h = $("#se-how");
+    if (p) e.prompt = p.value;
+    if (h) e.how = h.value;
+    const ch = stepTextChanges(), c = $("#se-chg"), b = document.querySelector("[data-se-save]");
+    if (c) c.innerHTML = ch.length ? ch.map(esc).join("<br>") : "Inget ändrat än.";
+    if (b) b.disabled = !ch.length;
+  }
+  const stepTextNode = (e, how, prompt) => ({ id: e.mol, instruktion: { ...e.hi, saa_goer_du: lines(how), ...(prompt.trim() ? { prompt } : {}) } });
+  function stepTextSave(btn) {
+    const e = state.sedit; if (!e) return;
+    const node = stepTextNode(e, e.how, e.prompt), before = stepTextNode(e, e.origHow, e.origPrompt);
+    return busy(btn, async () => {
+      try {
+        await call("registry_define", { change: true, node });
+        const undo = () => call("registry_define", { change: true, node: before }).then(() => refreshLib()).then(load);
+        state.sedit = null; await refreshLib(); await load();
+        toast("Stegets text är ändrad. Ny version sparad.", undo);
+      } catch (x) { fail("Texten sparades inte", x); }
+    });
+  }
+  document.addEventListener("input", (e) => {
+    if (e.target.id === "fe-val") fieldPaint();
+    else if (e.target.id === "se-prompt" || e.target.id === "se-how") stepTextPaint();
+    else if (e.target.id === "sa-text") answerAllPaint();
+  });
+  document.addEventListener("change", (e) => { if (e.target.dataset?.sa !== undefined) answerAllPaint(); });
+
+  /* ── Lika saker på Idag slås ihop (Daniel P 2026-09-29) ──
+     Frågor med samma frågetext till samma person eller kund blir en rad, med
+     Svara alla; uppgifter av samma slag i samma månad (SoMe-poster) en rad som
+     fälls ut. Gruppraden bär värsta läget. Nyckeln räknas ur det agendan redan
+     bär, så inget anrop tillkommer. */
+  const normText = (x) => String(x ?? "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  function similarKey(x) {
+    if (x.kind === "step") {
+      const t = taskById(x.task), m = day10(x.due).slice(0, 7);
+      return t?.method && /^\d{4}-\d{2}$/.test(m) ? `m|${t.method}|${t.deliverable_type ?? t.deliverable?.id ?? ""}|${m}` : null;
+    }
+    if (x.kind === "colleague" || x.kind === "handover_out" || x.kind === "handover" || !x.open) return null;
+    const o = opens().find((y) => y.id === x.open);
+    return o?.question ? `q|${o.holder?.id ?? x.customer?.id ?? o.customer?.id ?? ""}|${normText(o.question)}` : null;
+  }
+  /** Sätter samman poster med lika nyckel; en grupp står där dess första post stod. Uppgiftsgrupper kräver minst två uppgifter. */
+  function mergeSimilar(entries, keyOf = similarKey) {
+    const out = [], at = new Map();
+    for (const g of entries) {
+      const k = g.one ? keyOf(g.one) : null;
+      if (!k) { out.push(g); continue; }
+      if (at.has(k)) { out[at.get(k)].items.push(g.one); continue; }
+      at.set(k, out.length); out.push({ sim: k, items: [g.one] });
+    }
+    return out.flatMap((g) => !g.sim ? [g]
+      : g.items.length < 2 || (g.sim.startsWith("m|") && new Set(g.items.map((x) => x.task)).size < 2) ? g.items.map((x) => ({ one: x })) : [g]);
+  }
+  function similarHead(zone, g, { rowOf, worst, dueOf }) {
+    const key = `${zone}|sim|${g.sim}`, open = !!state.openGroups?.[key], n = g.items.length, x0 = g.items[0];
+    const due = g.items.map(dueOf).filter(Boolean).map(day10).sort()[0];
+    let title, acts = "", icon = "help";
+    if (g.sim.startsWith("q|")) {
+      const o = opens().find((y) => y.id === x0.open), who = lbl(o?.holder, "") || lbl(x0.customer, "");
+      title = `${n} frågor: ${clip60(o?.question)}${who ? ` · till ${who}` : ""}`;
+      acts = `<button class="btn sm primary" data-answer-all="${esc(JSON.stringify(g.items.map((x) => x.open)))}">Svara alla</button>`;
+    } else {
+      const t = taskById(x0.task); icon = "upp";
+      title = `${lbl(t?.deliverable, "Uppgifter")} · ${MONTHS[Number(day10(x0.due).slice(5, 7)) - 1] || ""} · ${n} uppgifter`;
+    }
+    return `<div class="trow dgrp${open ? " open" : ""}" data-dgroup="${esc(key)}" role="button" aria-expanded="${open}" tabindex="0">`
+      + `<span class="ico">${ic(icon)}</span><span class="t" title="${esc(title)}">${esc(title)}</span>`
+      + `<span class="act">${acts}<span class="chip">${n}</span><span class="caret" aria-hidden="true">${open ? "▾" : "▸"}</span></span>`
+      + `<span class="m">${worst(g.items)}${due ? byWhen(due, "närmast") : ""}</span></div>`
+      + (open ? `<div class="dgrp-rows">${g.items.map(rowOf).join("")}</div>` : "");
+  }
+  /* Svara alla: ett svar, ett anrop per fråga, och en förhandsvisning av vilka som ändras. */
+  function answerAllDialog(ids) {
+    const os = ids.map((id) => opens().find((x) => x.id === id)).filter(Boolean);
+    if (!os.length) return toast("Frågorna finns inte längre i planen. Hämta igen.", null, true);
+    state.sa = { ids: os.map((o) => o.id) };
+    dialog(`<h2>Svara alla · ${plural(os.length, "fråga", "frågor")}</h2><p class="meta">${esc(clip60(os[0].question))}</p>`
+      + `<label class="field wide"><span>Svaret · gäller de frågor du bockar för</span><textarea id="sa-text" rows="4"></textarea></label>`
+      + os.map((o) => { const t = taskById(o.task); return `<label class="need" style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-sa="${esc(o.id)}" checked> <span>${esc(t ? taskTitle(t) : o.about || o.id)} <span class="meta">${t ? `· ${esc(lbl(t.customer, ""))}` : ""}</span></span></label>`; }).join("")
+      + `<div class="chg" id="sa-chg" style="margin:8px 0;color:var(--text-2)"> </div>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Ångra</button><button class="btn primary" data-sa-save="1" disabled>Spara svaret</button></div>`);
+    answerAllPaint();
+  }
+  function answerAllPaint() {
+    const c = $("#sa-chg"); if (!state.sa || !c) return;
+    const picked = [...document.querySelectorAll("[data-sa]")].filter((x) => x.checked).map((x) => x.dataset.sa);
+    const text = $("#sa-text")?.value.trim();
+    c.textContent = picked.length ? `Ändrar: svaret «${clip60(text) || "…"}» sparas på ${plural(picked.length, "fråga", "frågor")}.` : "Ingen fråga vald.";
+    const b = document.querySelector("[data-sa-save]"); if (b) b.disabled = !picked.length || !text;
+  }
+  function answerAllSave(btn) {
+    const text = $("#sa-text")?.value.trim(), picked = [...document.querySelectorAll("[data-sa]")].filter((x) => x.checked).map((x) => x.dataset.sa);
+    if (!text || !picked.length) return;
+    return busy(btn, async () => {
+      const done = [];
+      for (const id of picked) {
+        const o = opens().find((x) => x.id === id); if (!o) continue;
+        try { await registerAsset(o, { text, mime: "text/plain" }); done.push(id); }
+        catch (e) { closeDialog(); if (done.length) await afterWrite(`${plural(done.length, "svar", "svar")} sparades innan det stannade.`); return fail(`Svaret på «${clip60(o.question)}» sparades inte`, e); }
+      }
+      closeDialog(); state.sa = null;
+      await afterWrite(`Svaret är registrerat på ${plural(done.length, "fråga", "frågor")}. Planen är hämtad igen.`);
+    });
+  }
+
+  /* ── Sidformer (Daniel P 2026-09-29: «Sidformerna bör vi ta i samma veva.») ──
+     Fem former, en per sida: kö (Idag, In), register (Metoder, Filer), objekt
+     (kund, leverans, uppgift), arbetsyta (steg, fråga, ärende) och tid (Planen).
+     Varje form har en egen ram och en mening om vad man gör där. */
+  const FORMS = { ko: "Kö", register: "Register", objekt: "Objekt", arbetsyta: "Arbetsyta", tid: "Tid" };
+  function formOf(screen, obj) {
+    if (obj) {
+      if (["step", "question", "case", "stepedit", "preview"].includes(obj.type)) return ["arbetsyta", {
+        step: "Här gör du det här steget.", question: "Här svarar du på frågan.", case: "Här bedömer du ärendet.", stepedit: "Här ändrar du hur steget görs.", preview: "Här ser du vad som ändras, innan något görs." }[obj.type]];
+      if (obj.type === "files") return ["register", "Här bläddrar du bland kundens filer."];
+      if (obj.type === "person") return ["tid", "Här ser du vad personen har de närmaste veckorna."];
+      if (obj.type === "method") return ["objekt", "Här ser du hur metoden görs, och ändrar den."];
+      if (obj.type === "customer") return ["objekt", "Här ser du kundens leveranser, frågor och filer."];
+      if (obj.type === "delivery") return ["objekt", obj.task ? "Här följer du uppgiften, steg för steg." : "Här följer du leveransen och dess uppgifter."];
+      return ["objekt", "Här ser du allt som hör till den här saken."];
+    }
+    return { idag: ["ko", "Här gör du det som är din tur: svara, godkänn och markera klart."], in: ["ko", "Här bedömer du och svarar på det som kommit in."],
+      meddelanden: ["ko", "Här läser och svarar du på meddelanden."],
+      planen: ["tid", "Här ser du veckorna framåt och flyttar det som ska göras."], metoder: ["register", "Här bläddrar du bland metoderna och ändrar hur vi gör."],
+      filer: ["register", "Här bläddrar du bland kundernas filer."] }[screen] || [null, ""];
+  }
+  const formBand = (form, line) => form ? `<div class="formline"><span class="ftag">${FORMS[form]}</span><span>${esc(line)}</span></div>` : "";
+
   /* ── Kopiera till Claude (docs/kvar.md 14 och 20) ──────────────────────
      Panelen bygger inga metoder och gör inga Claude-steg. Det görs i vanliga
      Claude-chatten, som har samma verktyg mot dirigenten och mer utrymme.
@@ -8583,6 +8896,14 @@ a.btn { text-decoration: none; color: var(--text); }
     const ds = t.dataset;
     if (ds.closeOverlay && e.target === t) return closeDialog();
     if (ds.close) return closeDialog();
+    if (ds.ecl) { const [k, ...r] = ds.ecl.split("|"); return editWithClaude(k, r.join("|")); }
+    if (ds.fedit) { const [k, ...r] = ds.fedit.split("|"); return fieldDialog(k, r.join("|")); }
+    if (ds.feSave) return fieldSave(t);
+    if (ds.sedit) return stepTextEdit(ds.sedit);
+    if (ds.seUndo) { state.sedit = null; return render(); }
+    if (ds.seSave) return stepTextSave(t);
+    if (ds.answerAll) { try { return answerAllDialog(JSON.parse(ds.answerAll)); } catch { return; } }
+    if (ds.saSave) return answerAllSave(t);
     if (ds.go) { state.screen = ds.go; state.obj = null; if (ds.mettab) state.metTab = ds.mettab;
       // Kopplingslänkarna gäller en kvart (src/google/link.ts); de hämtas nya
       // varje gång Inställningar öppnas, inte bara när vyn startade.
