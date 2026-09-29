@@ -67,7 +67,7 @@ body.rail-narrow .nav.railtoggle .ico .i { transform: rotate(180deg); }
 .crumbrow { padding: 8px var(--s6); background: var(--bg); border-bottom: 1px solid var(--line); font-size: 13px; flex: none; }
 .crumbrow[hidden] { display: none; }
 .crumbrow .i { width: 13px; height: 13px; color: var(--text-3); margin-right: 4px; }
-@media (max-width: 1500px) { .top .kbd { min-width: 0; } .top .kbd span, .top .kbd kbd, .top .fresh, .top .bugl { display: none; } }
+@media (max-width: 1500px) { .top .kbd { min-width: 0; } .top .kbd span, .top .kbd kbd, .top .bugl { display: none; } }
 /* Förklaringen när muspekaren står på en symbol eller ett märke, eller när det har fokus (Daniel P 2026-09-27: «I så fall tool tips»). */
 .tip { position: fixed; z-index: 70; max-width: 280px; background: var(--text); color: #fff; font-size: 12px; line-height: 1.4; padding: 6px 9px; border-radius: 8px; pointer-events: none; box-shadow: var(--shadow); }
 .tip[hidden] { display: none; }
@@ -602,11 +602,35 @@ a.btn { text-decoration: none; color: var(--text); }
 .lv-sec h2 { font-size: var(--fs-section); font-weight: 700; margin: 0; }
 .lv-sec .n { color: var(--text-2); font-size: var(--fs-meta); }
 .lv-sub { color: var(--text-2); margin: -8px 0 var(--s4); }
-.lv-status { padding: 14px 16px; margin-bottom: var(--s4); }
 .lv-sentence { font-size: var(--fs-section); font-weight: 600; }
 .lv-holding { margin-top: 4px; color: var(--text-2); }
 .lv-factline { margin-top: 12px; color: var(--text-2); font-size: var(--fs-meta); }
 .lv-card { margin-bottom: var(--s5); }
+.lv-now { padding: 14px 16px; margin-bottom: var(--s3); border-left: 4px solid var(--accent); }
+.lv-now.wait { border-left-color: var(--line); }
+.lv-now.done { border-left-color: var(--green); }
+.lv-now.warn { border-left-color: var(--amber); }
+.lv-now > .k { font-size: var(--fs-meta); color: var(--text-2); font-weight: 600; }
+.lv-now-h { font-size: var(--fs-section); font-weight: 700; margin: 2px 0 4px; overflow-wrap: anywhere; }
+.lv-now-m { color: var(--text-2); }
+.lv-now > .lv-acts { justify-content: flex-start; margin-top: 10px; }
+.lv-now-more { margin: 12px -16px 0; border-top: 1px solid var(--line); }
+.lv-now-promise { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.lv-now-promise .lv-sentence { font-size: inherit; }
+.lv-proc { list-style: none; margin: 0; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 6px; }
+.lv-proc li { display: flex; flex-direction: column; min-width: 0; max-width: 220px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; }
+.lv-proc li a { color: inherit; text-decoration: none; font-weight: 600; overflow-wrap: anywhere; }
+.lv-proc li .meta { font-size: var(--fs-meta); }
+.lv-proc li.done { opacity: .7; }
+.lv-proc li.done a::before { content: "✓ "; color: var(--green); }
+.lv-proc li.now { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-weak); }
+.lv-proc li.cust { border-style: dashed; }
+.lv-proc li.hit { background: var(--accent-weak); }
+.lv-proc li.cut { border: 0; padding: 6px 2px; align-self: center; max-width: none; color: var(--text-2); font-size: var(--fs-meta); }
+.lv-proc-empty, .lv-proc-note { padding: 10px 16px; }
+.lv-secbtn { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.lv-secbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 760px) { .lv-proc { flex-direction: column; } .lv-proc li { max-width: none; } .lv-proc li.cut { align-self: flex-start; } }
 .lv-card > .head { flex-wrap: wrap; }
 .lv-card > .head h2 { font-size: var(--fs-section); margin: 0; }
 .lv-card > .head a { color: var(--accent-ink); text-decoration: none; }
@@ -828,6 +852,12 @@ a.btn { text-decoration: none; color: var(--text); }
 .mline .ab button:hover { text-decoration: underline; }
 .av { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-weak); color: var(--accent-ink); display: inline-grid; place-items: center; font-size: 11px; font-weight: 800; grid-row: 1 / span 2; }
 .av.me { background: var(--gray-weak); color: var(--text-2); }
+.compose { padding: 12px var(--s4); margin-bottom: var(--s4); }
+.compose-h { font-weight: 700; margin-bottom: 8px; }
+.compose .field { margin-bottom: 8px; }
+.compose .opts { flex-wrap: wrap; }
+.compose-about { display: flex; gap: 8px; align-items: center; color: var(--text-2); font-size: var(--fs-meta); }
+.compose .bar-actions { flex-wrap: wrap; justify-content: space-between; margin-top: 8px; }
 .mthread { border-top: 1px solid var(--line); }
 .mthread:first-child { border-top: 0; }
 .mthread .th { display: flex; gap: 8px; align-items: center; padding: 10px var(--s4); background: var(--bg-subtle); font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
@@ -880,7 +910,7 @@ a.btn { text-decoration: none; color: var(--text); }
         <span class="msgbtn"><button class="btn sm" id="msg-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="msg-pop"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z'/><path d='M10 20.5a2 2 0 0 0 4 0'/></svg><span class="lbl">Meddelanden</span><span class="badge" id="msg-badge" hidden></span></button>
           <div class="msgpop" id="msg-pop" role="dialog" aria-label="Senaste meddelanden" hidden></div></span>
         <button class="kbd" id="open-palette" type="button"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><circle cx='11' cy='11' r='7'/><path d='m20 20-3.5-3.5'/></svg> <span>Sök eller gör …</span><kbd>⌘K</kbd></button>
-        <span class="fresh" id="fresh"></span><button class="btn quiet sm" data-reload="1" title="Hämta igen" aria-label="Hämta igen"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='M21 12a9 9 0 1 1-3-6.7L21 8'/><path d='M21 3v5h-5'/></svg></button>
+        <span class="fresh" id="fresh" aria-live="polite"></span><button class="btn quiet sm" id="refresh-all" data-refresh-all="1" type="button" title="Hämta allt på nytt"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='M21 12a9 9 0 1 1-3-6.7L21 8'/><path d='M21 3v5h-5'/></svg><span class="lbl">Uppdatera</span></button>
         <button class="btn quiet sm" data-bug="1" title="Rapportera fel" aria-label="Rapportera fel"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='M5 21V4h11l-2 4 2 4H5'/></svg><span class="bugl">Rapportera fel</span></button>
         <button class="btn ai sm" id="toggle-panel" type="button"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/><path d='M19 16v4M17 18h4'/></svg> Claude</button>
       </div>
@@ -910,7 +940,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "c86f5fb", published: "2026-09-29" };
+  const SIDA = { version: "a3072a5", published: "2026-09-29" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1013,19 +1043,29 @@ a.btn { text-decoration: none; color: var(--text); }
   const call = (tool, input) => callOn(SERVER, tool, input);
   /**
    * Förhandsvisningens kvitto (src/mcp/preview-token.ts). I vyn är kortet
-   * med Ja förhandsvisningen: när servern ändå kräver preview_id skickas
-   * samma anrop en gång till med kvittot — bara om förhandsvisningen gällde
-   * exakt de fälten användaren sa ja till.
+   * med Ja förhandsvisningen: när servern ändå svarar PREVIEW_REQUIRED med
+   * ett next_call som bär preview_id skickas det EN gång till, med kvittot.
+   *
+   * Servern räknar kvittot över sina egna, normaliserade fält, så det är
+   * next_call:s fält som skickas — med vyns ja. Vyns anrop och next_call
+   * behöver inte ha samma fält (felrapport från Sven 2026-09-29: en
+   * överlämning gav felet i stället för att gå igenom). Det som jämförs är
+   * att det gäller samma sak: verktyget, uppgiften, steget och handlingen.
    */
-  const APPROVAL_KEYS = ["confirmed", "user_approval", "preview_id", "tools_version", "acknowledge_commitment", "accept_late"];
-  const sameCall = (a, b) => { const norm = (v) => Array.isArray(v) ? v.map(norm) : v && typeof v === "object"
-    ? Object.fromEntries(Object.keys(v).sort().filter((k) => v[k] !== undefined).map((k) => [k, norm(v[k])])) : typeof v === "string" ? v.trim() : v;
-    const strip = (o) => Object.fromEntries(Object.entries(o || {}).filter(([k]) => !APPROVAL_KEYS.includes(k)));
-    return JSON.stringify(norm(strip(a))) === JSON.stringify(norm(strip(b))); };
-  function previewRetry(input, d) {
-    const e = d?.error; const pid = e?.next_call?.args?.preview_id;
-    if (e?.code !== "PREVIEW_REQUIRED" || !input?.confirmed || input.preview_id || !pid || !sameCall(input, e.next_call.args)) return null;
-    return { ...input, preview_id: pid };
+  const ACTION_KEYS = ["handover_to", "handover", "mark", "cancel_task", "delivered", "start", "postpone", "schedule",
+    "unschedule", "outcome", "take_over", "acquire", "molecule"];
+  const sameAction = (tool, a, next) => {
+    if (!next || next.tool !== tool || !next.args) return false;
+    const b = next.args, has = (o, k) => o?.[k] !== undefined && o?.[k] !== null;
+    for (const k of ["task", "step", "op"]) if ((a?.[k] ?? null) !== (b[k] ?? null)) return false;
+    for (const k of ACTION_KEYS) if (has(a, k) !== has(b, k)) return false;
+    if (has(a, "mark") && a.mark !== b.mark) return false;
+    return has(a?.values, "promised") === has(b.values, "promised");
+  };
+  function previewRetry(tool, input, d) {
+    const e = d?.error, next = e?.next_call, pid = next?.args?.preview_id;
+    if (e?.code !== "PREVIEW_REQUIRED" || !input?.confirmed || input.preview_id || !pid || !sameAction(tool, input, next)) return null;
+    return { ...next.args, confirmed: true, user_approval: input.user_approval ?? next.args.user_approval, preview_id: pid };
   }
   /** Ett anrop till en koppling. Dirigenten är förvalet; Claude läser också ur HubSpot (B-229). */
   async function callOn(server, tool, input) {
@@ -1035,10 +1075,10 @@ a.btn { text-decoration: none; color: var(--text); }
     const rec = { at: new Date().toISOString(), tool: server === SERVER ? (input?.op ? `${tool}:${input.op}` : tool) : `${server}/${tool}`, keys: Object.keys(input || {}) };
     RECENT.calls.push(rec); if (RECENT.calls.length > 15) RECENT.calls.shift();
     try { r = await mcp.callTool(server, tool, input); }
-    catch (e) { const again = server === SERVER && previewRetry(input, data(e?.result)); if (again) return callOn(server, tool, again);
+    catch (e) { const again = server === SERVER && previewRetry(tool, input, data(e?.result)); if (again) return callOn(server, tool, again);
       const f = data(e?.result)?.error; rec.error = f?.code || e?.code || String(e?.message || e).slice(0, 200); throw f ? Object.assign(new Error(f.message + (f.next_action ? " — " + f.next_action : "")), { code: f.code }) : e; }
     const d = data(r);
-    const again = server === SERVER && previewRetry(input, d);
+    const again = server === SERVER && previewRetry(tool, input, d);
     if (again) return callOn(server, tool, again);
     if (d?.error?.message) { rec.error = d.error.code || "fel"; throw Object.assign(new Error(d.error.message + (d.error.next_action ? " — " + d.error.next_action : "")), { code: d.error.code, context: d.error.context }); }
     return d;
@@ -1140,6 +1180,33 @@ a.btn { text-decoration: none; color: var(--text); }
     if (stale("settings")) loadSettings();
   }
   setInterval(refreshStale, 60_000);
+  /**
+   * Uppdatera (Daniel P 2026-09-29: «jag saknar en refreshknapp på själva
+   * vyn»). Hämtar allt på nytt oavsett livslängd: listan, planen, posten,
+   * inställningarna, meddelandena och det som står på skärmen. Under tiden
+   * står «hämtar …» där tiden brukar stå; efteråt den nya tiden.
+   */
+  async function refreshAll() {
+    if (!mcp || S.refreshing || S.phase) return;
+    S.refreshing = true; paintFresh();
+    try {
+      if (!S.plan || S.error) { S.error = null; await load(); }
+      else {
+        const o = state.obj;
+        await Promise.all([refreshAgenda(), refreshPlan(), loadQueue(), loadSettings(), loadMessages(),
+          state.screen === "metoder" || S.lib ? refreshLib().then(() => { S.at.lib = Date.now(); }) : null,
+          o?.type === "delivery" ? lvRefresh({ delivery: o.id }) : null]);
+        if (o?.type === "files" || state.screen === "filer") { FB.customers = null; FB.error = null; FB.files.clear(); FB.asked.clear(); }
+      }
+    } finally { S.refreshing = false; render(); paintFresh(); }
+  }
+  /** Tiden för hämtningen, eller att den pågår. */
+  function paintFresh() {
+    const f = $("#fresh"), b = $("#refresh-all");
+    if (f) { f.textContent = S.refreshing ? "hämtar …" : S.fetchedAt ? `hämtat ${String(S.fetchedAt.getHours()).padStart(2, "0")}:${String(S.fetchedAt.getMinutes()).padStart(2, "0")}` : "";
+      f.title = `Sidan v${SIDA.version} · ${SIDA.published}`; }
+    if (b) { b.disabled = !!S.refreshing; b.setAttribute("aria-busy", S.refreshing ? "true" : "false"); }
+  }
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const SP = `<svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z'/><path d='M19 16v4M17 18h4'/></svg>`;
@@ -1769,6 +1836,7 @@ a.btn { text-decoration: none; color: var(--text); }
   addEventListener("pagehide", () => { clearTimeout(snapTimer); snapTimer = null; try { saveSnap(); } catch { /* inget */ } });
   function render() {
     saveSnap();
+    noteMsgContext();
     if (state.screen === "metoder" && !S.lib && !S.libError) loadLib();
     // På leverans-, kund-, enhets- och förhandsvisningssidan är ingen yta markerad (UX-genomgången, problem 9).
     const off = state.obj && ["delivery", "unit", "customer", "preview"].includes(state.obj.type);
@@ -1800,7 +1868,7 @@ a.btn { text-decoration: none; color: var(--text); }
     placeTips(m);
     renderPanel();
     // Den riktiga tiden för hämtningen — prototypens klocka stod på 09:42.
-    const f = $("#fresh"); if (f) { f.textContent = S.fetchedAt ? `hämtat ${String(S.fetchedAt.getHours()).padStart(2, "0")}:${String(S.fetchedAt.getMinutes()).padStart(2, "0")}` : ""; f.title = `Sidan v${SIDA.version} · ${SIDA.published}`; }
+    paintFresh();
     // Pluginen (etapp 5): servern säger när personens plugin är äldre än den senaste.
     const pu = $("#plugin-update"), up = S.agenda?.plugin_update;
     if (pu) { pu.hidden = !up;
@@ -4375,8 +4443,8 @@ a.btn { text-decoration: none; color: var(--text); }
   const waitsText = (t) => { const s = currentStep(t); return s ? `${s.label} · ${s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, "")}` : "inget"; };
 
   /* ── att göra nu ── */
-  function lvTodoRows(d, withDelivery) {
-    const rows = asArr(d.todo).map((x) => ({ x, t: taskById(x.task) })).filter((r) => r.t && stepOf(r.t, r.x.step));
+  function lvTodoRows(d, withDelivery, only = null) {
+    const rows = only || asArr(d.todo).map((x) => ({ x, t: taskById(x.task) })).filter((r) => r.t && stepOf(r.t, r.x.step));
     if (!rows.length) return lvTasks(d).some((t) => !liveSteps(t).length)
       ? `<div class="empty"><b>Inget att göra i dirigenten.</b>Uppgiften har inga steg: den saknar metod. Lägg till steg från stegets arbetsyta, eller bygg metoden under Metoder.</div>`
       : `<div class="empty"><b>Inget väntar på någon just nu.</b>Allt i leveransen är gjort, eller står på ett antaget godkännande.</div>`;
@@ -4735,19 +4803,100 @@ a.btn { text-decoration: none; color: var(--text); }
       if (st.promised) bits.push(`Lovat kunden ${short(st.promised)}`);
       if (st.kind === "delivered") { if (st.delivered_at) bits.push(`Levererad ${short(st.delivered_at)}`); }
       else {
+        // «Nästa» står inte här: det är rubriken i rutan Nu (Daniel P 2026-09-29).
         if (st.likely) bits.push(`Beräknat klart ${short(st.likely)}`);
-        if (st.next) bits.push(`Nästa: ${esc(stepWhen(st.next))}`);
       }
     }
     const outUnits = lvUnits(d).filter(({ u }) => asArr(u.out_as).some((x) => !x.replaced_by));
     if (outUnits.length) bits.push(`Ute: ${plural(outUnits.length, "sak", "saker")}`);
     return bits.length ? `<div class="lv-factline">${bits.join(" · ")}</div>` : "";
   }
+  /** Löftet under nästa handling: meningen, det som håller uppe, datumknapparna och fakta. */
   function lvStatus(d, ts) {
     const st = statusOf(d), h = st.kind === "late" ? st.holding : null;
-    return `<div class="card lv-card lv-status"><div class="lv-sentence">${lvSentence(d)}</div>`
+    return `<div class="lv-now-promise"><div class="lv-sentence">${lvSentence(d)}</div>`
       + (h ? `<div class="lv-holding">Det som håller uppe: «${esc(h.label)}» (${esc(stepWhen(h))})</div>` : "")
       + lvButtons(d, ts) + lvPromiseForm(d) + (d.implicit ? "" : lvBindForm(d)) + lvFactLine(d) + `</div>`;
+  }
+
+  /* ── Nu och processen (Daniel P 2026-09-29: *"själva action måste ligga i topp
+     så att det är tydligt vad som ska göras och var man är i processen"*) ── */
+  /** Uppgifterna rutan Nu och processen gäller: den öppnade uppgiften, annars alla. */
+  const focusOf = (d, ts, o) => { const t = o.task ? ts.find((x) => x.id === o.task) || taskById(o.task) : null; return t ? [t] : ts; };
+  /** Vår del är gjord och bara kundens steg är kvar (src/plan/handover.ts). */
+  const handedOver = (t) => t.status === "handed_over"
+    || (!!t.handover && !!stepOf(t, t.handover.step)?.done && liveSteps(t).some((s) => !s.done && s.customer_side)
+      && liveSteps(t).every((s) => s.done || s.customer_side || s.assumed_approved));
+  const noMethod = (t) => t.status === "no_method" || (!t.method && !liveSteps(t).length && !t.delivered_externally);
+  /**
+   * Nästa handling: vad som ska göras nu, av vem, senast när, och knapparna.
+   * Det som är mitt går först, sedan en kollegas steg, sist en väntan på någon
+   * utanför Rotor. Resten av det som väntar står som rader under.
+   */
+  function lvNow(d, ts, focus) {
+    const ids = new Set(focus.map((t) => t.id)), many = !d.implicit && focus.length > 1;
+    const mine = (s) => !s.external && (s.responsible?.id ?? s.responsible) === me();
+    const rows = asArr(d.todo).map((x) => ({ x, t: taskById(x.task) })).filter((r) => r.t && ids.has(r.t.id) && stepOf(r.t, r.x.step))
+      .map((r) => ({ ...r, s: stepOf(r.t, r.x.step) }))
+      .map((r) => ({ ...r, rank: r.s.external || r.x.waiting ? 2 : mine(r.s) ? 0 : 1 }))
+      .sort((a, b) => a.rank - b.rank || String(a.x.end || a.s.end || "").localeCompare(String(b.x.end || b.s.end || "")));
+    // Frågor och överlämningar till mig i de här uppgifterna: Svara och Ta emot.
+    const asks = agenda().filter((x) => x.open && ids.has(x.task) && x.kind !== "step");
+    const box = (cls, kicker, head, meta, acts, more = "") => `<div class="card lv-card lv-now ${cls}" id="lv-now"><div class="k">${kicker}</div>`
+      + `<div class="lv-now-h">${head}</div>${meta ? `<div class="lv-now-m">${meta}</div>` : ""}${acts ? `<div class="lv-acts">${acts}</div>` : ""}${more}${lvStatus(d, ts)}</div>`;
+    const moreRows = (rest) => rest.length || asks.length ? `<div class="lv-now-more">${asks.map(turRow).join("")}${rest.length ? lvTodoRows(d, false, rest) : ""}</div>` : "";
+    const top = rows[0];
+    if (top && (top.rank === 0 || !asks.length)) {
+      const { x, t, s } = top, st = stepState(t, s);
+      const who = s.external ? lbl(s.waiting?.on, "någon utanför Rotor") : lbl(s.responsible, "en kollega");
+      const head = top.rank === 0 ? `Din tur: ${esc(s.label)}` : `Väntar på ${esc(who)}: ${esc(s.label)}`;
+      const meta = [st.tone === "red" ? toneChip(st) : "", many || !d.implicit ? esc(taskTitle(t)) : "", byWhen(x.end || s.end)].filter(Boolean).join(" · ");
+      return box(top.rank === 0 ? "" : "wait", "Nästa handling", head, meta, lvActions(t, s, x.next === undefined ? stepNextCall(t, s) : x.next), moreRows(rows.slice(1)));
+    }
+    if (asks.length) return box("", "Nästa handling", "Din tur: svara eller ta emot", "", "", moreRows(rows));
+    if (focus.length && focus.every(noMethod))
+      return box("warn", "Nästa handling", "Saknar metod: det finns inga steg att göra än",
+        `${esc(focus.map(taskTitle).map((x) => clipped(x, 50)).join(", "))} · välj en metod, eller lägg till steg från stegets arbetsyta`, `<button class="btn sm primary" data-go="metoder">Välj metod ›</button>`);
+    const handed = focus.filter(handedOver);
+    if (handed.length && handed.length === focus.filter((t) => !noMethod(t)).length) {
+      const t = handed[0], s = liveSteps(t).find((y) => !y.done && y.customer_side);
+      return box("wait", "Vår del är levererad", `Väntar på ${esc(lbl(custOf(d), "kunden"))}${s ? `: ${esc(s.label)}` : ""}`,
+        `Det som är kvar är kundens steg. Inget att göra för oss just nu.`, "");
+    }
+    const st = statusOf(d);
+    const allDone = focus.length && focus.every((t) => t.delivered_externally || (liveSteps(t).length && liveSteps(t).every((s) => s.done || s.assumed_approved)));
+    if (st.kind === "delivered" || allDone)
+      return box("done", "Klar", d.implicit || focus.length === 1 && ts.length > 1 ? "Uppgiften är klar" : "Leveransen är klar", "Inget kvar att göra.", "");
+    if (focus.some((t) => t.live)) return box("done", "Ute", "Ute hos kunden", "Bara efterkontroll kvar, eller inget alls.", "");
+    return box("wait", "Nästa handling", "Inget väntar på någon just nu", "Allt som går att göra är gjort, eller står på ett antaget godkännande.", "");
+  }
+  /**
+   * Var i processen: stegen i ordning, klara, det pågående markerat och det
+   * som kommer, med datum och vem. Kundens steg efter vår leverans står efter
+   * ett snitt. Flera uppgifter: en rad per uppgift, som fälls ut till stegen.
+   */
+  function lvProcess(d, t, hit) {
+    if (noMethod(t)) return `<div class="lv-proc-empty"><span class="chip amber">saknar metod</span> Inga steg än. <button class="btn sm" data-go="metoder">Välj metod ›</button></div>`;
+    const steps = roundSteps(t), cur = currentStep(t), cut = t.handover?.step;
+    const li = (s) => {
+      const cls = s.done || s.assumed_approved ? "done" : s === cur ? "now" : "";
+      const who = s.external ? lbl(s.waiting?.on, "") : s.customer_side ? lbl(t.customer, "kunden") : lbl(s.responsible, "");
+      const when = s.done ? short(s.done.at) : s.end ? `senast ${short(s.end)}` : "";
+      return `<li class="${cls}${s.customer_side ? " cust" : ""}${s.step === hit ? " hit" : ""}"><a href="${H.delivery(d.id, t.id, s.step)}">${esc(s.label)}</a>`
+        + `<span class="meta">${esc([s === cur && !s.done ? "nu" : "", who, when].filter(Boolean).join(" · "))}</span></li>`;
+    };
+    const i = cut ? steps.findIndex((s) => s.step === cut) : -1;
+    const ours = i >= 0 ? steps.slice(0, i + 1) : steps.filter((s) => !s.customer_side);
+    const theirs = i >= 0 ? steps.slice(i + 1) : steps.filter((s) => s.customer_side);
+    return `<ol class="lv-proc" aria-label="Stegen i ordning">${ours.map(li).join("")}`
+      + (theirs.length ? `<li class="cut" aria-hidden="true">levererat · sedan kundens steg</li>${theirs.map(li).join("")}` : "") + `</ol>`
+      + (t.revision ? `<div class="lv-proc-note meta">Runda ${Number(t.revision.number) + 1}: ${esc(t.revision.what || "")}</div>` : "");
+  }
+  /** En hopfällbar del under processen. Öppen när adressen pekar in i den. */
+  function lvFold(d, key, title, n, body, force = false, extra = "") {
+    const k = `sec|${d.id}|${key}`, o = force || !!LV.open[k];
+    return `<div class="lv-sec" id="lv-${key}"><h2><button class="lv-secbtn" data-lv-toggle="${esc(k)}" aria-expanded="${o}"><span class="lv-fold ${o ? "open" : ""}">›</span>${title}</button></h2>`
+      + `<span class="n">${n}</span>${extra}</div>${o ? body() : ""}`;
   }
   /* ── Flytta kundens datum / leveransdagen: serverns förhandsvisning och Bekräfta ── */
   function lvPromiseForm(d) {
@@ -4837,17 +4986,23 @@ a.btn { text-decoration: none; color: var(--text); }
     if (o.sub === "andra" && (!LV.change || LV.change.id !== d.id || LV.change.unit !== (o.unit || ""))) LV.change = newChange(d, o.unit);
     CRUMBS = pathCrumbs(d, t, s, o.sub === "andra" ? [["Ändra efter leverans", null]] : o.sub === "material" ? [["Material", null]] : []);
     if (t) openMirror(t.id); else if (ts[0]) openMirror(ts[0].id);
-    // Överdelen (Daniel P 2026-09-28): rubriken, meningen, knapparna och tre fakta. Ingen varning, ingen tidslinje.
-    return lvHead(d, ts) + lvStatus(d, ts)
-      // Det enda stället med handlingsknappar på sidan (UX-genomgången, problem 5).
-      + `<div class="lv-sec"><h2>Att göra nu</h2><span class="n">${plural(asArr(d.todo).length, "sak", "saker")} · från alla uppgifter</span></div><div class="card lv-card">${lvTodoRows(d, false)}</div>`
-      + `<div class="lv-sec"><h2>${ic("upp")} ${d.implicit ? "Stegen" : "Uppgifter"}</h2><span class="n">${d.implicit ? esc(lvCount(ts[0])) : `${plural(ts.length, "uppgift", "uppgifter")} · en utfälld i taget`}</span></div>`
-      + `<div class="card lv-card">${d.implicit ? `<div style="padding:4px 16px 12px">${lvRounds(d, ts[0], o.step)}</div>` : lvTaskRows(d, ts, openTask, o.step)}</div>`
-      + `<div class="lv-sec" id="lv-material"><h2>${ic("mat")} Material</h2><span class="n">${plural(lvUnits(d).length, "enhet", "enheter")} · det som saknas något först</span>`
-      + `<span class="lv-acts" style="margin-left:auto">${shareButtons(H.material(d.id), `materialet i ${d.label}`, lbl(custOf(d), ""))}</span></div>${lvMaterial(d)}`
-      + `<div class="lv-sec"><h2>${ic("ute")} Ute i systemen</h2><span class="n">det senast lästa, inte läget just nu</span></div>${lvOut(d)}`
-      + `<div class="lv-sec"><h2>Historik</h2><span class="right" style="margin-left:auto;display:flex;gap:8px">${o.sub === "andra" ? "" : `<a class="btn sm" href="${H.change(d.id)}">Ändra efter leverans…</a>`}</span></div>${lvHistory(d, ts)}`
-      + `<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap" id="lv-changes">${lvBindForm(d)}</div>`
+    // Ordningen (Daniel P 2026-09-29): rubriken, nästa handling, var i processen, och resten hopfällt.
+    const focus = focusOf(d, ts, o), one = focus.length === 1 ? focus[0] : null;
+    const units = lvUnits(d).length, hist = d.implicit ? null : asArr(d.history).length;
+    const proc = one
+      ? `<div class="lv-sec"><h2>Var i processen</h2><span class="n">${esc(lvCount(one))}${!d.implicit && ts.length > 1 ? ` · ${esc(clipped(taskTitle(one), 50))}` : ""}</span></div><div class="card lv-card">${lvProcess(d, one, o.step)}</div>`
+      : `<div class="lv-sec"><h2>Var i processen</h2><span class="n">${d.ongoing ? `${plural(ts.length, "öppet ärende", "öppna ärenden")}` : plural(ts.length, "uppgift", "uppgifter")} · fäll ut en uppgift för stegen</span></div><div class="card lv-card">${lvTaskRows(d, ts, openTask, o.step)}</div>`;
+    // En uppgift: stegen med alla detaljer och handlingar. Flera: uppgifterna står redan i processen.
+    const steps = one ? lvFold(d, "steps", `${ic("upp")} Alla steg, med detaljer`, esc(lvCount(one)),
+        () => `<div class="card lv-card"><div style="padding:4px 16px 12px">${fullOccasion(one) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(one))}</div>` : ""}${d.implicit ? "" : `<div class="lv-edge">Metod: ${methodLine(one)}${one.live ? ` · ute sedan ${short(one.live.at)}` : ""}</div>`}${waitEdges(one)}${lvRounds(d, one, o.step)}</div></div>`, !!o.step)
+      + (!d.implicit && ts.length > 1 ? lvFold(d, "tasks", `${ic("upp")} Alla uppgifter i leveransen`, plural(ts.length, "uppgift", "uppgifter"), () => `<div class="card lv-card">${lvTaskRows(d, ts, openTask, o.step)}</div>`) : "")
+      : "";
+    return lvHead(d, ts) + lvNow(d, ts, focus) + proc + steps
+      + lvFold(d, "material", `${ic("mat")} Material`, `${plural(units, "enhet", "enheter")} · det som saknas något först`, () => lvMaterial(d), o.sub === "material",
+        `<span class="lv-acts" style="margin-left:auto">${shareButtons(H.material(d.id), `materialet i ${d.label}`, lbl(custOf(d), ""))}</span>`)
+      + lvFold(d, "out", `${ic("ute")} Ute i systemen`, "det senast lästa, inte läget just nu", () => lvOut(d))
+      + lvFold(d, "history", "Historik", hist === null ? "" : plural(hist, "händelse", "händelser"), () => lvHistory(d, ts))
+      + `<div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap" id="lv-changes">${o.sub === "andra" ? "" : `<a class="btn sm" href="${H.change(d.id)}">Ändra efter leverans…</a>`}${lvBindForm(d)}</div>`
       + (o.sub === "andra" ? lvChangeForm(d) : "");
   }
   function pageUnit() {
@@ -5247,7 +5402,7 @@ a.btn { text-decoration: none; color: var(--text); }
     try { applyHash(location.hash); render(); } finally { hashNav = false; }
     const saved = LV.scroll[location.hash] ?? scrolls[location.hash], m = $("#main");
     requestAnimationFrame(() => {
-      const o = state.obj, anchor = o?.type === "delivery" ? (o.step ? `lv-step-${o.task}-${o.step}` : o.task ? `lv-task-${o.task}` : o.sub === "material" ? "lv-material" : o.sub === "andra" ? "lv-change" : null) : null;
+      const o = state.obj, anchor = o?.type === "delivery" ? (o.step ? `lv-step-${o.task}-${o.step}` : o.sub === "material" ? "lv-material" : o.sub === "andra" ? "lv-change" : null) : null;
       const el = anchor && document.getElementById(anchor);
       if (saved !== undefined && m) m.scrollTop = saved;
       else if (el) el.scrollIntoView({ block: "center" });
@@ -7990,37 +8145,76 @@ a.btn { text-decoration: none; color: var(--text); }
     const body = S.msgsError && !S.msgs ? `<div class="empty"><b>Meddelandena kunde inte hämtas.</b>${esc(S.msgsError.message || S.msgsError)}<div style="margin-top:12px"><button class="btn" data-msg-reload="1">Hämta igen</button></div></div>`
       : !S.msgs ? `<div class="empty"><b>Hämtar meddelandena…</b></div>`
       : ordered.length ? ordered.map((ms) => `<div class="mthread">${head(ms)}${ms.sort((a, b) => a.at.localeCompare(b.at)).map(item).join("")}</div>`).join("")
-      : `<div class="empty"><b>${tab === "unread" ? "Inga olästa meddelanden." : tab === "sent" ? "Inget skickat de senaste 30 dagarna." : "Inga meddelanden de senaste 30 dagarna."}</b>Ett meddelande skickas från ett steg, en fråga eller ett ärende, under «…» och Skicka meddelande….</div>`;
+      : `<div class="empty"><b>${tab === "unread" ? "Inga olästa meddelanden." : tab === "sent" ? "Inget skickat de senaste 30 dagarna." : "Inga meddelanden de senaste 30 dagarna."}</b>Skriv ett i rutan ovanför.</div>`;
     return `<div class="pagehead"><h1>Meddelanden</h1><span class="sub">${n ? plural(n, "oläst", "olästa") : "inga olästa"} · olästa först, sedan nyast · grupperat efter vad de gäller</span>`
       + `<div class="actions"><button class="btn quiet" data-msg-reload="1">Hämta igen</button></div></div>`
       + `<div class="tabs" role="tablist">${[["unread", "Olästa", n], ["all", "Alla", all.length], ["sent", "Skickade", all.filter((m) => m.direction === "out").length]]
         .map(([k, l, c]) => `<button role="tab" data-msg-tab="${k}" aria-selected="${tab === k}">${l}<span class="n">${c}</span></button>`).join("")}</div>`
-      + `<div class="card">${body}</div>`;
+      + composeBox() + `<div class="card">${body}</div>`;
   }
-  function replyDialog(id) {
-    const m = (S.msgs || []).find((x) => x.id === id);
-    if (!m) return toast("Meddelandet finns inte längre.", null, true);
-    const to = m.direction === "out" ? asArr(m.to).map((x) => lbl(x)).join(", ") : lbl(m.from);
-    state.reply = id;
-    dialog(`<h2>Svara ${esc(to)}</h2>${m.about_label ? `<p class="meta">Om ${esc(ABOUT_WORD[m.about_kind] || "")} ${esc(m.about_label)} · i samma tråd</p>` : ""}`
-      + `<div class="preview" style="padding:10px 12px"><span class="meta">${esc(m.direction === "out" ? "Du" : lbl(m.from))}, ${short(m.at)}:</span> ${esc(m.text ?? MSG_ERR)}</div>`
-      + `<label class="field"><span>Ditt svar</span><textarea id="reply-text" rows="4" maxlength="2000"></textarea></label>`
-      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-reply-send="1">Skicka</button></div>`);
-    $("#reply-text")?.focus();
+  /**
+   * Skrivrutan överst i Meddelanden (Daniel P 2026-09-29: *"hur skriver man
+   * ens ett meddelande? Det finns ju ingen ruta i meddelandefliken"*).
+   * Mottagarna är kollegerna vyn redan har (agendans colleagues), så rutan
+   * kostar inget anrop. Kopplingen är det man senast stod på: ett steg eller
+   * en uppgift. Svara fyller samma ruta med mottagaren och tråden.
+   */
+  const COMPOSE = { to: [], text: "", reply: null, withAbout: true, ctx: null };
+  /** Det man står på, för rutans koppling: steget eller uppgiften. */
+  function noteMsgContext() {
+    const o = state.obj;
+    if (o?.type === "step" && o.task && o.step) {
+      COMPOSE.ctx = { about: { task: o.task, step: o.step }, title: stepOf(taskById(o.task), o.step)?.label || o.title || "steget" };
+      return;
+    }
+    if (o?.type === "delivery") {
+      const t = taskById(o.task || o.id), s = t && o.step ? stepOf(t, o.step) : null;
+      if (t) COMPOSE.ctx = { about: { task: t.id, ...(s ? { step: s.step } : {}) }, title: s ? s.label : taskTitle(t) };
+    }
   }
-  function sendReply(btn) {
-    const text = $("#reply-text")?.value.trim(), id = state.reply;
-    if (!text) return toast("Skriv svaret först.", null, true);
+  function composeBox() {
+    const cs = S.agenda?.colleagues ?? [], m = COMPOSE.reply ? (S.msgs || []).find((x) => x.id === COMPOSE.reply) : null;
+    if (COMPOSE.reply && !m) COMPOSE.reply = null;
+    const replyTo = m ? (m.direction === "out" ? asArr(m.to).map((x) => lbl(x)).join(", ") : lbl(m.from, "en kollega")) : "";
+    const who = m ? `<div class="field"><span>Till</span><div class="opts"><span class="opt" aria-pressed="true">${esc(replyTo)}</span>`
+        + `<button class="btn sm quiet" data-compose-cancel="1">Skriv ett nytt i stället</button></div></div>`
+      : cs.length ? `<div class="field"><span>Till · välj en eller flera</span><div class="opts">${cs.map((c) => `<button class="opt" data-compose-to="${esc(c.id)}" aria-pressed="${COMPOSE.to.includes(c.id)}">${esc(c.label)}</button>`).join("")}</div></div>`
+      : `<div class="meta">Det finns ingen kollega att skicka till.</div>`;
+    const about = m ? (m.about_label ? `<div class="meta">Om ${esc(ABOUT_WORD[m.about_kind] || "")} ${esc(m.about_label)} · i samma tråd</div>` : `<div class="meta">I samma tråd.</div>`)
+      : COMPOSE.ctx ? `<label class="compose-about"><input type="checkbox" data-compose-about="1" ${COMPOSE.withAbout ? "checked" : ""}> Gäller «${esc(clipped(COMPOSE.ctx.title, 60))}», som du senast hade öppet</label>` : "";
+    return `<div class="card compose" id="compose"><div class="compose-h">${m ? `Svara ${esc(replyTo)}` : "Nytt meddelande"}</div>`
+      + (m ? `<div class="preview" style="padding:8px 12px;margin-bottom:8px"><span class="meta">${esc(m.direction === "out" ? "Du" : lbl(m.from))}, ${short(m.at)}:</span> ${esc(clipped(m.text ?? MSG_ERR, 200))}</div>` : "")
+      + who
+      + `<label class="field"><span>${m ? "Ditt svar" : "Meddelandet"}</span><textarea id="compose-text" rows="3" maxlength="2000" placeholder="Vad behöver de veta?">${esc(COMPOSE.text)}</textarea></label>`
+      + about
+      + `<div class="bar-actions"><span class="meta">Det står under Meddelanden hos var och en tills de markerat det läst.</span><button class="btn primary" data-compose-send="1">Skicka</button></div></div>`;
+  }
+  function composeReply(id) {
+    if (!(S.msgs || []).some((x) => x.id === id)) return toast("Meddelandet finns inte längre.", null, true);
+    COMPOSE.reply = id; COMPOSE.text = "";
+    render();
+    requestAnimationFrame(() => { $("#compose")?.scrollIntoView({ block: "start" }); $("#compose-text")?.focus(); });
+  }
+  function composeSend(btn) {
+    const text = ($("#compose-text")?.value ?? COMPOSE.text).trim(), id = COMPOSE.reply;
+    if (!id && !COMPOSE.to.length) return toast("Välj minst en kollega.", null, true);
+    if (!text) return toast(id ? "Skriv svaret först." : "Skriv meddelandet först.", null, true);
+    const about = !id && COMPOSE.withAbout && COMPOSE.ctx ? COMPOSE.ctx.about : null;
+    const args = id ? { reply_to: id, text } : { to: [...COMPOSE.to], text, ...(about ? { about } : {}) };
     return busy(btn, async () => {
-      try { await call("message", { reply_to: id, text, confirmed: true }); state.reply = null; closeDialog(); toast("Svaret är skickat.");
-        const m = (S.msgs || []).find((x) => x.id === id);
+      // Skicka är ja-kortet: servern får sitt kvitto genom omsändningen i callOn (previewRetry).
+      try { await call("message", { ...args, confirmed: true, user_approval: `Ja, skicka (i vyn): ${text}`.slice(0, 500) });
+        toast(id ? "Svaret är skickat." : `Skickat till ${COMPOSE.to.map(personName).join(", ")}.`);
+        const m = id ? (S.msgs || []).find((x) => x.id === id) : null;
+        Object.assign(COMPOSE, { to: [], text: "", reply: null, withAbout: true });
         if (m && !m.read && m.direction !== "out") await call("message", { read: id }).catch(() => null);
-        await Promise.all([loadMessages(), refreshAgenda()]); }
-      catch (e) { fail("Svaret skickades inte", e); }
+        await Promise.all([loadMessages(), refreshAgenda()]); render(); }
+      catch (e) { fail(id ? "Svaret skickades inte" : "Meddelandet skickades inte", e); }
     });
   }
+  document.addEventListener("input", (e) => { if (e.target.id === "compose-text") COMPOSE.text = e.target.value; }, true);
   document.addEventListener("click", (e) => {
-    const t = e.target.closest?.("#msg-btn, [data-msg-open], [data-msg-about], [data-msg-tab], [data-msg-reply], [data-reply-send], [data-msg-reload]");
+    const t = e.target.closest?.("#msg-btn, [data-msg-open], [data-msg-about], [data-msg-tab], [data-msg-reply], [data-compose-to], [data-compose-about], [data-compose-send], [data-compose-cancel], [data-msg-reload]");
     // Klick utanför rutan stänger den.
     if (!e.target.closest?.("#msg-pop, #msg-btn") && $("#msg-pop") && !$("#msg-pop").hidden) togglePopover(false);
     if (e.target.closest?.("#msg-pop [data-go]")) togglePopover(false);
@@ -8030,8 +8224,11 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.msgAbout) { e.stopPropagation(); togglePopover(false); location.hash = ds.msgAbout; return; }
     if (ds.msgOpen) { e.stopPropagation(); return openMessage(ds.msgOpen); }
     if (ds.msgTab) { state.msgTab = ds.msgTab; state.msgFocus = null; return render(); }
-    if (ds.msgReply) return replyDialog(ds.msgReply);
-    if (ds.replySend) return sendReply(t);
+    if (ds.msgReply) return composeReply(ds.msgReply);
+    if (ds.composeTo) { COMPOSE.to = COMPOSE.to.includes(ds.composeTo) ? COMPOSE.to.filter((x) => x !== ds.composeTo) : [...COMPOSE.to, ds.composeTo]; return render(); }
+    if (ds.composeAbout) { COMPOSE.withAbout = t.checked; return; }
+    if (ds.composeSend) return composeSend(t);
+    if (ds.composeCancel) { COMPOSE.reply = null; return render(); }
     if (ds.msgReload) { S.msgsError = null; S.msgs = null; render(); return loadMessages(); }
   }, true);
   document.addEventListener("keydown", (e) => {
@@ -8413,6 +8610,7 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.cget) return readText(t, ds.cget, ds.cname || "Texten");
     if (ds.freload) { FB.customers = null; FB.error = null; FB.files.clear(); FB.asked.clear(); return render(); }
     if (ds.reload) { S.error = null; render(); return load(); }
+    if (ds.refreshAll) return refreshAll();
     if (ds.more) return openMenu(t);
   });
   document.addEventListener("keydown", (e) => {
