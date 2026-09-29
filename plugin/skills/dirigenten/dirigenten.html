@@ -943,7 +943,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "aaa1b70", published: "2026-09-29" };
+  const SIDA = { version: "9ddf054", published: "2026-09-29" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -985,6 +985,27 @@ a.btn { text-decoration: none; color: var(--text); }
       SELF.msg = SELF_ERRORS[code] || `Uppdateringen gick inte: ${e?.message || e}.`;
       render();
     }
+  }
+  /**
+   * Spara den här kopians adress på personen (Daniel P 2026-09-29): en artefakt
+   * når kopplingarna bara för sin ägare, så adressen är personlig
+   * (party.views_url) och länken i svaren blir den egna. Tyst, och bara för
+   * ägaren — annars skulle den som öppnar någon annans kopia skriva över sin
+   * egen adress. Går adressen inte att läsa här sker ingenting; då sparar
+   * Claude den när kopian läggs ut med färdigheten.
+   */
+  const OWN_URL = /https:\/\/claude\.ai\/(?:code\/)?artifact\/[0-9a-f-]{8,}/i;
+  async function saveOwnAddress() {
+    try {
+      const id = me();
+      if (!id || typeof claude === "undefined" || !claude.use || WEB.on) return;
+      const user = await claude.use("user");
+      if (!user || !user.isOwner()) return;
+      const found = [location.href, document.referrer].map((t) => String(t || "").match(OWN_URL)?.[0]).find(Boolean);
+      if (!found || found === S.viewsUrl) return;
+      await call("registry_define", { change: true, node: { id, views_url: found } });
+      S.viewsUrl = found;
+    } catch { /* tyst: adressen sparas då med färdigheten i stället */ }
   }
   document.addEventListener("click", (ev) => { if (ev.target?.closest?.("#self-update")) selfUpdate(); });
   /*
@@ -1190,6 +1211,7 @@ a.btn { text-decoration: none; color: var(--text); }
       S.serverVersion = p.views?.version ?? null; S.viewsUrl = p.views?.url ?? S.viewsUrl ?? null;
       S.fetchedAt = new Date(); S.phase = null; S.at.plan = Date.now();
       render();
+      saveOwnAddress();
       // Resten behövs inte för Idag och får inte hålla den. Biblioteket med
       // alla sorter: utan include ger library_search bara atomer och molekyler.
       loadQueue();

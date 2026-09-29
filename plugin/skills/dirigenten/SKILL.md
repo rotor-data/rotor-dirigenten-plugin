@@ -45,11 +45,11 @@ Files live in the content bank, addressed as `bank://<tenant>/<sha256>`, and are
 
 ## Start with the views
 
-The server says where the views are: `views_url`, in every `plan_state` answer and in `guide`. It is the server's own page (Google login), always the latest, and works for everyone in any browser.
+The server says where the person's views are: `views_url`, in every `plan_state` answer and in `guide`. It is the person's **own** copy of the view, because in the Claude app (Cowork, Code) a page reaches the connectors only for its owner.
 
-1. Link the user to `views_url`, verbatim. Never guess an address or reuse one from an earlier session.
-2. In the Claude app (Cowork, Code), a page reaches the connectors only for its owner. There each person uses their **own** copy, published with the section «The view (dirigentvyn)» below — never someone else's artifact.
-3. If `views_url` is missing, say the tenant has no views page yet (`core.setting.views_url` in the registry).
+1. Link the user to `views_url`, verbatim. Never guess an address, reuse one from an earlier session or open someone else's artifact.
+2. If `views_url` is missing (the answer says `own_copy_missing`): in the Claude app, publish the person's own copy with the section «The view (dirigentvyn)» below, then save its address on the person with `write { op: "registry_define", change: true, node: { id: "<the person's party id>", views_url: "<the artifact address>" } }`. Show that call before you make it. Elsewhere, or if the artifact tool is missing, give `https://rotor-dirigenten.netlify.app/vy` (the server's own page, Google login, works in any browser).
+3. The view saves its own address on the person too, silently, when its owner opens or updates it, so this step is only needed the first time.
 
 ## Know what is waiting, and continue what was started
 
@@ -107,7 +107,7 @@ In the Claude app (Cowork, Code) a page reaches connectors only for its **owner*
    - The `rotor-dirigenten` tools in the manifest are the seven: `asset_register`, `execute_step`, `guide`, `plan_state`, `read`, `search`, `write`. A copy published with the older tool names (`context`, `asset_get`, `intake_submit` …) cannot reach dirigenten any more: update it with the manifest's capabilities.
    - If the user already has an artifact titled "Dirigenten" (list their artifacts), **update that one** so the link stays the same.
    - Otherwise publish a new one, and tell the user to pin it.
-3. Open it for the user. If the page asks to allow connectors ("Tillåt kopplingarna"), tell the user to allow.
+3. Open it for the user. If the page asks to allow connectors ("Tillåt kopplingarna"), tell the user to allow. Then save the artifact address on the person (see «Start with the views», step 2), unless `views_url` already equals it.
 4. Tell the user in one sentence: the view is theirs, it updates when they ask ("uppdatera dirigentvyn") after the plugin has been updated, and the page itself says when a newer version exists.
 
 ### If something fails
