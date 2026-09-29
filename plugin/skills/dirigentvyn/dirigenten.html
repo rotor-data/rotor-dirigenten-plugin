@@ -771,6 +771,10 @@ a.btn { text-decoration: none; color: var(--text); }
 .trow.mine { border-left-color: var(--accent); }
 .trow.burn { border-left-color: var(--red); }
 .trow .ico { color: var(--text-2); display: grid; place-items: center; grid-row: 1 / span 2; align-self: start; padding-top: 2px; }
+.trow.dgrp .act { display: flex; align-items: center; gap: 6px; }
+.trow.dgrp .caret { color: var(--text-2); width: 12px; text-align: center; }
+.dgrp-rows > .trow { padding-left: calc(var(--s4) + 18px); background: var(--bg-subtle); }
+@media (max-width: 600px) { .dgrp-rows > .trow { padding-left: calc(var(--s4) + 6px); } }
 .trow .ico.q { color: var(--amber); } .trow .ico.cl { color: var(--claude); }
 .trow .t { font-weight: 600; font-size: var(--fs-row); overflow: hidden; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: break-word; }
 .trow .m { grid-column: 2; color: var(--text-2); font-size: var(--fs-meta); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-width: 0; }
@@ -906,7 +910,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "11ff57b", published: "2026-09-29" };
+  const SIDA = { version: "7eed987", published: "2026-09-29" };
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -2009,6 +2013,47 @@ a.btn { text-decoration: none; color: var(--text); }
   const whyChip = (x) => isLate(x) ? chip(`sen ${plural(diff(TODAY, day10(x.due)), "dag", "dagar")}`, "red")
     : x.level === "hot" ? chip("i dag", "amber") : x.level === "today" ? chip("planerat i dag", "accent") : chip(`snart · ${short(x.due)}`);
   const LEVEL_RANK = { hot: 0, today: 1, soon: 2 };
+  /**
+   * Per leverans (Daniel P 2026-09-29: *"Kan vi istället gruppera (med toggle)
+   * saker inom samma leverans."*). Rader med samma leverans blir en rad med
+   * namn, antal, värsta läget och närmaste datum, som fälls ut. Rader utan
+   * leverans och leveranser med en enda rad står som förut. Gruppen står där
+   * leveransens första rad stod, så sektionens ordning gäller.
+   */
+  const byDelivery = () => !store.idagSeparate;
+  const deliveryIdOf = (x, t) => x?.project?.kind === "delivery" ? x.project.id : t?.delivery || null;
+  function groupByDelivery(xs, dOf) {
+    const out = [], at = new Map();
+    for (const x of xs) {
+      const d = dOf(x);
+      if (!d) { out.push({ one: x }); continue; }
+      if (at.has(d)) { out[at.get(d)].items.push(x); continue; }
+      at.set(d, out.length); out.push({ d, items: [x] });
+    }
+    return out.map((g) => (g.items && g.items.length === 1 ? { one: g.items[0] } : g));
+  }
+  /** Sektionens rader, per leverans eller var för sig. worst ger gruppens läge som chip. */
+  function deliveryRows(zone, xs, { rowOf, dOf, worst, dueOf = (x) => x.due }) {
+    if (!byDelivery()) return xs.map(rowOf).join("");
+    return groupByDelivery(xs, dOf).map((g) => {
+      if (g.one) return rowOf(g.one);
+      const key = `${zone}|${g.d}`, open = !!state.openGroups?.[key];
+      const d = realDeliveries().find((y) => y.id === g.d);
+      const name = d?.label || g.items.map((x) => x.project?.kind === "delivery" ? x.project.label : "").find(Boolean) || "Leveransen";
+      const due = g.items.map(dueOf).filter(Boolean).map(day10).sort()[0];
+      const head = `<div class="trow dgrp${open ? " open" : ""}" data-dgroup="${esc(key)}" role="button" aria-expanded="${open}" tabindex="0">`
+        + `<span class="ico">${ic("lev")}</span><span class="t" title="${esc(name)}">${esc(name)}</span>`
+        + `<span class="act"><span class="chip">${g.items.length}</span><span class="caret" aria-hidden="true">${open ? "▾" : "▸"}</span></span>`
+        + `<span class="m">${worst(g.items)}${due ? byWhen(due, "närmast") : ""}</span></div>`;
+      return head + (open ? `<div class="dgrp-rows">${g.items.map(rowOf).join("")}</div>` : "");
+    }).join("");
+  }
+  /** Gruppens värsta läge i Att göra: sena först, sedan i dag, planerat i dag, snart. */
+  const worstTodo = (xs) => {
+    const late = xs.filter(isLate).length, hot = xs.filter((x) => x.level === "hot").length, today = xs.filter((x) => x.level === "today").length;
+    return late ? chip(`${late} ${late === 1 ? "sen" : "sena"}`, "red") : hot ? chip(`${hot} i dag`, "amber")
+      : today ? chip(`${today} planerat i dag`, "accent") : chip(`${xs.length} snart`);
+  };
   /** Mitt, det som är min tur: inte det som ligger hos en kollega (B-271) eller väntar på att någon tar emot det. */
   const myTurn = () => agenda().filter((x) => x.kind !== "colleague" && x.kind !== "handover_out");
   /** Talet på Idag och i menyn: det som är din tur nu (brinner och i dag), samma tal på båda ställena. */
@@ -2030,9 +2075,10 @@ a.btn { text-decoration: none; color: var(--text); }
       .sort((a, b) => todoRank(a) - todoRank(b) || String(a.due).localeCompare(String(b.due)));
     const soon = vis.filter((x) => x.level === "soon");
     const now = todo.length, late = todo.filter(isLate).length;
-    const body = todo.map(rowOf).join("")
+    const dOf = (x) => deliveryIdOf(x, taskById(x.task));
+    const body = deliveryRows("todo", todo, { rowOf, dOf, worst: worstTodo })
       + (soon.length ? `<div class="zgrp"><b>Snart</b><span class="hint">${plural(soon.length, "sak", "saker")} de närmaste dagarna</span></div>`
-        + (store.showSoon ? soon.map(rowOf).join("") + `<div class="zmore"><button class="linkbtn" data-toggle-soon="1">Fäll ihop Snart</button></div>`
+        + (store.showSoon ? deliveryRows("soon", soon, { rowOf, dOf, worst: worstTodo }) + `<div class="zmore"><button class="linkbtn" data-toggle-soon="1">Fäll ihop Snart</button></div>`
           : `<div class="zmore">Fällt ihop, först ${short(soon[0].due)}. <button class="linkbtn" data-toggle-soon="1">Visa</button></div>`) : "");
     const filters = `<div class="filters${store.showFilters ? " open" : ""}"><div class="seg">`
       + [["mine", "Mina"], ["others", "Andras"], ["all", "Alla"]].map(([k, l]) => `<button data-who="${k}" aria-pressed="${who === k}">${l}</button>`).join("")
@@ -2063,7 +2109,8 @@ a.btn { text-decoration: none; color: var(--text); }
     const xs = [...agenda().filter((x) => x.kind === "colleague"), ...(S.agenda?.waiting_on_others ?? [])]
       .sort((a, b) => String(a.due).localeCompare(String(b.due)));
     return `<div class="zone"><div class="zone-h"><h2>${ic("user")} Väntar på andra</h2><span class="n">${xs.length}</span></div>`
-      + `<div class="card">${xs.length ? xs.slice(0, 8).map(otherRow).join("") + (xs.length > 8 ? `<div class="zmore">och ${plural(xs.length - 8, "sak", "saker")} till, längre fram.</div>` : "")
+      + `<div class="card">${xs.length ? deliveryRows("waiting", xs.slice(0, 8), { rowOf: otherRow, dOf: (x) => deliveryIdOf(x, taskById(x.task)),
+          worst: (g) => { const late = g.filter((x) => isDay(day10(x.due)) && day10(x.due) < TODAY).length; return late ? chip(`${late} ${late === 1 ? "sen" : "sena"}`, "red") : chip(`${g.length} väntar`); } }) + (xs.length > 8 ? `<div class="zmore">och ${plural(xs.length - 8, "sak", "saker")} till, längre fram.</div>` : "")
         : `<div class="empty"><b>Inget väntar på andra.</b>Steg hos en kollega, kunden eller en partner står här.</div>`}</div></div>`;
   }
   /**
@@ -2085,7 +2132,7 @@ a.btn { text-decoration: none; color: var(--text); }
     };
     return `<div class="zone no-method"><div class="zone-h"><h2>Saknar metod</h2><span class="n">${xs.length}</span>`
       + `<span class="hint">uppgifter utan steg att följa — ge dem en metod, eller registrera att de gått ut</span></div>`
-      + `<div class="card">${xs.map(row).join("")}</div></div>`;
+      + `<div class="card">${deliveryRows("nomethod", xs, { rowOf: row, dOf: (t) => t.delivery || null, worst: (g) => chip(`${g.length} saknar metod`, "amber") })}</div></div>`;
   }
   /**
    * Förslagen när tiden inte räcker (Daniel P 2026-09-28): trycka på eller lämna
@@ -2234,7 +2281,10 @@ a.btn { text-decoration: none; color: var(--text); }
 
   const SCREENS = {
     idag() {
-      return `<div class="pagehead"><h1>Idag</h1><span class="sub">${wday(TODAY)}</span></div>`
+      return `<div class="pagehead"><h1>Idag</h1><span class="sub">${wday(TODAY)}</span>`
+        + `<span class="actions"><span class="seg" role="group" aria-label="Rader i samma leverans">`
+        + [[false, "Per leverans"], [true, "Var för sig"]].map(([k, l]) => `<button data-idag-separate="${k}" aria-pressed="${!!store.idagSeparate === k}">${l}</button>`).join("")
+        + `</span></span></div>`
         + zoneAbsence() + zoneTur() + lvIdag()
         + `<div class="zones2">${zoneWaiting()}${zoneConfirm()}</div>`
         + zoneWeek()
@@ -8070,7 +8120,7 @@ a.btn { text-decoration: none; color: var(--text); }
     // En länk i en ruta (till exempel «Öppna i Filer» under en förhandsbild) går vidare och stänger rutan.
     if (e.target.closest("#layer a[href^='#/']")) { closeDialog(); return; }
     if (e.target.closest("a[href^='#/']")) return;
-    const t = e.target.closest("button, [data-pal-card], [data-step-edit], [data-open-step], [data-open-project], [data-open-method], [data-open-case], [data-proj-task], [data-open-q], [data-edsel], [data-calcol], [data-fcust], [data-ffolder], .item, [data-close-overlay]");
+    const t = e.target.closest("button, [data-pal-card], [data-step-edit], [data-open-step], [data-open-project], [data-open-method], [data-open-case], [data-proj-task], [data-open-q], [data-dgroup], [data-edsel], [data-calcol], [data-fcust], [data-ffolder], .item, [data-close-overlay]");
     if (!t) return;
     const ds = t.dataset;
     if (ds.closeOverlay && e.target === t) return closeDialog();
@@ -8103,6 +8153,8 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.mirrorReread) return rereadMirror(t, ds.mirrorReread);
     if (ds.takeTask) return takeTaskDialog(ds.takeTask);
     if (ds.takeTaskYes) return takeTask(t, ds.takeTaskYes);
+    if (ds.idagSeparate !== undefined) { store.idagSeparate = ds.idagSeparate === "true"; save(); return render(); }
+    if (ds.dgroup) { state.openGroups = { ...(state.openGroups || {}), [ds.dgroup]: !state.openGroups?.[ds.dgroup] }; return render(); }
     if (ds.toggleSoon) { store.showSoon = !store.showSoon; save(); return render(); }
     if (ds.showFilters) { store.showFilters = !store.showFilters; save(); return render(); }
     if (ds.toggleWeek) { store.showWeek = !store.showWeek; save(); return render(); }
