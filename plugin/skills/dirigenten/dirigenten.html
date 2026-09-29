@@ -943,7 +943,7 @@ a.btn { text-decoration: none; color: var(--text); }
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "027107d", published: "2026-09-29" };
+  const SIDA = { version: "aaa1b70", published: "2026-09-29" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -4025,7 +4025,7 @@ a.btn { text-decoration: none; color: var(--text); }
           + `${absenceBtn(a)}${(s.postpone_options || []).length ? `<button class="btn sm quiet" data-postpone="1">Senarelägg…</button>` : ""}</div>`).join(""))
         // Markera klart står överst (Daniel P 2026-09-25: "markera klart måste vara högst upp").
         + (s.done ? "" : `<div class="bar-actions" style="margin:4px 0 16px"><button class="btn primary" data-done="1">Klart, till nästa ›</button>`
-          + `<span class="right"><button class="btn quiet" data-calstep="${esc(t.id)}|${esc(s.step)}">${ic("calendar")} Lägg i kalendern</button>${(s.postpone_options || []).length ? `<button class="btn quiet" data-postpone="1">Senarelägg…</button>` : ""}<button class="btn quiet" data-handover-to="1">Ge steget till…</button>${t.steps.some((x) => !x.done && !x.external && (x.responsible?.id ?? x.responsible) !== me()) ? `<button class="btn quiet" data-take-task="${esc(t.id)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över</button>` : ""}${msgBtn({ task: t.id, step: s.step }, s.label)}</span></div>`)
+          + `<span class="right"><button class="btn quiet" data-calstep="${esc(t.id)}|${esc(s.step)}">${ic("calendar")} Lägg i kalendern</button>${(s.postpone_options || []).length ? `<button class="btn quiet" data-postpone="1">Senarelägg…</button>` : ""}<button class="btn quiet" data-handover-to="1">Ge steget till…</button><button class="btn quiet" data-handover-task="${esc(t.id)}" title="Alla ogjorda steg blir förslag till kollegan">Lämna över hela uppgiften…</button>${t.steps.some((x) => !x.done && !x.external && (x.responsible?.id ?? x.responsible) !== me()) ? `<button class="btn quiet" data-take-task="${esc(t.id)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över</button>` : ""}${msgBtn({ task: t.id, step: s.step }, s.label)}</span></div>`)
         + materialCard(t, s, true)
         + `<div class="card section"><h2>Kedjan ${t.method ? `<button class="linkbtn" data-open-method="${esc(t.method)}" title="Öppna metoden — där den kan ändras för alla">${esc(lbl(t.method_named, "metoden"))} ${ic("arrow")}</button>` : ""}`
         + `${t.method ? ` <button class="btn quiet sm" data-change="${esc(t.id)}">Ändra stegen för ${esc(lbl(t.customer, "kunden"))}</button>` : ""}`
@@ -4845,6 +4845,8 @@ a.btn { text-decoration: none; color: var(--text); }
       const hs = h && !h.waiting ? stepOf(taskById(h.task), h.step) : null;
       if (hs && (hs.responsible?.id ?? hs.responsible) === me())
         out.push(`<button class="btn sm" data-absence-handover="${esc(h.task)}|${esc(h.step)}" title="Steget blir kollegans när kollegan tagit emot det.">Lämna över «${esc(clipped(h.label, 40))}»</button>`);
+      if (hs && (hs.responsible?.id ?? hs.responsible) === me())
+        out.push(`<button class="btn sm" data-handover-task="${esc(h.task)}" title="Alla ogjorda steg blir förslag till kollegan. Stegen blir kollegans när kollegan tagit emot dem.">Lämna över hela uppgiften…</button>`);
     }
     if (!d.closed && !d.ongoing) out.push(`<button class="btn sm ai" data-lv-rearrange="${esc(d.id)}" title="Öppnar Claudepanelen med frågan. Varje ändring visas som ett kort med Ja och Nej.">${SP} Be Claude möblera om…</button>`);
     for (const { x, i } of deliverySuggestions(d))
@@ -7467,6 +7469,35 @@ a.btn { text-decoration: none; color: var(--text); }
       + `<p class="meta">Det här skrivs: ett förslag till <b class="ho-who">${esc(personName(to || people[0]?.id))}</b> att ta över «${esc(st.label)}» i «${esc(taskTitle(t))}». Steget flyttas till <span class="ho-who">${esc(personName(to || people[0]?.id))}</span> först när <span class="ho-who">${esc(personName(to || people[0]?.id))}</span> har tagit emot det. Tills dess står det hos ${esc(lbl(st.responsible, "dig"))}.</p>`
       + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-handover-send="1">Lämna över</button></div>`);
   }
+  /**
+   * Lämna över hela uppgiften: execute_step { task, handover_to, note } utan step.
+   * Alla ogjorda steg blir förslag; mottagaren tar emot dem, och till dess står de kvar hos dig.
+   */
+  const openSteps = (t) => asArr(t?.steps).filter((x) => !x.done && !x.external);
+  function handoverTaskDialog(task) {
+    const t = taskById(task); if (!t) return;
+    const n = openSteps(t).length;
+    state.handoverTask = { task, n };
+    const people = (S.agenda?.colleagues ?? peopleList()).filter((c) => c.id !== me());
+    const first = people[0]?.label ?? "den som tar över";
+    dialog(`<h2>Lämna över hela uppgiften</h2>`
+      + `<label class="field"><span>Till</span><select id="ht-to">${people.map((p) => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join("")}</select></label>`
+      + `<label class="field"><span>Vad behöver <span class="ht-who">${esc(first)}</span> veta? · valfritt</span><textarea id="ht-note" rows="3"></textarea></label>`
+      + `<p class="meta">Det här skrivs: ${n} steg i «${esc(taskTitle(t))}» föreslås för <b class="ht-who">${esc(first)}</b>. Stegen flyttas först när <span class="ht-who">${esc(first)}</span> har tagit emot dem. Tills dess står de kvar hos dig.</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-handover-task-send="1">Föreslå</button></div>`);
+  }
+  document.addEventListener("change", (e) => { if (e.target?.id === "ht-to") for (const x of document.querySelectorAll(".ht-who")) x.textContent = e.target.selectedOptions[0]?.textContent ?? ""; });
+  function sendHandoverTask() {
+    const h = state.handoverTask, sel = $("#ht-to"), to = sel?.value, name = sel?.selectedOptions[0]?.textContent ?? "kollegan", note = $("#ht-note")?.value.trim();
+    if (!h || !to) return toast("Välj vem uppgiften ska till.", null, true);
+    state.handoverTask = null; closeDialog();
+    return lvSave({ key: `task|${h.task}`, what: "lämna över", text: `föreslaget för ${name} · sparar…`,
+      change: () => {}, undo: () => {},
+      save: () => call("execute_step", { task: h.task, handover_to: to, ...(note ? { note } : {}),
+        confirmed: true, user_approval: `Ja i vyn: lämna över hela uppgiften till ${name}` }),
+      done: `${h.n} steg föreslagna för ${name}. Du står kvar tills ${name} tar emot dem.`,
+      refresh: lvDeliveryOf(h.task) ? { delivery: lvDeliveryOf(h.task).id } : { task: h.task } });
+  }
   document.addEventListener("change", (e) => { if (e.target?.id === "ho-to") for (const x of document.querySelectorAll(".ho-who")) x.textContent = personName(e.target.value); });
   /** Rutan stängs direkt; raden visar överlämningen och «sparar…» tills servern svarat. */
   function sendHandover() {
@@ -8508,6 +8539,8 @@ a.btn { text-decoration: none; color: var(--text); }
     if (ds.menuHandover) { closeMenu(); const [task, step] = ds.menuHandover.split("|"); return handoverDialog(task, step); }
     if (ds.handoverTo) { const { t: tt, s: ss } = current(); return ss ? handoverDialog(tt.id, ss.step) : undefined; }
     if (ds.handoverSend) return sendHandover(t);
+    if (ds.handoverTask) return handoverTaskDialog(ds.handoverTask);
+    if (ds.handoverTaskSend) return sendHandoverTask();
     // «+»: med ett kort valt läggs det dit; annars öppnas paletten för just den platsen.
     if (ds.addStep) { const [task, after] = ds.addStep.split("|");
       if (state.pick) { const it = state.pick.it; endPick(); return dropOn(it, after || null); }

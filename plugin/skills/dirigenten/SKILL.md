@@ -45,16 +45,11 @@ Files live in the content bank, addressed as `bank://<tenant>/<sha256>`, and are
 
 ## Start with the views
 
-There is exactly ONE Dirigenten views page, and the server says where it is: `views_url`, in every `plan_state` answer and in `guide`. The page shows today, the week, the customers, the incoming mail with its triage, and the file bank, and fetches everything itself.
+The server says where the views are: `views_url`, in every `plan_state` answer and in `guide`. It is the server's own page (Google login), always the latest, and works for everyone in any browser.
 
-1. Always link the user to `views_url`, verbatim. Never guess an address, never reuse one from an earlier session, never publish a page of your own.
-2. **Never publish or republish the views.** If the user cannot open the address, that is a permissions problem — say so plainly and say who grants access. A copy is not a fix: copies are why people ended up watching a page that was no longer the one being updated.
-3. If `views_url` is missing from the answer, say the tenant has no views page yet, and that the address is a setting in the registry (`core.setting.views_url`). Do not create one.
-4. Then say briefly what matters most today, with the link. Do not recite what the page already shows. Two or three lines is the whole opening.
-
-The answer also carries `views.version`: the version the running server belongs to. The page carries its own stamp and says so itself when it is the older one. The page itself does not live in this plugin: it is published once, at a fixed address, and everyone who can open it always sees the current version. The source is `views/next.html` in the repository, for whoever deploys it — not something you publish.
-
-When the page is open, let the user act there — mark a step done, upload a missing input, move a step — rather than doing it for them unasked.
+1. Link the user to `views_url`, verbatim. Never guess an address or reuse one from an earlier session.
+2. In the Claude app (Cowork, Code), a page reaches the connectors only for its owner. There each person uses their **own** copy, published with the section «The view (dirigentvyn)» below — never someone else's artifact.
+3. If `views_url` is missing, say the tenant has no views page yet (`core.setting.views_url` in the registry).
 
 ## Know what is waiting, and continue what was started
 
