@@ -976,6 +976,11 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
 .pp-ths { display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-end; }
 .pp-mb { min-width: 0; display: flex; flex-direction: column; gap: 4px; } .pp-mb b { font-size: 15px; }
 .pp-made.later b, .pp-made.later .meta { color: var(--text-3); }
+.pp-made.rendering .pp-th { position: relative; overflow: hidden; }
+.pp-made.rendering .pp-th::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--blue, #2f6fed) 22%, transparent) 50%, transparent 70%); background-size: 200% 100%; animation: pp-shimmer 1.4s linear infinite; }
+.pp-made.rendering .meta.pp-run { color: var(--blue, #2f6fed); }
+@keyframes pp-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .pp-made.rendering .pp-th::after { animation: none; } }
 .pp-miss { color: var(--amber); } .pp-links { display: flex; gap: var(--s3); }
 .pp-now { padding: var(--s4); margin-bottom: var(--s3); }
 .pp-h { font-size: 18px; font-weight: 700; margin: 4px 0; }
@@ -1212,7 +1217,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "c7c289d", published: "2026-09-30" };
+  const SIDA = { version: "c19be49", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -4930,7 +4935,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      Inget här vet vilket system något ligger ute i: namnet kommer ur spegeln
      (`out[].system`) eller ur publiceringens kanal, delarna ur tillgångens
      `part`, och länken till objektet ur `out_as[].url`. */
-  const LV = { open: {}, scroll: {}, change: null, bind: null, previews: new Map(), texts: new Map(), pending: {}, saving: {} };
+  const LV = { open: {}, scroll: {}, change: null, bind: null, previews: new Map(), texts: new Map(), pending: {}, saving: {}, render: {} };
   const enc = encodeURIComponent;
   const H = {
     screen: (s) => `#/${s}`,
@@ -6772,11 +6777,49 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
         + `<div class="pp-links"><button class="linkbtn" data-lv-toggle="txt|${esc(u.key)}" aria-expanded="${o}">${o ? "Dölj" : "Läs"}</button></div>${o ? lvText(u.key) : ""}</div></div>`;
     }
     const nowStep = later && cur && later.step === cur.label && !later.after, ip = nowStep ? ipEntry(t, cur) : "";
-    const body = all ? `<div class="meta">${files.map((p) => esc(p.name)).join(", ") || "Klar"}</div>`
+    // Ett renderingsjobb pågår för delen: «Renderas …» med formaten, tills bilderna kommer.
+    const rendering = !all && later ? renderingOf(t, later) : null;
+    const body = rendering ? `<div class="meta pp-run" role="status">Renderas ${esc(x.ratios.length ? x.ratios.join(" och ") : "bilderna")} …${rendering.progress ? ` <span>${esc(rendering.progress)}</span>` : ""}</div>`
+      : all ? `<div class="meta">${files.map((p) => esc(p.name)).join(", ") || "Klar"}</div>`
       : missing ? `<div class="meta pp-miss">Saknas: steget «${esc(missing.step || "")}» är gjort men delen finns inte.</div>`
       : nowStep ? `<div class="meta">Görs nu</div>${ip}` : `<div class="meta">${esc(laterWhen(later))}</div>`;
     const th = files.length ? `<span class="pp-ths">${files.map((p) => lvThumb(cust, p, "mid")).join("")}</span>` : `<span class="pp-th ${all ? "" : "later"}"></span>`;
-    return `<div class="pp-made ${all ? "ok" : missing ? "miss" : "later"}">${th}<div class="pp-mb"><b>${esc(title)}</b>${body}</div></div>`;
+    return `<div class="pp-made ${all ? "ok" : rendering ? "rendering" : missing ? "miss" : "later"}">${th}<div class="pp-mb"><b>${esc(title)}</b>${body}</div></div>`;
+  }
+  /**
+   * Renderas delen just nu? Steget som ska lämna den är en kodkörning som
+   * påbörjats inom tio minuter och inte är klar, eller en körning som den här
+   * vyn startade. Bilderna kommer som en ny version av posten; planen läses om
+   * tyst tills de finns (watchRender), utan att ritningen tar osparad text.
+   */
+  function renderingOf(t, later) {
+    const ps = roundSteps(t).find((y) => y.label === later.step);
+    const mine = LV.render[t.id];
+    if (mine && ps && mine.step === ps.step) return mine;
+    if (!ps || ps.done || !ps.started || (ps.performer_kind || "human") !== "code") return null;
+    if (Date.now() - Date.parse(ps.started.at) > 600_000) return null;
+    watchRender(t.id);
+    return { progress: "" };
+  }
+  const editingNow = () => { const a = document.activeElement; return !!a && !!a.closest?.("#main") && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable); };
+  const RW = { timer: new Map() };
+  /** Läser om planen var tionde sekund medan något renderas; ritar bara när ingen skriver i sidan. */
+  function watchRender(task) {
+    if (RW.timer.has(task)) return;
+    const started = Date.now();
+    const tick = async () => {
+      RW.timer.delete(task);
+      if (!mcp || Date.now() - started > 600_000 || state.obj?.type !== "delivery") return;
+      try {
+        if (document.visibilityState === "visible") {
+          const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "full" }), 45000, "Planen");
+          if (p?.plan) { S.plan = p.plan; S.at.plan = Date.now(); RW.dirty = true; }
+        }
+        if (RW.dirty && !editingNow()) { RW.dirty = false; render(); return; }
+      } catch { /* prövas igen */ }
+      RW.timer.set(task, setTimeout(tick, 10_000));
+    };
+    RW.timer.set(task, setTimeout(tick, 10_000));
   }
   function postMade(d, t) {
     const us = partUnits(t);
@@ -8724,6 +8767,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     return busy(btn, async () => {
       try {
         const d = await call("execute_step", { task: t.id, step: s.step });
+        // Renderingen pågår: posten visar «Renderas …» och bilderna kommer av sig själva (utan att knappen hålls upptagen).
+        if (d?.pending && d.pending.state !== "failed" && d.pending.job) { followRender(t, s, d); return; }
+        if (d?.pending?.state === "failed") { await load(); return toast(`${s.label}: ${d.pending.text || "renderingen föll"}`, null, true); }
         if (!d?.awaiting_confirmation) return codeResult(s.label, d);
         // Bilderna som miniatyrer med länk till filbiblioteket (felrapport c96d2186).
         const rows = wouldChangeHtml(d.would_change);
@@ -8733,6 +8779,25 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
           + `<div class="bar-actions"><a class="btn quiet" href="${H.preview(t.id, s.step)}" data-close="1">Visa som sida</a><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-confirm-run="1">Utför det</button></div>`);
       } catch (e) { fail("Steget kördes inte", e); }
     });
+  }
+  /**
+   * Följer en rendering som inte blev klar inom serverns väntan: samma anrop igen väntar
+   * vidare på samma jobb (inget nytt startas). Under tiden står «Renderas …» på posten.
+   */
+  async function followRender(t, s, d) {
+    LV.render[t.id] = { step: s.step, progress: d.pending?.progress || "" };
+    if (!editingNow()) render();
+    try {
+      for (let i = 0; i < 30 && d?.pending && d.pending.state !== "failed"; i++) {
+        LV.render[t.id].progress = d.pending.progress || "";
+        if (!editingNow()) render();
+        d = await call("execute_step", { task: t.id, step: s.step });
+      }
+    } catch (e) { delete LV.render[t.id]; return fail("Renderingen kunde inte följas", e); }
+    delete LV.render[t.id];
+    if (d?.pending?.state === "failed") { await load(); return toast(`${s.label}: ${d.pending.text || "renderingen föll"}`, null, true); }
+    if (d?.pending) { await load(); return toast(`${s.label} pågår fortfarande: ${d.pending.progress || "renderas"}. Posten visar bilderna när de är klara.`); }
+    return codeResult(s.label, d);
   }
   /**
    * Ett kodsteg som inte gick hela vägen är ett fel, inte ett kvitto (B-226).
