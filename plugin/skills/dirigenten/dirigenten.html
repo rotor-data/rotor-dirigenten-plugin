@@ -1124,6 +1124,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     </header>
     <nav class="crumbs crumbrow" id="crumbs" aria-label="Sökväg"></nav>
     <div class="warnline" id="stale" role="alert" hidden></div>
+    <div class="warnline" id="restored" role="status" hidden></div>
     <div class="warnline" id="plugin-update" role="status" hidden></div>
     <main id="main"></main>
   </div>
@@ -1147,7 +1148,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "10a5bef", published: "2026-09-30" };
+  const SIDA = { version: "27731c1", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1156,6 +1157,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
    */
   const SELF = { state: null, msg: "" };
   const VIEW_FILE_URL = "https://rotor-dirigenten.netlify.app/vy/fil";
+  const VERSION_URL = "https://rotor-dirigenten.netlify.app/vy/version";
   const wrapView = (text) => '<!doctype html><html lang="sv"><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1"><title>Dirigenten</title></head><body>\n'
     + text + "\n</body></html>\n";
@@ -1212,6 +1214,148 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     } catch { /* tyst: adressen sparas då med färdigheten i stället */ }
   }
   document.addEventListener("click", (ev) => { if (ev.target?.closest?.("#self-update")) selfUpdate(); });
+
+  /*
+   * Automatisk uppdatering (Daniel P 2026-09-30): ingen ska behöva trycka
+   * «Uppdatera vyn» eller lägga ut artefakter efter en utläggning. Men vyn
+   * laddar ALDRIG om medan någon håller på med något. Regeln (autoDecision):
+   *  - när vyn öppnas: uppdatera direkt;
+   *  - annars bara när vyn varit orörd i 10 minuter, eller fliken är dold, och
+   *    inget pågår (anrop, öppet fönster, osparat);
+   *  - annars en diskret rad med knappen «Uppdatera nu», ingen fråga mitt i arbetet.
+   * Skydd mot loopar: samma stämpel läggs aldrig ut två gånger (sparas i
+   * lagringen, överlever omladdning), och efter ett misslyckande väntar vyn 30 min.
+   * Funktionen mellan markörerna är ren och prövas utan sida (test/self-update.test.ts).
+   */
+  /*AUTO-BEGIN*/
+  const AUTO = { IDLE_MS: 600000, RETRY_MS: 1800000, CHECK_MS: 300000 };
+  function autoDecision(x) {
+    if (!x.server || x.server === x.own) return "none";
+    if (x.server === x.lastPublished) return "none";
+    if (x.failedAt && x.now - x.failedAt < AUTO.RETRY_MS) return "none";
+    if (x.trigger === "open") return "now";
+    const calm = !x.busy && !x.dirty && !x.dialogOpen;
+    if (calm && (x.hidden || x.idleMs >= AUTO.IDLE_MS)) return "now";
+    return "offer";
+  }
+  /*AUTO-END*/
+  const AUTO_S = { server: null, offer: false, running: false };
+  const AUTO_KEY = "dirigenten-autouppdatering";
+  const readGuard = () => { try { return JSON.parse(snapStore().getItem(AUTO_KEY) || "{}") || {}; } catch { return {}; } };
+  const writeGuard = (g) => { try { snapStore().setItem(AUTO_KEY, JSON.stringify(g)); } catch { /* utan lagring hindrar bara omladdningsskyddet */ } };
+  let lastActive = Date.now();
+  for (const ev of ["click", "keydown", "pointerdown", "wheel", "touchstart", "scroll", "input"])
+    document.addEventListener(ev, () => { lastActive = Date.now(); }, { capture: true, passive: true });
+  const dialogNow = () => !!$("#layer")?.innerHTML;
+  const dirtyNow = () => { try { return !!(S.settings && settingsChanged()) || dpCount() > 0 || !!state.cal?.draft?.length
+    || [...document.querySelectorAll("textarea")].some((t) => t.value.trim()) || Object.keys(readDrafts()).length > 0; } catch { return true; } };
+  const busyNow = () => INFLIGHT > 0 || !!S.phase || SELF.state === "busy" || !!DP.saving;
+  async function fetchServerStamp() {
+    try { const r = await fetch(VERSION_URL, { cache: "no-store" }); if (r.ok) { const j = await r.json(); if (j?.version) return String(j.version); } }
+    catch { /* stoppad av sidans regler — plan_state bär samma stämpel */ }
+    return S.serverVersion || null;
+  }
+  async function autoCheck(trigger) {
+    if (AUTO_S.running || SELF.state === "busy") return;
+    AUTO_S.running = true;
+    try {
+      AUTO_S.server = await fetchServerStamp();
+      const g = readGuard(), now = Date.now();
+      const dec = autoDecision({ own: SIDA.version, server: AUTO_S.server, lastPublished: g.published, failedAt: g.failedAt, now, trigger,
+        idleMs: now - lastActive, hidden: document.visibilityState !== "visible", busy: busyNow(), dirty: dirtyNow(), dialogOpen: dialogNow() });
+      AUTO_S.offer = dec === "offer";
+      if (dec === "now") await autoPublish(); else render();
+    } catch { /* nästa koll försöker igen */ }
+    finally { AUTO_S.running = false; }
+  }
+  async function autoPublish() {
+    const g = readGuard(), stamp = AUTO_S.server;
+    let a = null;
+    try { a = typeof claude !== "undefined" && claude.use ? await claude.use("artifact") : null; } catch { a = null; }
+    if (!a) { AUTO_S.offer = true; SELF.state = "no"; SELF.msg = "Ny version finns — öppna igen."; render(); return; }
+    // Stämpeln skrivs före utläggningen: en omladdning mitt i får aldrig lägga ut samma en gång till.
+    writeGuard({ ...g, published: stamp });
+    SELF.state = "busy"; SELF.msg = "Ny version, laddar om…"; render();
+    try { await a.publish(wrapView(await fetchViewText())); }
+    catch (e) {
+      const code = e?.code;
+      writeGuard({ published: g.published, failedAt: Date.now() });   // backa; nästa försök tidigast om 30 min
+      SELF.state = null; AUTO_S.offer = true;
+      SELF.msg = `Automatisk uppdatering misslyckades (${SELF_ERRORS[code] || e?.message || e}). Nytt försök tidigast om 30 minuter; «Uppdatera nu» gör det direkt.`;
+      render();
+    }
+  }
+  setInterval(() => autoCheck("tick"), AUTO.CHECK_MS);
+
+  /*
+   * Osparat går inte förlorat (Daniel P 2026-09-30): text i fält sparas lokalt
+   * medan man skriver, och detaljplaneringens osparade drag likaså. Efter en
+   * omladdning, krasch eller stängd flik läggs det tillbaka, med raden
+   * «Återställde ditt osparade utkast — Spara / Släng». Utkastet städas när det
+   * sparats (anropet lyckades och fältet är tomt eller borta). Den öppna sidan
+   * och fliken följer redan med i det sparade läget (saveSnap).
+   */
+  const DRAFT_KEY = "dirigenten-utkast", DP_KEY = "dirigenten-utkast-plan";
+  const RESTORED = { fields: 0, dp: 0, dpDone: false };
+  const FIELDS = "textarea, input[type=text], input:not([type])";
+  const readDrafts = () => { try { return JSON.parse(snapStore().getItem(DRAFT_KEY) || "{}") || {}; } catch { return {}; } };
+  const writeDrafts = (d) => { try { const k = Object.keys(d); if (k.length > 30) for (const x of k.sort((a, b) => (d[a].at || 0) - (d[b].at || 0)).slice(0, k.length - 30)) delete d[x];
+    if (Object.keys(d).length) snapStore().setItem(DRAFT_KEY, JSON.stringify(d)); else snapStore().removeItem(DRAFT_KEY); } catch { /* lagringen full eller blockerad */ } };
+  const draftable = (el) => el?.matches?.(FIELDS) && !el.closest("[data-nodraft]");
+  const draftKey = (el) => { const o = state.obj ? `${state.obj.type}:${state.obj.id || state.obj.key || `${state.obj.task}|${state.obj.step}`}` : "";
+    const f = el.id || el.name || el.dataset.fieldkey || `${el.tagName.toLowerCase()}#${[...document.querySelectorAll(FIELDS)].indexOf(el)}`;
+    return `${state.screen}|${o}|${f}`; };
+  let draftTimer = null;
+  document.addEventListener("input", (ev) => {
+    const el = ev.target; if (!draftable(el)) return;
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(() => { const d = readDrafts(), k = draftKey(el);
+      if (el.value.trim() && el.value.length < 20000) d[k] = { v: el.value, at: Date.now() }; else delete d[k];
+      writeDrafts(d); }, 400);
+  }, true);
+  function restoreDrafts() {
+    const d = readDrafts(); let n = 0;
+    for (const el of document.querySelectorAll(FIELDS)) {
+      if (!draftable(el) || el.value) continue;
+      const x = d[draftKey(el)]; if (x?.v) { el.value = x.v; n++; }
+    }
+    if (n) { RESTORED.fields = Math.max(RESTORED.fields, n); paintRestored(); }
+    if (!RESTORED.dpDone && S.plan) { RESTORED.dpDone = true;
+      try { const raw = snapStore().getItem(DP_KEY), x = raw ? JSON.parse(raw) : null;
+        if (x && !dpCount() && (Object.keys(x.edits || {}).length || Object.keys(x.sit || {}).length)) {
+          DP.edits = x.edits || {}; DP.sit = x.sit || {}; RESTORED.dp = new Set([...Object.keys(DP.edits), ...Object.keys(DP.sit)]).size; paintRestored(); } } catch { /* trasigt utkast hoppas över */ } }
+  }
+  function pruneDrafts() {
+    const d = readDrafts(); let changed = false;
+    const live = new Map(); for (const el of document.querySelectorAll(FIELDS)) if (draftable(el)) live.set(draftKey(el), el.value.trim());
+    for (const k of Object.keys(d)) if (!live.get(k)) { delete d[k]; changed = true; }
+    if (changed) writeDrafts(d);
+  }
+  function paintRestored() {
+    const r = $("#restored"); if (!r) return;
+    const what = [RESTORED.fields ? "ditt osparade utkast" : "", RESTORED.dp ? `din osparade detaljplanering (${RESTORED.dp} steg)` : ""].filter(Boolean).join(" och ");
+    r.hidden = !what;
+    r.innerHTML = what ? `<i></i>Återställde ${what} — <button class="btn sm" id="draft-keep">Spara</button> <button class="btn quiet sm" id="draft-drop">Släng</button>` : "";
+  }
+  document.addEventListener("click", (ev) => {
+    const t = ev.target?.closest?.("#draft-keep, #draft-drop"); if (!t) return;
+    if (t.id === "draft-drop") {
+      try { snapStore().removeItem(DRAFT_KEY); snapStore().removeItem(DP_KEY); } catch { /* inget att städa */ }
+      for (const el of document.querySelectorAll(FIELDS)) if (draftable(el)) el.value = "";
+      if (RESTORED.dp) { DP.edits = {}; DP.sit = {}; }
+      RESTORED.fields = 0; RESTORED.dp = 0; render();
+    } else { RESTORED.fields = 0; RESTORED.dp = 0; paintRestored(); }
+  });
+  // Detaljplaneringens osparade drag: lagras var tredje sekund om de ändrats, och tas bort när inget är osparat.
+  let dpSaved = "";
+  setInterval(() => { try {
+    if (!S.plan || !RESTORED.dpDone) return;
+    const cur = dpCount() ? JSON.stringify({ edits: DP.edits, sit: DP.sit }) : "";
+    if (cur === dpSaved) return; dpSaved = cur;
+    if (cur) snapStore().setItem(DP_KEY, cur); else snapStore().removeItem(DP_KEY);
+  } catch { /* lagringen blockerad */ } }, 3000);
+  // Det som ska följa med när artefakten publiceras (?: gränssnittet är inte bekräftat här; ingen effekt om det saknas).
+  try { claude?.hot?.snapshot?.(() => ({ drafts: readDrafts() })); } catch { /* finns inte här */ }
   /*
    * Datalagret (B-210). Prototypen läste window.DATA, en tillplattad
    * ögonblicksbild. Vyn läser serverns egna svar: plan_state med agendan,
@@ -1339,7 +1483,15 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     return { ...next.args, confirmed: true, user_approval: input.user_approval ?? next.args.user_approval, preview_id: pid };
   }
   /** Ett anrop till en koppling. Dirigenten är förvalet; Claude läser också ur HubSpot (B-229). */
+  /** Pågående anrop: vyn uppdaterar sig aldrig mitt i ett (se AUTO nedan). */
+  let INFLIGHT = 0;
+  const READ_ONLY = /^(plan_state|intake_status|guide|search|read|library_|content_(get|list|search)|asset_get|context|measure_|plan_(estimate|questions))/;
   async function callOn(server, tool, input) {
+    INFLIGHT++;
+    try { const r = await callOnRaw(server, tool, input); if (!READ_ONLY.test(tool)) setTimeout(() => { try { pruneDrafts(); } catch { /* utkasten städas nästa gång */ } }, 1500); return r; }
+    finally { INFLIGHT--; }
+  }
+  async function callOnRaw(server, tool, input) {
     if (!mcp) throw Object.assign(new Error(`anslutningen ${server} är inte tillgänglig här — öppna vyn i claude.ai med kopplingen på`), { code: "NOT_CONNECTED" });
     let r;
     if (server === SERVER) [tool, input] = newForm(tool, input);
@@ -2264,12 +2416,15 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       pu.innerHTML = up ? `<i></i><b>Uppdatering finns</b> · du har ${esc(up.have)}, senaste är ${esc(up.latest)}. ${esc(up.path)}. ${esc(up.tip)}` : ""; }
     const st = $("#stale");
     if (st) {
-      const v = S.serverVersion, gammal = !!v && v !== SIDA.version;
+      const v = S.serverVersion || AUTO_S.server, gammal = !!v && v !== SIDA.version;
       st.hidden = !gammal;
       st.innerHTML = !gammal ? "" : SELF.state === "no" || SELF.state === "busy" || SELF.msg
         ? `<i></i>${SELF.msg ? `${esc(SELF.msg)} ` : ""}${SELF.state === "busy" ? "Uppdaterar vyn…" : `Den här sidan är version ${esc(SIDA.version)}, men dirigenten kör ${esc(v)}. Ladda om sidan; syns raden kvar är den publicerade sidan äldre än servern.`}`
+        : AUTO_S.offer ? `<i></i>Ny version finns — används nästa gång du öppnar vyn. <button class="btn sm" id="self-update">Uppdatera nu</button>`
         : `<button class="btn sm" id="self-update">Uppdatera vyn</button>`;
     }
+    paintRestored();
+    try { restoreDrafts(); } catch { /* utkasten står kvar i lagringen */ }
     // Samma yta eller objekt: rullningen står kvar. Bara ett byte börjar överst.
     const key = state.obj ? `${state.obj.type}:${state.obj.id || state.obj.key || `${state.obj.task}|${state.obj.step}`}` : state.screen;
     // Rulläget sparas för sidan man lämnar (UX-genomgången, problem 9): Tillbaka ska stå där man var.
@@ -7307,7 +7462,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
    * som förut, i anropet, och större får besked om var de kan laddas upp.
    */
   const INLINE_MAX = 512 * 1024;
-  const UPLOAD = { direct: null, home: null };
+  const UPLOAD = { direct: null, home: null, why: null };
   const sha256Hex = async (file) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", await file.arrayBuffer()))]
     .map((b) => b.toString(16).padStart(2, "0")).join("");
   /** Ett besked som står kvar medan filen går upp, och visar hur långt den kommit. */
@@ -7336,6 +7491,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   }
   /** En fil in i banken och registret. Svaret är asset_registers, vilken väg filen än tog. */
   async function sendFile(f, fields) {
+    // Utan typ och sätt avvisar servern anropet (felrapport 13:37) — stoppa här med ett besked i stället.
+    if (!fields?.asset_type || !fields?.acquisition)
+      throw new Error(`${f.name} laddades inte upp: vyn vet inte vilken sorts fil det är (asset_type och acquisition saknas). Rapportera felet.`);
     const mime = f.type || "application/octet-stream";
     if (f.size > MAX_FILE) throw new Error(`${f.name} är ${fsize(f.size)}. Dirigenten tar emot högst 4 MB än — ange var filen finns i stället.`);
     const thumb = IMG_TYPE.test(f.type) ? await makeThumb(f) : null;
@@ -7346,20 +7504,24 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
         try {
           const d = await call("asset_register", { ...fields, filename: f.name, mime,
             upload_sha256: await sha256Hex(f), ...(thumb ? { thumbnail_base64: thumb } : {}) });
-          if (!d?.upload?.url) throw Object.assign(new Error("servern gav ingen uppladdningsadress"), { code: "NOT_READY" });
+          // Utan adress säger vi serverns eget besked — aldrig en tyst reserv (felrapport 13:37).
+          if (!d?.upload?.url) throw Object.assign(new Error(`${f.name} laddades inte upp: ${d?.error?.message || d?.summary || "servern gav ingen uppladdningsadress"}`), { code: d?.error?.code || "NO_UPLOAD_URL" });
           try { UPLOAD.home = `${new URL(d.upload.url).origin}/vy`; } catch { /* ingen adress att visa */ }
           const r = await postFile(d.upload, f, (p) => note.set(`Laddar upp ${f.name} · ${Math.round(p * 100)} %`));
           UPLOAD.direct = true;
           return r;
         } catch (e) {
+          // Bara två lägen får gå vidare till reserven: adressen gick inte att nå härifrån, eller
+          // servern säger uttryckligen att direkt uppladdning inte är inkopplad. Allt annat visas.
           if (e?.code !== "UNREACHABLE" && e?.code !== "NOT_READY") throw e;
           UPLOAD.direct = false;
+          UPLOAD.why = e?.code === "UNREACHABLE" ? "dirigentens uppladdningsadress gick inte att nå från vyn" : String(e?.message || "direkt uppladdning är inte inkopplad");
         }
       }
       // Originalet laddas upp oförändrat; vyn krymper aldrig bilder (Daniel P 2026-09-30).
       // Hänvisa aldrig till /vy — där finns ingen Claude.
       if (f.size > INLINE_MAX)
-        throw new Error(`${f.name} är ${fsize(f.size)}, och härifrån går bara filer upp till 500 kB. `
+        throw new Error(`${f.name} är ${fsize(f.size)}, och härifrån går bara filer upp till 500 kB${UPLOAD.why ? ` (${UPLOAD.why})` : ""}. `
           + "Be Claude i chatten om uppladdningsrutan — där går filer upp till 4 MB — eller ange var filen finns.");
       const small = thumb && f.size + thumb.length * 0.75 <= INLINE_MAX ? thumb : null;
       return await call("asset_register", { ...fields, filename: f.name, mime, base64: await toBase64(f),
@@ -10921,6 +11083,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       if (!(m && restored && S.plan)) { await load(); loadSettings(); }
       else { if (S.settings) showWhoAmI(S.settings.node?.label || S.settings.label); refreshStale(); loadMessages(); }
       checkTools();
+      autoCheck("open");
       if (!web) { try { sample = await claude.use("sample"); } catch { sample = null; } }
       renderPanel(); })
     .catch((e) => { S.error = e; render(); });
