@@ -1120,7 +1120,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "0c606db", published: "2026-09-30" };
+  const SIDA = { version: "b9301af", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1778,6 +1778,88 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       await afterWrite(`Den nya versionen av ${m.label} är sparad: ${done.join(", ")}.`);
     });
   }
+  /* ── Föreslå timmar för stegen i en metod (Daniel P 2026-09-30) ──
+     Steg utan känd insats (planens hours_source är förvalet, eller steget ligger
+     inte i någon uppgift) får ett förslag i kvartar. Samma Claude-anrop som Ändra med
+     Claude; utan Claude kopieras en färdig prompt till chatten. Sparas som en gissad
+     insatsrad, samma form som metodbyggarens uppskattning: registry_define change,
+     förhandsvisad först, aldrig utan ja. Visas alltid som «x h (?)». */
+  const hoursRows = (m) => stepIds(m).map((id) => { const e = libById(id), p = stepInfo(id);
+    return { id, label: e?.label || p?.label || "Steg", who: p?.responsible?.id || e?.responsible?.id || "", kind: stepKind(id), summary: p?.summary || e?.summary || "",
+      how: houseInstruktion(p) ? [houseInstruktion(p).syfte, ...asArr(houseInstruktion(p).saa_goer_du)].filter(Boolean).join(" · ") : lines(p?.recipe?.how).join(" · "),
+      src: p?.hours_source || null, now: p?.hours ?? null }; })
+    .filter((r) => !["set", "history", "estimate"].includes(r.src));
+  /** Stegen i alla metoder som ligger på förval, ett steg en gång. */
+  const defaultHoursSteps = () => { const seen = new Map();
+    for (const m of libEntries("method")) for (const id of stepIds(m)) { const src = stepInfo(id)?.hours_source || null;
+      if (!["set", "history", "estimate"].includes(src) && !seen.has(id)) seen.set(id, m.id); }
+    return seen; };
+  const defaultHoursLine = () => { const d = defaultHoursSteps(); if (!d.size) return "";
+    return `<div class="warnnote" style="margin-bottom:12px">${d.size} steg har bara förvalda timmar — <button class="linkbtn" data-hgo="${esc([...d.values()][0])}">Föreslå timmar</button></div>`; };
+  const HOURS_KIND = { code: "kod kör det", llm: "Claude gör det, en människa granskar", human: "en människa gör det", mixed: "kod och människa", ext: "väntar på någon utanför huset" };
+  function hoursBrief(m, rows) {
+    return ["Du uppskattar hur många timmar en människa på en liten byrå lägger på varje steg nedan, för EN gång steget görs: den egna arbetstiden, inte väntan på andra. Räkna ALLA stegtyper, även kod och Claude: den egna tiden är också att administrera steget — starta det, läsa resultatet, iterera och rätta. En research-körning eller ett resonemang med Claude kan vara 1 h eller mer; ett enkelt kodsteg är en kvart. Förvalet är sista utväg, så ge ett eget tal för varje steg. Läs receptet eller instruktionen när det finns. Hitta inte på fakta som inte står här.",
+      `Metoden: «${m.label}». Timmar i kvartar (0,25, 0,5, 1 …).`, "Stegen (id exakt):",
+      ...rows.map((r) => `- ${r.id} · ${r.label} · ${HOURS_KIND[r.kind] || r.kind}${r.summary ? ` · ${r.summary}` : ""}${r.how ? ` · så görs det: ${r.how.slice(0, 500)}` : ""}${r.now != null ? ` · i dag förvalet ${hh(r.now)}` : ""}`)].join("\n");
+  }
+  const HOURS_ANSWER = 'Svara med ENBART JSON: {"hours":[{"step":"<id>","hours":<tal i kvartar>,"why":"<en mening på svenska>"}]}';
+  async function suggestHours(btn) {
+    const m = methodById(state.obj.id), rows = hoursRows(m);
+    if (!rows.length) return toast("Alla steg har redan timmar från en säkrare källa.");
+    if (!sample) return copyToChat(hoursBrief(m, rows) + "\n\nFöreslå timmarna och visa dem som «x h (?)» per steg. Skriv inget förrän jag sagt ja: sedan med write { op: \"registry_define\", change: true, node: { id, effort: [{ party: <ansvarig>, phase: \"do\", likely_hours, worst_hours, certainty: \"new\", reason, origin: \"guessed\" }] } }, förhandsvisat först.", "Prompten för timmarna");
+    return busy(btn, async () => {
+      try {
+        const r = await sample.json(hoursBrief(m, rows) + "\n" + HOURS_ANSWER, { modelTier: "default" });
+        const ok = (Array.isArray(r?.hours) ? r.hours : []).filter((x) => rows.some((y) => y.id === x?.step) && Number(x.hours) >= 0 && Number(x.hours) <= 200);
+        state.obj.hprop = ok.map((x) => ({ step: x.step, hours: toQuarter(x.hours), why: String(x.why || "").trim().slice(0, 200) }));
+        if (!ok.length) toast("Claude hade inget underlag att föreslå något på.");
+        render();
+      } catch (e) { fail("Förslaget kom inte fram", e); }
+    });
+  }
+  function hoursPanel(m) {
+    const hp = state.obj.hprop; if (!hp) return "";
+    return `<div class="suggest" style="margin:8px 16px"><div class="from">${SP} Förslag på timmar<span class="why">${hp.length} steg</span></div>`
+      + hp.map((x) => { const e = libById(x.step), ok = !!hoursRows(m).find((r) => r.id === x.step)?.who;
+        return `<div class="need"><span class="t">${esc(e?.label || "Steg")}<div class="meta">${esc(x.why || "Claudes uppskattning")}${ok ? "" : ` · <span style="color:var(--amber)">saknar ansvarig, sparas inte</span>`}</div></span>`
+          + `<span><input type="number" min="0" max="200" step="0.25" style="width:80px" data-hval="${esc(x.step)}" value="${esc(String(x.hours))}" aria-label="Timmar för ${esc(e?.label || "steget")}"> h <span class="q">(?)</span></span></div>`; }).join("")
+      + `<div class="bar-actions"><button class="btn sm primary" data-hsave="1">Spara…</button><button class="btn sm quiet" data-hreject="1">Avvisa</button><span class="meta">Sparas som gissade timmar. Du ser vad som ändras först.</span></div></div>`;
+  }
+  const hoursNode = (m, x) => { const r = hoursRows(m).find((y) => y.id === x.step), h = toQuarter(x.hours);
+    return r?.who && Number.isFinite(h) && h >= 0 ? { id: x.step, effort: [{ party: r.who, phase: "do", likely_hours: h, worst_hours: toQuarter(h * 1.5), certainty: "new", reason: x.why || "Claudes uppskattning ur receptet (?)", origin: "guessed" }] } : null; };
+  /** Förhandsvisa varje steg hos servern, visa allt i en ruta och skriv först efter ja. */
+  async function saveHours(btn) {
+    const m = methodById(state.obj.id), hp = state.obj.hprop || [];
+    const nodes = hp.map((x) => ({ x, node: hoursNode(m, x) })).filter((y) => y.node);
+    if (!nodes.length) return toast("Inget steg med ansvarig att spara timmar på.", null, true);
+    return busy(btn, async () => {
+      try {
+        const pend = [], lines2 = [];
+        for (const { x, node } of nodes) {
+          const d = await call("registry_define", { node, change: true });
+          if (!d?.next_call?.args) continue;
+          pend.push(d.next_call); lines2.push(`${libById(x.step)?.label || "Steg"}: ${hh(x.hours)} (?)`, ...asArr(d?.preview?.lines).slice(0, 2));
+        }
+        if (!pend.length) return toast("Inget ändrades.");
+        S.hoursPending = { pend, lines: lines2, method: m.id };
+        dialog(`<h2>Spara timmarna?</h2><ul>${lines2.map((l) => `<li>${esc(l)}</li>`).join("")}</ul><p class="meta">Sparas som gissade timmar (?), som metodbyggarens uppskattning. Loggen bär att det är du.</p>`
+          + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-hyes="1">Ja, spara</button></div>`);
+      } catch (e) { fail("Timmarna gick inte att förhandsvisa, inget är skrivet", e); }
+    });
+  }
+  function confirmHours(btn) {
+    const p = S.hoursPending; if (!p) return;
+    return busy(btn, async () => {
+      const done = [];
+      try {
+        for (const n of p.pend) { await call(n.tool || "write", { ...n.args, confirmed: true, user_approval: `Ja i vyn: ${p.lines.join(" ")}`.slice(0, 500) }); done.push(1); }
+        S.hoursPending = null; if (state.obj?.hprop) state.obj.hprop = null; closeDialog();
+        await afterWrite(`Timmarna är sparade på ${done.length} steg, som gissade (?).`);
+      } catch (e) { fail(`Timmarna sparades inte helt (${done.length} av ${p.pend.length} skrivna)`, e); }
+    });
+  }
+  document.addEventListener("input", (e) => { const id = e.target?.dataset?.hval; if (id === undefined) return;
+    const x = state.obj?.hprop?.find((y) => y.step === id); if (x) x.hours = Number(e.target.value); });
   /* ── lägga en handling i kalendern ── */
   // Klockan nu. Prototypens klocka stod still; allt som räknar med nu läser den riktiga tiden.
   const nowHM = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
@@ -2731,7 +2813,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       // Leveranstypernas namn (guide) behövs för "levererar …"; hämtas en gång.
       if (!S.types && !S.typesAsked) { S.typesAsked = true; deliverableTypes().then(() => { if (state.screen === "metoder" && !state.obj) render(); }); }
       const gaps = libEntries("atom_proposal").filter((u) => u.unbuilt).length + (S.agenda?.search_misses?.proposals?.length || 0);
-      const tabs = [["bibliotek", "Bibliotek", libEntries("method").length], ["forbattra", "Förbättra", improveCards().length], ["ledtider", "Ledtider", S.lead?.rows ? S.lead.rows.filter((r) => r.origin === "guessed").length || "" : ""], ["luckor", "Luckor", gaps || ""]];
+      const tabs = [["bibliotek", "Bibliotek", libEntries("method").length], ["forbattra", "Förbättra", improveCards().length], ["ledtider", "Ledtider", S.lead?.rows ? S.lead.rows.filter((r) => r.origin === "guessed").length || "" : ""], ["luckor", "Luckor", (gaps + (S.lib ? defaultHoursSteps().size : 0)) || ""]];
       const body = { bibliotek: library, forbattra: improve, ledtider: leadTable, luckor: gapsList }[state.metTab] || library;
       return head
         + `<details class="how"><summary>Hur funkar det?</summary><p>En <b>metod</b> är stegen för en leverans. Varje steg görs av kod ${kindMark("code")}, Claude ${kindMark("llm")} eller en människa ${kindMark("human")}. Under stegen finns <b>molekyler</b> (en sak som händer) och <b>atomer</b> (koden). En kund kan ha egna skillnader i ett <b>kundflöde</b> — metoden är gemensam, kunden anpassad.</p></details>`
@@ -4056,9 +4138,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   /** Luckorna: obyggda atomförslag (B-107). Koden byggs av en människa ur förslaget. */
   function gapsList() {
     const us = libEntries("atom_proposal").filter((u) => u.unbuilt);
-    if (!us.length) return `<div class="empty"><b>Inga obyggda atomförslag.</b>Varje steg som vilar på kod har koden.</div>` + searchMisses();
+    if (!us.length) return defaultHoursLine() + `<div class="empty"><b>Inga obyggda atomförslag.</b>Varje steg som vilar på kod har koden.</div>` + searchMisses();
     const stopsIn = (u) => libEntries("method").filter((m) => stepIds(m).some((id) => stepBlockers(id).some((b) => b.id === u.id)));
-    return `<div class="card">${us.map((u) => { const ms = stopsIn(u);
+    return defaultHoursLine() + `<div class="card">${us.map((u) => { const ms = stopsIn(u);
       return row({ kind: `<span class="kind warn" title="Behöver åtgärd">${ic("alert")}</span>`, title: `Bygg atomen: ${esc(u.label)}`,
         why: `Atomförslag · obyggt${u.surface ? ` · ${esc(u.surface)}` : ""} · ${ms.length ? `${ms.map((m) => `«${esc(m.label)}»`).join(", ")} stannar här` : u.used_by ? `används i ${u.used_by} molekyl${u.used_by === 1 ? "" : "er"}` : "ingen metod använder det än"}`,
         act: `<button class="btn sm" data-copybuild="${esc(u.id)}">Kopiera kommandot</button>` }); }).join("")}</div>`
@@ -4082,7 +4164,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
           b.delivers ? `Leveranstypen: ${typeLabel(b.delivers)}.` : "",
           "Ett steg är EN effekt: en sak som händer, av en utförare. performer: code när ett skript gör det, llm när en modell gör det, human när en människa gör det. Dela hellre i två steg än att skriva ett som gör två saker. Behåll ordningen i planen.",
           "Fyll aldrig i ett fält texten inte säger något om — utelämna det, så blir det en fråga. Gissa aldrig en ledtid. label och summary på svenska; name på engelska, snake_case.",
-          "hours är DIN uppskattning av timmarna en människa lägger på steget en gång (den egna tiden, inte väntan): för kod 0 om ingen tittar, för llm granskningstiden. hours_reason är skälet i en mening. Det visas som en uppskattning (?).",
+          "hours är DIN uppskattning av timmarna en människa lägger på steget en gång (den egna tiden, inte väntan): för alla typer. Räkna ALLA stegtyper, även kod och Claude: den egna tiden är också att administrera steget — starta det, läsa resultatet, iterera och rätta. En research-körning eller ett resonemang med Claude kan vara 1 h eller mer; ett enkelt kodsteg är en kvart. Förvalet är sista utväg, så ge ett eget tal för varje steg. hours är obligatoriskt på VARJE steg. hours_reason är skälet i en mening. Det visas som en uppskattning (?).",
           'Svara med ENBART JSON: {"label":"<metodens namn>","summary":"<en mening>","name":"<modul>.method.<namn_på_engelska>","completion":"<när leveransen är klar, bara om texten säger det>","steps":[{"label":"<verb först>","summary":"<en mening>","from_plan_line":"<meningen ur texten, ordagrant>","performer":"code|llm|human","surface":"<system, bara om det står>","effect":{"verb":"reads|creates|updates|deletes|sends|publishes","object":"<vad som påverkas>"},"needs":[],"leaves":[],"hours":<tal>,"hours_reason":"<en mening>"}]}'].filter(Boolean).join("\n"),
           { modelTier: "default" });
         if (!r?.label || !Array.isArray(r.steps) || !r.steps.length || r.steps.some((s) => !s?.label || !s?.summary))
@@ -4458,7 +4540,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
         + `<div class="line">${ids.length} steg · ${ts.length ? `${ts.length} uppgift${ts.length === 1 ? "" : "er"} i planen` : "inte i planen nu"} · ${vs.length ? `${vs.length} kundflöde${vs.length === 1 ? "" : "n"}` : "inget kundflöde"}</div></div>`
         + `<button class="btn primary" data-edstart="1">Ändra metoden</button><button class="btn" data-adapt="1">Anpassa för kund</button></div>`
         + `<div class="card section"><h2>Kedjan</h2><div class="chain">${(m.parts || []).map((s, i) => `${i ? `<span class="arrow">${ic("chev")}</span>` : ""}<span class="node ${stepBlockers(s.id).length ? "removed" : ""}">${kindMark(stepKind(s.id))}<span class="l">${esc(s.label)}</span></span>`).join("")}</div></div>`
-        + `<div class="card" style="margin-top:16px"><div class="head"><h2>Stegen · kan de köras?</h2>${S.lead?.loading ? `<span class="meta">hämtar ledtiderna…</span>` : ""}</div>`
+        + `<div class="card" style="margin-top:16px"><div class="head"><h2>Stegen · kan de köras?</h2>${S.lead?.loading ? `<span class="meta">hämtar ledtiderna…</span>` : ""}<span class="right"><button class="btn sm ai" data-hsuggest="1">${SP} Föreslå timmar</button></span></div>`
+        + hoursPanel(m)
         + ids.map((id) => { const e = libById(id), p = stepInfo(id), lt = leadOf(id), k = stepKind(id), bl = stepBlockers(id);
           const facts = [p?.responsible ? `ansvarig ${esc(lbl(p.responsible))}` : "", lt ? `${lt.days} arbetsdag${lt.days === 1 ? "" : "ar"} ${originMark(ORIGIN_OF[lt.origin] || lt.origin)}` : "",
             (p?.leaves || []).length ? `lämnar ${p.leaves.map((lv) => esc(lbl(lv))).join(", ")}` : ""].filter(Boolean).join(" · ");
@@ -4517,7 +4600,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
               s.status === "new_molecule" ? "Blir en ny molekyl; koden finns" : "",
               s.gap ? `Saknas i koden: ${esc(s.gap.what)}${s.gap.proposal ? " — blir ett atomförslag som en människa bygger" : ""}` : "",
               s.stop ? "Här lämnar något huset och ska godkännas först" : "",
-              s.hours != null ? `${hh(s.hours)} (?) — ${s.hours_source === "estimate" ? "Claudes uppskattning" : "förvalet för stegets slag"}` : ""].filter(Boolean).join(" · ")}</div></span></div>`).join("")
+              s.hours != null ? `${hh(s.hours)} (?) — ${s.hours_source === "estimate" ? "Claudes uppskattning" : "bara förvalet — ingen uppskattning kom med; Föreslå timmar på metoden"}` : ""].filter(Boolean).join(" · ")}</div></span></div>`).join("")
             + (asArr(a?.sittings).length ? `<p class="meta">${a.sittings.map((x) => `${x.map((l) => `«${esc(l)}»`).join(" och ")} görs i samma pass: korta steg i följd av samma person blir ett block i planen.`).join("<br>")}</p>` : "")
             + `<p class="meta">finns = återanvänds · <span style="color:var(--amber)">ny</span> = ny molekyl, koden finns · saknas = atomförslag, en människa bygger koden</p>`
             + ((a?.stops_at || []).length ? `<p class="meta" style="color:var(--amber)">${a.stops_at.map((x) => `Metoden stannar vid «${esc(x.step)}»: ${esc(x.why)}`).join("<br>")}</p>` : "") + `</div>`
@@ -10222,6 +10305,11 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (ds.propaccept) { applyProposal(state.obj.edit); render(); return toast("Förslaget ligger i utkastet. Inget är sparat än."); }
     if (ds.propreject) { state.obj.edit.proposal = null; return render(); }
     if (ds.edhow) return suggestMoments(t);
+    if (ds.hsuggest) return suggestHours(t);
+    if (ds.hgo) { state.screen = "metoder"; return Promise.resolve(open({ type: "method", id: ds.hgo, title: methodById(ds.hgo)?.label || "" })).then(() => suggestHours(null)); }
+    if (ds.hsave) return saveHours(t);
+    if (ds.hreject) { state.obj.hprop = null; return render(); }
+    if (ds.hyes) return confirmHours(t);
     // Utkastet börjar med ledtiderna som de står, så att de hämtas först om de inte finns.
     if (ds.edstart) return (S.lead?.rows ? Promise.resolve() : loadLeadTimes()).then(() => { if (state.obj?.type !== "method") return;
       state.obj.edit = startEdit(methodById(state.obj.id)); render(); });
