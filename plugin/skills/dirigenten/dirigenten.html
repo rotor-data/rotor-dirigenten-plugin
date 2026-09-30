@@ -1121,7 +1121,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "5283b9a", published: "2026-09-30" };
+  const SIDA = { version: "1ed7d72", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -2352,6 +2352,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      Öppna steget ›, Kör…, Klart, Svara, Ta över, Påminn, Granska ›.
      Meddelandena står under knappen Meddelanden, inte här. */
   const chip = (word, tone = "") => `<span class="chip ${tone}">${esc(word)}</span>`;
+  /** Ett steg som kan börja tidigare än sitt sparade fönster (src/plan/pull-forward.ts): «kan börja nu» eller «kan dras fram N dagar». */
+  const pullChip = (s) => s?.pull_forward && !s.done
+    ? chip(s.pull_forward.can_start_now ? "kan börja nu" : `kan dras fram ${s.pull_forward.days} ${s.pull_forward.days === 1 ? "arbetsdag" : "arbetsdagar"}`, "green") : "";
   /** Ett steg som går att köra direkt: kod, en session kan göra det, och nästa anrop kör steget (inte markerar det). */
   // Ett kodsteg som behöver värden (B-272) körs från steget, där Claude fyller i dem.
   const runnableNow = (x, k) => k === "code" && x.by === "session" && x.next?.tool === "execute_step" && !x.next.args?.mark
@@ -2386,7 +2389,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
         : `<button class="btn sm primary" data-step="${esc(key)}">Öppna steget ›</button>`;
       return trow({ cls: hot ? "burn" : "mine", icon: k === "llm" ? "sparkles" : "ring", icls: k === "llm" ? "cl" : "",
         title: workTitle(t, x), attrs: `data-open-step="${esc(key)}"`, acts,
-        meta: lead + (absenceOf(x.task, x.step).length ? chip("borta den dagen", "red") : "") + (st?.critical && !hot ? chip("utan marginal", "red") : "") + qs + ms + stepTag(x.headline) + tail });
+        meta: lead + (absenceOf(x.task, x.step).length ? chip("borta den dagen", "red") : "") + (st?.critical && !hot ? chip("utan marginal", "red") : "") + pullChip(st) + qs + ms + stepTag(x.headline) + tail });
     }
     // Sen, utan metod (B-275): inget steg att följa. Registrera att den gått ut, avbryt den eller ge den en metod.
     if (x.kind === "late_without_method") {
@@ -4451,7 +4454,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
         + `<div class="line">${kindMark(k)} ${esc(kindTxt)} · ansvarig ${s.done ? esc(lbl(s.responsible, "–")) : `<button class="fld" data-handover-to="1" title="Ge steget till någon annan">${esc(lbl(s.responsible, "–"))}</button>`}`
         + ` · ${!s.done ? `<button class="fld" data-dp-step="${esc(t.id)}|${esc(s.step)}" title="Detaljplanera steget: ledtid, timmar och vem">${short(s.start)}–${short(s.latest_end ? lastOf(s.latest_end, s.start) : lastDay(s))}</button>` : `${short(s.start)}–${short(s.latest_end ? lastOf(s.latest_end, s.start) : lastDay(s))}`}`
         + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="meta">kan flyttas ${plural(s.float_days, "dag", "dagar")}</span>`)
-          + assumeChips(s)
+          + (pullChip(s) ? ` · ${pullChip(s)}` : "") + assumeChips(s)
           + (s.added ? ` · <span class="chip">Bara i den här uppgiften</span> <button class="linkbtn" data-remove-added="${esc(t.id)}|${esc(s.step)}">Ta bort ur uppgiften</button>` : "") + (s.done ? ` · <span class="chip green">${ic("check")} ${doneText(s)}</span>` : "") + (started ? ` · ${started}` : "") + `</div></div></div>`
         // Borta den dagen (F17): markeringen och handlingen bredvid, före allt annat.
         + (s.done ? "" : absenceOf(t.id, s.step).map((a) => `<div class="warnnote" style="margin:4px 0 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${ic("alert")} ${esc(absenceText(a))}.</span>`
@@ -5814,7 +5817,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const out = [];
     for (const o of opens()) {
       if (o.task !== t.id || o.step !== s.step) continue;
-      if ((o.reason === "requirement" && o.blocking) || o.reason === "chase") out.push({ kind: "question", what: o.question || lbl(o.what, "ett underlag"), on: on(o.asked_of), by: o.answer_by });
+      if ((o.reason === "requirement" && o.blocking) || o.reason === "chase") out.push({ kind: "question", what: o.question || lbl(o.what, "ett underlag"), on: on(o.asked_of), by: o.answer_by,
+        ...(isDay(o.answer_by) && isDay(s.start) && day10(o.answer_by) > day10(s.start) ? { late: true } : {}) });
       else if (o.reason === "handover_pending") out.push({ kind: "decision", what: `${on(o.asked_of)} har inte tagit emot steget än`, on: on(o.asked_of), by: o.answer_by });
       else if (["confirmation", "approval_may_be_stale"].includes(o.reason)) out.push({ kind: "decision", what: o.question || lbl(o.what, "ett beslut"), on: on(o.asked_of), by: o.answer_by });
     }
@@ -5827,13 +5831,15 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   const dpEntry = (ts, what) => {
     const ids = ts.filter((t) => dpSteps(t).length).map((t) => t.id); if (!ids.length) return "";
     const planned = ts.flatMap((t) => dpSteps(t)).filter((s) => s.planned).length;
+    const pull = ts.flatMap((t) => dpSteps(t)).filter((s) => s.pull_forward && !s.done).length;
     return `<div class="dp-entry"><button class="btn" data-dp-open="${esc(ids.join(","))}">${ic("calendar")} Detaljplanering – tid</button>`
+      + (pull ? `<button class="btn" data-dp-pull="${esc(ids.join(","))}" title="Ett steg blev klart före sin tid. Du ser först vad som flyttas, och inget sparas förrän du säger till.">Dra fram resten</button>` : "")
       + `<span class="meta">Ledtid, timmar och vem gör vad${ids.length > 1 ? `, för alla ${ids.length} uppgifter i ${esc(what)}` : ""}.${planned ? ` ${plural(planned, "steg", "steg")} detaljplanerat.` : ""}</span></div>`;
   };
   function dpOpen(ids, sel = null) {
     const ts = ids.map(taskById).filter(Boolean); if (!ts.length) return toast("Uppgiften finns inte längre i planen.", null, true);
     const same = DP.tasks.join() === ts.map((t) => t.id).join();
-    if (!same) Object.assign(DP, { edits: {}, sit: {}, pick: [], fold: {}, preview: {}, error: null, proposal: null, scroll: null });
+    if (!same) Object.assign(DP, { edits: {}, sit: {}, pick: [], fold: {}, preview: {}, error: null, proposal: null, scroll: null, pull: null });
     const dv = deliveryOfTask(ts[0]);
     Object.assign(DP, { open: true, tasks: ts.map((t) => t.id), sel, pop: null,
       title: ts.length > 1 && dv && !dv.implicit ? dv.label : taskTitle(ts[0]) });
@@ -5841,7 +5847,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (sel) requestAnimationFrame(() => document.querySelector(`#dp [data-dp-blk="${CSS.escape(sel)}"]`)?.focus({ preventScroll: false }));
   }
   function dpClose() {
-    DP.open = false; DP.pop = null; clearTimeout(DP.timer);
+    DP.open = false; DP.pop = null; DP.pull = null; clearTimeout(DP.timer);
     const el = $("#dp"); if (el) { el.close?.(); el.remove(); }
     document.body.classList.remove("dp-on");
   }
@@ -5964,7 +5970,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const say = `${s.label}: ${sub}${warn ? `. ${warn}` : ""}${stops.length ? `. ${stops.map((x) => `${STOP_WORD[x.kind]} på ${x.on}`).join(", ")}` : ""}`;
     return `<div class="dp-row${DP.sel === k ? " sel" : ""}${picked ? " pick" : ""}">`
       + `<div class="dp-lab"><span class="nm">${stops.length ? `<button class="dp-stop" data-dp-stop="${esc(k)}" aria-label="${esc(stops.map((x) => `${STOP_WORD[x.kind]}: ${x.what}`).join(". "))}">!</button>` : ""}<b>${esc(s.label)}</b></span>`
-      + `<span class="meta">${s.done ? "klart" : esc(sub)}</span>${warn && !s.done ? `<span class="dp-warn">${esc(warn)}</span>` : ""}</div>`
+      + `<span class="meta">${s.done ? "klart" : esc(sub)}</span>${pullChip(s)}${warn && !s.done ? `<span class="dp-warn">${esc(warn)}</span>` : ""}</div>`
       + `<div class="dp-blk${s.done ? " done" : ""}${late ? " late" : ""}${edited ? " edited" : ""}${s.critical && !s.done ? " crit" : ""}${picked ? " pick" : ""}" data-dp-blk="${esc(k)}" tabindex="${s.done ? -1 : 0}" role="button"`
       + ` style="left:${left}px;width:${width}px" aria-label="${esc(`${say}. Pilar flyttar en dag, Skift och pil ändrar sista dagen, Alt flyttar bara detta. Mellanslag eller Skift-klick väljer blocket.`)}" title="${esc(say)}">`
       + (s.done ? "" : `<i class="dp-e l" data-dp-edge="${esc(k)}|l" title="Dra: första dagen"></i><i class="dp-e r" data-dp-edge="${esc(k)}|r" title="Dra: sista dagen"></i>`)
@@ -6066,13 +6072,53 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
             : `<span>Timmar</span><button class="btn" data-dp-kb="${esc(k)}|hours|-1" aria-label="${esc(s.label)}: en kvart mindre">−15 min</button><button class="btn" data-dp-kb="${esc(k)}|hours|1" aria-label="${esc(s.label)}: en kvart mer">+15 min</button>`
               + `<button class="btn quiet" data-dp-who="${esc(k)}|0">${ic("user")} Vem</button>`) + `</div>`) + `</li>`; }).join("") + `</ul>`).join("");
   }
+  /** «Dra fram resten»: de steg som kan börja tidigare, med förhandsvisning och Spara (Daniel P 2026-09-30). */
+  const dpPullSteps = () => dpTasks().flatMap((t) => dpSteps(t).filter((s) => s.pull_forward && !s.done).map((s) => ({ t, s })));
+  function dpPullBox() {
+    const P = DP.pull, can = dpPullSteps();
+    if (P?.preview) {
+      const rows = Object.values(P.preview).flatMap((x) => asArr(x?.steps).filter((y) => y.changed));
+      return `<div class="dp-prop"><b>Förhandsvisning · dra fram</b> ${rows.map((r) => `${esc(r.label)} ${esc(wday(r.start))} – ${esc(wday(lastOf(r.end, r.start)))}`).join(" · ")}. Ledtid och timmar är lika. Inget är sparat än.`
+        + ` <button class="btn sm primary" data-dp-pullsave="1"${P.saving ? " disabled" : ""}>${P.saving ? "Sparar…" : "Spara"}</button> <button class="btn sm quiet" data-dp-pullno="1">Inte nu</button></div>`;
+    }
+    if (P?.busy) return `<div class="dp-prop meta">Räknar fram vad som kan dras fram…</div>`;
+    return can.length ? `<div class="dp-prop">${plural(can.length, "steg", "steg")} kan börja tidigare: ${can.map(({ s }) => esc(s.label)).join(", ")}. <button class="btn sm" data-dp-pull="1">Dra fram resten</button></div>` : "";
+  }
+  async function dpPullPreview() {
+    DP.pull = { busy: true }; dpRender();
+    try {
+      const preview = {};
+      for (const t of dpTasks().filter((x) => dpSteps(x).some((s) => s.pull_forward && !s.done))) preview[t.id] = await call("execute_step", { task: t.id, plan: { pull_forward: true } });
+      DP.pull = Object.keys(preview).length ? { preview } : null;
+    } catch (e) { DP.pull = null; fail("Det gick inte att räkna fram vad som kan dras fram", e); }
+    dpRender();
+  }
+  async function dpPullSave() {
+    const P = DP.pull; if (!P?.preview || P.saving) return;
+    P.saving = true; dpRender();
+    const before = {}, done = [];
+    for (const id of Object.keys(P.preview)) before[id] = dpSteps(taskById(id)).filter((s) => s.pull_forward).map((s) => ({ step: s.step, ...(s.planned?.window ? { window: s.planned.window } : { clear: true }) }));
+    let failed = null;
+    for (const id of Object.keys(P.preview)) {
+      try { await call("execute_step", { task: id, plan: { pull_forward: true, save: true } }); done.push(id); } catch (e) { failed = { id, e }; break; }
+    }
+    DP.pull = null;
+    for (const id of done) await lvRefresh({ task: id });
+    dpRender();
+    if (failed) return fail(`Sparade ${done.length} av ${Object.keys(P.preview).length}. ${taskTitle(taskById(failed.id))} sparades inte`, failed.e);
+    toast("Stegen är framdragna.", async () => {
+      for (const id of done) await call("execute_step", { task: id, plan: { save: true, accept_late: true, steps: before[id] }, user_approval: "Ja, ångra framdragningen (klickade Ångra i vyn)" });
+      for (const id of done) await lvRefresh({ task: id });
+      dpRender();
+    });
+  }
   function dpFoot() {
     const n = dpCount(), late = dpLate(), p = Object.values(DP.preview);
     const warns = [...new Set(p.flatMap((x) => asArr(x?.warnings)))], handed = p.flatMap((x) => asArr(x?.handed_to));
     const moved = p.reduce((a, x) => a + asArr(x?.moved).length, 0);
     const state_ = DP.saving ? "Sparar…" : DP.pending ? "Räknar om…" : DP.error ? `Kunde inte räkna: ${DP.error}` : !n ? "Inga ändringar. Dra i blocken, eller använd pilarna."
       : `${plural(moved, "steg", "steg")} flyttas · ${late ? `<span class="chip red">Leveransen spricker ${plural(late, "dag", "dagar")} — ett nytt löfte</span>` : `<span class="chip green">Leveransen håller</span>`}`;
-    return `<footer class="dp-foot${n ? " on" : ""}"><div class="dp-say" role="status" aria-live="polite"><div class="dp-line">${n && !DP.pending && !DP.error ? "<b>Förhandsvisning</b> · " : ""}${state_}</div>`
+    return `<footer class="dp-foot${n || DP.pull || dpPullSteps().length ? " on" : ""}"><div class="dp-say" role="status" aria-live="polite">${dpPullBox()}<div class="dp-line">${n && !DP.pending && !DP.error ? "<b>Förhandsvisning</b> · " : ""}${state_}</div>`
       + (n && warns.length ? `<div class="dp-warn">${warns.map(esc).join(" · ")}</div>` : "")
       + (n && handed.length ? `<div class="meta">${handed.map((h) => `${esc(h.label)} görs av ${esc(h.to)} direkt när du sparar — ${esc(h.to)} får ett meddelande.`).join(" ")}</div>` : "")
       + (n ? `<div class="meta">Inget är sparat än.</div>` : "")
@@ -6085,7 +6131,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const p = DP.pop; if (!p) return "";
     const [tid, sid, i] = p.key.split("|"), t = taskById(tid), s = stepOf(t, sid); if (!s) return "";
     if (p.kind === "stop") return `<div class="dp-popover" style="top:${p.y}px;left:${p.x}px" role="dialog" aria-label="Det som stoppar"><b>${esc(s.label)}</b>`
-      + dpStops(t, s).map((x) => `<p><span class="chip ${x.kind === "wait" ? "amber" : x.kind === "decision" ? "blue" : "red"}">${esc(STOP_WORD[x.kind])}</span> på <b>${esc(x.on)}</b><br>${esc(x.what)}${x.by ? `<br><span class="meta">Behövs senast ${esc(wday(x.by))}</span>` : ""}</p>`).join("")
+      + dpStops(t, s).map((x) => `<p><span class="chip ${x.kind === "wait" ? "amber" : x.kind === "decision" ? "blue" : "red"}">${esc(STOP_WORD[x.kind])}</span> på <b>${esc(x.on)}</b><br>${esc(x.what)}${x.by ? `<br><span class="meta">Behövs senast ${esc(wday(x.by))}</span>` : ""}${x.late ? ` <span class="chip red">besvaras för sent</span> <span class="meta">steget börjar ${esc(wday(s.start))}</span>` : ""}</p>`).join("")
       + `<button class="btn sm quiet" data-dp-popclose="1">Stäng</button></div>`;
     const c = dpCur(t, s), cur = c.people[Number(i)]?.party, list = [...new Map([...(S.agenda?.colleagues ?? []), ...peopleList()].map((x) => [x.id, x])).values()];
     const hrs = c.people[Number(i)]?.hours ?? 0, warn = dpWarning(c);
@@ -6215,10 +6261,13 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (Number.isFinite(v)) { dpSetHours(t, s, Number(i), v); dpChanged(); }
   });
   document.addEventListener("click", (e) => {
-    const b = e.target.closest?.("[data-dp-open],[data-dp-close],[data-dp-mode],[data-dp-zoom],[data-dp-names],[data-dp-std],[data-dp-undo],[data-dp-save],[data-dp-who],[data-dp-hstep],[data-dp-pick],[data-dp-share],[data-dp-unshare],[data-dp-stop],[data-dp-popclose],[data-dp-kb],[data-dp-goto],[data-dp-propose],[data-dp-noprop],[data-dp-step],[data-dp-join],[data-dp-split],[data-dp-unpick],[data-dp-fold],[data-dp-foldall]");
+    const b = e.target.closest?.("[data-dp-open],[data-dp-close],[data-dp-mode],[data-dp-zoom],[data-dp-names],[data-dp-std],[data-dp-undo],[data-dp-save],[data-dp-who],[data-dp-hstep],[data-dp-pick],[data-dp-share],[data-dp-unshare],[data-dp-stop],[data-dp-popclose],[data-dp-kb],[data-dp-goto],[data-dp-propose],[data-dp-noprop],[data-dp-pull],[data-dp-pullsave],[data-dp-pullno],[data-dp-step],[data-dp-join],[data-dp-split],[data-dp-unpick],[data-dp-fold],[data-dp-foldall]");
     if (!b) { if (DP.pop && !e.target.closest?.(".dp-popover")) { DP.pop = null; dpRender(); } return; }
     const ds = b.dataset;
     if (ds.dpOpen) return dpOpen(ds.dpOpen.split(","));
+    if (ds.dpPull) { if (ds.dpPull !== "1") dpOpen(ds.dpPull.split(",")); return void dpPullPreview(); }
+    if (ds.dpPullsave) return void dpPullSave();
+    if (ds.dpPullno) { DP.pull = null; return dpRender(); }
     if (ds.dpStep) { const [tid] = ds.dpStep.split("|"), t = taskById(tid), dv = t && deliveryOfTask(t);
       return dpOpen(dv && !dv.implicit ? lvTasks(dv).map((x) => x.id) : [tid], ds.dpStep); }
     if (ds.dpClose) return dpClose();
