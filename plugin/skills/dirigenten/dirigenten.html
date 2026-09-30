@@ -54,6 +54,14 @@ body.rail-narrow .nav.railtoggle .ico .i { transform: rotate(180deg); }
 .nav[aria-current="page"] .ico { color: var(--accent); }
 .nav .count { margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--accent-ink); }
 .rail .spacer { flex: 1; }
+.vbadge { font-size: var(--fs-meta); color: var(--text-3); padding: 4px 8px; line-height: 1.35; }
+.vbadge .vdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: #9aa0a6; }
+.vbadge.ok .vdot { background: #2e9e5b; } .vbadge.new .vdot { background: #e0a800; } .vbadge.new { color: var(--text-2, inherit); }
+.vbadge button { font: inherit; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; text-align: left; }
+.vbadge .vlink { color: var(--link, inherit); text-decoration: underline; }
+.vbadge.full { padding: 8px 0; margin-bottom: 8px; }
+body.rail-narrow .rail .vbadge .vtxt { display: none; } body.rail-narrow .rail .vbadge { text-align: center; padding: 4px 0; } body.rail-narrow .rail .vbadge .vdot { margin: 0; }
+@media (max-width: 900px) { .rail .vbadge { display: none; } }
 .me { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-sm); border: 0; background: none; color: var(--text-2); }
 .me:hover { background: var(--bg-hover); }
 .avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--accent-weak); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; }
@@ -1108,6 +1116,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     <button class="nav" data-go="metoder"><span class="ico"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='m12 3 9 5-9 5-9-5z'/><path d='m3 13 9 5 9-5'/></svg></span><span class="txt">Metoder</span></button>
     <button class="nav" data-go="filer"><span class="ico"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/></svg></span><span class="txt">Filer</span></button>
     <div class="spacer"></div>
+    <div class="vbadge" data-vbadge="rail"></div>
     <button class="nav railtoggle" id="rail-toggle" type="button" aria-pressed="false"><span class="ico"><svg class='i' viewBox='0 0 24 24' aria-hidden='true'><path d='m15 6-6 6 6 6'/></svg></span><span class="txt">Fäll in menyn</span></button>
     <button class="me" data-go="installningar"><span class="avatar" id="me-initials">·</span><span class="txt" id="me-name">Inställningar</span></button>
   </nav>
@@ -1148,7 +1157,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "27731c1", published: "2026-09-30" };
+  const SIDA = { version: "2cc2105", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1201,13 +1210,14 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
    * Claude den när kopian läggs ut med färdigheten.
    */
   const OWN_URL = /https:\/\/claude\.ai\/(?:code\/)?artifact\/[0-9a-f-]{8,}/i;
+  const ownUrl = () => { try { return [location.href, document.referrer].map((t) => String(t || "").match(OWN_URL)?.[0]).find(Boolean) || null; } catch { return null; } };
   async function saveOwnAddress() {
     try {
       const id = me();
       if (!id || typeof claude === "undefined" || !claude.use || WEB.on) return;
       const user = await claude.use("user");
       if (!user || !user.isOwner()) return;
-      const found = [location.href, document.referrer].map((t) => String(t || "").match(OWN_URL)?.[0]).find(Boolean);
+      const found = ownUrl();
       if (!found || found === S.viewsUrl) return;
       await call("registry_define", { change: true, node: { id, views_url: found } });
       S.viewsUrl = found;
@@ -1239,6 +1249,18 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     return "offer";
   }
   /*AUTO-END*/
+  /*BADGE-BEGIN*/
+  /** Läget i klartext: ok = senaste, new = nyare finns, unknown = /vy/version nåddes inte. */
+  function versionState(own, server) {
+    if (!server) return { k: "unknown", label: "Kunde inte kontrollera" };
+    return server === own ? { k: "ok", label: "Senaste" } : { k: "new", label: "Ny version finns — Uppdatera nu" };
+  }
+  /** Är dirigentens adress för personen en annan än den här kopians? Båda måste vara kända. */
+  function otherView(own, mine) {
+    const id = (u) => String(u || "").match(/artifact\/([0-9a-f-]{8,})/i)?.[1]?.toLowerCase() || "";
+    return !!id(own) && !!id(mine) && id(own) !== id(mine);
+  }
+  /*BADGE-END*/
   const AUTO_S = { server: null, offer: false, running: false };
   const AUTO_KEY = "dirigenten-autouppdatering";
   const readGuard = () => { try { return JSON.parse(snapStore().getItem(AUTO_KEY) || "{}") || {}; } catch { return {}; } };
@@ -1255,6 +1277,37 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     catch { /* stoppad av sidans regler — plan_state bär samma stämpel */ }
     return S.serverVersion || null;
   }
+  /** Klick på märket: kontrollera nu, utan att lägga ut något. */
+  async function checkNow() {
+    const b = $("[data-vbadge=rail]"); if (b) b.classList.add("busy");
+    AUTO_S.server = await fetchServerStamp(); paintVersion();
+  }
+  /** Har vyn artifact-rättigheten? Utan den kan den inte lägga ut sig själv. */
+  let CAN_SELF = null;
+  async function probeSelf() {
+    try { CAN_SELF = !!(typeof claude !== "undefined" && claude.use && await claude.use("artifact")); } catch { CAN_SELF = false; }
+    paintVersion();
+  }
+  function paintVersion() {
+    const own = SIDA.version, st = versionState(own, S.serverVersion || AUTO_S.server), addr = ownUrl(), other = otherView(addr, S.viewsUrl);
+    for (const el of document.querySelectorAll("[data-vbadge]")) {
+      const full = el.dataset.vbadge === "full";
+      el.className = `vbadge ${st.k}${full ? " full" : ""}`;
+      const cant = CAN_SELF === false;
+      const act = st.k === "new" && !cant ? `<button class="vlink" data-vself="1">${esc(st.label)}</button>` : esc(st.label);
+      const noself = cant && st.k === "new" ? `<div class="vtxt">Den här vyn kan inte uppdatera sig själv — ${S.viewsUrl ? `<a class="vlink" href="${esc(S.viewsUrl)}" target="_blank" rel="noopener">öppna din vy i sidofältet</a>` : "öppna din vy i sidofältet"}</div>` : "";
+      el.innerHTML = `<button data-vcheck="1" title="Kontrollera nu"><i class="vdot"></i><span class="vtxt">Version ${esc(own)} · ${esc(SIDA.published)}</span></button>`
+        + `<div class="vtxt">${act}</div>${noself}`
+        + (SELF.msg ? `<div class="vtxt">${esc(SELF.msg)}</div>` : "")
+        + (addr && (full || other) ? `<div class="vtxt" title="${esc(addr)}">${full ? `Den här vyn: ${esc(addr)}` : ""}</div>` : "")
+        + (other ? `<div class="vtxt">Din vy enligt dirigenten är en annan — <a class="vlink" href="${esc(S.viewsUrl)}" target="_blank" rel="noopener">öppna den</a></div>` : "");
+    }
+  }
+  setTimeout(probeSelf, 0);
+  document.addEventListener("click", (ev) => {
+    if (ev.target?.closest?.("[data-vcheck]")) checkNow();
+    else if (ev.target?.closest?.("[data-vself]")) selfUpdate();
+  });
   async function autoCheck(trigger) {
     if (AUTO_S.running || SELF.state === "busy") return;
     AUTO_S.running = true;
@@ -2409,7 +2462,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (DP.open) dpRender();
     renderPanel();
     // Den riktiga tiden för hämtningen — prototypens klocka stod på 09:42.
-    paintFresh();
+    paintFresh(); paintVersion();
     // Pluginen (etapp 5): servern säger när personens plugin är äldre än den senaste.
     const pu = $("#plugin-update"), up = S.agenda?.plugin_update;
     if (pu) { pu.hidden = !up;
@@ -3020,6 +3073,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       const tab = admin && state.setTab === "anvandare" ? "anvandare" : "mina";
       const head = `<div class="pagehead"><h1>Inställningar</h1><span class="sub">${tab === "anvandare" ? "Vilka som finns i huset och vad de får göra — bara för superadmin" : "Dina val — gäller bara dig och sparas på dig i dirigenten"}</span>`
         + `<div class="actions"><button class="btn" data-setreload="1">Hämta igen</button></div></div>`
+        + `<div data-vbadge="full"></div>`
         + (admin ? `<div class="tabs" role="tablist">${[["mina", "Mina inställningar"], ["anvandare", "Användare och behörigheter"]].map(([k, l]) => `<button role="tab" data-settab="${k}" aria-selected="${tab === k}">${l}</button>`).join("")}</div>` : "");
       if (!S.settings) return head + (S.settingsError
         ? `<div class="empty"><b>Inställningarna kunde inte hämtas.</b>${esc(S.settingsError.message || S.settingsError)}. Inget är ändrat.</div>`
