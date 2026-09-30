@@ -1157,7 +1157,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "2cc2105", published: "2026-09-30" };
+  const SIDA = { version: "f26ae5b", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1166,7 +1166,6 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
    */
   const SELF = { state: null, msg: "" };
   const VIEW_FILE_URL = "https://rotor-dirigenten.netlify.app/vy/fil";
-  const VERSION_URL = "https://rotor-dirigenten.netlify.app/vy/version";
   const wrapView = (text) => '<!doctype html><html lang="sv"><head><meta charset="utf-8">'
     + '<meta name="viewport" content="width=device-width,initial-scale=1"><title>Dirigenten</title></head><body>\n'
     + text + "\n</body></html>\n";
@@ -1273,8 +1272,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     || [...document.querySelectorAll("textarea")].some((t) => t.value.trim()) || Object.keys(readDrafts()).length > 0; } catch { return true; } };
   const busyNow = () => INFLIGHT > 0 || !!S.phase || SELF.state === "busy" || !!DP.saving;
   async function fetchServerStamp() {
-    try { const r = await fetch(VERSION_URL, { cache: "no-store" }); if (r.ok) { const j = await r.json(); if (j?.version) return String(j.version); } }
-    catch { /* stoppad av sidans regler — plan_state bär samma stämpel */ }
+    // Stämpeln läses genom kopplingen (plan_state): sidans sandlåda i claude.ai når inte
+    // dirigentens adress direkt, och ett tyst försök först visade inget (2026-09-30).
     return S.serverVersion || null;
   }
   /** Klick på märket: kontrollera nu, utan att lägga ut något. */
@@ -7516,7 +7515,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
    * som förut, i anropet, och större får besked om var de kan laddas upp.
    */
   const INLINE_MAX = 512 * 1024;
-  const UPLOAD = { direct: null, home: null, why: null };
+  /** En bit i en styckvis uppladdning: 256 kB blir ungefär 350 kB som base64 i anropet. */
+  const CHUNK_BYTES = 256 * 1024;
   const sha256Hex = async (file) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", await file.arrayBuffer()))]
     .map((b) => b.toString(16).padStart(2, "0")).join("");
   /** Ett besked som står kvar medan filen går upp, och visar hur långt den kommit. */
@@ -7525,23 +7525,6 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     el.className = "toast"; el.setAttribute("role", "status");
     document.body.append(el);
     return { set: (text) => { el.textContent = text; }, done: () => el.remove() };
-  }
-  /** Filens bytes till uppladdningsadressen. XMLHttpRequest, för att kunna visa hur långt den kommit. */
-  function postFile(up, file, onProgress) {
-    return new Promise((ok, bad) => {
-      const x = new XMLHttpRequest();
-      x.open(up.method || "POST", up.url);
-      for (const [k, v] of Object.entries(up.headers || {})) x.setRequestHeader(k, v);
-      x.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
-      x.onerror = () => bad(Object.assign(new Error("dirigentens adress gick inte att nå härifrån"), { code: "UNREACHABLE" }));
-      x.onload = () => {
-        let body = null;
-        try { body = JSON.parse(x.responseText); } catch { /* inte JSON */ }
-        if (x.status >= 200 && x.status < 300) return ok(body);
-        bad(Object.assign(new Error(body?.error?.message || `dirigenten svarade ${x.status}`), { code: body?.error?.code || `HTTP_${x.status}` }));
-      };
-      x.send(file);
-    });
   }
   /** En fil in i banken och registret. Svaret är asset_registers, vilken väg filen än tog. */
   async function sendFile(f, fields) {
@@ -7553,33 +7536,35 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const thumb = IMG_TYPE.test(f.type) ? await makeThumb(f) : null;
     const note = progressNote();
     note.set(`Laddar upp ${f.name}…`);
+    const yes = `Ja i vyn: ladda upp ${f.name}`.slice(0, 500);
     try {
-      if (UPLOAD.direct !== false) {
-        try {
-          const d = await call("asset_register", { ...fields, filename: f.name, mime,
-            upload_sha256: await sha256Hex(f), ...(thumb ? { thumbnail_base64: thumb } : {}) });
-          // Utan adress säger vi serverns eget besked — aldrig en tyst reserv (felrapport 13:37).
-          if (!d?.upload?.url) throw Object.assign(new Error(`${f.name} laddades inte upp: ${d?.error?.message || d?.summary || "servern gav ingen uppladdningsadress"}`), { code: d?.error?.code || "NO_UPLOAD_URL" });
-          try { UPLOAD.home = `${new URL(d.upload.url).origin}/vy`; } catch { /* ingen adress att visa */ }
-          const r = await postFile(d.upload, f, (p) => note.set(`Laddar upp ${f.name} · ${Math.round(p * 100)} %`));
-          UPLOAD.direct = true;
-          return r;
-        } catch (e) {
-          // Bara två lägen får gå vidare till reserven: adressen gick inte att nå härifrån, eller
-          // servern säger uttryckligen att direkt uppladdning inte är inkopplad. Allt annat visas.
-          if (e?.code !== "UNREACHABLE" && e?.code !== "NOT_READY") throw e;
-          UPLOAD.direct = false;
-          UPLOAD.why = e?.code === "UNREACHABLE" ? "dirigentens uppladdningsadress gick inte att nå från vyn" : String(e?.message || "direkt uppladdning är inte inkopplad");
+      // Allt går genom kopplingen: vyns sandlåda i claude.ai når inte dirigentens /upload
+      // (felrapport 2026-09-30 14:34). Små filer i ett anrop, större i bitar.
+      if (f.size <= CHUNK_BYTES) {
+        const small = thumb && f.size + thumb.length * 0.75 <= INLINE_MAX ? thumb : null;
+        return await call("asset_register", { ...fields, filename: f.name, mime, base64: await toBase64(f),
+          ...(small ? { thumbnail_base64: small } : {}), confirmed: true, user_approval: yes });
+      }
+      const sha = await sha256Hex(f);
+      const id = `u${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+      const total = Math.ceil(f.size / CHUNK_BYTES);
+      let last = null;
+      for (let i = 0; i < total; i++) {
+        const part = f.slice(i * CHUNK_BYTES, Math.min(f.size, (i + 1) * CHUNK_BYTES));
+        const base64 = await toBase64(part);
+        note.set(`Laddar upp ${f.name} · ${i + 1} av ${total}`);
+        // En bit som inte går fram försöks igen två gånger; samma bit två gånger är ofarligt.
+        for (let attempt = 1; ; attempt++) {
+          try {
+            last = await call("asset_register", { ...fields, filename: f.name, mime, base64,
+              chunk: { id, index: i, total, sha256: sha }, confirmed: true, user_approval: yes });
+            break;
+          } catch (e) {
+            if (attempt >= 3 || e?.code === "VALIDATION" || e?.code === "FORBIDDEN") throw new Error(`${f.name}: bit ${i + 1} av ${total} gick inte upp — ${e?.message || e}`);
+          }
         }
       }
-      // Originalet laddas upp oförändrat; vyn krymper aldrig bilder (Daniel P 2026-09-30).
-      // Hänvisa aldrig till /vy — där finns ingen Claude.
-      if (f.size > INLINE_MAX)
-        throw new Error(`${f.name} är ${fsize(f.size)}, och härifrån går bara filer upp till 500 kB${UPLOAD.why ? ` (${UPLOAD.why})` : ""}. `
-          + "Be Claude i chatten om uppladdningsrutan — där går filer upp till 4 MB — eller ange var filen finns.");
-      const small = thumb && f.size + thumb.length * 0.75 <= INLINE_MAX ? thumb : null;
-      return await call("asset_register", { ...fields, filename: f.name, mime, base64: await toBase64(f),
-        ...(small ? { thumbnail_base64: small } : {}), confirmed: true, user_approval: `Ja i vyn: ladda upp ${f.name}`.slice(0, 500) });
+      return last;
     } finally { note.done(); }
   }
   const busy = async (btn, fn) => { if (btn) btn.disabled = true; try { return await fn(); } finally { if (btn?.isConnected) btn.disabled = false; } };
