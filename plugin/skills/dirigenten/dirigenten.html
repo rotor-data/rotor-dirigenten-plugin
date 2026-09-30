@@ -1130,7 +1130,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "48c5ab6", published: "2026-09-30" };
+  const SIDA = { version: "8e72c2d", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1272,7 +1272,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
    */
   const VIEW_OPS = {
     read: ["context", "intake_status", "classify_propose", "library_check", "library_debt", "measure_debt",
-      "read_call", "content_search", "content_list", "asset_get", "content_get", "bug_report", "view_file"],
+      "read_call", "content_search", "content_list", "asset_get", "content_get", "bug_report", "view_file", "image_picker"],
     write: ["registry_define", "registry_append", "intake_submit", "intake_order", "classify_accept",
       "molecule_build", "workflow_build", "method_build", "method_variant_build",
       "question_answer", "time_report", "task_lock", "message", "note_link",
@@ -5848,12 +5848,14 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const pull = ts.flatMap((t) => dpSteps(t)).filter((s) => s.pull_forward && !s.done).length;
     return `<div class="dp-entry"><button class="btn" data-dp-open="${esc(ids.join(","))}">${ic("calendar")} Detaljplanering – tid</button>`
       + (pull ? `<button class="btn" data-dp-pull="${esc(ids.join(","))}" title="Ett steg blev klart före sin tid. Du ser först vad som flyttas, och inget sparas förrän du säger till.">Dra fram resten</button>` : "")
+      + `<button class="btn ai" data-pc-start="${esc(ids.join(","))}" title="Claude planerar en del i taget efter lärdomarna. Förslaget visas i detaljplaneringen, och inget sparas förrän du säger till.">${SP} Planera med Claude</button>`
+      + (ids.length > 1 ? `<select data-pc-part aria-label="Delen Claude ska planera">${ids.map((id) => `<option value="${esc(id)}">${esc(taskTitle(taskById(id)))}</option>`).join("")}</select>` : "")
       + `<span class="meta">Ledtid, timmar och vem gör vad${ids.length > 1 ? `, för alla ${ids.length} uppgifter i ${esc(what)}` : ""}.${planned ? ` ${plural(planned, "steg", "steg")} detaljplanerat.` : ""}</span></div>`;
   };
   function dpOpen(ids, sel = null) {
     const ts = ids.map(taskById).filter(Boolean); if (!ts.length) return toast("Uppgiften finns inte längre i planen.", null, true);
     const same = DP.tasks.join() === ts.map((t) => t.id).join();
-    if (!same) Object.assign(DP, { edits: {}, sit: {}, pick: [], fold: {}, preview: {}, error: null, proposal: null, scroll: null, pull: null });
+    if (!same) Object.assign(DP, { edits: {}, sit: {}, pick: [], fold: {}, preview: {}, error: null, proposal: null, scroll: null, pull: null, why: null });
     const dv = deliveryOfTask(ts[0]);
     Object.assign(DP, { open: true, tasks: ts.map((t) => t.id), sel, pop: null,
       title: ts.length > 1 && dv && !dv.implicit ? dv.label : taskTitle(ts[0]) });
@@ -5921,7 +5923,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     }
     DP.saving = false;
     for (const id of done) for (const k of [...Object.keys(DP.edits), ...Object.keys(DP.sit)]) if (k.startsWith(`${id}|`)) { delete DP.edits[k]; delete DP.sit[k]; }
-    DP.preview = {}; DP.proposal = proposal;
+    DP.preview = {}; DP.proposal = proposal; DP.why = null;
     for (const id of done) await lvRefresh({ task: id });
     dpRender();
     if (failed) return fail(`Sparade ${done.length} av ${ts.length}. ${taskTitle(failed.t)} sparades inte`, failed.e);
@@ -5930,6 +5932,43 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       for (const id of done) await lvRefresh({ task: id });
       dpRender();
     });
+  }
+  /**
+   * «Planera med Claude» (docs/planeringslardomar.md): arbetssättet ur
+   * prompten «Planera projektet» (guide prompt:plan_project) går till panelens
+   * Claude för EN del. Svaret slutar med ett planblock; det läggs som
+   * ändringar i detaljplaneringen, där servern förhandsvisar och kontrollerar
+   * det (violations). Spara och Ångra är detaljplaneringens egna.
+   */
+  async function pcStart(ids, part) {
+    const t = taskById(part); if (!t) return toast("Delen finns inte längre i planen.", null, true);
+    let method;
+    try { method = (await call("guide", { topic: "prompt:plan_project", format: "full" }))?.text; } catch (e) { return fail("Arbetssättet gick inte att läsa", e); }
+    await ask(`${method}\n\nPlanera nu delen «${taskTitle(t)}» (task: ${t.id}) och bara den. Avsluta svaret med förslaget i ett kodblock märkt plan, med JSON: `
+      + `{"tasks":[{"task":"${t.id}","steps":[{"step":"<stegets id>","window":{"start":"ÅÅÅÅ-MM-DD","end":"ÅÅÅÅ-MM-DD"},"hours":<timmar, bara teamets steg>,"same_sitting":<true|false, valfritt>,"why":"<skälet>"}]}]}. `
+      + `Ta bara med steg som ändras. Vyn visar förslaget i detaljplaneringen som förhandsvisning; spara ingenting själv.`, `Planera med Claude: ${taskTitle(t)}`);
+    const last = [...convo].reverse().find((m) => m.role === "assistant" && !m.error);
+    const m = /```plan\s*([\s\S]*?)```/.exec(last?.text || "");
+    if (!m) return toast("Claude gav inget planförslag att visa. Fråga vidare i panelen.", null, true);
+    let prop; try { prop = JSON.parse(m[1]); } catch { return toast("Planförslaget gick inte att läsa. Be Claude skriva om det.", null, true); }
+    // Blocket är för vyn, inte för människan: det tas ur texten i panelen.
+    last.text = last.text.replace(m[0], "").trim(); last.content = last.text; saveSamtal(); renderPanel();
+    dpOpen(ids);
+    const why = [];
+    for (const pt of asArr(prop?.tasks)) {
+      const task = taskById(pt.task); if (!task || !DP.tasks.includes(task.id)) continue;
+      for (const x of asArr(pt.steps)) {
+        const s = stepOf(task, x.step); if (!s) continue;
+        const k = dpKey(task, s), b = dpBase(task, s);
+        const win = isDay(x.window?.start) && isDay(x.window?.end) ? { start: x.window.start, end: x.window.end } : { start: b.start, end: b.end };
+        const people = Number.isFinite(x.hours) && !s.external && b.people.length === 1 ? [{ party: b.people[0].party, hours: Number(x.hours) }] : b.people;
+        DP.edits[k] = { ...b, ...win, people, work: null };
+        if (x.same_sitting === true || x.same_sitting === false) DP.sit[k] = x.same_sitting;
+        if (x.why) why.push(`${s.label}: ${x.why}`);
+      }
+    }
+    DP.why = why;
+    dpRender(); dpSchedule();
   }
   /** «Gör till standard i metoden» (beslut 2): ett förslag, som den som planerar bekräftar här. */
   async function dpPropose(btn) {
@@ -6135,10 +6174,13 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const n = dpCount(), late = dpLate(), p = Object.values(DP.preview);
     const warns = [...new Set(p.flatMap((x) => asArr(x?.warnings)))], handed = p.flatMap((x) => asArr(x?.handed_to));
     const moved = p.reduce((a, x) => a + asArr(x?.moved).length, 0);
+    const viol = [...new Set(p.flatMap((x) => asArr(x?.violations).map((v) => v.text)))];
     const state_ = DP.saving ? "Sparar…" : DP.pending ? "Räknar om…" : DP.error ? `Kunde inte räkna: ${DP.error}` : !n ? "Inga ändringar. Dra i blocken, eller använd pilarna."
       : `${plural(moved, "steg", "steg")} flyttas · ${late ? `<span class="chip red">Leveransen spricker ${plural(late, "dag", "dagar")} — ett nytt löfte</span>` : `<span class="chip green">Leveransen håller</span>`}`;
     return `<footer class="dp-foot${n || DP.pull || dpPullSteps().length ? " on" : ""}"><div class="dp-say" role="status" aria-live="polite">${dpPullBox()}<div class="dp-line">${n && !DP.pending && !DP.error ? "<b>Förhandsvisning</b> · " : ""}${state_}</div>`
       + (n && warns.length ? `<div class="dp-warn">${warns.map(esc).join(" · ")}</div>` : "")
+      + (n && viol.length ? `<div class="dp-warn">Bryter mot planeringens regler: ${viol.map(esc).join(" · ")}</div>` : "")
+      + (DP.why?.length ? `<div class="meta">Claudes skäl: ${DP.why.map(esc).join(" · ")}</div>` : "")
       + (n && handed.length ? `<div class="meta">${handed.map((h) => `${esc(h.label)} görs av ${esc(h.to)} direkt när du sparar — ${esc(h.to)} får ett meddelande.`).join(" ")}</div>` : "")
       + (n ? `<div class="meta">Inget är sparat än.</div>` : "")
       + (asArr(DP.proposal).length ? `<div class="dp-prop">Förslag till metoden: ${DP.proposal.map((r) => `${esc(stepOf(dpTasks().find((t) => stepOf(t, r.step)), r.step)?.label || "steget")} ${plural(r.lead_days, "dag", "dagar")}`).join(", ")}. <button class="btn sm" data-dp-propose="1">Lägg in i metoden</button> <button class="btn sm quiet" data-dp-noprop="1">Inte nu</button></div>` : "")
@@ -6290,9 +6332,11 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (Number.isFinite(v)) { dpSetHours(t, s, Number(i), v); dpChanged(); }
   });
   document.addEventListener("click", (e) => {
-    const b = e.target.closest?.("[data-dp-open],[data-dp-close],[data-dp-closeyes],[data-dp-closeno],[data-dp-mode],[data-dp-zoom],[data-dp-names],[data-dp-std],[data-dp-undo],[data-dp-save],[data-dp-who],[data-dp-hstep],[data-dp-pick],[data-dp-passwho],[data-dp-passpick],[data-dp-share],[data-dp-unshare],[data-dp-stop],[data-dp-popclose],[data-dp-kb],[data-dp-goto],[data-dp-propose],[data-dp-noprop],[data-dp-pull],[data-dp-pullsave],[data-dp-pullno],[data-dp-step],[data-dp-join],[data-dp-split],[data-dp-unpick],[data-dp-fold],[data-dp-foldall]");
+    const b = e.target.closest?.("[data-dp-open],[data-pc-start],[data-dp-close],[data-dp-closeyes],[data-dp-closeno],[data-dp-mode],[data-dp-zoom],[data-dp-names],[data-dp-std],[data-dp-undo],[data-dp-save],[data-dp-who],[data-dp-hstep],[data-dp-pick],[data-dp-passwho],[data-dp-passpick],[data-dp-share],[data-dp-unshare],[data-dp-stop],[data-dp-popclose],[data-dp-kb],[data-dp-goto],[data-dp-propose],[data-dp-noprop],[data-dp-pull],[data-dp-pullsave],[data-dp-pullno],[data-dp-step],[data-dp-join],[data-dp-split],[data-dp-unpick],[data-dp-fold],[data-dp-foldall]");
     if (!b) { if (DP.pop && !e.target.closest?.(".dp-popover")) { DP.pop = null; dpRender(); } return; }
     const ds = b.dataset;
+    if (ds.pcStart) { const ids = ds.pcStart.split(","); const part = b.parentElement?.querySelector("[data-pc-part]")?.value || ids[0];
+      return void pcStart(ids, part); }
     if (ds.dpOpen) return dpOpen(ds.dpOpen.split(","));
     if (ds.dpPull) { if (ds.dpPull !== "1") dpOpen(ds.dpPull.split(",")); return void dpPullPreview(); }
     if (ds.dpPullsave) return void dpPullSave();
