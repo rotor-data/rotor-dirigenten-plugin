@@ -1147,7 +1147,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "ff78c14", published: "2026-09-30" };
+  const SIDA = { version: "7427150", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -7501,6 +7501,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       + (IP.sources && !IP.prompt && (searchable || IP.source === "adobe_stock") ? `<form class="ip-bar" data-ip-form="1"><input type="search" id="ip-q" value="${esc(ipQ())}" placeholder="Sökord, t.ex. solpaneler på villatak" aria-label="Sökord"><button class="btn" type="submit">Sök</button></form>` : "")
       + (IP.sources && !IP.prompt ? `<div class="meta">${esc(IP.sources.find((s) => s.key === IP.source)?.note || "")}</div>` : "")
       + ipBody()
+      // Felet syns på alla flikar, också vid uppladdning (felrapport 2026-09-30: «det hände inget»).
+      + (IP.error && (IP.source === "upload" || IP.prompt || IP.results?.length) ? `<div class="warnnote" role="alert">${esc(IP.error)}</div>` : "")
+      + (IP.busy ? `<div class="meta" role="status">Arbetar…</div>` : "")
       + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button>`
       + (IP.results?.length && !IP.prompt && IP.source !== "upload" ? `<button class="btn" data-ip-compare="1" ${n >= 2 && n <= 4 ? "" : "disabled"}>${IP.compare ? "Tillbaka till rutnätet" : `Jämför ${n >= 2 ? n : "2–4"} valda`}</button>` : "")
       + (!IP.prompt && IP.source !== "adobe_stock" ? `<span class="right"><button class="btn primary" data-ip-save="1" ${IP.source === "upload" || n === 1 ? "" : "disabled"}>${IP.source === "upload" ? "Ladda upp och välj" : "Spara val"}</button></span>` : "")
@@ -7510,6 +7513,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   /** Bilden in i kundens filer (med ursprung), och fältet bild på innehållet pekar på den. */
   async function ipSave(btn) {
     const base = { asset_type: "core.asset.image", customer: IP.customer, for_task: IP.task };
+    IP.error = null;
     await busy(btn, async () => {
       try {
         let ref = null, name = "";
@@ -7520,8 +7524,13 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
           const by = $("#ip-by")?.value.trim(), gen = $("#ip-gen")?.value, prompt = $("#ip-promptin")?.value.trim();
           const provenance = { source: "upload", origin, ...(by ? { photographer: by } : {}), ...(gen ? { generator: gen } : {}), ...(prompt ? { prompt } : {}) };
           if (origin === "ai_generated" && (!gen || !prompt)) throw new Error("En AI-genererad bild sparas med prompten och tjänsten — fyll i båda.");
-          const r = await sendFile(f, { ...base, acquisition: "provided", folder: "Bilder/Uppladdat", provenance });
+          // Filen först, sedan ursprunget på samma fil: prompten får inte plats i uppladdningsadressen (felrapport 2026-09-30).
+          const r = await sendFile(f, { ...base, acquisition: "provided", folder: "Bilder/Uppladdat" });
           ref = r?.ref?.uri; name = f.name;
+          const sha = r?.ref?.sha256;
+          if (!ref || !sha) throw new Error(`${f.name} laddades inte upp — servern gav ingen referens.`);
+          await call("asset_register", { ...base, acquisition: "provided", from_ref: sha, provenance,
+            confirmed: true, user_approval: `Ja i vyn: ursprunget för ${f.name}`.slice(0, 500) });
         } else {
           const c = IP.results.find((x) => IP.picked.has(ipKey(x)));
           if (!c) throw new Error("Markera en bild först.");
