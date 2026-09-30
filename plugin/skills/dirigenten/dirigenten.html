@@ -1147,7 +1147,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "7427150", published: "2026-09-30" };
+  const SIDA = { version: "10a5bef", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -7356,9 +7356,11 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
           UPLOAD.direct = false;
         }
       }
+      // Originalet laddas upp oförändrat; vyn krymper aldrig bilder (Daniel P 2026-09-30).
+      // Hänvisa aldrig till /vy — där finns ingen Claude.
       if (f.size > INLINE_MAX)
-        throw new Error(`${f.name} är ${fsize(f.size)}. Härifrån går bara filer upp till 500 kB att skicka. `
-          + (WEB.on ? "Ange var filen finns i stället." : `Öppna vyn på dirigentens egen adress${UPLOAD.home ? ` (${UPLOAD.home})` : ""} och ladda upp den där, eller ange var filen finns.`));
+        throw new Error(`${f.name} är ${fsize(f.size)}, och härifrån går bara filer upp till 500 kB. `
+          + "Be Claude i chatten om uppladdningsrutan — där går filer upp till 4 MB — eller ange var filen finns.");
       const small = thumb && f.size + thumb.length * 0.75 <= INLINE_MAX ? thumb : null;
       return await call("asset_register", { ...fields, filename: f.name, mime, base64: await toBase64(f),
         ...(small ? { thumbnail_base64: small } : {}), confirmed: true, user_approval: `Ja i vyn: ladda upp ${f.name}`.slice(0, 500) });
@@ -7386,13 +7388,13 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   const ipThumb = (c) => c.thumbnail_base64 ? `data:${c.thumbnail_mime || "image/webp"};base64,${c.thumbnail_base64}` : c.thumb_url || "";
   const ipKey = (c) => `${c.source}:${c.source_id}`;
   /** Sökorden: förslaget ur texten för externa källor; i dirigentens filer söks på namn, så där börjar fältet tomt och visar de senaste. */
-  const ipQ = () => IP.source === "bank" ? IP.bankQ : IP.q;
+  const ipQ = () => IP.source === "bank" ? IP.bankQ : IP.source === "hubspot" ? IP.hsQ : IP.q;
   const ipSize = (c) => c.width && c.height ? `${c.width} × ${c.height} px` : "mått okända";
   async function ipOpen(taskId, stepId, kind) {
     const t = taskById(taskId);
     if (!t?.customer?.id) return toast("Steget har ingen kund, så det finns inga källor att välja ur.", null, true);
     Object.assign(IP, { open: true, task: taskId, step: stepId, customer: t.customer.id, customerLabel: lbl(t.customer),
-      source: "bank", q: "", bankQ: "", results: null, error: null, picked: new Map(), compare: false, prompt: null,
+      source: "bank", q: "", bankQ: "", hsQ: "", results: null, error: null, picked: new Map(), compare: false, prompt: null,
       contents: [], content: "", sources: null, formats: [], textArea: null, busy: false, more: false, page: 1 });
     ipRender("Hämtar kundens källor…");
     try {
@@ -7409,7 +7411,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   }
   async function ipSources() {
     const d = await call("image_picker", { mode: "sources", customer: IP.customer, ...(IP.content ? { content: IP.content } : {}) });
-    IP.sources = d?.sources || []; IP.q = d?.suggested_query || ""; IP.formats = d?.formats || []; IP.textArea = d?.text_area || null;
+    IP.sources = d?.sources || []; // Unsplash och Adobe Stock söker bara på engelska (Daniel P 2026-09-30).
+    IP.q = d?.suggested_query_en || ""; IP.formats = d?.formats || []; IP.textArea = d?.text_area || null;
   }
   async function ipSearch(page = 1) {
     const src = IP.sources?.find((s) => s.key === IP.source);
@@ -7432,7 +7435,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   }
   /** Ett format med bilden beskuren som renderingen gör det, och mallens textyta inritad. */
   function ipFrame(c, f) {
-    const src = c.preview_url || ipThumb(c);
+    const src = ipThumb(c) || c.preview_url;
     const cf = f.crop_fraction || { x: 0, y: 0, w: 1, h: 1 };
     const pos = (o, s) => s >= 1 ? 0 : (o / (1 - s)) * 100;
     const ta = f.text_area;
@@ -7498,7 +7501,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       + (status ? `<div class="meta">${esc(status)}</div>` : "")
       + (IP.sources ? `<div class="ip-bar"><div class="seg" role="group" aria-label="Källa">${IP.sources.map((s) => `<button aria-pressed="${!IP.prompt && s.key === IP.source}" data-ip-src="${esc(s.key)}">${esc(s.label)}${s.cost ? ` <span class="n">${esc(s.cost.toLowerCase())}</span>` : ""}</button>`).join("")}</div>`
         + `<button class="btn ai" data-ip-prompt="1">Skapa bildprompt</button></div>` : "")
-      + (IP.sources && !IP.prompt && (searchable || IP.source === "adobe_stock") ? `<form class="ip-bar" data-ip-form="1"><input type="search" id="ip-q" value="${esc(ipQ())}" placeholder="Sökord, t.ex. solpaneler på villatak" aria-label="Sökord"><button class="btn" type="submit">Sök</button></form>` : "")
+      + (IP.sources && !IP.prompt && (searchable || IP.source === "adobe_stock") ? `<form class="ip-bar" data-ip-form="1"><input type="search" id="ip-q" value="${esc(ipQ())}" placeholder="${IP.source === "unsplash" || IP.source === "adobe_stock" ? "Sökord på engelska, t.ex. solar panels house roof" : "Sökord i filnamnet"}" aria-label="Sökord"><button class="btn" type="submit">Sök</button></form>` : "")
       + (IP.sources && !IP.prompt ? `<div class="meta">${esc(IP.sources.find((s) => s.key === IP.source)?.note || "")}</div>` : "")
       + ipBody()
       // Felet syns på alla flikar, också vid uppladdning (felrapport 2026-09-30: «det hände inget»).
@@ -7550,14 +7553,22 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
             title: cur.title ?? doc?.title ?? "", markdown: cur.markdown ?? doc?.markdown ?? "", fields: { ...(cur.fields || doc?.fields || {}), bild: ref },
             confirmed: true, user_approval: `Ja i vyn: bilden ${name} till innehållet`.slice(0, 500) });
         }
-        IP.open = false; closeDialog();
-        toast(IP.content ? `${name} är sparad och vald till innehållet.` : `${name} är sparad i kundens filer.`);
+        IP.open = false;
+        // Claude ska veta att bilden finns och kunna gå vidare, t.ex. rendera (Daniel P 2026-09-30).
+        const label = IP.contents.find((c) => c.id === IP.content)?.name;
+        const note = label ? `Bilden ${name} är uppladdad och kopplad till posten «${label}» (fältet bild, ${ref}).`
+          : `Bilden ${name} är uppladdad till ${IP.customerLabel}s filer (${ref}), inte kopplad till något innehåll.`;
+        IP.done = note;
+        dialog(`<h2>Bilden är sparad</h2><p>${esc(note)}</p>`
+          + `<p class="meta">${sample ? "Claude i panelen har fått beskedet." : "Kopiera beskedet till Claude, så vet Claude att bilden finns och kan gå vidare."}</p>`
+          + `<div class="bar-actions"><button class="btn quiet" data-close="1">Stäng</button><button class="btn${sample ? "" : " primary"}" data-ip-tell="1">Kopiera till Claude</button></div>`);
+        if (sample && !running) ask(`${note} Säg kort vad nästa steg är.`, note).catch(() => {});
       } catch (e) { IP.error = e?.message || String(e); ipRender(); }
     });
   }
   document.addEventListener("submit", (e) => {
     if (!e.target?.closest?.("[data-ip-form]")) return;
-    e.preventDefault(); const v = $("#ip-q")?.value.trim() || ""; if (IP.source === "bank") IP.bankQ = v; else IP.q = v; IP.compare = false; ipSearch();
+    e.preventDefault(); const v = $("#ip-q")?.value.trim() || ""; if (IP.source === "bank") IP.bankQ = v; else if (IP.source === "hubspot") IP.hsQ = v; else IP.q = v; IP.compare = false; ipSearch();
   });
   document.addEventListener("change", async (e) => {
     if (e.target?.id !== "ip-content") return;
@@ -7566,7 +7577,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     ipSearch();
   });
   document.addEventListener("click", (e) => {
-    const el = e.target?.closest?.("[data-ip-open],[data-ip-src],[data-ip-pick],[data-ip-compare],[data-ip-only],[data-ip-prompt],[data-ip-back],[data-ip-copy],[data-ip-save],[data-ip-more]");
+    const el = e.target?.closest?.("[data-ip-tell],[data-ip-open],[data-ip-src],[data-ip-pick],[data-ip-compare],[data-ip-only],[data-ip-prompt],[data-ip-back],[data-ip-copy],[data-ip-save],[data-ip-more]");
     if (!el) return;
     const ds = el.dataset;
     if (ds.ipOpen) { const [t, s, k] = ds.ipOpen.split("|"); return ipOpen(t, s, k); }
@@ -7578,6 +7589,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (ds.ipBack) { IP.prompt = null; return ipRender(); }
     if (ds.ipMore) return ipSearch(IP.page + 1);
     if (ds.ipSave) return ipSave(el);
+    if (ds.ipTell) return copyToChat(IP.done || "", "Beskedet om bilden");
     if (ds.ipCopy) {
       const text = $("#ip-prompt-text")?.value || "";
       return (navigator.clipboard?.writeText(text) ?? Promise.reject(new Error("urklippet går inte att nå här")))
