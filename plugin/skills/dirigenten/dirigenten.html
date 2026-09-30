@@ -444,6 +444,23 @@ ol.how { margin: 0; padding-left: 20px; } ol.how li { padding: 3px 0; }
 .radio:has(input:checked) { border-color: var(--accent); background: var(--bg-selected); }
 .radio input { margin-top: 3px; }
 .radio .d { color: var(--text-2); font-size: var(--fs-meta); }
+/* Bildväljaren (docs/image-picker-plan.md): husets dialog, segment, rutnät och fält — inga egna färger. */
+.dialog:has(.ip) { width: min(980px, 100%); }
+.ip { display: flex; flex-direction: column; gap: var(--s3); }
+.ip-bar { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; }
+.ip-bar input[type="search"] { flex: 1; min-width: 180px; border: 1px solid var(--line-strong); border-radius: 10px; padding: 7px 10px; min-height: var(--h-control); background: var(--bg); color: var(--text); }
+.ip .fgrid { padding: 0; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.ip .fcard { border: 1px solid var(--line); border-radius: var(--r-sm); padding: 6px; cursor: pointer; background: var(--bg); }
+.ip .fcard[aria-pressed="true"] { border-color: var(--accent); background: var(--bg-selected); }
+.ip .fcard .ph img { object-fit: cover; }
+.ip-cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--s3); }
+.ip-cmp .col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ip-frames { display: flex; gap: 6px; align-items: flex-start; }
+.ip-frame { position: relative; flex: 1; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg-subtle) no-repeat; overflow: hidden; }
+.ip-frame .ta { position: absolute; border: 1.5px dashed var(--accent); background: var(--accent-weak); opacity: .75; }
+.ip-frame .lbl { position: absolute; left: 4px; top: 4px; }
+.ip-prompt textarea { width: 100%; min-height: 180px; font: inherit; font-size: 12.5px; border: 1px solid var(--line-strong); border-radius: 10px; padding: 8px 10px; background: var(--bg-subtle); color: var(--text); }
+@media (max-width: 767px) { .ip .fgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 16px; border-radius: var(--r-pill); display: flex; gap: 14px; align-items: center; z-index: 60; box-shadow: var(--shadow); font-size: 13.5px; }
 .toast button { border: 0; background: none; color: #9fdcdf; font-weight: 600; }
 @media (max-width: 760px) { .toast { width: calc(100vw - 24px); border-radius: 14px; bottom: 70px; } }
@@ -1130,7 +1147,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "8e72c2d", published: "2026-09-30" };
+  const SIDA = { version: "ff78c14", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -4491,7 +4508,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
         + (s.instruktion?.syfte ? `<p style="margin:0 0 8px">${esc(s.instruktion.syfte)}</p>` : "")
         + (how ? `<ol class="how">${how.slice(0, 8).map((h) => `<li>${esc(h)}</li>`).join("")}</ol>` : `<div class="meta">Ingen beskrivning än.</div>`)
         + ((s.leaves || []).length ? `<div class="meta" style="margin-top:8px">Lämnar: ${s.leaves.map((lv) => esc(lbl(lv))).join(", ")}</div>` : "") + `</div></div>`
-        + `<div class="card doarea"><h2>Gör</h2>${doArea}</div>`
+        + `<div class="card doarea"><h2>Gör</h2>${ipEntry(t, s)}${doArea}</div>`
         + (!s.done && (k === "human" || k === "mixed") ? deliverBlock(t, s) : "");
     },
 
@@ -7349,6 +7366,215 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   }
   const busy = async (btn, fn) => { if (btn) btn.disabled = true; try { return await fn(); } finally { if (btn?.isConnected) btn.disabled = false; } };
   const current = () => { const t = taskById(state.obj?.task); return { t, s: stepOf(t, state.obj?.step) }; };
+
+  /* ── Bildväljaren (docs/image-picker-plan.md) ─────────────────────────────
+   * Ett skal: all logik bor på servern (read { op: "image_picker" } och
+   * asset_register med provenance), så att samma sak går att göra med Claude
+   * i Cowork utan vyn. Flödet följer Smyras ImagePickerDialog (flikar per
+   * källa, rutnät, uppladdning), utseendet är vyns egna delar. */
+  const IP = { open: false };
+  const IP_ORIGINS = [["own", "Eget foto"], ["customer", "Kundens bild"], ["ai_generated", "AI-genererad"], ["other", "Annan källa"]];
+  /** Stegen som väljer eller föreslår en bild: de som lämnar en bild eller en bildprompt. */
+  const ipKind = (s) => (s?.leaves || []).some((l) => l?.name === "core.asset.image_prompt") ? "prompt"
+    : (s?.leaves || []).some((l) => l?.name === "core.asset.image") ? "pick" : null;
+  function ipEntry(t, s) {
+    const k = ipKind(s);
+    if (!k || s.done || !t?.customer?.id || kindOf(s) !== "human") return "";
+    return `<div class="bar-actions" style="margin-bottom:10px"><button class="btn primary" data-ip-open="${esc(t.id)}|${esc(s.step)}|${k}">${k === "prompt" ? "Skapa bildprompt" : "Välj bild"}</button>`
+      + `<span class="meta">${k === "prompt" ? "Instruktionen till Claude, med kundens bildregler, texten och formatet." : "Välj ur kundens källor, jämför i formaten och spara med ursprung."}</span></div>`;
+  }
+  const ipThumb = (c) => c.thumbnail_base64 ? `data:${c.thumbnail_mime || "image/webp"};base64,${c.thumbnail_base64}` : c.thumb_url || "";
+  const ipKey = (c) => `${c.source}:${c.source_id}`;
+  /** Sökorden: förslaget ur texten för externa källor; i dirigentens filer söks på namn, så där börjar fältet tomt och visar de senaste. */
+  const ipQ = () => IP.source === "bank" ? IP.bankQ : IP.q;
+  const ipSize = (c) => c.width && c.height ? `${c.width} × ${c.height} px` : "mått okända";
+  async function ipOpen(taskId, stepId, kind) {
+    const t = taskById(taskId);
+    if (!t?.customer?.id) return toast("Steget har ingen kund, så det finns inga källor att välja ur.", null, true);
+    Object.assign(IP, { open: true, task: taskId, step: stepId, customer: t.customer.id, customerLabel: lbl(t.customer),
+      source: "bank", q: "", bankQ: "", results: null, error: null, picked: new Map(), compare: false, prompt: null,
+      contents: [], content: "", sources: null, formats: [], textArea: null, busy: false, more: false, page: 1 });
+    ipRender("Hämtar kundens källor…");
+    try {
+      const list = await call("content_list", { customer: IP.customer }).catch(() => ({ entries: [] }));
+      // Innehållet som sparats till uppgiften först; annars kundens utkast, nyast först.
+      const all = (list?.entries || []).filter((c) => c.status === "utkast").sort((a, b) => String(b.saved_at).localeCompare(String(a.saved_at)));
+      const own = all.filter((c) => c.for_task === taskId);
+      IP.contents = [...own, ...all.filter((c) => c.for_task !== taskId)];
+      IP.content = own[0]?.id || "";
+      await ipSources();
+      if (kind === "prompt") return ipPrompt();
+      await ipSearch();
+    } catch (e) { IP.error = e?.message || String(e); ipRender(); }
+  }
+  async function ipSources() {
+    const d = await call("image_picker", { mode: "sources", customer: IP.customer, ...(IP.content ? { content: IP.content } : {}) });
+    IP.sources = d?.sources || []; IP.q = d?.suggested_query || ""; IP.formats = d?.formats || []; IP.textArea = d?.text_area || null;
+  }
+  async function ipSearch(page = 1) {
+    const src = IP.sources?.find((s) => s.key === IP.source);
+    IP.error = null; IP.page = page;
+    if (!src || src.key === "upload" || src.key === "adobe_stock") { IP.results = null; return ipRender(); }
+    IP.busy = true; ipRender();
+    try {
+      const d = await call("image_picker", { mode: "search", customer: IP.customer, source: IP.source, page,
+        ...(ipQ() ? { q: ipQ() } : {}), ...(IP.content ? { content: IP.content } : {}) });
+      IP.results = page > 1 ? [...(IP.results || []), ...(d?.candidates || [])] : d?.candidates || [];
+      IP.more = Boolean(d?.more);
+    } catch (e) { IP.error = e?.message || String(e); IP.results = []; }
+    IP.busy = false; ipRender();
+  }
+  async function ipPrompt() {
+    IP.busy = true; IP.compare = false; ipRender();
+    try { IP.prompt = await call("image_picker", { mode: "prompt", customer: IP.customer, ...(IP.content ? { content: IP.content } : {}) }); }
+    catch (e) { IP.error = e?.message || String(e); }
+    IP.busy = false; ipRender();
+  }
+  /** Ett format med bilden beskuren som renderingen gör det, och mallens textyta inritad. */
+  function ipFrame(c, f) {
+    const src = c.preview_url || ipThumb(c);
+    const cf = f.crop_fraction || { x: 0, y: 0, w: 1, h: 1 };
+    const pos = (o, s) => s >= 1 ? 0 : (o / (1 - s)) * 100;
+    const ta = f.text_area;
+    return `<div class="ip-frame" style="aspect-ratio:${f.size.width} / ${f.size.height};${src ? `background-image:url('${esc(src)}');background-size:${100 / cf.w}% ${100 / cf.h}%;background-position:${pos(cf.x, cf.w)}% ${pos(cf.y, cf.h)}%` : ""}">`
+      + `<span class="chip lbl">${esc(f.format.replace("x", ":"))}</span>`
+      + (ta ? `<span class="ta" style="left:${ta.x * 100}%;top:${ta.y * 100}%;width:${ta.w * 100}%;height:${ta.h * 100}%" title="Mallens textyta"></span>` : "")
+      + `</div>`;
+  }
+  function ipCard(c) {
+    const on = IP.picked.has(ipKey(c));
+    const img = ipThumb(c);
+    const warn = (c.too_small || [])[0];
+    return `<div class="fcard" role="button" tabindex="0" aria-pressed="${on}" data-ip-pick="${esc(ipKey(c))}">`
+      + `<div class="ph">${img ? `<img src="${esc(img)}" alt="${esc(c.title)}" loading="lazy">` : ic("file")}</div>`
+      + `<div class="t" title="${esc(c.title)}">${esc(c.title)}</div>`
+      + `<div class="meta">${esc(ipSize(c))}</div>`
+      + `<div class="meta">${esc([c.photographer ? `Foto ${c.photographer}` : null, c.license].filter(Boolean).join(" · ") || "Ursprung okänt")}</div>`
+      + (c.cost ? `<span class="chip amber">Kostar licens</span>` : "")
+      + (warn ? `<div class="warnnote">${esc(warn)}</div>` : "")
+      + `</div>`;
+  }
+  function ipBody() {
+    if (IP.prompt) return `<div class="ip-prompt"><p>${esc(IP.prompt.human_instruction)}</p>`
+      + `<textarea readonly id="ip-prompt-text">${esc(IP.prompt.prompt)}</textarea>`
+      + (IP.prompt.image_rules_found ? "" : `<div class="warnnote">Kunden har inga bildregler i dirigenten än, så Claude frågar om stil och ljus i stället.</div>`)
+      + `<div class="bar-actions" style="margin-top:8px"><button class="btn primary" data-ip-copy="1">Kopiera</button><button class="btn quiet" data-ip-back="1">Tillbaka till bilderna</button></div>`
+      + `<p class="meta">När bilden är gjord: ladda upp den under «Ladda upp», med ursprung AI-genererad och prompten du fick av Claude.</p></div>`;
+    if (IP.source === "upload") return `<div class="fields">`
+      + `<label class="field wide"><span>Bilden (PNG eller JPG, högst 4 MB)</span><input type="file" id="ip-file" accept="image/png,image/jpeg,image/webp"></label>`
+      + `<div class="field wide"><span>Var kommer bilden ifrån? Det måste anges.</span><div class="ip-bar">${IP_ORIGINS.map(([v, l], i) => `<label class="radio"><input type="radio" name="ip-origin" value="${v}"${i ? "" : " checked"}> ${esc(l)}</label>`).join("")}</div></div>`
+      + `<label class="field"><span>Fotograf eller upphov (valfritt)</span><input id="ip-by"></label>`
+      + `<label class="field"><span>Tjänst, för en AI-bild</span><select id="ip-gen"><option value="">–</option><option>ChatGPT</option><option>Gemini</option><option>Midjourney</option><option>Adobe Firefly</option><option>Annan</option></select></label>`
+      + `<label class="field wide"><span>Prompten bilden gjordes med, för en AI-bild — så att den går att göra om</span><textarea id="ip-promptin" rows="3"></textarea></label></div>`;
+    if (IP.source === "adobe_stock") {
+      const s = IP.sources.find((x) => x.key === "adobe_stock");
+      const text = `Sök bilder i Adobe Stock till ${IP.customerLabel}${IP.q ? ` på «${IP.q}»` : ""} med Adobe-kopplingen, och visa dem märkta «Kostar licens». `
+        + `Licensiera ingenting förrän jag sagt ja — följ receptet «Licensiera stockbild» i dirigenten (read { op: "image_picker", mode: "search", source: "adobe_stock", customer: "${IP.customer}" }).`;
+      return `<p>${esc(s?.note || "")}</p><p class="meta">Adobe Stock nås bara av Claude, med Adobe-kopplingen. Kopiera texten och klistra in den i Claude.</p>`
+        + `<div class="ip-prompt"><textarea readonly id="ip-prompt-text">${esc(text)}</textarea></div><div class="bar-actions"><button class="btn" data-ip-copy="1">Kopiera</button></div>`;
+    }
+    if (IP.busy && !IP.results?.length) return `<div class="meta">Söker…</div>`;
+    if (IP.error) return `<div class="warnnote">${esc(IP.error)}</div>`;
+    if (!IP.results) return "";
+    if (!IP.results.length) return `<div class="empty"><b>Inga bilder${ipQ() ? ` för «${esc(ipQ())}»` : ""}.</b> Ändra sökorden, välj en annan källa, eller ladda upp en egen bild.</div>`;
+    if (IP.compare) {
+      const sel = IP.results.filter((c) => IP.picked.has(ipKey(c)));
+      return `<div class="ip-cmp">${sel.map((c) => `<div class="col"><div class="ip-frames">${(c.fit || []).map((f) => ipFrame(c, f)).join("")}</div>`
+        + `<div class="t">${esc(c.title)}</div><div class="meta">${esc(ipSize(c))}</div>${(c.too_small || []).map((w) => `<div class="warnnote">${esc(w)}</div>`).join("")}`
+        + `<button class="btn sm" data-ip-only="${esc(ipKey(c))}">Välj den här</button></div>`).join("")}</div>`
+        + `<p class="meta">Den streckade rutan är mallens textyta. Välj en bild där motivet håller i alla format och textytan ligger över en lugn del.</p>`;
+    }
+    return `<div class="fgrid">${IP.results.map(ipCard).join("")}</div>`
+      + (IP.more ? `<div class="bar-actions"><button class="btn quiet" data-ip-more="1">Visa fler</button></div>` : "");
+  }
+  function ipRender(status = "") {
+    if (!IP.open) return;
+    const fmt = (IP.formats || []).map((f) => typeof f === "string" ? f : `${f.label.replace("x", ":")}`).join(", ");
+    const n = IP.picked.size;
+    const searchable = IP.sources?.find((s) => s.key === IP.source)?.searchable;
+    const html = `<div class="ip"><h2>Välj bild · ${esc(IP.customerLabel)}</h2>`
+      + `<div class="meta">${fmt ? `Format ${esc(fmt)}` : ""}${IP.textArea ? " · mallens textyta inritad vid jämförelse" : ""}</div>`
+      + (IP.contents.length ? `<label class="field"><span>Till innehållet</span><select id="ip-content">${IP.contents.map((c) => `<option value="${esc(c.id)}"${c.id === IP.content ? " selected" : ""}>${esc(c.name)}</option>`).join("")}<option value=""${IP.content ? "" : " selected"}>Inget innehåll — spara bara bilden i kundens filer</option></select></label>` : "")
+      + (status ? `<div class="meta">${esc(status)}</div>` : "")
+      + (IP.sources ? `<div class="ip-bar"><div class="seg" role="group" aria-label="Källa">${IP.sources.map((s) => `<button aria-pressed="${!IP.prompt && s.key === IP.source}" data-ip-src="${esc(s.key)}">${esc(s.label)}${s.cost ? ` <span class="n">${esc(s.cost.toLowerCase())}</span>` : ""}</button>`).join("")}</div>`
+        + `<button class="btn ai" data-ip-prompt="1">Skapa bildprompt</button></div>` : "")
+      + (IP.sources && !IP.prompt && (searchable || IP.source === "adobe_stock") ? `<form class="ip-bar" data-ip-form="1"><input type="search" id="ip-q" value="${esc(ipQ())}" placeholder="Sökord, t.ex. solpaneler på villatak" aria-label="Sökord"><button class="btn" type="submit">Sök</button></form>` : "")
+      + (IP.sources && !IP.prompt ? `<div class="meta">${esc(IP.sources.find((s) => s.key === IP.source)?.note || "")}</div>` : "")
+      + ipBody()
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button>`
+      + (IP.results?.length && !IP.prompt && IP.source !== "upload" ? `<button class="btn" data-ip-compare="1" ${n >= 2 && n <= 4 ? "" : "disabled"}>${IP.compare ? "Tillbaka till rutnätet" : `Jämför ${n >= 2 ? n : "2–4"} valda`}</button>` : "")
+      + (!IP.prompt && IP.source !== "adobe_stock" ? `<span class="right"><button class="btn primary" data-ip-save="1" ${IP.source === "upload" || n === 1 ? "" : "disabled"}>${IP.source === "upload" ? "Ladda upp och välj" : "Spara val"}</button></span>` : "")
+      + `</div></div>`;
+    if ($("#layer .ip")) $("#layer .dialog").innerHTML = html; else dialog(html);
+  }
+  /** Bilden in i kundens filer (med ursprung), och fältet bild på innehållet pekar på den. */
+  async function ipSave(btn) {
+    const base = { asset_type: "core.asset.image", customer: IP.customer, for_task: IP.task };
+    await busy(btn, async () => {
+      try {
+        let ref = null, name = "";
+        if (IP.source === "upload") {
+          const f = $("#ip-file")?.files?.[0];
+          if (!f) throw new Error("Välj en bild att ladda upp först.");
+          const origin = document.querySelector("input[name=ip-origin]:checked")?.value || "";
+          const by = $("#ip-by")?.value.trim(), gen = $("#ip-gen")?.value, prompt = $("#ip-promptin")?.value.trim();
+          const provenance = { source: "upload", origin, ...(by ? { photographer: by } : {}), ...(gen ? { generator: gen } : {}), ...(prompt ? { prompt } : {}) };
+          if (origin === "ai_generated" && (!gen || !prompt)) throw new Error("En AI-genererad bild sparas med prompten och tjänsten — fyll i båda.");
+          const r = await sendFile(f, { ...base, acquisition: "provided", folder: "Bilder/Uppladdat", provenance });
+          ref = r?.ref?.uri; name = f.name;
+        } else {
+          const c = IP.results.find((x) => IP.picked.has(ipKey(x)));
+          if (!c) throw new Error("Markera en bild först.");
+          name = c.title;
+          if (c.source === "bank") ref = c.ref;
+          else {
+            const r = await call("asset_register", { ...base, acquisition: "fetched", provenance: { source: c.source, source_id: c.source_id },
+              confirmed: true, user_approval: `Ja i vyn: välj bilden ${c.title}`.slice(0, 500) });
+            ref = r?.ref?.uri;
+          }
+        }
+        if (!ref) throw new Error("Bilden sparades, men servern gav ingen referens att peka på.");
+        if (IP.content) {
+          const doc = await call("content_get", { id: IP.content });
+          const cur = doc?.content || doc || {};
+          await call("content_save", { id: IP.content, customer: IP.customer, kind: cur.kind || doc?.kind, name: cur.name || doc?.name,
+            title: cur.title ?? doc?.title ?? "", markdown: cur.markdown ?? doc?.markdown ?? "", fields: { ...(cur.fields || doc?.fields || {}), bild: ref },
+            confirmed: true, user_approval: `Ja i vyn: bilden ${name} till innehållet`.slice(0, 500) });
+        }
+        IP.open = false; closeDialog();
+        toast(IP.content ? `${name} är sparad och vald till innehållet.` : `${name} är sparad i kundens filer.`);
+      } catch (e) { IP.error = e?.message || String(e); ipRender(); }
+    });
+  }
+  document.addEventListener("submit", (e) => {
+    if (!e.target?.closest?.("[data-ip-form]")) return;
+    e.preventDefault(); const v = $("#ip-q")?.value.trim() || ""; if (IP.source === "bank") IP.bankQ = v; else IP.q = v; IP.compare = false; ipSearch();
+  });
+  document.addEventListener("change", async (e) => {
+    if (e.target?.id !== "ip-content") return;
+    IP.content = e.target.value; IP.prompt = null;
+    try { await ipSources(); } catch (err) { IP.error = err?.message || String(err); }
+    ipSearch();
+  });
+  document.addEventListener("click", (e) => {
+    const el = e.target?.closest?.("[data-ip-open],[data-ip-src],[data-ip-pick],[data-ip-compare],[data-ip-only],[data-ip-prompt],[data-ip-back],[data-ip-copy],[data-ip-save],[data-ip-more]");
+    if (!el) return;
+    const ds = el.dataset;
+    if (ds.ipOpen) { const [t, s, k] = ds.ipOpen.split("|"); return ipOpen(t, s, k); }
+    if (ds.ipSrc) { IP.source = ds.ipSrc; IP.prompt = null; IP.compare = false; IP.picked = new Map(); IP.results = null; return ipSearch(); }
+    if (ds.ipPick) { const k = ds.ipPick; if (IP.picked.has(k)) IP.picked.delete(k); else if (IP.picked.size < 4) IP.picked.set(k, true); return ipRender(); }
+    if (ds.ipCompare) { IP.compare = !IP.compare; return ipRender(); }
+    if (ds.ipOnly) { IP.picked = new Map([[ds.ipOnly, true]]); IP.compare = false; return ipRender(); }
+    if (ds.ipPrompt) return ipPrompt();
+    if (ds.ipBack) { IP.prompt = null; return ipRender(); }
+    if (ds.ipMore) return ipSearch(IP.page + 1);
+    if (ds.ipSave) return ipSave(el);
+    if (ds.ipCopy) {
+      const text = $("#ip-prompt-text")?.value || "";
+      return (navigator.clipboard?.writeText(text) ?? Promise.reject(new Error("urklippet går inte att nå här")))
+        .then(() => toast("Kopierat. Klistra in det i Claude."), () => { $("#ip-prompt-text")?.select(); toast("Urklippet gick inte att nå — texten är markerad, kopiera den med Cmd+C.", null, true); });
+    }
+  });
 
   async function registerAsset(o, fields) {
     const t = taskById(o.task);
