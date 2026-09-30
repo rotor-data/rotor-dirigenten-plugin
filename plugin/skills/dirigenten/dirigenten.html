@@ -774,6 +774,7 @@ dialog.dp { position: fixed; inset: 16px; width: auto; height: auto; max-width: 
 .dp-sum .q { color: rgba(255, 255, 255, .8); font-weight: 600; }
 .dp-sum.warn { background: var(--red); }
 .dp-knob .q { color: var(--text-3); font-weight: 600; }
+.dp-knob.ext { border-style: dashed; color: var(--text-2); cursor: default; }
 .dp-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 8px 20px; border-bottom: 1px solid var(--line); background: var(--accent-weak); }
 .dp-bar .why { font-size: 12px; color: var(--text-2); }
 .dp-list li.sitting { border-left: 3px solid var(--accent); padding-left: 10px; }
@@ -1120,7 +1121,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "b9301af", published: "2026-09-30" };
+  const SIDA = { version: "5283b9a", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1788,11 +1789,12 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     return { id, label: e?.label || p?.label || "Steg", who: p?.responsible?.id || e?.responsible?.id || "", kind: stepKind(id), summary: p?.summary || e?.summary || "",
       how: houseInstruktion(p) ? [houseInstruktion(p).syfte, ...asArr(houseInstruktion(p).saa_goer_du)].filter(Boolean).join(" · ") : lines(p?.recipe?.how).join(" · "),
       src: p?.hours_source || null, now: p?.hours ?? null }; })
-    .filter((r) => !["set", "history", "estimate"].includes(r.src));
+    // Steg som någon utanför oss gör har inga timmar hos oss (Daniel P 2026-09-30).
+    .filter((r) => !["set", "history", "estimate", "external"].includes(r.src) && r.kind !== "ext");
   /** Stegen i alla metoder som ligger på förval, ett steg en gång. */
   const defaultHoursSteps = () => { const seen = new Map();
     for (const m of libEntries("method")) for (const id of stepIds(m)) { const src = stepInfo(id)?.hours_source || null;
-      if (!["set", "history", "estimate"].includes(src) && !seen.has(id)) seen.set(id, m.id); }
+      if (!["set", "history", "estimate", "external"].includes(src) && stepKind(id) !== "ext" && !seen.has(id)) seen.set(id, m.id); }
     return seen; };
   const defaultHoursLine = () => { const d = defaultHoursSteps(); if (!d.size) return "";
     return `<div class="warnnote" style="margin-bottom:12px">${d.size} steg har bara förvalda timmar — <button class="linkbtn" data-hgo="${esc([...d.values()][0])}">Föreslå timmar</button></div>`; };
@@ -1888,6 +1890,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   const refKey = (ref) => JSON.stringify(ref || {});
   const hrs = (m) => m % 60 ? (m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`) : `${m / 60} h`;
   function calDialog(item, day) {
+    // Ett steg som någon utanför oss gör har ledtid men inga timmar att lägga ut (Daniel P 2026-09-30).
+    const refStep = item.ref?.task && item.ref?.step ? stepOf(taskById(item.ref.task), item.ref.step) : null;
+    if (refStep?.external) return toast("Steget görs utanför oss — det har ledtid men inga timmar att lägga i kalendern.", null, true);
     const mon0 = monday(TODAY);
     const earlier = passes().filter((x) => refKey(x.ref) === refKey(item.ref));
     const total = item.minutes || 120;
@@ -5612,11 +5617,12 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   function dpSrc(t, s) {
     const e = DP.edits[dpKey(t, s)];
     if (e && dpHours(e) !== dpHours(dpBase(t, s))) return "set";
+    if (s.external) return "external";
     if (s.planned?.hours != null || asArr(s.planned?.people).length) return "set";
     return s.hours_source || "set";
   }
-  /** «6 h», «≈ 4 h (förra gångerna)», «1 h (?)» — kort utan förklaringen. */
-  const hText = (h, src, long = false) => src === "history" ? `≈ ${hh(h)}${long ? " (förra gångerna)" : ""}`
+  /** «6 h», «≈ 4 h (förra gångerna)», «1 h (?)» — kort utan förklaringen. Externt: «extern», inga timmar. */
+  const hText = (h, src, long = false) => src === "external" ? "extern" : src === "history" ? `≈ ${hh(h)}${long ? " (förra gångerna)" : ""}`
     : src === "estimate" || src === "standard" ? `${hh(h)} (?)` : `${hh(h)}`;
   /** Passen i uppgiften: listor av steg i följd. Serverns pass, med ändringarna i fönstret ovanpå. */
   function dpGroups(t) {
@@ -5758,12 +5764,11 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   /** Flytta en kant. Kortare än en dag går inte; ett steg som väntar och nu börjar för tidigt skjuts fram. */
   function dpEdge(t, s, side, n, alone) {
     // Ett pass har ett fönster: kanten gäller alla stegen i det.
-    const g = dpGroupOf(t, s), c = dpCur(t, g[0]);
-    let w;
+    // Ett pass: vänsterkanten är det första stegets start, högerkanten det sista stegets slut.
+    const g = dpGroupOf(t, s), m = side === "l" ? g[0] : g.at(-1), c = dpCur(t, m);
     if (side === "l") { const start = add(c.start, n); if (start >= c.end) return; const x = snapStart({ ...c, start }, n > 0 ? 1 : -1);
-      if (x.start >= c.end) return; w = { start: x.start, end: c.end }; }
-    else { const end = add(c.end, n); if (end <= c.start) return; const x = snapEnd({ ...c, end }, n); w = { start: x.start, end: x.end }; }
-    for (const m of g) dpSet(t, m, clampWork({ ...dpCur(t, m), ...w }));
+      if (x.start >= c.end) return; dpSet(t, m, clampWork({ ...x, end: c.end })); }
+    else { const end = add(c.end, n); if (end <= c.start) return; dpSet(t, m, clampWork(snapEnd({ ...c, end }, n))); }
     if (side === "r" && !alone) dpPush(t, g.at(-1));
   }
   /** Magneten när ett steg blev längre: de som väntar börjar tidigast när det slutar. */
@@ -5943,7 +5948,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
    * eller klicka för stegaren och vem. Ett delat steg har flera knobbar sida
    * vid sida. Rymmer inte timmarna ledtiden får knoben röd kant.
    */
-  const knob = (k, i, p, warn, done, s, src = "set", named = false) => `<span class="dp-knob${warn ? " warn" : ""}${done ? " done" : ""}" ${done ? "" : `data-dp-knob="${esc(k)}|${i}" tabindex="0" role="button"`}`
+  const knob = (k, i, p, warn, done, s, src = "set", named = false) => src === "external"
+    ? `<span class="dp-knob sm ext" title="${esc(`${personName(p.party)} · görs utanför oss: ledtid, inga timmar`)}">${ring(p.party, DP.names)}<b>extern</b></span>` : `<span class="dp-knob${warn ? " warn" : ""}${done ? " done" : ""}" ${done ? "" : `data-dp-knob="${esc(k)}|${i}" tabindex="0" role="button"`}`
     + ` aria-label="${esc(`${personName(p.party)}: ${hText(p.hours, src, true)} i ${s.label}${warn ? `. ${warn}` : ""}. Dra uppåt eller nedåt, eller pil upp och ned, för timmarna. Enter för stegaren och vem.`)}"`
     + ` title="${esc(`${named ? `${s.label} · ` : ""}${personName(p.party)} · ${hText(p.hours, src, true)}${warn ? ` · ${warn}` : ""}`)}">${ring(p.party, DP.names)}`
     + `${named ? `<span class="dp-kl">${esc(s.label)}</span>` : ""}<b>${esc(src === "history" ? `≈ ${hh(p.hours)}` : `${hh(p.hours)}`)}</b>${src === "estimate" || src === "standard" ? `<span class="q">(?)</span>` : ""}</span>`;
@@ -5970,7 +5976,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
    * var för sig.
    */
   function dpPassRow(t, g, f) {
-    const first = g[0], k = dpKey(t, first), c = dpCur(t, first), len = dpLen(c);
+    // Passets spann: från det första stegets start till det sista stegets slut.
+    const first = g[0], k = dpKey(t, first), cs = g.map((m) => dpCur(t, m));
+    const c = { ...cs[0], start: cs.map((x) => x.start).sort()[0], end: cs.map((x) => x.end).sort().at(-1) }, len = dpLen(c);
     const h = g.reduce((n, m) => n + dpHours(dpCur(t, m)), 0), warn = dpWarning({ ...c, people: g.flatMap((m) => dpCur(t, m).people) });
     const edited = g.some((m) => DP.edits[dpKey(t, m)] || dpKey(t, m) in DP.sit), done = g.every((m) => m.done), picked = DP.pick.includes(k);
     const late = !done && isDay(t.due) && c.end > add(day10(t.due), 1), crit = g.some((m) => m.critical && !m.done);
@@ -6023,7 +6031,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   /** Per person: timmarna över alla steg, en rad per person, och dagar över 8 h markerade. */
   function dpPersonRows(ts, f) {
     const by = new Map();
-    for (const t of ts) for (const s of dpSteps(t)) { if (s.done) continue; const c = dpCur(t, s);
+    for (const t of ts) for (const s of dpSteps(t)) { if (s.done || s.external) continue; const c = dpCur(t, s);
       // Över ledtiden: där timmarna kan ligga. Krockarna räknas med timmarna spridda över dess arbetsdagar.
       c.people.forEach((p, i) => { (by.get(p.party) ?? by.set(p.party, []).get(p.party)).push({ t, s, i, p, start: c.start, end: add(c.start, dpLen(c)) }); }); }
     return [...by].sort((a, b) => personName(a[0]).localeCompare(personName(b[0]), "sv")).map(([party, items]) => {
