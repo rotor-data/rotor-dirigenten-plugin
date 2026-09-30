@@ -940,6 +940,61 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
 .lv-fcard .t { font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); }
 .lv-fcard.cur .lv-th { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-weak); }
 .lv-method a, .lv-method button { font-weight: 500; }
+/* Leveranssidan (översikt) och postsidan (arbetsyta), Daniel P 2026-09-30. */
+.pv-eyebrow, .pp-eyebrow, .pp-k { font-size: var(--fs-label); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-ink); }
+.pv-head { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
+.pv-head h1 { margin: 2px 0 0; font-size: 26px; line-height: 1.2; }
+.pv-sub { color: var(--text-2); margin: 6px 0 var(--s4); }
+.pv-facts { display: flex; gap: var(--s7); flex-wrap: wrap; padding: var(--s4) 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.pv-fact { display: flex; flex-direction: column; } .pv-fact b { font-size: 16px; } .pv-fact span { color: var(--text-2); font-size: var(--fs-meta); }
+.pv-hold { margin-top: var(--s3); padding: 10px var(--s4); border-radius: var(--r-sm); background: var(--amber-weak); color: var(--amber); font-size: var(--fs-meta); }
+.pv-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
+.pv-card { display: flex; gap: var(--s3); padding: var(--s3); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg); color: var(--text); text-decoration: none; min-width: 0; }
+.pv-card:hover { border-color: var(--line-strong); box-shadow: var(--shadow-card); }
+.pv-b { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.pv-k { font-size: var(--fs-label); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-2); }
+.pv-t { font-weight: 600; overflow-wrap: anywhere; } .pv-m { color: var(--text-2); font-size: var(--fs-meta); }
+.pv-bar { height: 4px; border-radius: 2px; background: var(--line); margin: 4px 0; overflow: hidden; } .pv-bar i { display: block; height: 100%; background: var(--accent); }
+.pv-about { display: flex; gap: var(--s4); flex-wrap: wrap; color: var(--text-2); font-size: var(--fs-meta); }
+.pv-about .linkbtn { font-size: var(--fs-meta); }
+.pt-th { width: 64px; height: 80px; flex: none; border-radius: var(--r-sm); background: var(--gray-weak); border: 1px solid var(--line); overflow: hidden; display: inline-grid; place-items: center; }
+.pt-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pt-th.empty { background: var(--bg-subtle); border-style: dashed; }
+.pp { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: var(--s6); align-items: start; }
+.pp-left { display: flex; flex-direction: column; gap: 2px; position: sticky; top: var(--s4); }
+.pp-back { color: var(--text-2); font-size: var(--fs-meta); text-decoration: none; } .pp-dn { font-weight: 700; margin: 2px 0 var(--s3); }
+.pp-li { display: flex; gap: 10px; align-items: center; padding: 6px 8px; border-radius: var(--r-sm); color: var(--text); text-decoration: none; border-left: 3px solid transparent; }
+.pp-li:hover { background: var(--bg-hover); } .pp-li.on { background: var(--bg-selected); border-left-color: var(--accent); }
+.pp-li .pt-th { width: 36px; height: 36px; } .pp-lt { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; } .pp-lt b { font-size: 13px; font-weight: 600; }
+.pp-mid h1 { margin: 2px 0 0; font-size: 26px; line-height: 1.2; }
+.pp-cols { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--s6); align-items: start; }
+.pp-right { order: 2; } .pp-center { order: 1; }
+.pp-made { display: flex; gap: var(--s4); padding: var(--s4) 0; border-top: 1px solid var(--line); }
+.pp-made:first-of-type { border-top: 0; }
+.pp-th { width: 96px; height: 120px; flex: none; border-radius: var(--r-sm); background: var(--gray-weak); border: 1px solid var(--line); font-size: 11px; color: var(--text-2); padding: 6px; overflow: hidden; line-height: 1.35; }
+.pp-th.later { background: var(--bg-subtle); border-style: dashed; }
+.pp-ths { display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-end; }
+.pp-mb { min-width: 0; display: flex; flex-direction: column; gap: 4px; } .pp-mb b { font-size: 15px; }
+.pp-made.later b, .pp-made.later .meta { color: var(--text-3); }
+.pp-miss { color: var(--amber); } .pp-links { display: flex; gap: var(--s3); }
+.pp-now { padding: var(--s4); margin-bottom: var(--s3); }
+.pp-h { font-size: 18px; font-weight: 700; margin: 4px 0; }
+.pp-ask { padding: 8px var(--s3); border-radius: var(--r-sm); background: var(--amber-weak); margin-bottom: var(--s3); }
+.pp-tl { list-style: none; margin: 0; padding: 0; }
+.pp-tl li a { display: flex; align-items: center; gap: 10px; padding: 5px 0; color: var(--text); text-decoration: none; font-size: 13.5px; }
+.pp-tl i { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line-strong); flex: none; }
+.pp-tl li.done i { background: var(--accent); border-color: var(--accent); } .pp-tl li.now i { border-color: var(--accent); border-width: 2.5px; } .pp-tl li.now .nm { font-weight: 700; }
+.pp-tl .nm { flex: 1; min-width: 0; } .pp-tl .dt { color: var(--text-2); font-size: var(--fs-meta); }
+.pp-tl li.hit { background: var(--bg-selected); border-radius: 6px; }
+@media (max-width: 900px) { .pp-cols { grid-template-columns: minmax(0, 1fr); } .pp-right { order: 1; } .pp-center { order: 2; } }
+@media (max-width: 760px) {
+  .pv-grid { grid-template-columns: minmax(0, 1fr); } .pv-facts { gap: var(--s5); }
+  .pp { grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
+  .pp-left { position: static; flex-direction: row; overflow-x: auto; gap: 8px; align-items: stretch; padding-bottom: 4px; }
+  .pp-back, .pp-dn { flex: none; align-self: center; white-space: nowrap; } .pp-dn { margin: 0 8px 0 0; }
+  .pp-li { flex: none; min-width: 190px; border: 1px solid var(--line); border-left-width: 3px; background: var(--bg); }
+  .pp-made { flex-direction: row; }
+}
 @media (max-width: 760px) {
   .lv-facts { grid-template-columns: 1fr 1fr; }
   .lv-fact:nth-child(2) { border-right: 0; }
@@ -1157,7 +1212,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "f26ae5b", published: "2026-09-30" };
+  const SIDA = { version: "c7c289d", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -3943,7 +3998,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       const statuses = [...new Set(outs.map((o) => statusWord(o.status)).filter(Boolean))];
       const chips = [...statuses.map((w) => chip(w, w === "aktiv" ? "green" : "amber")),
         ...(u.text && !u.text.approved ? [chip("text ej godkänd", "amber")] : []),
-        ...asArr(u.missing).filter((m) => !/^Text/.test(m)).map((m) => chip(`saknar ${m}`, "amber"))].join(" ");
+        ...missingOf(u).filter((m) => !/^Text/.test(m)).map((m) => chip(`saknar ${m}`, "amber")),
+        ...laterOf(u).map((m) => chip(`${m} kommer senare`, ""))].join(" ");
       const sub = outs.length ? `Ute i ${esc(sys.join(", "))} · ${plural(outs.length, "publicering", "publiceringar")}` : esc(u.status || "");
       const detail = `<div class="udetail">`
         + (u.text ? `<div class="utext" data-utext="${esc(u.key)}"><span class="meta">Hämtar texten…</span></div>` : "")
@@ -5015,7 +5071,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const words = [...new Map(out.map((o) => { const x = outState(o); return [x.word, x]; })).values()];
     return [...words, ...(u.text && !u.text.approved ? [{ word: "saknas", tone: "amber", note: "godkänd text" }] : []),
       ...(missingOf(u).length ? [{ word: "saknas", tone: "amber", note: missingOf(u).join(", ") }] : []),
-      ...(!out.length && !asArr(u.missing).length ? [{ word: /^klar/.test(u.status || "klar") ? "klar" : "inte påbörjad", tone: /^klar/.test(u.status || "klar") ? "green" : "" }] : [])];
+      ...(laterOf(u).length ? [{ word: "kommer senare", tone: "", note: laterOf(u).join(", ") }] : []),
+      ...(!out.length && !missingOf(u).length && !laterOf(u).length ? [{ word: /^klar/.test(u.status || "klar") ? "klar" : "inte påbörjad", tone: /^klar/.test(u.status || "klar") ? "green" : "" }] : [])];
   }
   /** Metoden uppgiften görs efter: namn, version, kundvariant och om den är låst (Daniel P 2026-09-26). */
   function methodLine(t) {
@@ -5232,16 +5289,20 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   function lvUnits(d) {
     const seen = new Map();
     for (const r of asArr(d.material?.rounds)) for (const u of asArr(r.units)) seen.set(unitKey(u), { u, r });
-    const needs = (u) => (asArr(u.missing).length || (u.text && !u.text.approved)) ? 0 : 1;
+    const needs = (u) => (missingOf(u).length || (u.text && !u.text.approved)) ? 0 : 1;
     return [...seen.values()].sort((a, b) => needs(a.u) - needs(b.u) || a.u.label.localeCompare(b.u.label, "sv"));
   }
   /** Vad enheten är, i ord ur datan: delen för en fil, innehållsslaget för en text. */
   const kindLabel = (u) => u.key.startsWith("file:") ? (asArr(u.parts)[0]?.part || "Fil") : (u.kind ? u.kind.charAt(0).toUpperCase() + u.kind.slice(1).replace(/_/g, " ") : "Material");
   /** Gruppen i materialet: var enheten är ute, annars att den inte är ute än. */
   const unitGroup = (d, u) => { const out = asArr(u.out_as).filter((o) => !o.replaced_by);
-    return asArr(u.missing).length || (u.text && !u.text.approved) ? "Saknas något" : out.length ? `Ute i ${[...new Set(out.map((o) => systemName(d, o.channel)))].join(", ")}` : "Klart"; };
+    return missingOf(u).length || (u.text && !u.text.approved) ? "Saknas något" : laterOf(u).length && !out.length ? "Kommer senare" : out.length ? `Ute i ${[...new Set(out.map((o) => systemName(d, o.channel)))].join(", ")}` : "Klart"; };
   /** Det som saknas, utan att säga texten två gånger (märket «text ej godkänd» säger det). */
-  const missingOf = (u) => asArr(u.missing).filter((m) => !(u.text && !u.text.approved && /^Text/.test(m)));
+  const missingOf = (u) => asArr(u.expected).length
+    ? asArr(u.expected).filter((e) => e.state === "saknas").map((e) => e.part).filter((m) => !(u.text && !u.text.approved && /^Text/.test(m)))
+    : asArr(u.missing).filter((m) => !(u.text && !u.text.approved && /^Text/.test(m)));
+  /** Delar som kommer senare: ett steg som inte är gjort ska lämna dem. De saknas inte. */
+  const laterOf = (u) => asArr(u.expected).filter((e) => e.state === "kommer senare").map((e) => e.part);
   function lvUnitRow(d, u) {
     const cust = custOf(d)?.id, o = LV.open[`unit|${d.id}`] === u.key;
     const now = asArr(u.parts).filter((p) => p.kind === "file" && !p.superseded);
@@ -6600,11 +6661,185 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       return dpChanged(); }
   });
   addEventListener("resize", () => { if (DP.open) dpRender(); });
+  /* ── Leveranssidan och postsidan (Daniel P 2026-09-30: hela leveransen och varje del ska vara tydligt olika) ──
+     Leveranssidan är bara en översikt: löftet, hur långt det kommit och delarna som kort, utan stegknappar.
+     Postsidan är arbetsytan för en del: leveransens alla delar till vänster, det som skapats i mitten och det
+     du ska göra nu till höger. En post är en uppgift i leveransen. */
+  const byDueDay = (a, b) => String(day10(a.due) || "9").localeCompare(String(day10(b.due) || "9"));
+  /** Delens rubrik: ärendets ämne, tillfället eller sorten. */
+  const partTitle = (t) => (t.thread && threadSubject(t.thread)) || shortHead(t.occasion) || lbl(t.deliverable, "Uppgift");
+  /** Sorten och postnumret, «SoMe-post 2»; numret bara när leveransen har flera av samma sort. */
+  function partKicker(ts, t) {
+    const type = lbl(t.deliverable, "Uppgift"), same = ts.filter((x) => lbl(x.deliverable, "Uppgift") === type).sort(byDueDay);
+    return same.length > 1 ? `${type} ${same.indexOf(t) + 1}` : type;
+  }
+  const partNumbered = (ts, t) => ts.filter((x) => lbl(x.deliverable, "Uppgift") === lbl(t.deliverable, "Uppgift")).length > 1;
+  /** Enheterna i uppgiftens senaste runda, och den som är delens egen (den med text, annars den första). */
+  const partUnits = (t) => asArr(asArr(t.material?.rounds).at(-1)?.units);
+  const partUnit = (t) => partUnits(t).find((u) => u.text) || partUnits(t)[0] || null;
+  /** Delens bild: den första filen i enheten som har en förhandsbild att visa. */
+  const partThumbFile = (t) => partUnits(t).flatMap((u) => asArr(u.parts)).find((p) => p.kind === "file" && !p.superseded && /image|bild/i.test(`${p.asset_type || ""} ${p.part}`));
+  function partThumb(t, cls = "") {
+    const p = partThumbFile(t);
+    if (!p) return `<span class="pt-th empty ${cls}"></span>`;
+    wantThumb(p.ref);
+    return `<span class="pt-th ${cls}" data-thumb="${esc(p.ref)}">${thumbImg({ ref: p.ref })}</span>`;
+  }
+  const partMine = (t) => { const c = currentStep(t); return !!c && !c.external && (c.responsible?.id ?? c.responsible) === me(); };
+  const partDone = (t) => { const r = roundSteps(t); return !!t.delivered_externally || (r.length > 0 && r.every((s) => s.done || s.assumed_approved)); };
+  /** Var delen står: märket, hur många steg som är gjorda och vems tur. */
+  function partStatus(t) {
+    const steps = roundSteps(t), done = steps.filter((s) => s.done || s.assumed_approved).length;
+    if (noMethod(t)) return { word: "välj metod", tone: "amber", done: 0, total: 0, key: "nomethod" };
+    if (partDone(t)) return { word: "klar", tone: "green", done, total: steps.length, key: "done" };
+    const c = currentStep(t), st = c ? stepState(t, c) : { word: "inte påbörjad", tone: "" };
+    if (st.word === "din tur") return { word: `din tur: ${c.label}`, tone: "accent", done, total: steps.length, key: "mine" };
+    if (t.waits && waitOfStep(t, c)) return { word: `stoppad: ${clipped(c.label, 30)}`, tone: "amber", done, total: steps.length, key: "wait" };
+    return { ...st, done, total: steps.length, key: st.word === "inte påbörjad" ? "idle" : "wait" };
+  }
+  /** «Text klar · nästa: Välj bild»: vad som är gjort, ur delarna när de är kända, annars ur stegen. */
+  function partDoneLine(t) {
+    const u = partUnit(t), fin = [...new Set(asArr(u?.expected).filter((e) => e.state === "finns").map((e) => e.part.replace(/\s+\d+:\d+$/, "")))];
+    const last = roundSteps(t).filter((s) => s.done).sort((a, b) => String(a.done.at).localeCompare(String(b.done.at))).at(-1);
+    const c = currentStep(t);
+    const done = fin.length ? `${fin.join(" och ")} ${fin.length > 1 ? "klara" : "klar"}` : last ? `${last.label} ${short(day10(last.done.at))}` : "Inget gjort än";
+    return partDone(t) ? done : `${done}${c ? ` · nästa: ${c.label}` : ""}`;
+  }
+  /** Delens datum: när den ska vara klar. */
+  const partDate = (t) => t.due ? short(day10(t.due)) : "";
+
+  function pageLeverans(d, ts) {
+    const st = statusOf(d), c = custOf(d);
+    CRUMBS = pathCrumbs(d, null, null);
+    if (ts[0]) openMirror(ts[0].id);
+    const [word, tone] = st.kind === "late" && st.days_late ? [`${plural(st.days_late, "dag", "dagar")} efter löftet`, "red"] : STATUS_CHIP[st.kind] || STATUS_CHIP.on_time;
+    const types = [...ts.reduce((m, t) => m.set(lbl(t.deliverable, "Uppgift"), (m.get(lbl(t.deliverable, "Uppgift")) || 0) + 1), new Map())]
+      .map(([k, n]) => n > 1 ? `${n} ${k}` : k).join(", ");
+    const nDone = ts.filter(partDone).length, nMine = ts.filter((t) => !partDone(t) && partMine(t)).length;
+    const h = st.kind === "late" ? st.holding : null;
+    const fact = (v, l) => `<div class="pv-fact"><b>${v}</b><span>${l}</span></div>`;
+    const card = (t) => {
+      const s = partStatus(t), pct = s.total ? Math.round(100 * s.done / s.total) : 0, kick = partKicker(ts, t);
+      return `<a class="pv-card" href="${H.delivery(d.id, t.id)}">${partThumb(t)}<span class="pv-b">`
+        + `<span class="pv-k">${esc(kick)}${partDate(t) ? ` · ${esc(partDate(t))}` : ""}</span><span class="pv-t">${esc(partTitle(t))}</span>`
+        + `<span class="pv-m">${esc(partDoneLine(t))}</span><span class="pv-bar" aria-hidden="true"><i style="width:${pct}%"></i></span>`
+        + `<span class="pv-c">${toneChip(s)}</span></span></a>`;
+    };
+    const link = (label, attrs) => `<button class="linkbtn" ${attrs}>${label}</button>`;
+    return `<div class="pv"><div class="pv-eyebrow">Leverans</div><div class="pv-head"><h1>${esc(d.label)}</h1>${d.closed ? "" : chip(word, tone)}</div>`
+      + `<div class="pv-sub">${c?.id ? `<a href="${H.customer(c.id)}">${esc(lbl(c))}</a> · ` : ""}${plural(ts.length, "del", "delar")}${types ? ` · ${esc(types)}` : ""}</div>`
+      + `<div class="pv-facts">${fact(st.promised ? short(st.promised) : "–", "lovat kunden")}${st.kind === "delivered" ? fact(short(st.delivered_at), "levererad") : fact(st.likely ? short(st.likely) : "–", "beräknat klart")}`
+      + `${fact(`${nDone} av ${ts.length}`, "delar klara")}${fact(String(nMine), "väntar på dig")}</div>`
+      + (h ? `<div class="pv-hold">Det som håller uppe: «${esc(h.label)}» · ${esc(stepWhen(h))}</div>` : "")
+      + `<div class="lv-sec"><h2>Delarna</h2></div><div class="pv-grid">${ts.map(card).join("")}</div>`
+      + `<div class="lv-sec"><h2>Om leveransen</h2></div><div class="pv-about">`
+      + (st.kind === "late" || st.kind === "on_time" ? link("Flytta kundens datum", `data-lv-promise="${ts.length === 1 ? `task|${esc(ts[0].id)}` : `delivery|${esc(d.id)}`}|${esc(st.likely && st.promised && st.likely > st.promised ? st.likely : st.promised || "")}"`) : "")
+      + (!d.closed ? link("Be Claude möblera om", `data-lv-rearrange="${esc(d.id)}"`) : "")
+      + `<a class="linkbtn" href="${H.change(d.id)}">Ändra efter leverans</a>${shareButtons(H.delivery(d.id), d.label, lbl(c, ""), "linkbtn")}</div>`
+      + lvPromiseForm(d) + lvBindForm(d)
+      + lvFold(d, "out", `${ic("ute")} Ute i systemen`, "det senast lästa, inte läget just nu", () => lvOut(d))
+      + lvFold(d, "history", "Historik", plural(asArr(d.history).length, "händelse", "händelser"), () => lvHistory(d, ts))
+      + `</div>`;
+  }
+
+  /** Delarna som saknar något eller kommer senare, som «det som skapats»: en grupp per del-namn, formaten ihop. */
+  function madeGroups(u) {
+    const ex = asArr(u.expected).length ? asArr(u.expected)
+      : [...asArr(u.parts).filter((p) => !p.superseded).map((p) => ({ part: p.part, state: "finns", step: null, after: null })),
+        ...asArr(u.missing).filter((m) => !/^Text/.test(m)).map((m) => ({ part: m, state: "saknas", step: null, after: null }))];
+    const g = new Map();
+    for (const e of ex) {
+      const base = e.part.replace(/\s+\d+:\d+$/, ""), r = /(\d+:\d+)$/.exec(e.part)?.[1];
+      const x = g.get(base) || { base, ratios: [], items: [] };
+      if (r) x.ratios.push(r);
+      x.items.push(e); g.set(base, x);
+    }
+    return [...g.values()];
+  }
+  /** «Görs när bilden är vald»: det som gör att delen inte kan göras än, i ord. */
+  const laterWhen = (e) => e.after ? `Görs när ${e.after === "Bild" ? "bilden är vald" : `${e.after.toLowerCase()} finns`}` : e.step ? `Görs i steget «${e.step}»` : "Görs senare";
+  function madeCard(d, t, u, x) {
+    const cust = custOf(d)?.id, cur = currentStep(t);
+    const title = `${x.base}${x.ratios.length ? ` ${x.ratios.join(" och ")}` : ""}`;
+    const all = x.items.every((e) => e.state === "finns"), missing = x.items.find((e) => e.state === "saknas"), later = x.items.find((e) => e.state === "kommer senare");
+    const files = asArr(u.parts).filter((p) => p.kind === "file" && !p.superseded && (p.part === x.base || p.part.replace(/\s+\d+:\d+$/, "") === x.base));
+    if (x.base === "Text" && u.text) {
+      lvText(u.key);
+      const c = LV.texts.get(u.key), ex = c && !c.error ? String(c.markdown || "").replace(/[#*_>`\[\]]/g, "").replace(/\s+/g, " ").trim().slice(0, 110) : "";
+      const o = !!LV.open[`txt|${u.key}`];
+      return `<div class="pp-made ok"><span class="pp-th text">${esc(ex)}</span><div class="pp-mb"><b>${esc(title)}</b>`
+        + `<div class="meta">Version ${u.text.version} · ${u.text.approved ? "godkänd" : ""}${u.text.approved ? "" : `<span class="chip">inte godkänd</span>`}${u.text.reused_from ? " · återanvänd" : ""}</div>`
+        + `<div class="pp-links"><button class="linkbtn" data-lv-toggle="txt|${esc(u.key)}" aria-expanded="${o}">${o ? "Dölj" : "Läs"}</button></div>${o ? lvText(u.key) : ""}</div></div>`;
+    }
+    const nowStep = later && cur && later.step === cur.label && !later.after, ip = nowStep ? ipEntry(t, cur) : "";
+    const body = all ? `<div class="meta">${files.map((p) => esc(p.name)).join(", ") || "Klar"}</div>`
+      : missing ? `<div class="meta pp-miss">Saknas: steget «${esc(missing.step || "")}» är gjort men delen finns inte.</div>`
+      : nowStep ? `<div class="meta">Görs nu</div>${ip}` : `<div class="meta">${esc(laterWhen(later))}</div>`;
+    const th = files.length ? `<span class="pp-ths">${files.map((p) => lvThumb(cust, p, "mid")).join("")}</span>` : `<span class="pp-th ${all ? "" : "later"}"></span>`;
+    return `<div class="pp-made ${all ? "ok" : missing ? "miss" : "later"}">${th}<div class="pp-mb"><b>${esc(title)}</b>${body}</div></div>`;
+  }
+  function postMade(d, t) {
+    const us = partUnits(t);
+    if (!us.length) return `<div class="empty"><b>Inget skapat än.</b>Det som skapas för delen står här, och det som görs senare står grått.</div>`;
+    return us.map((u) => (us.length > 1 ? `<div class="meta" style="margin:8px 0 4px">${esc(unitName(d, u))}</div>` : "") + madeGroups(u).map((x) => madeCard(d, t, u, x)).join("")).join("");
+  }
+  /** Det du ska göra nu: steget, vems tur, knapparna, och det som väntar på en fråga eller överlämning. */
+  function postNow(d, t) {
+    const steps = roundSteps(t), mine = (s) => !s.external && (s.responsible?.id ?? s.responsible) === me();
+    const rows = asArr(d.todo).filter((x) => x.task === t.id && stepOf(t, x.step)).map((x) => ({ x, s: stepOf(t, x.step) }))
+      .sort((a, b) => (mine(b.s) ? 1 : 0) - (mine(a.s) ? 1 : 0));
+    const asks = agenda().filter((x) => x.open && x.task === t.id && x.kind !== "step");
+    const top = rows[0];
+    let box;
+    if (top) {
+      const { x, s } = top, st = stepState(t, s), n = steps.findIndex((y) => y.step === s.step) + 1;
+      const who = s.external ? lbl(s.waiting?.on, "någon utanför Rotor") : "";
+      box = `<div class="pp-k">Steg ${n} av ${steps.length} · ${esc(s.external ? `väntar på ${who}` : st.word)}</div><div class="pp-h">${esc(s.label)}</div>`
+        + `<div class="meta">${byWhen(x.end || s.end, "Klart senast") || ""}${st.tone === "red" ? ` ${toneChip(st)}` : ""}</div>`
+        + `${ipEntry(t, s)}<div class="lv-acts" style="justify-content:flex-start;margin-top:10px">${lvActions(t, s, x.next === undefined ? stepNextCall(t, s) : x.next)}</div>`;
+    } else if (noMethod(t)) box = `<div class="pp-h">Saknar metod</div><div class="meta">Det finns inga steg att göra än.</div><div class="lv-acts" style="justify-content:flex-start;margin-top:10px"><button class="btn sm primary" data-go="metoder">Välj metod ›</button></div>`;
+    else if (partDone(t)) box = `<div class="pp-h">Klar</div><div class="meta">Inget kvar att göra.</div>`;
+    else box = `<div class="pp-h">Inget väntar på någon just nu</div><div class="meta">Allt som går att göra är gjort, eller står på ett antaget godkännande.</div>`;
+    return `<div class="card pp-now" id="lv-now">${box}</div>` + asks.map((x) => `<div class="pp-ask">${turRow(x, true)}</div>`).join("");
+  }
+  /** Stegen som en tunn tidslinje: gjort, nu och kommande, med datum. */
+  function postSteps(d, t, hit) {
+    const cur = currentStep(t);
+    return `<ol class="pp-tl" aria-label="Stegen i ordning">${roundSteps(t).map((s) => {
+      const done = !!s.done || !!s.assumed_approved, now = s === cur && !done;
+      return `<li class="${done ? "done" : now ? "now" : ""}${s.step === hit ? " hit" : ""}"><a href="${H.delivery(d.id, t.id, s.step)}"><i aria-hidden="true"></i><span class="nm">${esc(s.label)}</span>`
+        + `<span class="dt">${esc(done ? short(day10(s.done?.at)) : s.end ? short(lastDay(s)) : "")}</span></a></li>`;
+    }).join("")}</ol>`;
+  }
+  function pagePost(d, ts, t, o) {
+    const s = o.step ? stepOf(t, o.step) : null, kick = partKicker(ts, t), title = partTitle(t), numbered = partNumbered(ts, t);
+    LV.open[`task|${d.id}`] = t.id;
+    CRUMBS = pathCrumbs(d, null, null, [[`${kick}: ${title}`, null]]);
+    openMirror(t.id);
+    const item = (x) => { const st = partStatus(x), on = x.id === t.id;
+      return `<a class="pp-li${on ? " on" : ""}" href="${H.delivery(d.id, x.id)}"${on ? ' aria-current="page"' : ""}>${partThumb(x)}<span class="pp-lt"><b>${esc(numbered || partNumbered(ts, x) ? `${partKicker(ts, x)} · ${clipped(partTitle(x), 24)}` : clipped(partTitle(x), 34))}</b>`
+        + `<span class="meta">${esc(st.word)}</span></span></a>`; };
+    const late = t.late ? chip("sen", "red") : "";
+    const who = lbl(roundSteps(t).find((y) => !y.done)?.responsible, "");
+    return `<div class="pp"><nav class="pp-left" aria-label="Leveransens delar"><a class="pp-back" href="${H.delivery(d.id)}">← Leveransen</a><div class="pp-dn">${esc(d.label)}</div>${ts.map(item).join("")}</nav>`
+      + `<div class="pp-mid"><div class="pp-eyebrow">${esc(lbl(t.deliverable, "Uppgift"))}</div><div class="pv-head"><h1>${esc(title)}</h1>${late}</div>`
+      + `<div class="pv-sub">${[t.due ? `Klart ${short(day10(t.due))}` : "", who].filter(Boolean).map(esc).join(" · ")}${t.method ? ` · ${methodLine(t)}` : ""}</div>`
+      + `<div class="pp-cols"><div class="pp-right"><div class="lv-sec"><h2>Det du ska göra nu</h2></div>${postNow(d, t)}`
+      + `<div class="lv-sec"><h2>Stegen</h2><span class="n">${esc(lvCount(t))}</span></div>${noMethod(t) ? "" : postSteps(d, t, o.step)}</div>`
+      + `<div class="pp-center"><div class="lv-sec"><h2>Det som skapats</h2></div>${postMade(d, t)}`
+      + lvFold(d, "steps", `${ic("upp")} Alla steg, med detaljer`, esc(lvCount(t)),
+        () => `<div class="card lv-card"><div style="padding:4px 16px 12px">${fullOccasion(t) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(t))}</div>` : ""}${waitEdges(t)}${dpEntry([t], "uppgiften")}${lvRounds(d, t, o.step)}</div></div>`, !!o.step)
+      + lvFold(d, "material", `${ic("mat")} Material och filer`, "", () => lvMaterial({ ...d, material: t.material || null }))
+      + lvFold(d, "history", "Historik för posten", "", () => lvHistory(d, [t]))
+      + `</div></div></div></div>`;
+  }
   function pageDelivery() {
     const o = state.obj, d = lvDelivery(o.id);
     if (!d) { CRUMBS = [screenCrumb(), ["Hittas inte", null]]; return `<div class="empty"><b>Leveransen finns inte i planen.</b>Den kan vara avslutad, eller ligga längre fram än planen räcker.<div style="margin-top:12px"><a class="btn" href="${H.screen(state.screen)}">Tillbaka</a></div></div>`; }
     const ts = lvTasks(d);
     const t = o.task ? taskById(o.task) : null, s = t && o.step ? stepOf(t, o.step) : null;
+    // En leverans med flera delar: översikten för hela leveransen, och en arbetsyta för varje del.
+    if (!d.implicit && !d.ongoing && !o.sub) return t && ts.includes(t) ? pagePost(d, ts, t, o) : pageLeverans(d, ts);
     if (o.task) LV.open[`task|${d.id}`] = o.task;
     if (d.implicit) LV.open[`task|${d.id}`] = d.id;
     const openTask = LV.open[`task|${d.id}`] || null;
@@ -7533,7 +7768,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       throw new Error(`${f.name} laddades inte upp: vyn vet inte vilken sorts fil det är (asset_type och acquisition saknas). Rapportera felet.`);
     const mime = f.type || "application/octet-stream";
     if (f.size > MAX_FILE) throw new Error(`${f.name} är ${fsize(f.size)}. Dirigenten tar emot högst 4 MB än — ange var filen finns i stället.`);
-    const thumb = IMG_TYPE.test(f.type) ? await makeThumb(f) : null;
+    // Stora filer: förhandsbilden görs av servern, inte här.
+    const thumb = f.size <= CHUNK_BYTES && IMG_TYPE.test(f.type) ? await makeThumb(f) : null;
     const note = progressNote();
     note.set(`Laddar upp ${f.name}…`);
     const yes = `Ja i vyn: ladda upp ${f.name}`.slice(0, 500);
@@ -7556,6 +7792,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
         // En bit som inte går fram försöks igen två gånger; samma bit två gånger är ofarligt.
         for (let attempt = 1; ; attempt++) {
           try {
+            // Förhandsbilden görs av servern när bitarna satts ihop.
             last = await call("asset_register", { ...fields, filename: f.name, mime, base64,
               chunk: { id, index: i, total, sha256: sha }, confirmed: true, user_approval: yes });
             break;
@@ -7580,10 +7817,34 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   /** Stegen som väljer eller föreslår en bild: de som lämnar en bild eller en bildprompt. */
   const ipKind = (s) => (s?.leaves || []).some((l) => l?.name === "core.asset.image_prompt") ? "prompt"
     : (s?.leaves || []).some((l) => l?.name === "core.asset.image") ? "pick" : null;
+  /** Den valda bilden per uppgift: innehållets fält bild, med namn och förhandsbild. Hämtas en gång. */
+  IP.current = new Map();
+  async function ipLoadCurrent(t) {
+    if (IP.current.has(t.id)) return;
+    IP.current.set(t.id, { loading: true });
+    try {
+      const list = await call("content_list", { customer: t.customer.id });
+      const c = (list?.entries || []).filter((x) => x.for_task === t.id).sort((a, b) => String(b.saved_at).localeCompare(String(a.saved_at)))[0];
+      const doc = c ? await call("content_get", { id: c.id }) : null;
+      const ref = doc?.fields?.bild;
+      const f = ref ? (await call("asset_get", { refs: [ref], forhandsbilder: true }))?.files?.[0] : null;
+      IP.current.set(t.id, f?.found ? { name: f.name, thumb: f.thumbnail_base64 ? `data:${f.thumbnail_mime || "image/webp"};base64,${f.thumbnail_base64}` : "", post: c?.name } : { none: true });
+    } catch { IP.current.set(t.id, { none: true }); }
+    render();
+  }
+  function ipCurrentHtml(t) {
+    const cur = IP.current.get(t.id);
+    if (!cur) { ipLoadCurrent(t); return ""; }
+    if (cur.loading || cur.none) return "";
+    return `<div class="need" style="margin-bottom:10px">${cur.thumb ? `<img src="${esc(cur.thumb)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:var(--r-sm);border:1px solid var(--line)">` : ""}`
+      + `<span class="t">Vald bild: <b>${esc(cur.name)}</b>${cur.post ? ` <span class="meta">· till ${esc(cur.post)}</span>` : ""}</span></div>`;
+  }
   function ipEntry(t, s) {
     const k = ipKind(s);
-    if (!k || s.done || !t?.customer?.id || kindOf(s) !== "human") return "";
-    return `<div class="bar-actions" style="margin-bottom:10px"><button class="btn primary" data-ip-open="${esc(t.id)}|${esc(s.step)}|${k}">${k === "prompt" ? "Skapa bildprompt" : "Välj bild"}</button>`
+    if (!k || !t?.customer?.id || kindOf(s) !== "human") return "";
+    const cur = k === "pick" ? ipCurrentHtml(t) : "";
+    if (s.done) return cur ? cur + `<div class="bar-actions" style="margin-bottom:10px"><button class="btn" data-ip-open="${esc(t.id)}|${esc(s.step)}|pick">Byt bild</button></div>` : "";
+    return cur + `<div class="bar-actions" style="margin-bottom:10px"><button class="btn primary" data-ip-open="${esc(t.id)}|${esc(s.step)}|${k}">${k === "prompt" ? "Skapa bildprompt" : cur ? "Byt bild" : "Välj bild"}</button>`
       + `<span class="meta">${k === "prompt" ? "Instruktionen till Claude, med kundens bildregler, texten och formatet." : "Välj ur kundens källor, jämför i formaten och spara med ursprung."}</span></div>`;
   }
   const ipThumb = (c) => c.thumbnail_base64 ? `data:${c.thumbnail_mime || "image/webp"};base64,${c.thumbnail_base64}` : c.thumb_url || "";
@@ -7716,7 +7977,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   }
   /** Bilden in i kundens filer (med ursprung), och fältet bild på innehållet pekar på den. */
   async function ipSave(btn) {
-    const base = { asset_type: "core.asset.image", customer: IP.customer, for_task: IP.task };
+    // Bilden kopplas till steget här, i samma flöde — Claude behöver inte registrera något (felrapport 15:04).
+    const base = { asset_type: "core.asset.image", customer: IP.customer, for_task: IP.task, for_step: IP.step, ...(IP.content ? { unit: IP.content } : {}) };
     IP.error = null;
     await busy(btn, async () => {
       try {
@@ -7729,7 +7991,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
           const provenance = { source: "upload", origin, ...(by ? { photographer: by } : {}), ...(gen ? { generator: gen } : {}), ...(prompt ? { prompt } : {}) };
           if (origin === "ai_generated" && (!gen || !prompt)) throw new Error("En AI-genererad bild sparas med prompten och tjänsten — fyll i båda.");
           // Filen först, sedan ursprunget på samma fil: prompten får inte plats i uppladdningsadressen (felrapport 2026-09-30).
-          const r = await sendFile(f, { ...base, acquisition: "provided", folder: "Bilder/Uppladdat" });
+          // Filen först utan koppling, sedan ursprunget och kopplingen till steget på samma fil.
+          const r = await sendFile(f, { asset_type: base.asset_type, customer: base.customer, acquisition: "provided", folder: "Bilder/Uppladdat" });
           ref = r?.ref?.uri; name = f.name;
           const sha = r?.ref?.sha256;
           if (!ref || !sha) throw new Error(`${f.name} laddades inte upp — servern gav ingen referens.`);
@@ -7739,7 +8002,11 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
           const c = IP.results.find((x) => IP.picked.has(ipKey(x)));
           if (!c) throw new Error("Markera en bild först.");
           name = c.title;
-          if (c.source === "bank") ref = c.ref;
+          if (c.source === "bank") {
+            ref = c.ref;
+            await call("asset_register", { ...base, acquisition: "provided", from_ref: c.source_id,
+              confirmed: true, user_approval: `Ja i vyn: välj bilden ${c.title}`.slice(0, 500) });
+          }
           else {
             const r = await call("asset_register", { ...base, acquisition: "fetched", provenance: { source: c.source, source_id: c.source_id },
               confirmed: true, user_approval: `Ja i vyn: välj bilden ${c.title}`.slice(0, 500) });
@@ -7757,13 +8024,23 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
         IP.open = false;
         // Claude ska veta att bilden finns och kunna gå vidare, t.ex. rendera (Daniel P 2026-09-30).
         const label = IP.contents.find((c) => c.id === IP.content)?.name;
-        const note = label ? `Bilden ${name} är uppladdad och kopplad till posten «${label}» (fältet bild, ${ref}).`
-          : `Bilden ${name} är uppladdad till ${IP.customerLabel}s filer (${ref}), inte kopplad till något innehåll.`;
+        // Ren information: inget i beskedet ber Claude registrera eller koppla något (felrapport 15:04).
+        const note = label ? `Bilden ${name} är uppladdad och kopplad till posten «${label}» och till steget. Inget mer behöver göras för bilden.`
+          : `Bilden ${name} är uppladdad till ${IP.customerLabel}s filer och kopplad till steget. Inget mer behöver göras för bilden.`;
         IP.done = note;
-        dialog(`<h2>Bilden är sparad</h2><p>${esc(note)}</p>`
+        IP.current.delete(IP.task);
+        // Lämnar steget bara en bild markeras det klart i samma flöde; annars erbjuds knappen (Daniel P 2026-09-30).
+        const t = taskById(IP.task), st = stepOf(t, IP.step);
+        const onlyImage = st && !st.done && (st.leaves || []).length > 0 && (st.leaves || []).every((l) => l?.name === "core.asset.image");
+        let doneNote = "";
+        if (onlyImage) {
+          try { await doneFast(t, st); doneNote = `Steget «${st.label}» är markerat klart.`; }
+          catch (e) { doneNote = `Steget kunde inte markeras klart: ${e?.message || e}`; }
+        }
+        dialog(`<h2>Bilden är sparad</h2><p>${esc(note)}</p>${doneNote ? `<p class="meta">${esc(doneNote)}</p>` : ""}`
           + `<p class="meta">${sample ? "Claude i panelen har fått beskedet." : "Kopiera beskedet till Claude, så vet Claude att bilden finns och kan gå vidare."}</p>`
-          + `<div class="bar-actions"><button class="btn quiet" data-close="1">Stäng</button><button class="btn${sample ? "" : " primary"}" data-ip-tell="1">Kopiera till Claude</button></div>`);
-        if (sample && !running) ask(`${note} Säg kort vad nästa steg är.`, note).catch(() => {});
+          + `<div class="bar-actions"><button class="btn quiet" data-close="1">Stäng</button>${st && !st.done && !onlyImage ? `<button class="btn primary" data-quick-done="${esc(IP.task)}|${esc(IP.step)}">Markera steget klart</button>` : ""}<button class="btn${sample ? "" : " primary"}" data-ip-tell="1">Kopiera till Claude</button></div>`);
+        if (sample && !running) ask(note, note).catch(() => {});
       } catch (e) { IP.error = e?.message || String(e); ipRender(); }
     });
   }
@@ -9331,8 +9608,28 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (s.writes_to) return null;
     return cs.some((c) => /^smyra$/i.test(String(c))) ? "smyra_write" : null;
   }
+  /**
+   * Prompten för ett kodsteg: dirigenten kör det, och värdena tas ur tidigare
+   * steg och kundens variant — den som kör ger inga. Det som stoppar steget
+   * (en obesvarad fråga, ett beslut) står först.
+   */
+  function codeStepPrompt(t, s) {
+    const stops = dpStops(t, s);
+    return [`Kör steget ${s.label} i dirigenten, tillsammans med mig.`, "",
+      `Kund: ${lbl(t.customer, "okänd")}${idOf(t.customer)}.`,
+      `Uppgift: ${taskName(t)} (id ${t.id}). Steg: ${s.label} (id ${s.step}).`,
+      ...(stops.length ? ["", "Först — det här stoppar steget:",
+        ...stops.map((x) => `- ${STOP_WORD[x.kind] || "Väntar"}: ${x.what}${x.on ? ` (${x.on})` : ""}`),
+        "Ta upp det med mig innan steget körs."] : []),
+      "", "Så går du till väga:",
+      `1. Kör steget: execute_step { task: "${t.id}", step: "${s.step}" }. Värdena tas ur tidigare steg och kundens variant — ange inga själv.`,
+      "2. Svarar det med en förhandsvisning: visa den för mig på vanlig svenska och vänta på mitt ja. Kör sedan samma anrop med confirmed: true, preview_id och user_approval.",
+      "3. Saknas något: säg vad och var det läggs in, med svarets egna ord. Gissa inte fram värden.",
+      "", CHAT_RULES.split("\n").filter((x) => !x.includes("Smyra")).join("\n")].join("\n");
+  }
   /** Prompten för ett steg: vad som ska göras, kund, uppgift och steg med id, instruktionen och verktygen. */
   function stepChatPrompt(t, s) {
+    if (kindOf(s) === "code") return codeStepPrompt(t, s);
     const typ = (s.leaves || [])[0], cust = t.customer?.id;
     const ogjorda = undoneBefore(t, s);
     const tool = stepTool(s), cs = asArr(s.instruktion?.connections).map((c) => String(c).split("/")[0]);
