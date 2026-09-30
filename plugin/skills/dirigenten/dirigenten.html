@@ -748,6 +748,35 @@ dialog.dp { position: fixed; inset: 16px; width: auto; height: auto; max-width: 
 .dp-pin:hover { border-color: var(--accent); }
 .dp-pin span { overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 .dp-pin em { font-style: normal; flex: none; }
+/* Pass (Daniel P 2026-09-30): steg som görs i samma session är ett block, med en bricka per steg. */
+.dp-blk.sitting { background: color-mix(in srgb, var(--accent-weak) 70%, var(--bg)); border-width: 2px; }
+.dp-blk.pick, .dp-row.pick .dp-lab { box-shadow: inset 0 0 0 2px var(--accent); }
+.dp-row.pick { background: color-mix(in srgb, var(--accent-weak) 60%, transparent); }
+.dp-lab .pass-t { font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--accent-ink); }
+.dp-lab .pass-steps { font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dp-lab .pass-steps s { color: var(--text-3); }
+.dp-row.sitting { border-bottom: 0; }
+.dp-row.sub { min-height: 34px; border-bottom: 0; }
+.dp-row.sub + .dp-row:not(.sub) { border-top: 1px solid var(--line); }
+.dp-row.sub .dp-lab { padding: 4px 12px 4px 34px; font-size: 13px; }
+.dp-row.sub .dp-lab b { font-weight: 500; }
+.dp-subk { position: absolute; z-index: 2; top: 3px; margin-left: 286px; display: flex; gap: 4px; }
+.dp-blk.sitting .dp-knobs, .dp-blk.task .dp-knobs { pointer-events: none; }
+.dp-blk.task { background: color-mix(in srgb, var(--accent) 16%, var(--bg)); border: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); }
+.dp-blk.task.crit { border-color: var(--accent); }
+.dp-tick { position: absolute; top: 6px; bottom: 6px; width: 0; border-left: 1.5px dashed color-mix(in srgb, var(--accent) 55%, transparent); }
+.dp-fold { flex: none; width: 26px; height: 26px; margin-left: -6px; border: 0; border-radius: 6px; background: transparent; color: var(--text-2); font-size: 16px; cursor: pointer; }
+.dp-fold:hover { background: var(--accent-weak); color: var(--accent-ink); }
+.dp-grp .in .dp-fold { align-self: center; }
+.dp-row.task .dp-lab .nm { gap: 4px; }
+.dp-sum { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px 0 3px; border-radius: 7px; background: var(--accent); color: #fff; font-size: 12.5px; white-space: nowrap; }
+.dp-sum .dp-ring { background: #fff; }
+.dp-sum .q { color: rgba(255, 255, 255, .8); font-weight: 600; }
+.dp-sum.warn { background: var(--red); }
+.dp-knob .q { color: var(--text-3); font-weight: 600; }
+.dp-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 8px 20px; border-bottom: 1px solid var(--line); background: var(--accent-weak); }
+.dp-bar .why { font-size: 12px; color: var(--text-2); }
+.dp-list li.sitting { border-left: 3px solid var(--accent); padding-left: 10px; }
 .dp-over { position: absolute; top: 0; bottom: 0; margin-left: 280px; background: var(--red-weak); border-top: 3px solid var(--red); }
 .dp-foot { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 12px 20px; border-top: 1px solid var(--line-strong); background: var(--bg-subtle); }
 .dp-foot.on { background: var(--bg); box-shadow: 0 -6px 18px -12px rgba(20, 20, 40, .35); }
@@ -1091,7 +1120,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "ac10ad9", published: "2026-09-30" };
+  const SIDA = { version: "0c606db", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -4053,7 +4082,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
           b.delivers ? `Leveranstypen: ${typeLabel(b.delivers)}.` : "",
           "Ett steg är EN effekt: en sak som händer, av en utförare. performer: code när ett skript gör det, llm när en modell gör det, human när en människa gör det. Dela hellre i två steg än att skriva ett som gör två saker. Behåll ordningen i planen.",
           "Fyll aldrig i ett fält texten inte säger något om — utelämna det, så blir det en fråga. Gissa aldrig en ledtid. label och summary på svenska; name på engelska, snake_case.",
-          'Svara med ENBART JSON: {"label":"<metodens namn>","summary":"<en mening>","name":"<modul>.method.<namn_på_engelska>","completion":"<när leveransen är klar, bara om texten säger det>","steps":[{"label":"<verb först>","summary":"<en mening>","from_plan_line":"<meningen ur texten, ordagrant>","performer":"code|llm|human","surface":"<system, bara om det står>","effect":{"verb":"reads|creates|updates|deletes|sends|publishes","object":"<vad som påverkas>"},"needs":[],"leaves":[]}]}'].filter(Boolean).join("\n"),
+          "hours är DIN uppskattning av timmarna en människa lägger på steget en gång (den egna tiden, inte väntan): för kod 0 om ingen tittar, för llm granskningstiden. hours_reason är skälet i en mening. Det visas som en uppskattning (?).",
+          'Svara med ENBART JSON: {"label":"<metodens namn>","summary":"<en mening>","name":"<modul>.method.<namn_på_engelska>","completion":"<när leveransen är klar, bara om texten säger det>","steps":[{"label":"<verb först>","summary":"<en mening>","from_plan_line":"<meningen ur texten, ordagrant>","performer":"code|llm|human","surface":"<system, bara om det står>","effect":{"verb":"reads|creates|updates|deletes|sends|publishes","object":"<vad som påverkas>"},"needs":[],"leaves":[],"hours":<tal>,"hours_reason":"<en mening>"}]}'].filter(Boolean).join("\n"),
           { modelTier: "default" });
         if (!r?.label || !Array.isArray(r.steps) || !r.steps.length || r.steps.some((s) => !s?.label || !s?.summary))
           throw new Error("Claude svarade inte med en metod i steg — skriv planen tydligare och försök igen");
@@ -4486,7 +4516,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
               s.uses ? `Använder ${esc(s.uses.label)}, som redan finns — ${esc(s.uses.why)}` : "",
               s.status === "new_molecule" ? "Blir en ny molekyl; koden finns" : "",
               s.gap ? `Saknas i koden: ${esc(s.gap.what)}${s.gap.proposal ? " — blir ett atomförslag som en människa bygger" : ""}` : "",
-              s.stop ? "Här lämnar något huset och ska godkännas först" : ""].filter(Boolean).join(" · ")}</div></span></div>`).join("")
+              s.stop ? "Här lämnar något huset och ska godkännas först" : "",
+              s.hours != null ? `${hh(s.hours)} (?) — ${s.hours_source === "estimate" ? "Claudes uppskattning" : "förvalet för stegets slag"}` : ""].filter(Boolean).join(" · ")}</div></span></div>`).join("")
+            + (asArr(a?.sittings).length ? `<p class="meta">${a.sittings.map((x) => `${x.map((l) => `«${esc(l)}»`).join(" och ")} görs i samma pass: korta steg i följd av samma person blir ett block i planen.`).join("<br>")}</p>` : "")
             + `<p class="meta">finns = återanvänds · <span style="color:var(--amber)">ny</span> = ny molekyl, koden finns · saknas = atomförslag, en människa bygger koden</p>`
             + ((a?.stops_at || []).length ? `<p class="meta" style="color:var(--amber)">${a.stops_at.map((x) => `Metoden stannar vid «${esc(x.step)}»: ${esc(x.why)}`).join("<br>")}</p>` : "") + `</div>`
             + (qs.length ? `<div class="card section" style="margin-top:16px"><h2>Det som måste bestämmas innan metoden kan sparas</h2><div class="fields">${qs.map(answerField).join("")}</div>`
@@ -5464,15 +5496,25 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
 
      «Per person» visar samma timmar en rad per person, över alla stegen, så
      att belastning och krockar syns. På telefon är det en lista med ±1 dag
-     och ±1 h. */
+     och ±1 h.
+
+     Pass (Daniel P 2026-09-30, src/plan/sittings.ts): korta steg i följd som
+     samma person gör står som ETT block med en bricka per steg. Skift-klick
+     (eller mellanslag) väljer block; «Gör i samma pass» slår ihop, «Dela upp»
+     delar. Det sparas per uppgift som same_sitting i execute_step plan.
+     Timmarna bär sin källa: «6 h», «≈ 4 h (förra gångerna)», «1 h (?)». */
   const DP = { open: false, tasks: [], title: "", edits: {}, sel: null, mode: "step", zoom: "day", names: false,
-    standard: false, preview: {}, pending: 0, error: null, saving: false, pop: null, scroll: null, timer: null, proposal: null };
+    standard: false, preview: {}, pending: 0, error: null, saving: false, pop: null, scroll: null, timer: null, proposal: null,
+    /** Passen som ändrats: `<uppgift>|<steg>` → sant (samma pass som steget före) eller falskt (eget pass). */
+    sit: {}, pick: [],
+    /** Hopfällda uppgifter: `<uppgift>` → sant/falskt. Utan val: hopfällt i projektet, utfällt i en uppgift. */
+    fold: {} };
   const WORK_H = 8;
   const dpKey = (t, s) => `${t.id}|${s.step}`;
   const dpSteps = (t) => roundSteps(t).filter((s) => isDay(s.start) && isDay(s.end));
   const pid = (p) => p?.id ?? p;
   /** Stegets timmar när ingen planerat dem: uppskattningen, annars inga. */
-  const dpBaseHours = (s) => s.planned?.hours ?? (Number(s.estimate_minutes) > 0 ? Math.max(1, Math.round(s.estimate_minutes / 60)) : 0);
+  const dpBaseHours = (s) => s.planned?.hours ?? s.hours ?? (Number(s.estimate_minutes) > 0 ? Math.max(1, Math.round(s.estimate_minutes / 60)) : 0);
   /** Stegets läge som planen har det, före ändringarna i fönstret. */
   function dpBase(t, s) {
     const start = day10(s.start), end = day10(s.end) > start ? day10(s.end) : add(start, 1), hours = dpBaseHours(s);
@@ -5483,14 +5525,108 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   /** Stegets läge just nu: ändringen om det finns en, annars planens. */
   const dpCur = (t, s) => DP.edits[dpKey(t, s)] ?? dpBase(t, s);
   const dpHours = (c) => c.people.reduce((n, p) => n + Number(p.hours || 0), 0);
+  /** Varifrån timmarna kommer (src/plan/hours.ts). Ändrade i fönstret är de satta. */
+  function dpSrc(t, s) {
+    const e = DP.edits[dpKey(t, s)];
+    if (e && dpHours(e) !== dpHours(dpBase(t, s))) return "set";
+    if (s.planned?.hours != null || asArr(s.planned?.people).length) return "set";
+    return s.hours_source || "set";
+  }
+  /** «6 h», «≈ 4 h (förra gångerna)», «1 h (?)» — kort utan förklaringen. */
+  const hText = (h, src, long = false) => src === "history" ? `≈ ${hh(h)}${long ? " (förra gångerna)" : ""}`
+    : src === "estimate" || src === "standard" ? `${hh(h)} (?)` : `${hh(h)}`;
+  /** Passen i uppgiften: listor av steg i följd. Serverns pass, med ändringarna i fönstret ovanpå. */
+  function dpGroups(t) {
+    const steps = dpSteps(t), out = [];
+    steps.forEach((s, i) => {
+      const prev = steps[i - 1], k = dpKey(t, s), asked = k in DP.sit ? DP.sit[k] : undefined;
+      const joined = !!prev && asked !== false && (asked === true || asArr(s.sitting?.steps).includes(prev.step));
+      if (joined && out.length) out[out.length - 1].push(s); else out.push([s]);
+    });
+    return out;
+  }
+  const dpGroupOf = (t, s) => dpGroups(t).find((g) => g.some((x) => x.step === s.step)) || [s];
+  const dpDoer = (t, s) => { const p = dpCur(t, s).people; return p.length === 1 ? p[0].party : null; };
+  /** Går de valda blocken att göra i samma pass? Samma regel som servern: i följd, samma person, ingen väntan emellan. */
+  function dpCanJoin() {
+    const sel = DP.pick.map((k) => dpStep(k)).filter((x) => x.s);
+    if (sel.length < 2) return { ok: false, why: "" };
+    if (new Set(sel.map((x) => x.t.id)).size > 1) return { ok: false, why: "Stegen hör till olika uppgifter." };
+    const t = sel[0].t, steps = dpSteps(t), groups = [...new Map(sel.map((x) => { const g = dpGroupOf(t, x.s); return [g[0].step, g]; })).values()];
+    const idx = (s) => steps.findIndex((x) => x.step === s.step);
+    groups.sort((a, b) => idx(a[0]) - idx(b[0]));
+    const members = groups.flat();
+    if (groups.length < 2) return { ok: false, why: "Välj minst två block." };
+    if (idx(members.at(-1)) - idx(members[0]) + 1 !== members.length) return { ok: false, why: "Stegen måste komma efter varandra." };
+    if (members.some((m) => m.done)) return { ok: false, why: "Ett av stegen är redan klart." };
+    const who = dpDoer(t, members[0]);
+    if (!who || members.some((m) => dpDoer(t, m) !== who)) return { ok: false, why: "Stegen görs inte av samma person." };
+    if (members.slice(1).some((m) => m.waiting || dpStops(t, m).some((x) => x.kind === "wait" || x.kind === "question")))
+      return { ok: false, why: "Det väntas på någon mellan stegen." };
+    return { ok: true, t, members };
+  }
+  /** Arbetsdagarna från `start` som `hours` kräver, minst en: slutet, [start, slut). */
+  const dpDaysFor = (start, hours) => { let end = start, n = 0; const need = Math.max(1, Math.ceil(hours / WORK_H));
+    while (n < need) { if (isWorkday(end)) n++; end = add(end, 1); } return end; };
+  function dpJoin() {
+    const c = dpCanJoin(); if (!c.ok) return;
+    const { t, members } = c, c0 = dpCur(t, members[0]), h = members.reduce((n, m) => n + dpHours(dpCur(t, m)), 0);
+    members.slice(1).forEach((m) => { DP.sit[dpKey(t, m)] = true; });
+    const end = [dpDaysFor(c0.start, h), c0.end].sort().at(-1);
+    for (const m of members) dpSet(t, m, clampWork({ ...dpCur(t, m), start: c0.start, end }));
+    DP.pick = []; dpPush(t, members.at(-1)); dpChanged();
+  }
+  function dpSplit() {
+    for (const k of DP.pick) {
+      const { t, s } = dpStep(k); if (!s) continue;
+      const g = dpGroupOf(t, s); if (g.length < 2) continue;
+      g.slice(1).forEach((m) => { DP.sit[dpKey(t, m)] = false; });
+      let start = dpCur(t, g[0]).start;
+      for (const m of g) { const c = dpCur(t, m); while (!isWorkday(start)) start = add(start, 1);
+        const end = dpDaysFor(start, dpHours(c)); dpSet(t, m, clampWork({ ...c, start, end })); start = end; }
+      dpPush(t, g.at(-1));
+    }
+    DP.pick = []; dpChanged();
+  }
+  const dpCount = () => new Set([...Object.keys(DP.edits), ...Object.keys(DP.sit)]).size;
+  /**
+   * En hopfälld uppgift (Daniel P 2026-09-30): en stapel från första stegets
+   * start till sista stegets slut, med summerade timmar och initialer. Den
+   * dras i sin helhet — alla stegen följer med, och det som väntar på dem i
+   * andra uppgifter också (magnet; Alt = bara denna).
+   */
+  const dpFolded = (t) => (t.id in DP.fold ? DP.fold[t.id] : DP.tasks.length > 1);
+  const dpOpenSteps = (t) => { const all = dpSteps(t), open = all.filter((s) => !s.done); return open.length ? open : all; };
+  function dpMoveTask(t, n, alone) {
+    if (!n) return;
+    const steps = dpSteps(t).filter((s) => !s.done); if (!steps.length) return;
+    const first = steps.map((s) => dpCur(t, s)).sort((a, b) => a.start.localeCompare(b.start))[0];
+    const by = diff(snapStart(shiftC(first, n), n > 0 ? 1 : -1).start, first.start);
+    for (const s of steps) dpSet(t, s, snapStart(shiftC(dpCur(t, s), by), n > 0 ? 1 : -1));
+    if (alone) return;
+    const seen = new Set(steps.map((s) => dpKey(t, s)));
+    for (const s of steps) for (const x of dpClosure(t, s)) {
+      const k = dpKey(x.t, x.s); if (seen.has(k)) continue; seen.add(k);
+      dpSet(x.t, x.s, toWorkday(shiftC(dpCur(x.t, x.s), by)));
+    }
+  }
   const dpLen = (c) => Math.max(1, diff(c.end, c.start));
   const workdaysIn = (a, b) => { let n = 0; for (let x = a; x < b; x = add(x, 1)) if (isWorkday(x)) n++; return n; };
   /** «30 h får inte plats på 3 arbetsdagar» — samma ord som servern. Tillåtet, men sägs. */
   function dpWarning(c) {
     const h = dpHours(c), n = c.start === c.end ? 1 : workdaysIn(c.start, c.end);
-    return h > n * WORK_H ? `${fmtH(h)} h får inte plats på ${n} arbetsdag${n === 1 ? "" : "ar"}` : null;
+    return h > n * WORK_H ? `${hh(h)} får inte plats på ${n} arbetsdag${n === 1 ? "" : "ar"}` : null;
   }
-  const fmtH = (h) => (Number.isInteger(h) ? String(h) : String(Math.round(h * 10) / 10).replace(".", ","));
+  /**
+   * Timmar ned till en kvart (Daniel P 2026-09-30): under två timmar «15 min»,
+   * «1 h», «1 h 15 min»; från två timmar «2 h», «2,5 h». Samma regel som servern
+   * (hoursText i src/plan/standards.ts).
+   */
+  const QUARTER = 0.25;
+  const toQuarter = (x) => Math.round(Number(x) / QUARTER) * QUARTER;
+  const hh = (x) => { const q = toQuarter(x);
+    if (q < 2) { const h = Math.floor(q), m = Math.round((q - h) * 60); return h && m ? `${h} h ${m} min` : h ? `${h} h` : `${m} min`; }
+    return `${String(q).replace(".", ",")} h`; };
   /** Ändra ett steg i förslaget. Tillbaka till planens läge tar bort ändringen. */
   function dpSet(t, s, c) {
     const k = dpKey(t, s), b = dpBase(t, s);
@@ -5530,17 +5666,22 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   const snapEnd = (c, dir) => { let e = c.end; while (!dpIsWork(add(e, -1)) && add(e, -1) > c.start) e = add(e, dir > 0 ? 1 : -1); return e === c.end ? c : { ...c, end: e }; };
   function dpMove(t, s, n, alone) {
     if (!n) return;
-    dpSet(t, s, snapStart(shiftC(dpCur(t, s), n), n > 0 ? 1 : -1));
-    if (!alone) for (const x of dpClosure(t, s)) dpSet(x.t, x.s, toWorkday(shiftC(dpCur(x.t, x.s), n)));
+    // Ett pass flyttas som ett block.
+    const g = dpGroupOf(t, s), c0 = dpCur(t, g[0]), first = snapStart(shiftC(c0, n), n > 0 ? 1 : -1), by = diff(first.start, c0.start);
+    for (const m of g) dpSet(t, m, m === g[0] ? first : shiftC(dpCur(t, m), by));
+    const inPass = (x) => x.t.id === t.id && g.some((m) => m.step === x.s.step);
+    if (!alone) for (const x of dpClosure(t, g[0])) if (!inPass(x)) dpSet(x.t, x.s, toWorkday(shiftC(dpCur(x.t, x.s), n)));
   }
   /** Flytta en kant. Kortare än en dag går inte; ett steg som väntar och nu börjar för tidigt skjuts fram. */
   function dpEdge(t, s, side, n, alone) {
-    const c = dpCur(t, s);
+    // Ett pass har ett fönster: kanten gäller alla stegen i det.
+    const g = dpGroupOf(t, s), c = dpCur(t, g[0]);
+    let w;
     if (side === "l") { const start = add(c.start, n); if (start >= c.end) return; const x = snapStart({ ...c, start }, n > 0 ? 1 : -1);
-      if (x.start >= c.end) return; dpSet(t, s, clampWork({ ...x, end: c.end })); return; }
-    const end = add(c.end, n); if (end <= c.start) return;
-    dpSet(t, s, clampWork(snapEnd({ ...c, end }, n)));
-    if (!alone) dpPush(t, s);
+      if (x.start >= c.end) return; w = { start: x.start, end: c.end }; }
+    else { const end = add(c.end, n); if (end <= c.start) return; const x = snapEnd({ ...c, end }, n); w = { start: x.start, end: x.end }; }
+    for (const m of g) dpSet(t, m, clampWork({ ...dpCur(t, m), ...w }));
+    if (side === "r" && !alone) dpPush(t, g.at(-1));
   }
   /** Magneten när ett steg blev längre: de som väntar börjar tidigast när det slutar. */
   function dpPush(t, s) {
@@ -5549,11 +5690,11 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       if (c.start < need) { dpSet(x.t, x.s, toWorkday(shiftC(c, diff(need, c.start)))); dpPush(x.t, x.s); }
     }
   }
-  /** Timmarna för en person i steget. Minst 1 h; 0 tar bort en delad person. */
+  /** Timmarna för en person i steget, i kvartar. Minst en kvart. */
   function dpSetHours(t, s, i, h) {
     const c = dpCur(t, s), people = c.people.map((p) => ({ ...p }));
     if (!people[i]) return;
-    people[i].hours = Math.max(1, Math.round(h));
+    people[i].hours = Math.max(QUARTER, toQuarter(h));
     const w = c.work ? { start: c.work.start, end: add(c.work.start, Math.max(1, Math.ceil(dpHours({ people }) / WORK_H))) } : null;
     dpSet(t, s, clampWork({ ...c, people, work: w }));
   }
@@ -5567,8 +5708,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   function dpShare(t, s, party) {
     const c = dpCur(t, s), h = dpHours(c), people = c.people.map((p) => ({ ...p }));
     if (people.some((p) => p.party === party)) return;
-    const half = Math.max(1, Math.round(h / 2));
-    people[0].hours = Math.max(1, people[0].hours - half);
+    const half = Math.max(QUARTER, toQuarter(h / 2));
+    people[0].hours = Math.max(QUARTER, people[0].hours - half);
     people.push({ party, hours: half });
     dpSet(t, s, { ...c, people });
   }
@@ -5604,7 +5745,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   function dpOpen(ids, sel = null) {
     const ts = ids.map(taskById).filter(Boolean); if (!ts.length) return toast("Uppgiften finns inte längre i planen.", null, true);
     const same = DP.tasks.join() === ts.map((t) => t.id).join();
-    if (!same) Object.assign(DP, { edits: {}, preview: {}, error: null, proposal: null, scroll: null });
+    if (!same) Object.assign(DP, { edits: {}, sit: {}, pick: [], fold: {}, preview: {}, error: null, proposal: null, scroll: null });
     const dv = deliveryOfTask(ts[0]);
     Object.assign(DP, { open: true, tasks: ts.map((t) => t.id), sel, pop: null,
       title: ts.length > 1 && dv && !dv.implicit ? dv.label : taskTitle(ts[0]) });
@@ -5626,9 +5767,12 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     DP.timer = setTimeout(dpPreview, 350);
   }
   function dpPlanArgs(t) {
-    const steps = dpSteps(t).filter((s) => DP.edits[dpKey(t, s)]).map((s) => { const c = DP.edits[dpKey(t, s)];
-      return { step: s.step, window: { start: c.start, end: c.end }, hours: dpHours(c), people: c.people.map((p) => ({ party: p.party, hours: p.hours })),
-        ...(c.work ? { work: c.work } : {}) }; });
+    const steps = dpSteps(t).filter((s) => DP.edits[dpKey(t, s)] || dpKey(t, s) in DP.sit).map((s) => { const k = dpKey(t, s), c = DP.edits[k];
+      // Timmar och vem följer bara med när de ändrats: ett flyttat steg behåller timmarnas källa (Daniel P 2026-09-30).
+      const b = dpBase(t, s), who = c && JSON.stringify(c.people) !== JSON.stringify(b.people);
+      return { step: s.step, ...(c ? { window: { start: c.start, end: c.end },
+        ...(who ? { hours: dpHours(c), people: c.people.map((p) => ({ party: p.party, hours: p.hours })) } : {}),
+        ...(c.work ? { work: c.work } : {}) } : {}), ...(k in DP.sit ? { same_sitting: DP.sit[k] } : {}) }; });
     return steps.length ? { steps } : null;
   }
   async function dpPreview() {
@@ -5654,7 +5798,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       const args = dpPlanArgs(t), late = Number(DP.preview[t.id]?.late_by || 0) > 0;
       // Ångra: det som stod innan, eller tillbaka till metoden.
       undo.push({ task: t.id, plan: { save: true, accept_late: true, steps: args.steps.map((x) => { const p = stepOf(t, x.step)?.planned;
-        return p ? { step: x.step, ...(p.window ? { window: p.window } : {}), ...(p.hours != null ? { hours: p.hours } : {}), ...(asArr(p.people).length ? { people: p.people } : {}) } : { step: x.step, clear: true }; }) } });
+        return p ? { step: x.step, ...(p.window ? { window: p.window } : {}), ...(p.hours != null ? { hours: p.hours } : {}), ...(asArr(p.people).length ? { people: p.people } : {}),
+          ...(x.same_sitting !== undefined ? { same_sitting: p.same_sitting ?? null } : {}) } : { step: x.step, clear: true }; }) } });
       try {
         const r = await call("execute_step", { task: t.id, plan: { ...args, save: true, ...(late ? { accept_late: true } : {}), ...(DP.standard ? { as_standard: true } : {}) },
           ...(late ? { user_approval: "Ja, spara detaljplaneringen och flytta leveransen (i vyn)" } : {}) });
@@ -5662,7 +5807,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       } catch (e) { failed = { t, e }; break; }
     }
     DP.saving = false;
-    for (const id of done) for (const k of Object.keys(DP.edits)) if (k.startsWith(`${id}|`)) delete DP.edits[k];
+    for (const id of done) for (const k of [...Object.keys(DP.edits), ...Object.keys(DP.sit)]) if (k.startsWith(`${id}|`)) { delete DP.edits[k]; delete DP.sit[k]; }
     DP.preview = {}; DP.proposal = proposal;
     for (const id of done) await lvRefresh({ task: id });
     dpRender();
@@ -5715,24 +5860,82 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
    * eller klicka för stegaren och vem. Ett delat steg har flera knobbar sida
    * vid sida. Rymmer inte timmarna ledtiden får knoben röd kant.
    */
-  const knob = (k, i, p, warn, done, s) => `<span class="dp-knob${warn ? " warn" : ""}${done ? " done" : ""}" ${done ? "" : `data-dp-knob="${esc(k)}|${i}" tabindex="0" role="button"`}`
-    + ` aria-label="${esc(`${personName(p.party)}: ${fmtH(p.hours)} timmar i ${s.label}${warn ? `. ${warn}` : ""}. Dra uppåt eller nedåt, eller pil upp och ned, för timmarna. Enter för stegaren och vem.`)}"`
-    + ` title="${esc(`${personName(p.party)} · ${fmtH(p.hours)} h${warn ? ` · ${warn}` : ""}`)}">${ring(p.party, DP.names)}<b>${fmtH(p.hours)} h</b></span>`;
+  const knob = (k, i, p, warn, done, s, src = "set", named = false) => `<span class="dp-knob${warn ? " warn" : ""}${done ? " done" : ""}" ${done ? "" : `data-dp-knob="${esc(k)}|${i}" tabindex="0" role="button"`}`
+    + ` aria-label="${esc(`${personName(p.party)}: ${hText(p.hours, src, true)} i ${s.label}${warn ? `. ${warn}` : ""}. Dra uppåt eller nedåt, eller pil upp och ned, för timmarna. Enter för stegaren och vem.`)}"`
+    + ` title="${esc(`${named ? `${s.label} · ` : ""}${personName(p.party)} · ${hText(p.hours, src, true)}${warn ? ` · ${warn}` : ""}`)}">${ring(p.party, DP.names)}`
+    + `${named ? `<span class="dp-kl">${esc(s.label)}</span>` : ""}<b>${esc(src === "history" ? `≈ ${hh(p.hours)}` : `${hh(p.hours)}`)}</b>${src === "estimate" || src === "standard" ? `<span class="q">(?)</span>` : ""}</span>`;
   /** En rad per steg: ledtiden som block, med en knob per person. */
   function dpStepRow(t, s, f) {
     const k = dpKey(t, s), c = dpCur(t, s), len = dpLen(c), h = dpHours(c), warn = dpWarning(c), stops = dpStops(t, s), edited = !!DP.edits[k];
     const left = f.x(c.start), width = len * f.dw;
     // Sent mot uppgiftens eget datum, inte bara leveransens: servern räknar så.
     const late = !s.done && isDay(t.due) && c.end > add(day10(t.due), 1);
-    const sub = `${wday(c.start)} – ${wday(lastOf(c.end, c.start))} · ${plural(len, "dag", "dagar")} · ${fmtH(h)} h`;
+    const src = dpSrc(t, s), picked = DP.pick.includes(k);
+    const sub = `${wday(c.start)} – ${wday(lastOf(c.end, c.start))} · ${plural(len, "dag", "dagar")} · ${hText(h, src, true)}`;
     const say = `${s.label}: ${sub}${warn ? `. ${warn}` : ""}${stops.length ? `. ${stops.map((x) => `${STOP_WORD[x.kind]} på ${x.on}`).join(", ")}` : ""}`;
-    return `<div class="dp-row${DP.sel === k ? " sel" : ""}">`
+    return `<div class="dp-row${DP.sel === k ? " sel" : ""}${picked ? " pick" : ""}">`
       + `<div class="dp-lab"><span class="nm">${stops.length ? `<button class="dp-stop" data-dp-stop="${esc(k)}" aria-label="${esc(stops.map((x) => `${STOP_WORD[x.kind]}: ${x.what}`).join(". "))}">!</button>` : ""}<b>${esc(s.label)}</b></span>`
       + `<span class="meta">${s.done ? "klart" : esc(sub)}</span>${warn && !s.done ? `<span class="dp-warn">${esc(warn)}</span>` : ""}</div>`
-      + `<div class="dp-blk${s.done ? " done" : ""}${late ? " late" : ""}${edited ? " edited" : ""}${s.critical && !s.done ? " crit" : ""}" data-dp-blk="${esc(k)}" tabindex="${s.done ? -1 : 0}" role="button"`
-      + ` style="left:${left}px;width:${width}px" aria-label="${esc(`${say}. Pilar flyttar en dag, Skift och pil ändrar sista dagen, Alt flyttar bara detta.`)}" title="${esc(say)}">`
+      + `<div class="dp-blk${s.done ? " done" : ""}${late ? " late" : ""}${edited ? " edited" : ""}${s.critical && !s.done ? " crit" : ""}${picked ? " pick" : ""}" data-dp-blk="${esc(k)}" tabindex="${s.done ? -1 : 0}" role="button"`
+      + ` style="left:${left}px;width:${width}px" aria-label="${esc(`${say}. Pilar flyttar en dag, Skift och pil ändrar sista dagen, Alt flyttar bara detta. Mellanslag eller Skift-klick väljer blocket.`)}" title="${esc(say)}">`
       + (s.done ? "" : `<i class="dp-e l" data-dp-edge="${esc(k)}|l" title="Dra: första dagen"></i><i class="dp-e r" data-dp-edge="${esc(k)}|r" title="Dra: sista dagen"></i>`)
-      + `<span class="dp-knobs">${c.people.map((p, i) => knob(k, i, p, warn, s.done, s)).join("")}</span></div></div>`;
+      + `<span class="dp-knobs">${c.people.map((p, i) => knob(k, i, p, warn, s.done, s, src)).join("")}</span></div></div>`;
+  }
+  /**
+   * Ett pass: steg i följd som samma person gör i en session. Ett block och
+   * ett fönster, summerade timmar, och en bricka per steg — stegen bockas av
+   * var för sig.
+   */
+  function dpPassRow(t, g, f) {
+    const first = g[0], k = dpKey(t, first), c = dpCur(t, first), len = dpLen(c);
+    const h = g.reduce((n, m) => n + dpHours(dpCur(t, m)), 0), warn = dpWarning({ ...c, people: g.flatMap((m) => dpCur(t, m).people) });
+    const edited = g.some((m) => DP.edits[dpKey(t, m)] || dpKey(t, m) in DP.sit), done = g.every((m) => m.done), picked = DP.pick.includes(k);
+    const late = !done && isDay(t.due) && c.end > add(day10(t.due), 1), crit = g.some((m) => m.critical && !m.done);
+    const guessed = g.some((m) => ["estimate", "standard"].includes(dpSrc(t, m)));
+    const sub = `${wday(c.start)} – ${wday(lastOf(c.end, c.start))} · ${plural(len, "dag", "dagar")} · ${hh(h)}${guessed ? " (?)" : ""}`;
+    const stopper = g.find((m) => dpStops(t, m).length), stops = g.flatMap((m) => dpStops(t, m));
+    const say = `I samma pass, ${g.length} steg: ${g.map((m) => m.label).join(", ")}. ${sub}${warn ? `. ${warn}` : ""}`;
+    // Brickorna står en rad per steg under blocket: i ett smalt pass får de inte plats sida vid sida.
+    const x = f.x(c.start);
+    const subRows = g.map((m) => `<div class="dp-row sub${DP.sel === dpKey(t, m) ? " sel" : ""}"><div class="dp-lab"><span class="nm">${m.done ? `<s>${esc(m.label)}</s>` : `<b>${esc(m.label)}</b>`}</span></div>`
+      + `<span class="dp-subk" style="left:${x}px">${dpCur(t, m).people.map((p, i) => knob(dpKey(t, m), i, p, warn, !!m.done, m, dpSrc(t, m))).join("")}</span></div>`).join("");
+    return `<div class="dp-row sitting${DP.sel === k ? " sel" : ""}${picked ? " pick" : ""}">`
+      + `<div class="dp-lab"><span class="nm">${stopper ? `<button class="dp-stop" data-dp-stop="${esc(dpKey(t, stopper))}" aria-label="${esc(stops.map((x) => `${STOP_WORD[x.kind]}: ${x.what}`).join(". "))}">!</button>` : ""}<span class="pass-t">I samma pass · ${g.length} steg</span></span>`
+      + `<span class="pass-steps" title="${esc(g.map((m) => m.label).join(" · "))}">${g.map((m) => (m.done ? `<s>${esc(m.label)}</s>` : esc(m.label))).join(" · ")}</span>`
+      + `<span class="meta">${done ? "klart" : esc(sub)}</span>${warn && !done ? `<span class="dp-warn">${esc(warn)}</span>` : ""}</div>`
+      + `<div class="dp-blk sitting${done ? " done" : ""}${late ? " late" : ""}${edited ? " edited" : ""}${crit ? " crit" : ""}${picked ? " pick" : ""}" data-dp-blk="${esc(k)}" tabindex="${done ? -1 : 0}" role="button"`
+      + ` style="left:${f.x(c.start)}px;width:${len * f.dw}px" aria-label="${esc(`${say}. Pilar flyttar passet en dag, Skift och pil ändrar sista dagen. Mellanslag eller Skift-klick väljer passet.`)}" title="${esc(say)}">`
+      + (done ? "" : `<i class="dp-e l" data-dp-edge="${esc(k)}|l" title="Dra: första dagen"></i><i class="dp-e r" data-dp-edge="${esc(k)}|r" title="Dra: sista dagen"></i>`)
+      + `<span class="dp-knobs"><span class="dp-sum${warn ? " warn" : ""}" title="${esc(`Passet: ${hh(h)}`)}">${ring(dpDoer(t, first) || pid(first.responsible), DP.names)}<b>${hh(h)}</b>${guessed ? `<span class="q">(?)</span>` : ""}</span></span></div></div>` + subRows;
+  }
+  /** En hopfälld uppgift som en rad: stapeln över alla stegen, timmarna och vilka. */
+  function dpTaskRow(t, f) {
+    const steps = dpOpenSteps(t), cs = steps.map((s) => dpCur(t, s)), k = `${t.id}|@task`;
+    const start = cs.map((c) => c.start).sort()[0], end = cs.map((c) => c.end).sort().at(-1), len = Math.max(1, diff(end, start));
+    const h = cs.reduce((n, c) => n + dpHours(c), 0), who = [...new Set(cs.flatMap((c) => c.people.map((p) => p.party)))];
+    const done = dpSteps(t).every((s) => s.done), edited = dpSteps(t).some((s) => DP.edits[dpKey(t, s)] || dpKey(t, s) in DP.sit);
+    const late = !done && isDay(t.due) && end > add(day10(t.due), 1), crit = steps.some((s) => s.critical && !s.done);
+    const guessed = steps.some((s) => ["estimate", "standard"].includes(dpSrc(t, s)));
+    const sub = `${wday(start)} – ${wday(lastOf(end, start))} · ${plural(dpSteps(t).length, "steg", "steg")} · ${hh(h)}${guessed ? " (?)" : ""}`;
+    const say = `${taskTitle(t)}, hopfälld: ${sub}`;
+    const ticks = steps.slice(1).map((s) => dpCur(t, s).start).filter((d) => d > start && d < end)
+      .map((d) => `<i class="dp-tick" style="left:${(diff(d, start)) * f.dw}px"></i>`).join("");
+    return `<div class="dp-row task${DP.sel === k ? " sel" : ""}"><div class="dp-lab"><span class="nm"><button class="dp-fold" data-dp-fold="${esc(t.id)}" aria-expanded="false" aria-label="${esc(`Fäll ut ${taskTitle(t)}`)}">▸</button><b>${esc(taskTitle(t))}</b></span>`
+      + `<span class="meta">${done ? "klart" : esc(sub)}</span></div>`
+      + `<div class="dp-blk task${done ? " done" : ""}${late ? " late" : ""}${edited ? " edited" : ""}${crit ? " crit" : ""}" data-dp-blk="${esc(k)}" tabindex="${done ? -1 : 0}" role="button"`
+      + ` style="left:${f.x(start)}px;width:${len * f.dw}px" aria-label="${esc(`${say}. Dra eller pilar flyttar hela uppgiften; det som väntar på den följer med, Alt flyttar bara denna.`)}" title="${esc(say)}">${ticks}`
+      + `<span class="dp-knobs"><span class="dp-sum">${who.slice(0, 3).map((x) => ring(x, false)).join("")}<b>${hh(h)}</b>${guessed ? `<span class="q">(?)</span>` : ""}</span></span></div></div>`;
+  }
+  /** Listen när block är valda: «Gör i samma pass» och «Dela upp». */
+  function dpBar() {
+    if (!DP.pick.length) return "";
+    const sel = DP.pick.map((k) => dpStep(k)).filter((x) => x.s), can = dpCanJoin();
+    const passes = sel.filter(({ t, s }) => dpGroupOf(t, s).length > 1);
+    const why = !can.ok && sel.length > 1 ? can.why : sel.length === 1 && !passes.length ? "Skift-klicka ett block till för att göra dem i samma pass." : "";
+    return `<div class="dp-bar" role="toolbar" aria-label="Valda block"><b>${plural(sel.length, "valt block", "valda block")}</b>`
+      + `<button class="btn sm" data-dp-join="1"${can.ok ? "" : " disabled"}>Gör i samma pass</button>`
+      + `<button class="btn sm" data-dp-split="1"${passes.length ? "" : " disabled"}>Dela upp</button>`
+      + `<button class="btn sm quiet" data-dp-unpick="1">Avmarkera</button>${why ? `<span class="why">${esc(why)}</span>` : ""}</div>`;
   }
   /** Per person: timmarna över alla steg, en rad per person, och dagar över 8 h markerade. */
   function dpPersonRows(ts, f) {
@@ -5750,25 +5953,30 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       const over = [...perDay].filter(([, h]) => h > WORK_H + 0.01);
       const total = items.reduce((n, it) => n + it.p.hours, 0);
       return `<div class="dp-row person" style="height:${Math.max(1, lanes.length) * 32 + 22}px"><div class="dp-lab"><span class="nm">${ring(party, false)} <b>${esc(personName(party))}</b></span>`
-        + `<span class="meta">${fmtH(total)} h${over.length ? ` · <span class="dp-warn">${plural(over.length, "dag", "dagar")} över ${WORK_H} h</span>` : ""}</span></div>`
-        + over.map(([day, h]) => `<i class="dp-over" style="left:${f.x(day)}px;width:${f.dw}px" title="${esc(`${wday(day)}: ${fmtH(h)} h`)}"></i>`).join("")
+        + `<span class="meta">${hh(total)}${over.length ? ` · <span class="dp-warn">${plural(over.length, "dag", "dagar")} över ${WORK_H} h</span>` : ""}</span></div>`
+        + over.map(([day, h]) => `<i class="dp-over" style="left:${f.x(day)}px;width:${f.dw}px" title="${esc(`${wday(day)}: ${hh(h)}`)}"></i>`).join("")
         + items.map((it) => `<button class="dp-pin" data-dp-goto="${esc(dpKey(it.t, it.s))}" style="left:${it.x}px;width:${it.w}px;top:${10 + it.lane * 32}px;--fill:${Math.min(100, Math.round(it.p.hours / Math.max(1, (workdaysIn(it.start, it.end) || 1) * WORK_H) * 100))}%"`
-          + ` title="${esc(`${it.s.label} · ${taskTitle(it.t)} · ${fmtH(it.p.hours)} h`)}"><span class="dp-knob sm${dpWarning(dpCur(it.t, it.s)) ? " warn" : ""}"><b>${fmtH(it.p.hours)} h</b></span><span>${esc(it.s.label)}</span></button>`).join("") + `</div>`;
+          + ` title="${esc(`${it.s.label} · ${taskTitle(it.t)} · ${hh(it.p.hours)}`)}"><span class="dp-knob sm${dpWarning(dpCur(it.t, it.s)) ? " warn" : ""}"><b>${hh(it.p.hours)}</b></span><span>${esc(it.s.label)}</span></button>`).join("") + `</div>`;
     }).join("") || `<div class="empty">Inga timmar att visa.</div>`;
   }
   /** Telefon: samma sak som en lista. */
   function dpList(ts) {
-    return ts.map((t) => `<h3 class="dp-grp">${esc(taskTitle(t))}</h3><ul class="dp-list">` + dpSteps(t).map((s) => {
-      const k = dpKey(t, s), c = dpCur(t, s), warn = dpWarning(c), stops = dpStops(t, s);
-      return `<li class="${DP.edits[k] ? "edited" : ""}"><div class="nm"><b>${esc(s.label)}</b><span class="meta">${esc(wday(c.start))} – ${esc(wday(lastOf(c.end, c.start)))} · ${fmtH(dpHours(c))} h · ${c.people.map((p) => esc(personName(p.party))).join(" och ")}</span>`
+    return ts.map((t) => `<h3 class="dp-grp">${esc(taskTitle(t))}</h3><ul class="dp-list">` + dpGroups(t).map((g) => {
+      const s = g[0], k = dpKey(t, s), c = dpCur(t, s), stops = g.flatMap((m) => dpStops(t, m));
+      const pass = g.length > 1, h = g.reduce((n, m) => n + dpHours(dpCur(t, m)), 0);
+      const warn = dpWarning({ ...c, people: g.flatMap((m) => dpCur(t, m).people) });
+      const hours = pass ? g.map((m) => `${esc(m.label)} ${esc(hText(dpHours(dpCur(t, m)), dpSrc(t, m)))}`).join(", ") : esc(hText(h, dpSrc(t, s), true));
+      const edited = g.some((m) => DP.edits[dpKey(t, m)] || dpKey(t, m) in DP.sit), done = g.every((m) => m.done);
+      return `<li class="${edited ? "edited" : ""}${pass ? " sitting" : ""}"><div class="nm">${pass ? `<span class="meta"><b>I samma pass</b> · ${hh(h)}</span>` : ""}<b>${g.map((m) => esc(m.label)).join(" · ")}</b><span class="meta">${esc(wday(c.start))} – ${esc(wday(lastOf(c.end, c.start)))} · ${hours} · ${c.people.map((p) => esc(personName(p.party))).join(" och ")}</span>`
         + (warn ? `<span class="dp-warn">${esc(warn)}</span>` : "") + stops.map((x) => `<span class="dp-warn">${esc(STOP_WORD[x.kind])} på ${esc(x.on)}: ${esc(x.what)}</span>`).join("") + `</div>`
-        + (s.done ? `<span class="chip green">klart</span>` : `<div class="dp-pm"><span>Flytta</span><button class="btn" data-dp-kb="${esc(k)}|move|-1" aria-label="${esc(s.label)}: en dag tidigare">−1 dag</button><button class="btn" data-dp-kb="${esc(k)}|move|1" aria-label="${esc(s.label)}: en dag senare">+1 dag</button>`
+        + (done ? `<span class="chip green">klart</span>` : `<div class="dp-pm"><span>Flytta</span><button class="btn" data-dp-kb="${esc(k)}|move|-1" aria-label="${esc(s.label)}: en dag tidigare">−1 dag</button><button class="btn" data-dp-kb="${esc(k)}|move|1" aria-label="${esc(s.label)}: en dag senare">+1 dag</button>`
           + `<span>Ledtid</span><button class="btn" data-dp-kb="${esc(k)}|end|-1" aria-label="${esc(s.label)}: en dag kortare">−1 dag</button><button class="btn" data-dp-kb="${esc(k)}|end|1" aria-label="${esc(s.label)}: en dag längre">+1 dag</button>`
-          + `<span>Timmar</span><button class="btn" data-dp-kb="${esc(k)}|hours|-1" aria-label="${esc(s.label)}: en timme mindre">−1 h</button><button class="btn" data-dp-kb="${esc(k)}|hours|1" aria-label="${esc(s.label)}: en timme mer">+1 h</button>`
-          + `<button class="btn quiet" data-dp-who="${esc(k)}|0">${ic("user")} Vem</button></div>`) + `</li>`; }).join("") + `</ul>`).join("");
+          + (pass ? `<button class="btn quiet" data-dp-split="${esc(k)}">Dela upp passet</button>`
+            : `<span>Timmar</span><button class="btn" data-dp-kb="${esc(k)}|hours|-1" aria-label="${esc(s.label)}: en kvart mindre">−15 min</button><button class="btn" data-dp-kb="${esc(k)}|hours|1" aria-label="${esc(s.label)}: en kvart mer">+15 min</button>`
+              + `<button class="btn quiet" data-dp-who="${esc(k)}|0">${ic("user")} Vem</button>`) + `</div>`) + `</li>`; }).join("") + `</ul>`).join("");
   }
   function dpFoot() {
-    const n = Object.keys(DP.edits).length, late = dpLate(), p = Object.values(DP.preview);
+    const n = dpCount(), late = dpLate(), p = Object.values(DP.preview);
     const warns = [...new Set(p.flatMap((x) => asArr(x?.warnings)))], handed = p.flatMap((x) => asArr(x?.handed_to));
     const moved = p.reduce((a, x) => a + asArr(x?.moved).length, 0);
     const state_ = DP.saving ? "Sparar…" : DP.pending ? "Räknar om…" : DP.error ? `Kunde inte räkna: ${DP.error}` : !n ? "Inga ändringar. Dra i blocken, eller använd pilarna."
@@ -5791,9 +5999,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const c = dpCur(t, s), cur = c.people[Number(i)]?.party, list = [...new Map([...(S.agenda?.colleagues ?? []), ...peopleList()].map((x) => [x.id, x])).values()];
     const hrs = c.people[Number(i)]?.hours ?? 0, warn = dpWarning(c);
     return `<div class="dp-popover" style="top:${p.y}px;left:${p.x}px" role="dialog" aria-label="Timmar och vem"><b>${esc(personName(cur))} · ${esc(s.label)}</b>`
-      + `<div class="dp-stepper"><button class="btn" data-dp-hstep="${esc(p.key)}|-1" aria-label="En timme mindre">−</button>`
-      + `<label><input type="number" min="1" max="999" step="1" value="${esc(fmtH(hrs).replace(",", "."))}" data-dp-hin="${esc(p.key)}" aria-label="Timmar"> h</label>`
-      + `<button class="btn" data-dp-hstep="${esc(p.key)}|1" aria-label="En timme mer">+</button></div>`
+      + `<div class="dp-stepper"><button class="btn" data-dp-hstep="${esc(p.key)}|-1" aria-label="En kvart mindre">−</button>`
+      + `<label><input type="number" min="0.25" max="999" step="0.25" value="${esc(String(hrs))}" data-dp-hin="${esc(p.key)}" aria-label="Timmar"> h</label>`
+      + `<button class="btn" data-dp-hstep="${esc(p.key)}|1" aria-label="En kvart mer">+</button></div>`
       + (warn ? `<div class="dp-warn">${esc(warn)}</div>` : "")
       + `<div class="meta">Vem gör det</div><div class="dp-people">`
       + list.map((x) => `<button class="${x.id === cur ? "on" : ""}" data-dp-pick="${esc(p.key)}|${esc(x.id)}">${ring(x.id, false)} ${esc(x.label || personName(x.id))}</button>`).join("") + `</div>`
@@ -5813,16 +6021,19 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       : `<div class="dp-scroll"><div class="dp-grid" style="width:${280 + f.n * f.dw}px;--dw:${f.dw}px;--axis:${DP.zoom === "week" ? 30 : 58}px">`
         + `<div class="dp-corner">${DP.mode === "step" ? "Steg" : "Person"}</div>${ax.head}<div class="dp-rows">${ax.bg}`
         + (DP.mode === "person" ? dpPersonRows(ts, f)
-          : ts.map((t) => `<div class="dp-grp"><div class="in"><b>${esc(taskTitle(t))}</b><span class="meta">${esc(lvCount(t))} · klart senast ${esc(wday(day10(t.due)))}</span></div></div>`
-            + dpSteps(t).map((s) => dpStepRow(t, s, f)).join("")).join(""))
+          : ts.map((t) => (dpFolded(t) ? dpTaskRow(t, f)
+            : `<div class="dp-grp"><div class="in">${ts.length > 1 ? `<button class="dp-fold" data-dp-fold="${esc(t.id)}" aria-expanded="true" aria-label="${esc(`Fäll ihop ${taskTitle(t)}`)}">▾</button>` : ""}<b>${esc(taskTitle(t))}</b><span class="meta">${esc(lvCount(t))} · klart senast ${esc(wday(day10(t.due)))}</span></div></div>`
+            + dpGroups(t).map((g) => (g.length > 1 ? dpPassRow(t, g, f) : dpStepRow(t, g[0], f))).join(""))).join(""))
         + `</div></div></div>`;
     el.innerHTML = `<header class="dp-head"><div class="dp-t"><h2 id="dp-title">Detaljplanering – tid</h2><span class="meta">${esc(DP.title)}${ts.length > 1 ? ` · ${plural(ts.length, "uppgift", "uppgifter")}` : ""}${isDay(f.due) ? ` · leverans ${esc(wday(f.due))}` : ""}</span>`
       + `<button class="ecl" data-ecl="detailplan|${esc(DP.tasks.join(","))}" title="${ECL_TIP}" aria-label="${ECL_TIP}">${ECL_ICON}</button></div>`
       + `<div class="dp-tools">${phone ? "" : `<div class="seg" role="group" aria-label="Visa"><button data-dp-mode="step" aria-pressed="${DP.mode === "step"}">Per steg</button><button data-dp-mode="person" aria-pressed="${DP.mode === "person"}">Per person</button></div>`}`
       + (phone ? "" : `<div class="seg" role="group" aria-label="Skala"><button data-dp-zoom="day" aria-pressed="${DP.zoom === "day"}">Dag</button><button data-dp-zoom="week" aria-pressed="${DP.zoom === "week"}">Vecka</button></div>`)
+      + (phone || DP.mode === "person" || ts.length < 2 ? "" : `<button class="btn quiet" data-dp-foldall="${ts.some((t) => dpFolded(t)) ? "open" : "close"}">${ts.some((t) => dpFolded(t)) ? "Fäll ut alla" : "Fäll ihop alla"}</button>`)
       + `<label class="meta dp-names"><input type="checkbox" data-dp-names="1"${DP.names ? " checked" : ""}> Fullt namn</label>`
       + `<button class="btn quiet" data-dp-close="1" aria-label="Stäng detaljplaneringen">Stäng</button></div></header>`
-      + (phone || DP.mode === "person" ? "" : `<p class="dp-help meta">Dra ett block för att flytta ledtiden, och kanten för första eller sista dagen. Stegen efter följer med — håll Alt för att flytta bara detta. Brickan är timmarna och vem: dra den uppåt för fler, nedåt för färre, eller klicka för stegaren.</p>`)
+      + (phone || DP.mode === "person" ? "" : `<p class="dp-help meta">Dra ett block för att flytta ledtiden, och kanten för första eller sista dagen. Stegen efter följer med — håll Alt för att flytta bara detta. Brickan är timmarna och vem: dra den uppåt för fler, nedåt för färre, eller klicka för stegaren. «≈» är förra gångerna, «(?)» en uppskattning. Korta steg i följd som samma person gör står som ett pass; Skift-klicka block för att slå ihop eller dela upp.${ts.some((t) => dpFolded(t)) ? " En hopfälld uppgift dras i sin helhet; ▸ fäller ut den." : ""}</p>`)
+      + (phone || DP.mode === "person" ? "" : dpBar())
       + body + dpFoot() + dpPop();
     const sc2 = el.querySelector(".dp-scroll");
     if (sc2) { if (DP.scroll) { sc2.scrollLeft = DP.scroll.l; sc2.scrollTop = DP.scroll.t; } else sc2.scrollLeft = Math.max(0, f.x(TODAY) - f.dw * 2); }
@@ -5853,12 +6064,15 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (!g.moved && Math.abs(g.kind === "knob" ? dy : dx) < 4) return;
     g.moved = true;
     DP.edits = JSON.parse(g.snap);
-    const parts = g.ref.split("|"), { t, s } = dpStep(`${parts[0]}|${parts[1]}`); if (!s) return;
+    const parts = g.ref.split("|");
+    // En hopfälld uppgift flyttas i sin helhet.
+    if (parts[1] === "@task") { dpMoveTask(taskById(parts[0]), Math.round(dx / g.dw), e.altKey); Object.assign(DP, { sel: g.ref }); dpRender(); return $("#dp")?.classList.add("dragging"); }
+    const { t, s } = dpStep(`${parts[0]}|${parts[1]}`); if (!s) return;
     const days = Math.round(dx / g.dw);
     if (g.kind === "move") dpMove(t, s, days, e.altKey);
     else if (g.kind === "edge") dpEdge(t, s, parts[2], days, e.altKey);
-    // Knoben: uppåt är fler timmar, 6 px per timme.
-    else { const i = Number(parts[2]), base = dpCur(t, s).people[i]?.hours ?? 1; dpSetHours(t, s, i, base + Math.round(dy / 6)); }
+    // Knoben: uppåt är fler timmar, en kvart per 6 px.
+    else { const i = Number(parts[2]), base = dpCur(t, s).people[i]?.hours ?? 1; dpSetHours(t, s, i, base + Math.round(dy / 6) * QUARTER); }
     DP.sel = `${t.id}|${s.step}`;
     dpRender();
     $("#dp")?.classList.add("dragging");
@@ -5869,6 +6083,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (e.type === "pointercancel") { DP.edits = JSON.parse(g.snap); return dpRender(); }
     if (!g.moved) { DP.sel = g.ref.split("|").slice(0, 2).join("|");
       if (g.kind === "knob") DP.pop = { kind: "knob", key: g.ref, ...dpWhere(g.el) };
+      // Skift-klick väljer blocket (pass): flera valda ger «Gör i samma pass» och «Dela upp».
+      else if (g.kind === "move" && e.shiftKey && !g.ref.endsWith("|@task")) dpPickToggle(g.ref);
       return dpRender(); }
     dpChanged();
   };
@@ -5879,14 +6095,19 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const kn = e.target.closest?.("[data-dp-knob]");
     if (kn && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); DP.pop = { kind: "knob", key: kn.dataset.dpKnob, ...dpWhere(kn) }; return dpRender(); }
     if (kn && (e.key === "ArrowUp" || e.key === "ArrowDown")) { e.preventDefault(); const [tid, sid, i] = kn.dataset.dpKnob.split("|"), { t, s } = dpStep(`${tid}|${sid}`);
-      dpSetHours(t, s, Number(i), (dpCur(t, s).people[Number(i)]?.hours ?? 1) + (e.key === "ArrowUp" ? 1 : -1)); return dpChanged(); }
+      dpSetHours(t, s, Number(i), (dpCur(t, s).people[Number(i)]?.hours ?? 1) + (e.key === "ArrowUp" ? QUARTER : -QUARTER)); return dpChanged(); }
+    const picker = !kn && e.key === " " && e.target.closest?.("[data-dp-blk]:not(.done):not(.task)");
+    if (picker) { e.preventDefault(); dpPickToggle(picker.dataset.dpBlk); return dpRender(); }
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     const blk = !kn && e.target.closest?.("[data-dp-blk]:not(.done)"); if (!blk) return;
     e.preventDefault();
-    const n = e.key === "ArrowRight" ? 1 : -1, { t, s } = dpStep(blk.dataset.dpBlk); DP.sel = blk.dataset.dpBlk;
+    const n = e.key === "ArrowRight" ? 1 : -1;
+    if (blk.dataset.dpBlk.endsWith("|@task")) { DP.sel = blk.dataset.dpBlk; dpMoveTask(taskById(blk.dataset.dpBlk.split("|")[0]), n, e.altKey); return dpChanged(); }
+    const { t, s } = dpStep(blk.dataset.dpBlk); DP.sel = blk.dataset.dpBlk;
     if (e.shiftKey) dpEdge(t, s, "r", n, e.altKey); else dpMove(t, s, n, e.altKey);
     dpChanged();
   });
+  function dpPickToggle(k) { DP.pick = DP.pick.includes(k) ? DP.pick.filter((x) => x !== k) : [...DP.pick, k]; }
   /** Var en ruta vid ett element hamnar i fönstret. */
   const dpWhere = (el) => { const r = el.getBoundingClientRect(), box = $("#dp").getBoundingClientRect();
     return { x: Math.max(8, Math.min(r.left - box.left, box.width - 320)), y: Math.max(8, Math.min(r.bottom - box.top + 6, box.height - 340)) }; };
@@ -5895,7 +6116,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const kn = DP.open && e.target.closest?.("[data-dp-knob]"); if (!kn || !e.deltaY) return;
     e.preventDefault();
     const [tid, sid, i] = kn.dataset.dpKnob.split("|"), { t, s } = dpStep(`${tid}|${sid}`);
-    dpSetHours(t, s, Number(i), (dpCur(t, s).people[Number(i)]?.hours ?? 1) + (e.deltaY < 0 ? 1 : -1)); dpChanged();
+    dpSetHours(t, s, Number(i), (dpCur(t, s).people[Number(i)]?.hours ?? 1) + (e.deltaY < 0 ? QUARTER : -QUARTER)); dpChanged();
   }, { passive: false });
   document.addEventListener("change", (e) => {
     const inp = DP.open && e.target.closest?.("[data-dp-hin]"); if (!inp) return;
@@ -5903,7 +6124,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (Number.isFinite(v)) { dpSetHours(t, s, Number(i), v); dpChanged(); }
   });
   document.addEventListener("click", (e) => {
-    const b = e.target.closest?.("[data-dp-open],[data-dp-close],[data-dp-mode],[data-dp-zoom],[data-dp-names],[data-dp-std],[data-dp-undo],[data-dp-save],[data-dp-who],[data-dp-hstep],[data-dp-pick],[data-dp-share],[data-dp-unshare],[data-dp-stop],[data-dp-popclose],[data-dp-kb],[data-dp-goto],[data-dp-propose],[data-dp-noprop],[data-dp-step]");
+    const b = e.target.closest?.("[data-dp-open],[data-dp-close],[data-dp-mode],[data-dp-zoom],[data-dp-names],[data-dp-std],[data-dp-undo],[data-dp-save],[data-dp-who],[data-dp-hstep],[data-dp-pick],[data-dp-share],[data-dp-unshare],[data-dp-stop],[data-dp-popclose],[data-dp-kb],[data-dp-goto],[data-dp-propose],[data-dp-noprop],[data-dp-step],[data-dp-join],[data-dp-split],[data-dp-unpick],[data-dp-fold],[data-dp-foldall]");
     if (!b) { if (DP.pop && !e.target.closest?.(".dp-popover")) { DP.pop = null; dpRender(); } return; }
     const ds = b.dataset;
     if (ds.dpOpen) return dpOpen(ds.dpOpen.split(","));
@@ -5914,7 +6135,12 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (ds.dpZoom) { DP.zoom = ds.dpZoom; DP.scroll = null; return dpRender(); }
     if (ds.dpNames) { DP.names = b.checked; return dpRender(); }
     if (ds.dpStd) { DP.standard = b.checked; return; }
-    if (ds.dpUndo) { DP.edits = {}; DP.preview = {}; DP.error = null; return dpRender(); }
+    if (ds.dpUndo) { DP.edits = {}; DP.sit = {}; DP.pick = []; DP.preview = {}; DP.error = null; return dpRender(); }
+    if (ds.dpJoin) return dpJoin();
+    if (ds.dpFold) { const t = taskById(ds.dpFold); if (t) DP.fold[t.id] = !dpFolded(t); return dpRender(); }
+    if (ds.dpFoldall) { for (const t of dpTasks()) DP.fold[t.id] = ds.dpFoldall === "close"; return dpRender(); }
+    if (ds.dpSplit) { if (ds.dpSplit !== "1") DP.pick = [ds.dpSplit]; return dpSplit(); }
+    if (ds.dpUnpick) { DP.pick = []; return dpRender(); }
     if (ds.dpSave) return void dpSave();
     if (ds.dpPropose) return void dpPropose(b);
     if (ds.dpNoprop) { DP.proposal = null; return dpRender(); }
@@ -5922,13 +6148,13 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (ds.dpWho) { e.stopPropagation(); DP.pop = { kind: "knob", key: ds.dpWho, ...dpWhere(b) }; return dpRender(); }
     if (ds.dpStop) { e.stopPropagation(); DP.pop = { kind: "stop", key: ds.dpStop, ...dpWhere(b) }; return dpRender(); }
     if (ds.dpHstep) { const [tid, sid, i, n] = ds.dpHstep.split("|"), { t, s } = dpStep(`${tid}|${sid}`);
-      dpSetHours(t, s, Number(i), (dpCur(t, s).people[Number(i)]?.hours ?? 1) + Number(n)); return dpChanged(); }
+      dpSetHours(t, s, Number(i), (dpCur(t, s).people[Number(i)]?.hours ?? 1) + Number(n) * QUARTER); return dpChanged(); }
     if (ds.dpPick) { const [tid, sid, i, party] = ds.dpPick.split("|"), { t, s } = dpStep(`${tid}|${sid}`); DP.pop = null; dpPerson(t, s, Number(i), party); return dpChanged(); }
     if (ds.dpShare) { const [tid, sid, party] = ds.dpShare.split("|"), { t, s } = dpStep(`${tid}|${sid}`); DP.pop = null; dpShare(t, s, party); return dpChanged(); }
     if (ds.dpUnshare) { const [tid, sid, i] = ds.dpUnshare.split("|"), { t, s } = dpStep(`${tid}|${sid}`); DP.pop = null; dpUnshare(t, s, Number(i)); return dpChanged(); }
     if (ds.dpGoto) { DP.mode = "step"; DP.sel = ds.dpGoto; DP.scroll = null; dpRender(); return $(`#dp [data-dp-blk="${CSS.escape(ds.dpGoto)}"]`)?.focus(); }
     if (ds.dpKb) { const [tid, sid, what, n] = ds.dpKb.split("|"), { t, s } = dpStep(`${tid}|${sid}`), k = Number(n);
-      if (what === "move") dpMove(t, s, k, false); else if (what === "end") dpEdge(t, s, "r", k, false); else dpSetHours(t, s, 0, (dpCur(t, s).people[0]?.hours ?? 1) + k);
+      if (what === "move") dpMove(t, s, k, false); else if (what === "end") dpEdge(t, s, "r", k, false); else dpSetHours(t, s, 0, (dpCur(t, s).people[0]?.hours ?? 1) + k * QUARTER);
       return dpChanged(); }
   });
   addEventListener("resize", () => { if (DP.open) dpRender(); });
@@ -7934,7 +8160,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       // det som är ändrat men inte sparat — och de valda stegen först.
       const ts = String(id).split(",").map(taskById).filter(Boolean); if (!ts.length) return null;
       const line = (t, s) => { const c = dpCur(t, s);
-        return `${DP.sel === dpKey(t, s) ? "▶ " : ""}${s.label}: ${c.start} till ${c.end} (slutet räknas inte), ${fmtH(dpHours(c))} h, ${c.people.map((p) => `${personName(p.party)} ${fmtH(p.hours)} h`).join(" och ")}${DP.edits[dpKey(t, s)] ? " — ändrat, inte sparat" : ""} [task ${t.id}, step ${s.step}]`; };
+        return `${DP.sel === dpKey(t, s) ? "▶ " : ""}${s.label}: ${c.start} till ${c.end} (slutet räknas inte), ${hh(dpHours(c))}, ${c.people.map((p) => `${personName(p.party)} ${hh(p.hours)}`).join(" och ")}${DP.edits[dpKey(t, s)] ? " — ändrat, inte sparat" : ""} [task ${t.id}, step ${s.step}]`; };
       return { kind, id, name: `Detaljplanering – ${DP.title || taskTitle(ts[0])}`, path: editPath(ts[0], null),
         current: ts.map((t) => [`Uppgift: ${taskTitle(t)} (leverans ${day10(t.due)})`, ...dpSteps(t).map((s) => `- ${line(t, s)}`)].join("\n")).join("\n\n"), save: [
         `- Stegen: execute_step { task, plan: { steps: [{ step, window: { start, end }, hours, people: [{ party, hours }] }] } } utan save visar förhandsvisningen; samma med plan.save: true sparar. Spricker leveransen krävs plan.accept_late och mitt ja i user_approval.`,
