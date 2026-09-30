@@ -666,9 +666,18 @@ body.dp-on { overflow: hidden; }
 body.dp-on::after { content: ""; position: fixed; inset: 0; background: rgba(20, 20, 30, .32); z-index: 54; }
 dialog.dp { position: fixed; inset: 16px; width: auto; height: auto; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; border-radius: 16px;
   background: var(--bg); color: var(--text); box-shadow: var(--shadow); z-index: 55; display: flex; flex-direction: column; overflow: hidden; }
-.dp-head { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 14px 20px 10px; border-bottom: 1px solid var(--line); }
+.dp-head { position: sticky; top: 0; z-index: 30; flex: none; background: var(--bg); display: flex; gap: 8px 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+.dp-top { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex: 1 1 100%; min-width: 0; }
 .dp-t { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; min-width: 0; }
 .dp-t h2 { margin: 0; font-size: 17px; }
+.dp-sum { font: inherit; color: inherit; background: none; border: 0; padding: 0; display: inline-flex; gap: 6px; align-items: center; }
+button.dp-sum { cursor: pointer; border-radius: 7px; padding: 1px 4px; }
+button.dp-sum:hover { background: var(--accent-weak); }
+button.dp-sum:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+.dp-ask { flex: 1 1 100%; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 8px 12px; border-radius: 10px; background: var(--amber-weak, var(--bg-subtle)); border: 1px solid var(--amber, var(--line-strong)); }
+.dp-x { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); font-size: 20px; line-height: 1; padding: 0; cursor: pointer; }
+.dp-x:hover { background: var(--bg-selected); }
+.dp-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .dp-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .dp-names { display: inline-flex; gap: 6px; align-items: center; min-height: 32px; }
 .dp-help { margin: 0; padding: 8px 20px; border-bottom: 1px solid var(--line); }
@@ -1121,7 +1130,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "1ed7d72", published: "2026-09-30" };
+  const SIDA = { version: "48c5ab6", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -5796,6 +5805,11 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     people[i] = { ...people[i], party };
     dpSet(t, s, { ...c, people });
   }
+  /** Hela passet till en person: varje ogjort steg får henne, med stegets timmar (delade steg samlas hos henne). */
+  function dpPassPerson(t, g, party) {
+    for (const m of g) { if (m.done) continue; const c = dpCur(t, m);
+      dpSet(t, m, { ...c, people: [{ party, hours: dpHours(c) }] }); }
+  }
   function dpShare(t, s, party) {
     const c = dpCur(t, s), h = dpHours(c), people = c.people.map((p) => ({ ...p }));
     if (people.some((p) => p.party === party)) return;
@@ -5846,8 +5860,13 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     dpRender();
     if (sel) requestAnimationFrame(() => document.querySelector(`#dp [data-dp-blk="${CSS.escape(sel)}"]`)?.focus({ preventScroll: false }));
   }
+  /** Stäng med fråga när något är osparat; klick utanför stänger aldrig. */
+  function dpAskClose() {
+    if (dpCount() && !DP.saving) { DP.askClose = true; DP.pop = null; dpRender(); return $("#dp [data-dp-closeno]")?.focus(); }
+    dpClose();
+  }
   function dpClose() {
-    DP.open = false; DP.pop = null; DP.pull = null; clearTimeout(DP.timer);
+    DP.open = false; DP.pop = null; DP.pull = null; DP.askClose = false; clearTimeout(DP.timer);
     const el = $("#dp"); if (el) { el.close?.(); el.remove(); }
     document.body.classList.remove("dp-on");
   }
@@ -6003,7 +6022,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       + `<div class="dp-blk sitting${done ? " done" : ""}${late ? " late" : ""}${edited ? " edited" : ""}${crit ? " crit" : ""}${picked ? " pick" : ""}" data-dp-blk="${esc(k)}" tabindex="${done ? -1 : 0}" role="button"`
       + ` style="left:${f.x(c.start)}px;width:${len * f.dw}px" aria-label="${esc(`${say}. Pilar flyttar passet en dag, Skift och pil ändrar sista dagen. Mellanslag eller Skift-klick väljer passet.`)}" title="${esc(say)}">`
       + (done ? "" : `<i class="dp-e l" data-dp-edge="${esc(k)}|l" title="Dra: första dagen"></i><i class="dp-e r" data-dp-edge="${esc(k)}|r" title="Dra: sista dagen"></i>`)
-      + `<span class="dp-knobs"><span class="dp-sum${warn ? " warn" : ""}" title="${esc(`Passet: ${hh(h)}`)}">${ring(dpDoer(t, first) || pid(first.responsible), DP.names)}<b>${hh(h)}</b>${guessed ? `<span class="q">(?)</span>` : ""}</span></span></div></div>` + subRows;
+      + `<span class="dp-knobs">${done ? "" : `<button class="dp-sum${warn ? " warn" : ""}" data-dp-passwho="${esc(k)}" title="${esc(`Passet: ${hh(h)}. Klicka för att byta vem som gör hela passet.`)}" aria-label="${esc(`Byt vem som gör hela passet, ${hh(h)}`)}">`}${done ? `<span class="dp-sum">` : ""}${ring(dpDoer(t, first) || pid(first.responsible), DP.names)}<b>${hh(h)}</b>${guessed ? `<span class="q">(?)</span>` : ""}${done ? "</span>" : "</button>"}</span></div></div>` + subRows;
   }
   /** En hopfälld uppgift som en rad: stapeln över alla stegen, timmarna och vilka. */
   function dpTaskRow(t, f) {
@@ -6133,6 +6152,15 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (p.kind === "stop") return `<div class="dp-popover" style="top:${p.y}px;left:${p.x}px" role="dialog" aria-label="Det som stoppar"><b>${esc(s.label)}</b>`
       + dpStops(t, s).map((x) => `<p><span class="chip ${x.kind === "wait" ? "amber" : x.kind === "decision" ? "blue" : "red"}">${esc(STOP_WORD[x.kind])}</span> på <b>${esc(x.on)}</b><br>${esc(x.what)}${x.by ? `<br><span class="meta">Behövs senast ${esc(wday(x.by))}</span>` : ""}${x.late ? ` <span class="chip red">besvaras för sent</span> <span class="meta">steget börjar ${esc(wday(s.start))}</span>` : ""}</p>`).join("")
       + `<button class="btn sm quiet" data-dp-popclose="1">Stäng</button></div>`;
+    if (p.kind === "pass") {
+      const g = dpGroupOf(t, s), open = g.filter((m) => !m.done), who = [...new Set(open.flatMap((m) => dpCur(t, m).people.map((q) => q.party)))];
+      const ppl = [...new Map([...(S.agenda?.colleagues ?? []), ...peopleList()].map((x) => [x.id, x])).values()], ins = new Set([...(S.agenda?.colleagues ?? []).map((x) => x.id), me()].filter(Boolean));
+      return `<div class="dp-popover" style="top:${p.y}px;left:${p.x}px" role="dialog" aria-label="Vem gör passet"><b>Vem gör hela passet?</b><div class="meta">${esc(plural(open.length, "steg", "steg"))}: ${esc(open.map((m) => m.label).join(", "))}</div><div class="dp-people">`
+        + ppl.map((x) => { const ext = (S.agenda?.colleagues ?? []).length > 0 && !ins.has(x.id), nm = x.label || personName(x.id);
+          return ext ? `<button disabled title="${esc(`${nm} finns utanför Rotor och kan inte ta ett pass med timmar.`)}">${ring(x.id, false)} ${esc(nm)} <span class="meta">tar inte pass med timmar</span></button>`
+            : `<button class="${who.length === 1 && who[0] === x.id ? "on" : ""}" data-dp-passpick="${esc(p.key)}|${esc(x.id)}">${ring(x.id, false)} ${esc(nm)}</button>`; }).join("") + `</div>`
+        + `<p class="meta">Alla stegen i passet byter person i samma förhandsvisning, och byter gäller när du sparar. Ett steg som delades mellan flera samlas hos den du väljer.</p><button class="btn sm quiet" data-dp-popclose="1">Stäng</button></div>`;
+    }
     const c = dpCur(t, s), cur = c.people[Number(i)]?.party, list = [...new Map([...(S.agenda?.colleagues ?? []), ...peopleList()].map((x) => [x.id, x])).values()];
     const hrs = c.people[Number(i)]?.hours ?? 0, warn = dpWarning(c);
     return `<div class="dp-popover" style="top:${p.y}px;left:${p.x}px" role="dialog" aria-label="Timmar och vem"><b>${esc(personName(cur))} · ${esc(s.label)}</b>`
@@ -6162,13 +6190,14 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
             : `<div class="dp-grp"><div class="in">${ts.length > 1 ? `<button class="dp-fold" data-dp-fold="${esc(t.id)}" aria-expanded="true" aria-label="${esc(`Fäll ihop ${taskTitle(t)}`)}">▾</button>` : ""}<b>${esc(taskTitle(t))}</b><span class="meta">${esc(lvCount(t))} · klart senast ${esc(wday(day10(t.due)))}</span></div></div>`
             + dpGroups(t).map((g) => (g.length > 1 ? dpPassRow(t, g, f) : dpStepRow(t, g[0], f))).join(""))).join(""))
         + `</div></div></div>`;
-    el.innerHTML = `<header class="dp-head"><div class="dp-t"><h2 id="dp-title">Detaljplanering – tid</h2><span class="meta">${esc(DP.title)}${ts.length > 1 ? ` · ${plural(ts.length, "uppgift", "uppgifter")}` : ""}${isDay(f.due) ? ` · leverans ${esc(wday(f.due))}` : ""}</span>`
+    el.innerHTML = `<header class="dp-head"><div class="dp-top"><div class="dp-t"><h2 id="dp-title">Detaljplanering – tid</h2><span class="meta">${esc(DP.title)}${ts.length > 1 ? ` · ${plural(ts.length, "uppgift", "uppgifter")}` : ""}${isDay(f.due) ? ` · leverans ${esc(wday(f.due))}` : ""}</span>`
       + `<button class="ecl" data-ecl="detailplan|${esc(DP.tasks.join(","))}" title="${ECL_TIP}" aria-label="${ECL_TIP}">${ECL_ICON}</button></div>`
+      + `<button class="dp-x" data-dp-close="1" aria-label="Stäng" title="Stäng (Esc)">✕</button></div>`
       + `<div class="dp-tools">${phone ? "" : `<div class="seg" role="group" aria-label="Visa"><button data-dp-mode="step" aria-pressed="${DP.mode === "step"}">Per steg</button><button data-dp-mode="person" aria-pressed="${DP.mode === "person"}">Per person</button></div>`}`
       + (phone ? "" : `<div class="seg" role="group" aria-label="Skala"><button data-dp-zoom="day" aria-pressed="${DP.zoom === "day"}">Dag</button><button data-dp-zoom="week" aria-pressed="${DP.zoom === "week"}">Vecka</button></div>`)
       + (phone || DP.mode === "person" || ts.length < 2 ? "" : `<button class="btn quiet" data-dp-foldall="${ts.some((t) => dpFolded(t)) ? "open" : "close"}">${ts.some((t) => dpFolded(t)) ? "Fäll ut alla" : "Fäll ihop alla"}</button>`)
       + `<label class="meta dp-names"><input type="checkbox" data-dp-names="1"${DP.names ? " checked" : ""}> Fullt namn</label>`
-      + `<button class="btn quiet" data-dp-close="1" aria-label="Stäng detaljplaneringen">Stäng</button></div></header>`
+      + `</div>${DP.askClose ? `<div class="dp-ask" role="alertdialog" aria-label="Stäng utan att spara?"><b>Stäng utan att spara?</b><span class="meta">Ändringarna i förhandsvisningen försvinner.</span><button class="btn sm" data-dp-closeyes="1">Stäng utan att spara</button><button class="btn sm primary" data-dp-closeno="1">Fortsätt planera</button></div>` : ""}</header>`
       + (phone || DP.mode === "person" ? "" : `<p class="dp-help meta">Dra ett block för att flytta ledtiden, och kanten för första eller sista dagen. Stegen efter följer med — håll Alt för att flytta bara detta. Brickan är timmarna och vem: dra den uppåt för fler, nedåt för färre, eller klicka för stegaren. «≈» är förra gångerna, «(?)» en uppskattning. Korta steg i följd som samma person gör står som ett pass; Skift-klicka block för att slå ihop eller dela upp.${ts.some((t) => dpFolded(t)) ? " En hopfälld uppgift dras i sin helhet; ▸ fäller ut den." : ""}</p>`)
       + (phone || DP.mode === "person" ? "" : dpBar())
       + body + dpFoot() + dpPop();
@@ -6228,7 +6257,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   document.addEventListener("pointerup", dpDragEnd); document.addEventListener("pointercancel", dpDragEnd);
   document.addEventListener("keydown", (e) => {
     if (!DP.open) return;
-    if (e.key === "Escape") { e.preventDefault(); if (DP.pop) { DP.pop = null; return dpRender(); } return dpClose(); }
+    if (e.key === "Escape") { e.preventDefault(); if (DP.pop) { DP.pop = null; return dpRender(); } if (DP.askClose) { DP.askClose = false; return dpRender(); } return dpAskClose(); }
     const kn = e.target.closest?.("[data-dp-knob]");
     if (kn && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); DP.pop = { kind: "knob", key: kn.dataset.dpKnob, ...dpWhere(kn) }; return dpRender(); }
     if (kn && (e.key === "ArrowUp" || e.key === "ArrowDown")) { e.preventDefault(); const [tid, sid, i] = kn.dataset.dpKnob.split("|"), { t, s } = dpStep(`${tid}|${sid}`);
@@ -6261,7 +6290,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (Number.isFinite(v)) { dpSetHours(t, s, Number(i), v); dpChanged(); }
   });
   document.addEventListener("click", (e) => {
-    const b = e.target.closest?.("[data-dp-open],[data-dp-close],[data-dp-mode],[data-dp-zoom],[data-dp-names],[data-dp-std],[data-dp-undo],[data-dp-save],[data-dp-who],[data-dp-hstep],[data-dp-pick],[data-dp-share],[data-dp-unshare],[data-dp-stop],[data-dp-popclose],[data-dp-kb],[data-dp-goto],[data-dp-propose],[data-dp-noprop],[data-dp-pull],[data-dp-pullsave],[data-dp-pullno],[data-dp-step],[data-dp-join],[data-dp-split],[data-dp-unpick],[data-dp-fold],[data-dp-foldall]");
+    const b = e.target.closest?.("[data-dp-open],[data-dp-close],[data-dp-closeyes],[data-dp-closeno],[data-dp-mode],[data-dp-zoom],[data-dp-names],[data-dp-std],[data-dp-undo],[data-dp-save],[data-dp-who],[data-dp-hstep],[data-dp-pick],[data-dp-passwho],[data-dp-passpick],[data-dp-share],[data-dp-unshare],[data-dp-stop],[data-dp-popclose],[data-dp-kb],[data-dp-goto],[data-dp-propose],[data-dp-noprop],[data-dp-pull],[data-dp-pullsave],[data-dp-pullno],[data-dp-step],[data-dp-join],[data-dp-split],[data-dp-unpick],[data-dp-fold],[data-dp-foldall]");
     if (!b) { if (DP.pop && !e.target.closest?.(".dp-popover")) { DP.pop = null; dpRender(); } return; }
     const ds = b.dataset;
     if (ds.dpOpen) return dpOpen(ds.dpOpen.split(","));
@@ -6270,7 +6299,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (ds.dpPullno) { DP.pull = null; return dpRender(); }
     if (ds.dpStep) { const [tid] = ds.dpStep.split("|"), t = taskById(tid), dv = t && deliveryOfTask(t);
       return dpOpen(dv && !dv.implicit ? lvTasks(dv).map((x) => x.id) : [tid], ds.dpStep); }
-    if (ds.dpClose) return dpClose();
+    if (ds.dpClose) return dpAskClose();
+    if (ds.dpCloseyes) return dpClose();
+    if (ds.dpCloseno) { DP.askClose = false; return dpRender(); }
     if (ds.dpMode) { DP.mode = ds.dpMode; DP.scroll = null; return dpRender(); }
     if (ds.dpZoom) { DP.zoom = ds.dpZoom; DP.scroll = null; return dpRender(); }
     if (ds.dpNames) { DP.names = b.checked; return dpRender(); }
@@ -6290,6 +6321,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (ds.dpHstep) { const [tid, sid, i, n] = ds.dpHstep.split("|"), { t, s } = dpStep(`${tid}|${sid}`);
       dpSetHours(t, s, Number(i), (dpCur(t, s).people[Number(i)]?.hours ?? 1) + Number(n) * QUARTER); return dpChanged(); }
     if (ds.dpPick) { const [tid, sid, i, party] = ds.dpPick.split("|"), { t, s } = dpStep(`${tid}|${sid}`); DP.pop = null; dpPerson(t, s, Number(i), party); return dpChanged(); }
+    if (ds.dpPasswho) { e.stopPropagation(); DP.pop = { kind: "pass", key: ds.dpPasswho, ...dpWhere(b) }; return dpRender(); }
+    if (ds.dpPasspick) { const [tid, sid, party] = ds.dpPasspick.split("|"), { t, s } = dpStep(`${tid}|${sid}`); DP.pop = null; dpPassPerson(t, dpGroupOf(t, s), party); return dpChanged(); }
     if (ds.dpShare) { const [tid, sid, party] = ds.dpShare.split("|"), { t, s } = dpStep(`${tid}|${sid}`); DP.pop = null; dpShare(t, s, party); return dpChanged(); }
     if (ds.dpUnshare) { const [tid, sid, i] = ds.dpUnshare.split("|"), { t, s } = dpStep(`${tid}|${sid}`); DP.pop = null; dpUnshare(t, s, Number(i)); return dpChanged(); }
     if (ds.dpGoto) { DP.mode = "step"; DP.sel = ds.dpGoto; DP.scroll = null; dpRender(); return $(`#dp [data-dp-blk="${CSS.escape(ds.dpGoto)}"]`)?.focus(); }

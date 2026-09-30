@@ -1,0 +1,5 @@
+interface:
+  display_name: "Image Prompt Director"
+  short_description: "Turns loose image ideas into strong, usable English prompts."
+  icon: "Image"
+  color: "#2F5D62"
