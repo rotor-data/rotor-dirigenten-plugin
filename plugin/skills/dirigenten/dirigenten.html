@@ -1091,7 +1091,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "9d78bed", published: "2026-09-30" };
+  const SIDA = { version: "ac10ad9", published: "2026-09-30" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1442,6 +1442,24 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   const wday = (s) => `${WD[d(s).getUTCDay()]} ${short(s)}`;
   const week = (s) => { const t = d(s); t.setUTCDate(t.getUTCDate() + 4 - (t.getUTCDay() || 7)); const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y) / DAY + 1) / 7); };
   const monday = (s) => add(s, -((d(s).getUTCDay() + 6) % 7));
+  /* Svenska helgdagar (Daniel P 2026-09-30), samma regel som servern (src/plan/calendar.ts):
+     rörliga helger ur påsken, inga årslistor. */
+  const easterOf = (y) => { const a = y % 19, b = Math.floor(y / 100), c = y % 100, dd = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3),
+    h = (19 * a + b - dd - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    return `${y}-${String(Math.floor((h + l - 7 * m + 114) / 31)).padStart(2, "0")}-${String(((h + l - 7 * m + 114) % 31) + 1).padStart(2, "0")}`; };
+  const HOLI = new Map();
+  const holidays = (y) => { if (HOLI.has(y)) return HOLI.get(y);
+    const e = easterOf(y), dow = (from, w) => { let x = from; while (d(x).getUTCDay() !== w) x = add(x, 1); return x; }, mid = dow(`${y}-06-19`, 5);
+    const m = new Map([[`${y}-01-01`, "Nyårsdagen"], [`${y}-01-06`, "Trettondedag jul"], [add(e, -2), "Långfredagen"], [add(e, -1), "Påskafton"], [e, "Påskdagen"], [add(e, 1), "Annandag påsk"],
+      [`${y}-05-01`, "Första maj"], [add(e, 39), "Kristi himmelsfärdsdag"], [add(e, 49), "Pingstdagen"], [`${y}-06-06`, "Sveriges nationaldag"], [mid, "Midsommarafton"], [add(mid, 1), "Midsommardagen"],
+      [dow(`${y}-10-31`, 6), "Alla helgons dag"], [`${y}-12-24`, "Julafton"], [`${y}-12-25`, "Juldagen"], [`${y}-12-26`, "Annandag jul"], [`${y}-12-31`, "Nyårsafton"]]);
+    HOLI.set(y, m); return m; };
+  const holidayName = (x) => holidays(Number(String(x).slice(0, 4))).get(String(x).slice(0, 10)) ?? null;
+  const isWorkday = (x) => { const w = d(x).getUTCDay(); return w !== 0 && w !== 6 && !holidayName(x); };
+  /** Sista arbetsdagen i ett steg: planens slut räknas inte med ([start, slut)). */
+  const lastOf = (end, start = null) => { let x = String(end).slice(0, 10); if (start && x <= String(start).slice(0, 10)) return String(start).slice(0, 10);
+    x = add(x, -1); for (let n = 0; n < 30 && !isWorkday(x); n++) x = add(x, -1); return start && x < String(start).slice(0, 10) ? String(start).slice(0, 10) : x; };
+  const lastDay = (s) => lastOf(s.end, s.start);
   const KIND = { code: ["code", "kod"], llm: ["sparkles", "Claude"], human: ["user", "en människa"], mixed: ["users", "kod och människa"], ext: ["building", "kunden eller någon utanför Rotor"] };
   const kindMark = (k) => { const x = KIND[k] || KIND.human; return `<span class="kind ${k || "human"}" title="Görs av ${x[1]}" aria-label="Görs av ${x[1]}">${ic(x[0])}</span>`; };
   const ORIGIN = { decided: "beslutad", measured: "mätt", derived: "uträknad", guessed: "gissad" };
@@ -3811,7 +3829,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
    */
   function timeline() {
     const { from: start, weeks: nWeeks, days, end } = tlSpan();
-    const shown = (st) => st.start.slice(0, 10) < end && add(st.end.slice(0, 10), 1) > start;
+    const shown = (st) => st.start.slice(0, 10) < end && add(lastDay(st), 1) > start;
     const rows = tasks().filter((t) => t.steps.some((st) => shown(st) && (!st.done || start < monday(TODAY)))).sort((a, b) => String(a.due).localeCompare(String(b.due))).slice(0, 40);
     const pos = (x) => Math.max(0, Math.min(100, diff(String(x).slice(0, 10), start) / days * 100));
     const weeks = Array.from({ length: nWeeks }, (_, i) => add(start, i * 7));
@@ -3823,10 +3841,10 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
           + `<td><div class="lane" data-lane="${esc(t.id)}">${TODAY >= start && TODAY < end ? `<div class="todayline" style="left:${pos(TODAY)}%"></div>` : ""}`
           + (t.due >= start && t.due < end ? `<div class="dueline" style="left:${pos(t.due)}%" title="leverans ${short(t.due)}"></div>` : "")
           + t.steps.filter(shown).map((st) => {
-            const a = pos(st.start), b = pos(add(st.end.slice(0, 10), 1));
+            const a = pos(st.start), b = pos(add(lastDay(st), 1));
             // Ett klart steg syns när spannet går bakåt, men flyttas inte.
             return `<div class="bar sbar ${st.done ? "done" : st.critical ? "crit" : ""}" draggable="false" data-open-step="${esc(t.id)}|${esc(st.step)}"${st.done ? "" : ` data-drag-start="${esc(st.start.slice(0, 10))}"`}`
-              + ` style="left:${a}%;width:${Math.max(1.2, b - a)}%" title="${esc(st.label)}${st.done || !whoOf(st) ? "" : ` · ${esc(whoOf(st))}`} · ${short(st.start)}–${short(st.end)}${st.done ? ` · ${doneText(st)}` : st.critical ? " · utan marginal" : ` · kan flyttas ${st.float_days} dagar utan att leveransen spricker`}">`
+              + ` style="left:${a}%;width:${Math.max(1.2, b - a)}%" title="${esc(st.label)}${st.done || !whoOf(st) ? "" : ` · ${esc(whoOf(st))}`} · ${short(st.start)}–${short(lastDay(st))}${st.done ? ` · ${doneText(st)}` : st.critical ? " · utan marginal" : ` · kan flyttas ${st.float_days} dagar utan att leveransen spricker`}">`
               + (st.done ? `<span class="ok">${ic("check")}</span>` : st.external ? "" : tickBtn(t.id, st.step)) + `${esc(st.label)}</div>`;
           }).join("") + `</div></td></tr>`;
       }).join("") + `</tbody></table></div><p class="meta">Ljus = har marginal · bärnsten = utan marginal · grön med bock = klart. Bocken i början av ett steg markerar det klart. Dra ett steg framåt för att senarelägga det, bakåt för att flytta det tidigare — aldrig före i dag, och aldrig före ett steg som måste vara klart innan. Klicka för att öppna.</p>`;
@@ -4314,7 +4332,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
         + `<h1><button class="fld" data-fedit="step-name|${esc(t.id)}|${esc(s.step)}" title="Byt stegets namn">${esc(s.label)}</button>${eclBtn("step", `${t.id}|${s.step}`)}</h1>`
         + (!s.done && s.handover ? `<div class="warnnote" style="margin:4px 0 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${ic("user")} ${s.handover.to === me() ? `${esc(lbl(s.handover.by_named, "En kollega"))} vill lämna steget till dig` : `Överlämnat till ${esc(lbl(s.handover.to_named, personName(s.handover.to)))}, väntar på ja`}${s.handover.at ? ` · ${short(s.handover.at)}` : ""}.</span>${s.handover.by === me() ? `<button class="btn sm quiet" data-withdraw="${esc(t.id)}|${esc(s.handover.to)}">Dra tillbaka</button>` : ""}</div>` : "")
         + `<div class="line">${kindMark(k)} ${esc(kindTxt)} · ansvarig ${s.done ? esc(lbl(s.responsible, "–")) : `<button class="fld" data-handover-to="1" title="Ge steget till någon annan">${esc(lbl(s.responsible, "–"))}</button>`}`
-        + ` · ${!s.done ? `<button class="fld" data-dp-step="${esc(t.id)}|${esc(s.step)}" title="Detaljplanera steget: ledtid, timmar och vem">${short(s.start)}–${short(s.latest_end || s.end)}</button>` : `${short(s.start)}–${short(s.latest_end || s.end)}`}`
+        + ` · ${!s.done ? `<button class="fld" data-dp-step="${esc(t.id)}|${esc(s.step)}" title="Detaljplanera steget: ledtid, timmar och vem">${short(s.start)}–${short(s.latest_end ? lastOf(s.latest_end, s.start) : lastDay(s))}</button>` : `${short(s.start)}–${short(s.latest_end ? lastOf(s.latest_end, s.start) : lastDay(s))}`}`
         + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="meta">kan flyttas ${plural(s.float_days, "dag", "dagar")}</span>`)
           + assumeChips(s)
           + (s.added ? ` · <span class="chip">Bara i den här uppgiften</span> <button class="linkbtn" data-remove-added="${esc(t.id)}|${esc(s.step)}">Ta bort ur uppgiften</button>` : "") + (s.done ? ` · <span class="chip green">${ic("check")} ${doneText(s)}</span>` : "") + (started ? ` · ${started}` : "") + `</div></div></div>`
@@ -4594,7 +4612,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (held) return { word: waitWho(held).replace(/^V/, "v"), tone: "", note: "inte sent hos oss" };
     if (s.external) return { word: `väntar på ${lbl(s.waiting?.on, "någon utanför Rotor")}`, tone: "" };
     if (s.after_check) return { word: "ute", tone: "green", note: "efterkontroll kvar" };
-    if (day10(s.end) < TODAY) return { word: "sen", tone: "red" };
+    if (lastDay(s) < TODAY) return { word: "sen", tone: "red" };
     if (s.started || (s === currentStep(t) && day10(s.start) <= TODAY)) return turOf(s);
     return { word: "inte påbörjad", tone: "" };
   }
@@ -4785,7 +4803,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       + `<span class="nm"><a href="${H.delivery(d.id, t.id, s.step)}">${esc(s.label)}</a>${lvStepSub(t, s)}${lvNote(pend)}`
       + (s.done ? "" : absenceOf(t.id, s.step).map((a) => `<span class="sub" style="color:var(--red)">${esc(absenceText(a))}.</span>`).join(""))
       + (writes ? `<a class="sub" href="${H.preview(t.id, s.step)}">Visa vad som ändras ›</a>` : "") + `</span>`
-      + `<span class="right">${toneChip(st)}<span class="meta">${esc(s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, ""))}${s.done ? ` · ${short(s.done.at)}` : ` · senast ${short(s.end)}`}</span>`
+      + `<span class="right">${toneChip(st)}<span class="meta">${esc(s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, ""))}${s.done ? ` · ${short(s.done.at)}` : ` · senast ${short(lastDay(s))}`}</span>`
       + (s.done ? "" : lvOrderButtons("step", t.id, s.step, s.label))
       + (s.done ? "" : absenceOf(t.id, s.step).slice(0, 1).map((a) => absenceBtn(a, "btn sm")).join(""))
       + `<a class="btn sm quiet" href="${H.step(t.id, s.step)}">Öppna steget ›</a></span></li>`;
@@ -5274,7 +5292,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       const cls = s.done || s.assumed_approved ? "done" : s === cur ? "now" : "";
       const who = s.external ? lbl(s.waiting?.on, "") : s.customer_side ? lbl(t.customer, "kunden") : lbl(s.responsible, "");
       // Personens tid räcker inte före stegets datum: dagen steget blir klart, inte dagen det skulle vara klart.
-      const when = s.done ? `klar ${short(s.done.at)}` : s.capacity_end ? `blir klart ${short(s.capacity_end)} · tid saknas` : s.end ? `senast ${short(s.end)}` : "";
+      const when = s.done ? `klar ${short(s.done.at)}` : s.capacity_end ? `blir klart ${short(s.capacity_end)} · tid saknas` : s.end ? `senast ${short(lastDay(s))}` : "";
       return `<li class="${cls}${s.customer_side ? " cust" : ""}${s.step === hit ? " hit" : ""}"><a href="${H.delivery(d.id, t.id, s.step)}">${cls === "done" ? `<span class="tick" aria-label="klart">✓</span> ` : ""}${esc(s.label)}</a>`
         + `<span class="meta">${esc([s === cur && !s.done ? "nu" : "", who, when].filter(Boolean).join(" · "))}</span></li>`;
     };
@@ -5407,7 +5425,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   function famMeeting(dv, ts) {
     const all = ts.flatMap((t) => roundSteps(t).map((s) => ({ t, s })));
     const open = all.filter((x) => !x.s.done), done = all.filter((x) => x.s.done);
-    const row = ({ t, s }) => `<li><span><a href="${H.delivery(dv.id, t.id, s.step)}">${esc(s.label)}</a>${lvStepSub(t, s)}</span><span class="meta">${esc(s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, ""))}${s.done ? ` · ${short(s.done.at)}` : ` · ${short(s.end)}`}</span></li>`;
+    const row = ({ t, s }) => `<li><span><a href="${H.delivery(dv.id, t.id, s.step)}">${esc(s.label)}</a>${lvStepSub(t, s)}</span><span class="meta">${esc(s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, ""))}${s.done ? ` · ${short(s.done.at)}` : ` · ${short(lastDay(s))}`}</span></li>`;
     return `<div class="lv-sec"><h2>Agenda och utfall</h2><span class="n">${esc(lvCountAll(ts))}</span></div><div class="card lv-card"><div class="fam-two">`
       + `<div><h3>Agenda</h3>${open.length ? `<ol class="fam-list" style="padding-left:18px;list-style:decimal">${open.map(row).join("")}</ol>` : `<div class="meta">Allt på agendan är gjort.</div>`}</div>`
       + `<div><h3>Utfall</h3>${done.length ? `<ul class="fam-list">${done.map(row).join("")}</ul>` : `<div class="meta">Inget är avklarat än.</div>`}</div></div></div>`;
@@ -5466,7 +5484,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   const dpCur = (t, s) => DP.edits[dpKey(t, s)] ?? dpBase(t, s);
   const dpHours = (c) => c.people.reduce((n, p) => n + Number(p.hours || 0), 0);
   const dpLen = (c) => Math.max(1, diff(c.end, c.start));
-  const workdaysIn = (a, b) => { let n = 0; for (let x = a; x < b; x = add(x, 1)) { const w = d(x).getUTCDay(); if (w && w !== 6) n++; } return n; };
+  const workdaysIn = (a, b) => { let n = 0; for (let x = a; x < b; x = add(x, 1)) if (isWorkday(x)) n++; return n; };
   /** «30 h får inte plats på 3 arbetsdagar» — samma ord som servern. Tillåtet, men sägs. */
   function dpWarning(c) {
     const h = dpHours(c), n = c.start === c.end ? 1 : workdaysIn(c.start, c.end);
@@ -5494,9 +5512,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     while (q.length) { const c = q.shift(); for (const n of dpDependents(c.t, c.s)) { const k = dpKey(n.t, n.s); if (!seen.has(k)) { seen.set(k, n); q.push(n); } } }
     return [...seen.values()];
   }
-  const dpIsWork = (x) => { const w = d(x).getUTCDay(); return w !== 0 && w !== 6; };
+  const dpIsWork = isWorkday;
   /** Ett steg som följer med hamnar på en arbetsdag, aldrig en helg (Daniel P 2026-09-30). */
-  const toWorkday = (c) => { let n = 0; while (!dpIsWork(add(c.start, n))) n++; return n ? shiftC(c, n) : c; };
+  const toWorkday = (c) => snapEnd(snapStart(c, 1), 1);
   const shiftC = (c, n) => ({ ...c, start: add(c.start, n), end: add(c.end, n), work: c.work ? { start: add(c.work.start, n), end: add(c.work.end, n) } : null });
   /** Håll den egna placeringen inom ledtiden. */
   function clampWork(c) {
@@ -5507,17 +5525,21 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     return { ...c, work: { start: s, end: add(s, len) } };
   }
   /** Flytta ett steg `n` dagar; med magneten följer de som väntar på det. */
+  /** Ett steg börjar och slutar på en arbetsdag (Daniel P 2026-09-30): snäpp i den riktning man drar. */
+  const snapStart = (c, dir) => { let n = 0; while (!dpIsWork(add(c.start, n)) && Math.abs(n) < 30) n += dir; return n ? shiftC(c, n) : c; };
+  const snapEnd = (c, dir) => { let e = c.end; while (!dpIsWork(add(e, -1)) && add(e, -1) > c.start) e = add(e, dir > 0 ? 1 : -1); return e === c.end ? c : { ...c, end: e }; };
   function dpMove(t, s, n, alone) {
     if (!n) return;
-    dpSet(t, s, shiftC(dpCur(t, s), n));
+    dpSet(t, s, snapStart(shiftC(dpCur(t, s), n), n > 0 ? 1 : -1));
     if (!alone) for (const x of dpClosure(t, s)) dpSet(x.t, x.s, toWorkday(shiftC(dpCur(x.t, x.s), n)));
   }
   /** Flytta en kant. Kortare än en dag går inte; ett steg som väntar och nu börjar för tidigt skjuts fram. */
   function dpEdge(t, s, side, n, alone) {
     const c = dpCur(t, s);
-    if (side === "l") { const start = add(c.start, n); if (start >= c.end) return; dpSet(t, s, clampWork({ ...c, start })); return; }
+    if (side === "l") { const start = add(c.start, n); if (start >= c.end) return; const x = snapStart({ ...c, start }, n > 0 ? 1 : -1);
+      if (x.start >= c.end) return; dpSet(t, s, clampWork({ ...x, end: c.end })); return; }
     const end = add(c.end, n); if (end <= c.start) return;
-    dpSet(t, s, clampWork({ ...c, end }));
+    dpSet(t, s, clampWork(snapEnd({ ...c, end }, n)));
     if (!alone) dpPush(t, s);
   }
   /** Magneten när ett steg blev längre: de som väntar börjar tidigast när det slutar. */
@@ -5677,8 +5699,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     for (let i = 0; i < f.n; i++) {
       const day = add(f.from, i), wd = d(day).getUTCDay();
       if (wd === 1) weeks += `<div class="dp-wk" style="left:${i * f.dw}px;width:${7 * f.dw}px"><b>v${week(day)}</b> <span>${esc(short(day))}–${esc(short(add(day, 6)))}</span></div>`;
-      if (DP.zoom === "day") days += `<div class="dp-day${wd === 0 || wd === 6 ? " we" : ""}${day === TODAY ? " now" : ""}" style="left:${i * f.dw}px;width:${f.dw}px"><span>${WD[wd]}</span><b>${d(day).getUTCDate()}</b></div>`;
-      bg += `<i class="dp-col${wd === 0 || wd === 6 ? " we" : ""}${wd === 1 ? " mon" : ""}" style="left:${i * f.dw}px;width:${f.dw}px"></i>`;
+      const hol = holidayName(day), off = wd === 0 || wd === 6 || !!hol;
+      if (DP.zoom === "day") days += `<div class="dp-day${off ? " we" : ""}${day === TODAY ? " now" : ""}"${hol ? ` title="${esc(hol)}"` : ""} style="left:${i * f.dw}px;width:${f.dw}px"><span>${WD[wd]}</span><b>${d(day).getUTCDate()}</b></div>`;
+      bg += `<i class="dp-col${off ? " we" : ""}${wd === 1 ? " mon" : ""}"${hol ? ` title="${esc(hol)}"` : ""} style="left:${i * f.dw}px;width:${f.dw}px"></i>`;
     }
     return { head: `<div class="dp-axis"><div class="dp-weeks">${weeks}</div>${days ? `<div class="dp-days">${days}</div>` : ""}`
       + (TODAY >= f.from ? `<div class="dp-flag now" style="left:${f.x(TODAY) + f.dw / 2}px">i dag</div>` : "")
@@ -5701,7 +5724,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const left = f.x(c.start), width = len * f.dw;
     // Sent mot uppgiftens eget datum, inte bara leveransens: servern räknar så.
     const late = !s.done && isDay(t.due) && c.end > add(day10(t.due), 1);
-    const sub = `${wday(c.start)} – ${wday(add(c.end, -1))} · ${plural(len, "dag", "dagar")} · ${fmtH(h)} h`;
+    const sub = `${wday(c.start)} – ${wday(lastOf(c.end, c.start))} · ${plural(len, "dag", "dagar")} · ${fmtH(h)} h`;
     const say = `${s.label}: ${sub}${warn ? `. ${warn}` : ""}${stops.length ? `. ${stops.map((x) => `${STOP_WORD[x.kind]} på ${x.on}`).join(", ")}` : ""}`;
     return `<div class="dp-row${DP.sel === k ? " sel" : ""}">`
       + `<div class="dp-lab"><span class="nm">${stops.length ? `<button class="dp-stop" data-dp-stop="${esc(k)}" aria-label="${esc(stops.map((x) => `${STOP_WORD[x.kind]}: ${x.what}`).join(". "))}">!</button>` : ""}<b>${esc(s.label)}</b></span>`
@@ -5737,7 +5760,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   function dpList(ts) {
     return ts.map((t) => `<h3 class="dp-grp">${esc(taskTitle(t))}</h3><ul class="dp-list">` + dpSteps(t).map((s) => {
       const k = dpKey(t, s), c = dpCur(t, s), warn = dpWarning(c), stops = dpStops(t, s);
-      return `<li class="${DP.edits[k] ? "edited" : ""}"><div class="nm"><b>${esc(s.label)}</b><span class="meta">${esc(wday(c.start))} – ${esc(wday(add(c.end, -1)))} · ${fmtH(dpHours(c))} h · ${c.people.map((p) => esc(personName(p.party))).join(" och ")}</span>`
+      return `<li class="${DP.edits[k] ? "edited" : ""}"><div class="nm"><b>${esc(s.label)}</b><span class="meta">${esc(wday(c.start))} – ${esc(wday(lastOf(c.end, c.start)))} · ${fmtH(dpHours(c))} h · ${c.people.map((p) => esc(personName(p.party))).join(" och ")}</span>`
         + (warn ? `<span class="dp-warn">${esc(warn)}</span>` : "") + stops.map((x) => `<span class="dp-warn">${esc(STOP_WORD[x.kind])} på ${esc(x.on)}: ${esc(x.what)}</span>`).join("") + `</div>`
         + (s.done ? `<span class="chip green">klart</span>` : `<div class="dp-pm"><span>Flytta</span><button class="btn" data-dp-kb="${esc(k)}|move|-1" aria-label="${esc(s.label)}: en dag tidigare">−1 dag</button><button class="btn" data-dp-kb="${esc(k)}|move|1" aria-label="${esc(s.label)}: en dag senare">+1 dag</button>`
           + `<span>Ledtid</span><button class="btn" data-dp-kb="${esc(k)}|end|-1" aria-label="${esc(s.label)}: en dag kortare">−1 dag</button><button class="btn" data-dp-kb="${esc(k)}|end|1" aria-label="${esc(s.label)}: en dag längre">+1 dag</button>`
@@ -6531,7 +6554,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       if (!t || !st) return "";
       const qs = opens().filter((o) => o.task === t.id).map((o) => `- ${headlineForOpen(o)}${o.step === st.step ? " (stoppar det här steget)" : ""}`);
       return [`Steget «${st.label}» i ${taskName(t)} för ${lbl(t.customer)}, leverans ${t.due}.`,
-        `Görs av: ${kindOf(st)} · ansvarig ${lbl(st.responsible, "ingen")} · ${st.start.slice(0, 10)}–${(st.latest_end || st.end).slice(0, 10)} · marginal ${st.float_days} d${st.done ? " · KLART" : ""}${st.started ? " · påbörjat" : ""}.`,
+        `Görs av: ${kindOf(st)} · ansvarig ${lbl(st.responsible, "ingen")} · ${st.start.slice(0, 10)}–${st.latest_end ? lastOf(st.latest_end, st.start) : lastDay(st)} · marginal ${st.float_days} d${st.done ? " · KLART" : ""}${st.started ? " · påbörjat" : ""}.`,
         `Kedjan: ${t.steps.map((x) => `${x.label}${x.done ? " (klart)" : ""}`).join(" → ")}.`,
         st.instruktion?.syfte ? `Syfte: ${st.instruktion.syfte}` : "",
         (st.instruktion?.saa_goer_du || []).length ? `Så görs det:\n${st.instruktion.saa_goer_du.map((x) => `- ${x}`).join("\n")}` : "",
@@ -9767,7 +9790,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (!ref?.openStep) return null;
     const [task, step] = ref.openStep.split("|"); const t = taskById(task), st = stepOf(t, step);
     if (!st) return null;
-    return { title: st.label, ctx: `${lbl(t.customer)} · ${taskName(t)}`, due: (st.latest_end || st.end).slice(0, 10),
+    return { title: st.label, ctx: `${lbl(t.customer)} · ${taskName(t)}`, due: st.latest_end ? lastOf(st.latest_end, st.start) : lastDay(st),
       minutes: st.remaining_minutes || st.estimate_minutes || null, ref };
   }
   async function savePasses(btn) {
