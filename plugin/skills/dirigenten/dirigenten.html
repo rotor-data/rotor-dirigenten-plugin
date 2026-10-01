@@ -143,6 +143,8 @@ details.how p { max-width: 70ch; margin: 6px 0 0; }
 .chip.green { background: var(--green-weak); color: var(--green); } .chip.blue { background: var(--blue-weak); color: var(--blue); }
 .chip.claude { background: var(--claude-weak); color: var(--claude); }
 .chip.example { background: none; border: 1px dashed var(--line-strong); color: var(--text-3); }
+/* Lagret (Allmänt / För kund / I det här uppdraget): en liten etikett, inte en egen rad. */
+.chip.lt { height: 18px; padding: 0 6px; font-size: 11px; font-weight: 400; background: none; border: 1px solid var(--line); color: var(--text-3); vertical-align: middle; }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
 .kind { width: 22px; height: 22px; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; flex: none; }
 .kind.code { background: var(--blue-weak); color: var(--blue); }
@@ -994,6 +996,40 @@ main[data-w="l"] .pp-cols { grid-template-columns: minmax(0, 1fr) 320px; } main[
 @media (prefers-reduced-motion: reduce) { .pp-made.rendering .pp-th::after { animation: none; } }
 .pp-miss { color: var(--amber); } .pp-links { display: flex; gap: var(--s3); }
 .pp-now { padding: var(--s4); margin-bottom: var(--s3); }
+/* Stegsidan (Daniel P 2026-10-01): det du gör nu överst, delarna, receptet, sist detaljerna. */
+.st-now { margin-bottom: var(--s4); border-left: 3px solid var(--accent); }
+.st-now .st-what { margin: 4px 0 6px; color: var(--text-2); }
+.st-now .st-do { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
+.st-now .st-line { margin: 0 0 6px; }
+.st-now .st-acts { margin-top: 8px; flex-wrap: wrap; }
+.st-now .st-side { display: flex; flex-wrap: wrap; gap: 2px var(--s1); margin: 6px 0 2px -8px; }
+a { color: var(--accent-ink); }
+.field-inline { font: inherit; font-size: var(--fs-body); min-height: var(--h-control); padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); flex: 1 1 200px; min-width: 0; }
+button.chip { border: 1px solid var(--line-strong); font-family: inherit; cursor: pointer; }
+button.chip.accent { border-color: var(--accent); }
+.pv-c .chip { white-space: normal; height: auto; min-height: 20px; padding: 2px 7px; }
+.st-parts, .st-recipe { margin-bottom: var(--s4); }
+.st-layer { padding: var(--s3) 0; border-top: 1px solid var(--line); }
+.st-layer:first-of-type { border-top: 0; padding-top: 0; }
+.st-layer.cust, .st-layer.task { padding-left: var(--s3); border-left: 3px solid var(--line-strong); border-top: 0; margin-top: var(--s2); }
+.st-lh { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin-bottom: var(--s2); }
+.ws-parts { list-style: none; margin: 0; padding: 0; }
+.ws-part { border-top: 1px solid var(--line); } .ws-part:first-child { border-top: 0; }
+.ws-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 0; background: none; border: 0; text-align: left; font: inherit; color: var(--text); cursor: pointer; min-height: 44px; }
+.ws-row .nm { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.ws-row .ws-open { white-space: nowrap; }
+.ws-body { padding: 0 0 12px; }
+.ws-drafts { margin: 4px 0 8px; padding-left: 18px; }
+.st-recipe .label { margin-top: 10px; }
+ol.how li.how-sec { list-style: none; margin-left: -20px; color: var(--text-2); }
+.st-pre { white-space: pre-wrap; }
+.st-recipe h2, .st-parts h2, .st-more h2 { flex-wrap: wrap; }
+.wshead .line .chip { white-space: normal; max-width: 100%; height: auto; }
+.st-prompt { display: flex; gap: 8px; align-items: flex-start; margin: 6px 0; }
+.st-prompt textarea { flex: 1; min-width: 0; font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
+.st-more { margin: var(--s4) 0; }
+.st-more > summary { cursor: pointer; font-weight: 600; padding: 8px 0; min-height: 44px; display: flex; align-items: center; }
+.st-more > .card, .st-more > .ws2 { margin-top: var(--s3); }
 .pp-h { font-size: 18px; font-weight: 700; margin: 4px 0; }
 .pp-ask { padding: 8px var(--s3); border-radius: var(--r-sm); background: var(--amber-weak); margin-bottom: var(--s3); }
 .pp-tl { list-style: none; margin: 0; padding: 0; }
@@ -1233,7 +1269,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "34ced7d", published: "2026-10-01" };
+  const SIDA = { version: "e89139e", published: "2026-10-01" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1817,7 +1853,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   const deliv = (t) => taskName(t);
   /* ── Metoder: biblioteket, ledtiderna och ett utkast till nästa version (B-216) ──
      Allt läses ur serverns svar: library_search (metoder, steg, molekyler,
-     kundflöden, atomförslag), measure_debt (ledtiderna med ursprung) och
+     kundvarianter, atomförslag), measure_debt (ledtiderna med ursprung) och
      planen (stegen som används, med ansvarig, recept och instruktion).
      Prototypen läste D.methods och D.stepKinds och förstod några fasta
      formuleringar; nu föreslår Claude, och registry_define skriver. */
@@ -2041,7 +2077,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       + `<div class="label">Följder</div>`
       + `<div class="row2"><span>Hela metoden</span><span>${known(before) && known(after) ? `${sum(after)} arbetsdagar i stället för ${sum(before)} <span class="meta">· stegens ledtider lagda efter varandra</span>` : "Alla steg har inte en känd ledtid; planen räknar om när versionen sparats."}</span></div>`
       + `<div class="row2"><span>Uppgifter i planen</span><span>${ts.length ? `${ts.length - locked.length} följer den nya versionen när planen räknas om${locked.length ? ` · ${locked.length} är låsta och står kvar på sin version` : ""}. Att välja uppgift för uppgift går inte här än.` : "Inga. Gäller nästa gång metoden används."}</span></div>`
-      + `<div class="row2"><span>Kundflöden</span><span>${vs.length ? `${vs.map((v) => `«${esc(v.label)}»`).join(", ")} bygger på metoden och behåller sina skillnader.` : "Inga."}</span></div>`
+      + `<div class="row2"><span>Kundens sätt</span><span>${vs.length ? `${vs.map((v) => `«${esc(v.label)}»`).join(", ")} bygger på metoden och behåller sina skillnader.` : "Inga."}</span></div>`
       + (shared.length ? `<div class="row2"><span>Andra metoder</span><span>${shared.map((x) => `«${esc(x.label)}» ändras också i ${sharedWith(x.id, m).map((y) => `«${esc(y.label)}»`).join(", ")}`).join("<br>")}</span></div>` : "")
       + `<div class="row2"><span>Grinden</span><span>${noVerb.length ? `<span style="color:var(--amber)">Varning: ${noVerb.map((x) => `«${esc(x.label)}»`).join(", ")} börjar inte med ett verb.</span> ` : ""}Varje ändring prövas när den sparas; ett nej visas här.</span></div></div>`
       + `<div id="ed-out"></div><div class="bar-actions"><button class="btn primary" data-edsave="1">Spara versionen</button><button class="btn quiet" data-close="1">Tillbaka till utkastet</button></div>`);
@@ -2318,7 +2354,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   const tickBtn = (task, step, cls = "tick") => `<button class="${cls}" data-quick-done="${esc(task)}|${esc(step)}" title="Markera klart" aria-label="Markera klart">${ic("check")}</button>`;
   /** Kedjans nod: ett klart steg har en grön bock, ett ogjort en bock att klicka i. */
   // Ett steg som lagts till i just den här uppgiften är streckat: det finns inte i metoden.
-  const nodeTitle = (x) => x.done ? ` title="${doneText(x)}"` : x.added ? ` title="Bara i den här uppgiften"`
+  const nodeTitle = (x) => x.done ? ` title="${doneText(x)}"` : x.added ? ` title="Bara i det här uppdraget"`
     : x.needed_by ? ` title="${esc(x.needed_by.text)}"` : x.assumes ? ` title="${esc(x.assumes.text)}"` : "";
   /**
    * Parallellt och under förutsättning (Daniel P 2026-09-25): texten kommer
@@ -2702,8 +2738,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       const ms = (x.attached?.messages ?? []).length ? `<button class="chip" data-msg-open="${esc(x.attached.messages[0])}" title="Öppna meddelandet">${ic("bell")} ${plural(x.attached.messages.length, "meddelande", "meddelanden")}</button>` : "";
       const acts = k === "llm" ? `<button class="btn sm ai" data-copy-step="${esc(key)}" title="Stegets prompt till vanliga Claude-chatten">${SP} Kopiera till Claude</button><button class="btn sm" data-step="${esc(key)}">Öppna steget ›</button>`
         : runnableNow(x, k) ? `<button class="btn sm primary" data-run-step="${esc(key)}" title="Kör steget. Du ser först vad som ändras, och inget ändras förrän du bekräftar.">Kör…</button>`
-        : k === "human" ? `<button class="btn sm" data-quick-done="${esc(key)}" title="Markera steget klart. Du kan ångra direkt.">Klart</button><button class="btn sm primary" data-step="${esc(key)}">Öppna steget ›</button>`
-        : `<button class="btn sm primary" data-step="${esc(key)}">Öppna steget ›</button>`;
+        : k === "human" ? `<button class="btn sm" data-quick-done="${esc(key)}" title="Markera steget klart. Du kan ångra direkt.">Klart</button><button class="btn sm" data-step="${esc(key)}">Öppna steget ›</button>`
+        : `<button class="btn sm" data-step="${esc(key)}">Öppna steget ›</button>`;
       return trow({ cls: hot ? "burn" : "mine", icon: k === "llm" ? "sparkles" : "ring", icls: k === "llm" ? "cl" : "",
         title: workTitle(t, x), attrs: `data-open-step="${esc(key)}"`, acts,
         meta: lead + (absenceOf(x.task, x.step).length ? chip("borta den dagen", "red") : "") + (st?.critical && !hot ? chip("utan marginal", "red") : "") + pullChip(st) + qs + ms + stepTag(x.headline) + tail });
@@ -3141,7 +3177,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       const tabs = [["bibliotek", "Bibliotek", libEntries("method").length], ["forbattra", "Förbättra", improveCards().length], ["ledtider", "Ledtider", S.lead?.rows ? S.lead.rows.filter((r) => r.origin === "guessed").length || "" : ""], ["luckor", "Luckor", (gaps + (S.lib ? defaultHoursSteps().size : 0)) || ""]];
       const body = { bibliotek: library, forbattra: improve, ledtider: leadTable, luckor: gapsList }[state.metTab] || library;
       return head
-        + `<details class="how"><summary>Hur funkar det?</summary><p>En <b>metod</b> är stegen för en leverans. Varje steg görs av kod ${kindMark("code")}, Claude ${kindMark("llm")} eller en människa ${kindMark("human")}. Under stegen finns <b>molekyler</b> (en sak som händer) och <b>atomer</b> (koden). En kund kan ha egna skillnader i ett <b>kundflöde</b> — metoden är gemensam, kunden anpassad.</p></details>`
+        + `<details class="how"><summary>Hur funkar det?</summary><p>En <b>metod</b> är stegen för en leverans. Varje steg görs av kod ${kindMark("code")}, Claude ${kindMark("llm")} eller en människa ${kindMark("human")}. Under stegen finns <b>molekyler</b> (en sak som händer) och <b>atomer</b> (koden). Varje steg har tre lager: <b>Allmänt</b> (metoden, alla kunder), <b>För kunden</b> (kundens sätt — bara skillnaderna) och <b>I det här uppdraget</b> (det som bara gäller leveransen).</p></details>`
         + `<div class="tabs" role="tablist">${tabs.map(([k, l, n]) => `<button role="tab" data-mettab="${k}" aria-selected="${state.metTab === k}">${l}${n !== "" ? `<span class="n">${n}</span>` : ""}</button>`).join("")}</div>` + body();
     },
     filer() {
@@ -4353,7 +4389,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       const stops = stepIds(m).filter((id) => stepBlockers(id).length).length;
       const n = methodTasks(m).length, v = methodVariants(m).length;
       return row({ kind: `<span class="kind human" title="Metod">${ic("layers")}</span>`, title: esc(m.label),
-        why: `${(m.parts || []).length} steg${typeLabel(m.output?.[0]) ? ` · levererar ${esc(typeLabel(m.output[0]))}` : ""} · ${n ? `${n} uppgift${n === 1 ? "" : "er"} i planen` : "inte i planen nu"}${v ? ` · ${v} kundflöde${v === 1 ? "" : "n"}` : ""}`
+        why: `${(m.parts || []).length} steg${typeLabel(m.output?.[0]) ? ` · levererar ${esc(typeLabel(m.output[0]))}` : ""} · ${n ? `${n} uppgift${n === 1 ? "" : "er"} i planen` : "inte i planen nu"}${v ? ` · ${v === 1 ? "en kund" : `${v} kunder`} med eget sätt` : ""}`
           + (stops ? ` · <span style="color:var(--amber)">stannar vid ${stops} steg utan kod</span>` : "") + (noun ? ` · <span style="color:var(--amber)">${noun} stegnamn utan verb</span>` : ""),
         when: chainDots(m), attrs: `data-open-method="${esc(m.id)}"` });
     }).join("")}</div>`;
@@ -4559,7 +4595,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const cs = customerList();
     state.adapt = { method: m.id, draft: null };
     dialog(`<h2>Anpassa ${esc(m.label)} för en kund</h2>`
-      + `<p class="meta">Ändringen blir ett kundflöde: den gäller kundens uppgifter, och metoden står kvar för alla andra. När metoden förbättras följer kunden med.</p>`
+      + `<p class="meta">Ändringen blir kundens sätt: den gäller kundens uppgifter, och det allmänna står kvar för alla andra. När metoden förbättras följer kunden med.</p>`
       + `<label class="field"><span>Kund</span><select id="adp-cust"><option value="">Välj kund</option>${cs.map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join("")}</select></label>`
       + `<div class="chain" style="margin:8px 0">${(m.parts || []).map((x, i) => `${i ? `<span class="arrow">${ic("chev")}</span>` : ""}<span class="node">${kindMark(stepKind(x.id))}<span class="l">${esc(x.label)}</span></span>`).join("")}</div>`
       + `<label class="field"><span>Vad ska vara annorlunda för kunden?</span><textarea id="adp-text" rows="3" placeholder="T.ex.: kunden godkänner inte själv, och korrekturen görs av en av oss."></textarea></label>`
@@ -4573,7 +4609,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       const out = $("#adp-out"); out.innerHTML = `<div class="running"><span class="spin"></span>Claude läser ändringen…</div>`;
       try {
         const people = peopleList(), ids = stepIds(m);
-        const draft = await sample.json([`Du läser en ändring för EN kund och skriver den som ett kundflöde — bara skillnaderna mot metoden.`,
+        const draft = await sample.json([`Du läser en ändring för EN kund och skriver den som kundens sätt (kundvarianten) — bara skillnaderna mot metoden.`,
           `Ändringen: """${text}"""`, `Kunden: ${custLabel(cust)} (id ${cust})`, `Grundmetoden: ${m.label} (id ${m.id})`,
           `Stegen i metoden:\n${(m.parts || []).map((x, i) => `${i + 1}. id=${x.id} · ${x.label}`).join("\n")}`,
           `Ett steg som ska bort: id i remove. Byta ansvarig: responsible {stegets id: personens id}. Personer: ${people.map((x) => `${x.id} (${x.label})`).join(", ") || "inga kända"}.`,
@@ -4581,7 +4617,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
           `Svara med ENBART JSON: {"label":"kort namn","summary":"en mening","customer":"${cust}","base":"${m.id}","remove":[],"responsible":{},"add":[],"gaps":[]}`].join("\n"), { modelTier: "default" });
         const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
         if (!isObj(draft) || !draft.label || !Array.isArray(draft.remove ?? []) || !isObj(draft.responsible ?? {}) || !Array.isArray(draft.add ?? []))
-          throw new Error("Claude svarade inte med ett kundflöde — försök igen, eller skriv ändringen tydligare");
+          throw new Error("Claude svarade inte med kundens sätt — försök igen, eller skriv ändringen tydligare");
         const { gaps = [], ...flow } = draft;
         flow.customer = cust; flow.base = m.id;
         const check = await call("method_build", { do: "variant", flow });
@@ -4593,7 +4629,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
           + ((flow.add || []).length ? `<div class="meta">Läggs till: ${flow.add.map((a) => esc(name(a.step))).join(", ")}</div>` : "")
           + ((check?.differences || []).length ? `<div class="meta">${check.differences.map((x) => esc(x)).join("<br>")}</div>` : "")
           + ([...gaps, ...(check?.questions || []).map((q) => q.question)].length ? `<div class="meta" style="color:var(--amber)">Saknas först: ${[...gaps, ...(check?.questions || []).map((q) => q.question)].map((g) => esc(g.message || g)).join(" · ")}</div>` : "")
-          + `<div class="bar-actions"><button class="btn primary" data-adpwrite="1">Skriv in kundflödet</button></div></div>`;
+          + `<div class="bar-actions"><button class="btn primary" data-adpwrite="1">Spara kundens sätt</button></div></div>`;
       } catch (e) { out.innerHTML = `<div class="meta" style="color:var(--red)">Kunde inte läsa ändringen: ${esc(e.message || e)}</div>`; }
     });
   }
@@ -4602,8 +4638,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       // Samma utkast som visades — inte en ny tolkning av samma text.
       try { await call("method_build", { do: "variant", commit: true, flow: a.draft }); state.adapt = null; closeDialog();
-        await afterWrite(`Kundflödet för ${custLabel(a.draft.customer) || "kunden"} är inskrivet. Planen räknas om på de nya stegen.`); }
-      catch (e) { const out = $("#adp-out"); if (out) out.insertAdjacentHTML("beforeend", `<div class="meta" style="color:var(--red)">Kundflödet skrevs inte: ${esc(e.message || e)}</div>`); else fail("Kundflödet skrevs inte", e); }
+        await afterWrite(`Sättet för ${custLabel(a.draft.customer) || "kunden"} är sparat. Planen räknas om på de nya stegen.`); }
+      catch (e) { const out = $("#adp-out"); if (out) out.insertAdjacentHTML("beforeend", `<div class="meta" style="color:var(--red)">Kundens sätt sparades inte: ${esc(e.message || e)}</div>`); else fail("Kundens sätt sparades inte", e); }
     });
   }
 
@@ -4672,8 +4708,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         + `<div class="fields2" style="margin-top:8px"><label class="field"><span>Får inte · en per rad</span><textarea rows="3" data-hw="never">${esc(h.never)}</textarea></label><label class="field"><span>Stanna och fråga när · en per rad</span><textarea rows="3" data-hw="ask">${esc(h.ask)}</textarea></label></div>` : "")
       + `<div class="label" style="margin-top:16px">Vem ändringen gäller</div>`
       + `<label class="radio"><input type="radio" name="hwscope" data-hwscope="all" ${h.scope === "all" ? "checked" : ""}><span><b>Alla som gör steget</b><div class="d">Ny version av arbetssättet${uses.length ? `, i ${uses.map((m) => `«${esc(m.label)}»`).join(", ")}` : ""}. Gäller nästa gång steget görs.</div></span></label>`
-      + `<label class="radio"><input type="radio" name="hwscope" data-hwscope="customer" ${h.scope === "customer" ? "checked" : ""}><span><b>Bara hos ${esc(t.customer)}</b><div class="d">Läggs i ${esc(t.customer)}s kundflöde. Arbetssättet för andra kunder är orört.</div></span></label>`
-      + `<label class="radio"><input type="radio" name="hwscope" data-hwscope="once" ${h.scope === "once" ? "checked" : ""}><span><b>Bara den här gången</b><div class="d">En avvikelse för den här uppgiften. Inget annat ändras.</div></span></label>`
+      + `<label class="radio"><input type="radio" name="hwscope" data-hwscope="customer" ${h.scope === "customer" ? "checked" : ""}><span><b>Bara hos ${esc(t.customer)}</b><div class="d">Läggs i kundens sätt. Det allmänna för andra kunder är orört.</div></span></label>`
+      + `<label class="radio"><input type="radio" name="hwscope" data-hwscope="once" ${h.scope === "once" ? "checked" : ""}><span><b>Bara i det här uppdraget</b><div class="d">En avvikelse för den här leveransen. Inget annat ändras.</div></span></label>`
       + `<div class="savebar"><span class="meta"><b data-hwcount>${n} ändring${n === 1 ? "" : "ar"}</b> · inget är sparat än</span><span class="right"><button class="btn quiet" data-hwcancel="1">Avbryt</button><button class="btn primary" data-hwreview="1" ${n ? "" : "disabled"}>Granska och spara</button></span></div></div>`;
   }
   function patchHow() {
@@ -4705,7 +4741,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   }
   function howReview(t, s) {
     const h = state.obj.how, cs = howChanges(h);
-    const scope = { all: `Alla som gör steget (ny version)`, customer: `Bara hos ${t.customer} (kundflödet)`, once: "Bara den här uppgiften" }[h.scope];
+    const scope = { all: `Alla som gör steget (ny version)`, customer: `Bara hos ${t.customer} (kundens sätt)`, once: "Bara i det här uppdraget" }[h.scope];
     dialog(`<h2>Så här ändras «${esc(s.label)}»</h2><div class="preview">`
       + cs.map((c) => `<div class="diffline"><span class="chip ${c.kind === "added" ? "green" : c.kind === "removed" ? "" : "amber"}">${c.kind === "added" ? "nytt" : c.kind === "removed" ? "bort" : "ändrat"}</span><span><b>${esc(c.field)}</b>`
         + (c.before && c.kind !== "added" ? `<div class="meta"><s>${esc(c.before)}</s></div>` : "") + (c.after && c.kind !== "removed" ? `<div>${esc(c.after)}</div>` : "") + `</span></div>`).join("")
@@ -4754,6 +4790,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       const how = s.instruktion?.saa_goer_du?.length ? s.instruktion.saa_goer_du
         : s.recipe?.how ? String(s.recipe.how).split(/\n+/).map((x) => x.replace(/^\d+[.)]\s*/, "")).filter(Boolean) : null;
       const started = s.started ? `<span class="chip blue">påbörjat ${short(s.started.at)}${s.started.by_named ? ` av ${esc(s.started.by_named.label)}` : ""}</span>` : "";
+      const ws = s.workspace || null;
+      // Gör-ytan: handlingen. Receptet står under «Så görs det», inte här en gång till.
       const doArea = s.done ? `<div><span class="chip green">${ic("check")} ${doneText(s)}</span></div>`
         : k === "code" && (s.needs_values || []).length ? valuesStepCard(t, s)
         : k === "code"
@@ -4762,25 +4800,70 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
           : k === "mixed" && (s.molecules || []).length ? mixedStepCard(t, s)
           : k === "ext"
             ? `<div class="meta">Görs av ${esc(lbl(s.waiting?.on, "kunden"))}${s.waiting?.answer_by ? ` · svar behövs senast ${short(s.waiting.answer_by)}` : ""}.</div>`
-            : `<div>${(how || []).map((h) => `<div class="howline">${esc(h)}</div>`).join("") || `<div class="meta">Steget saknar beskrivning av hur det görs.</div>`}</div>`
-              + `<div class="bar-actions" style="margin-top:10px">${s.started ? `<button class="btn quiet" data-start="false">Släpp steget</button>` : `<button class="btn" data-start="true">Jag börjar på det</button>`}</div>`;
+            : "";
+      // Börja/släpp står i samma rad som huvudknappen (GUI-städningen 2026-10-01), inte som en egen rad ovanför.
+      const startBtn = s.done || ws || doArea || k === "code" || k === "llm" || k === "ext" ? ""
+        : s.started ? `<button class="btn quiet" data-start="false">Släpp steget</button>` : `<button class="btn" data-start="true">Jag börjar på det</button>`;
       // Var steget hör hemma (etapp 5): «I uppgiften … · i leveransen …», som länkar.
       const dv = deliveryOfTask(t);
-      return `<div class="wshead"><div class="titles"><span class="meta">${custDot(t.customer?.color)} ${t.customer?.id ? `<a href="${H.customer(t.customer.id)}">${esc(lbl(t.customer))}</a>` : esc(lbl(t.customer))}`
-        + ` · i uppgiften <a href="${H.delivery(dv.id, dv.implicit ? null : t.id)}">${esc(taskTitle(t))}</a>${eclBtn("task", t.id)}${dv.implicit ? "" : ` · i leveransen <a href="${H.delivery(dv.id)}">${esc(dv.label)}</a>`} · leverans ${short(t.due)} · ${methodLine(t)}</span>`
-        + `<h1><button class="fld" data-fedit="step-name|${esc(t.id)}|${esc(s.step)}" title="Byt stegets namn">${esc(s.label)}</button>${eclBtn("step", `${t.id}|${s.step}`)}</h1>`
-        + (!s.done && s.handover ? `<div class="warnnote" style="margin:4px 0 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${ic("user")} ${s.handover.to === me() ? `${esc(lbl(s.handover.by_named, "En kollega"))} vill lämna steget till dig` : `Överlämnat till ${esc(lbl(s.handover.to_named, personName(s.handover.to)))}, väntar på ja`}${s.handover.at ? ` · ${short(s.handover.at)}` : ""}.</span>${s.handover.by === me() ? `<button class="btn sm quiet" data-withdraw="${esc(t.id)}|${esc(s.handover.to)}">Dra tillbaka</button>` : ""}</div>` : "")
-        + `<div class="line">${kindMark(k)} ${esc(kindTxt)} · ansvarig ${s.done ? esc(lbl(s.responsible, "–")) : `<button class="fld" data-handover-to="1" title="Ge steget till någon annan">${esc(lbl(s.responsible, "–"))}</button>`}`
-        + ` · ${!s.done ? `<button class="fld" data-dp-step="${esc(t.id)}|${esc(s.step)}" title="Detaljplanera steget: ledtid, timmar och vem">${short(s.start)}–${short(s.latest_end ? lastOf(s.latest_end, s.start) : lastDay(s))}</button>` : `${short(s.start)}–${short(s.latest_end ? lastOf(s.latest_end, s.start) : lastDay(s))}`}`
-        + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="meta">kan flyttas ${plural(s.float_days, "dag", "dagar")}</span>`)
-          + (pullChip(s) ? ` · ${pullChip(s)}` : "") + assumeChips(s)
-          + (s.added ? ` · <span class="chip">Bara i den här uppgiften</span> <button class="linkbtn" data-remove-added="${esc(t.id)}|${esc(s.step)}">Ta bort ur uppgiften</button>` : "") + (s.done ? ` · <span class="chip green">${ic("check")} ${doneText(s)}</span>` : "") + (started ? ` · ${started}` : "") + `</div></div></div>`
-        // Borta den dagen (F17): markeringen och handlingen bredvid, före allt annat.
-        + (s.done ? "" : absenceOf(t.id, s.step).map((a) => `<div class="warnnote" style="margin:4px 0 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${ic("alert")} ${esc(absenceText(a))}.</span>`
-          + `${absenceBtn(a)}${s.done ? "" : `<button class="btn sm quiet" data-dp-step="${esc(t.id)}|${esc(s.step)}">Detaljplanera…</button>`}</div>`).join(""))
-        // Markera klart står överst (Daniel P 2026-09-25: "markera klart måste vara högst upp").
-        + (s.done ? "" : `<div class="bar-actions" style="margin:4px 0 16px"><button class="btn primary" data-done="1">Klart, till nästa ›</button>`
-          + `<span class="right"><button class="btn quiet" data-calstep="${esc(t.id)}|${esc(s.step)}">${ic("calendar")} Lägg i kalendern</button>${s.done ? "" : `<button class="btn quiet" data-dp-step="${esc(t.id)}|${esc(s.step)}">${ic("calendar")} Detaljplanera…</button>`}<button class="btn quiet" data-handover-to="1">Ge steget till…</button><button class="btn quiet" data-handover-task="${esc(t.id)}" title="Alla ogjorda steg blir förslag till kollegan">Lämna över hela uppgiften…</button>${t.steps.some((x) => !x.done && !x.external && (x.responsible?.id ?? x.responsible) !== me()) ? `<button class="btn quiet" data-take-task="${esc(t.id)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över</button>` : ""}${msgBtn({ task: t.id, step: s.step }, s.label)}</span></div>`)
+      const prompts = stepPrompts(s);
+      // Ordningen (Daniel P 2026-10-01: «själva actionen är längst ner. Det behöver vara överblickbart»):
+      // vad steget är och vad du gör nu, med knappen — sedan delarna, receptet och prompterna, sist detaljerna.
+      const nowCard = `<div class="card section st-now" id="st-now"><div class="pp-k">Det du ska göra nu</div>`
+        + (s.summary && String(s.summary).trim().replace(/[.!]+$/, "").toLowerCase() !== String(s.label).trim().toLowerCase() ? `<p class="st-what">${esc(s.summary)}</p>` : "")
+        + `<p class="st-do">${esc(stepNowText(t, s, k))}</p>`
+        + (s.enough ? `<p class="meta st-line"><b>Så vet du att du är klar:</b> ${esc(s.enough)}</p>` : "")
+        + (s.approver && !s.done ? `<p class="meta st-line"><b>Ja från ${esc(approverName(t, s.approver))}</b> behövs${s.approval_why ? `, för att ${esc(s.approval_why)}` : ""}.</p>` : "")
+        + qs.filter((o) => o.step === s.step).map((o) => `<div class="need" style="cursor:pointer" data-open-q="${esc(o.id)}"><span class="no">${ic("stop")}</span><span class="t">${esc(headlineForOpen(o))}</span><button class="btn sm" data-open-q="${esc(o.id)}">Svara</button></div>`).join("")
+        + stepWaitBanner(t, s)
+        + ipEntry(t, s) + doArea
+        + (s.done ? "" : `<div class="bar-actions st-acts"><button class="btn ${(!ws || (ws.parts.length && ws.parts.every((p) => p.state === "enough"))) && !/btn[^"]*primary/.test(doArea) ? "primary" : ""}" data-done="1">${ws ? "Alla delar räcker — klart ›" : "Klart, till nästa ›"}</button>${startBtn}</div>`
+          + `<div class="st-side"><button class="btn quiet sm" data-calstep="${esc(t.id)}|${esc(s.step)}">Lägg i kalendern</button><button class="btn quiet sm" data-dp-step="${esc(t.id)}|${esc(s.step)}">Detaljplanera…</button><button class="btn quiet sm" data-handover-to="1">Ge steget till…</button><button class="btn quiet sm" data-handover-task="${esc(t.id)}" title="Alla ogjorda steg blir förslag till kollegan">Lämna över hela uppgiften…</button>${t.steps.some((x) => !x.done && !x.external && (x.responsible?.id ?? x.responsible) !== me()) ? `<button class="btn quiet sm" data-take-task="${esc(t.id)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över</button>` : ""}${msgBtn({ task: t.id, step: s.step }, s.label).replace('class="btn quiet"', 'class="btn quiet sm"')}</div>`)
+        // En arbetsyta lämnar per del (texten med delens namn), inte i ett block för hela steget.
+        + (!s.done && !ws && (k === "human" || k === "mixed") ? deliverBlock(t, s) : "")
+        + `</div>`;
+      /* Så görs det, i tre åtskilda block (Daniel P 2026-10-01: «tydligt med skillnaden mellan metodens
+         allmänna och stegets kundspecifika instruktioner»): Allmänt · För <kund> · I det här uppdraget.
+         Kundens text blandas aldrig in i den allmänna; ett lager utan innehåll visas inte. */
+      const skey = `${t.id}|${s.step}`, cust = custName(t), custOwn = s.layers?.instruction === "customer";
+      const diffs = asArr(s.layers?.customer_diffs).filter((x) => x !== "egen instruktion");
+      const own = ownInstruction(t, s), deps = !!(deliveryOfTask(t) && !deliveryOfTask(t).implicit && stepWaitsOn(t, s).length);
+      const editAt = state.sedit?.key === skey ? state.sedit.at || "all" : null;
+      const editBtn = (at) => s.done && at !== "all" ? "" : `<button class="btn quiet sm" data-sedit="${esc(skey)}" data-sedit-at="${at}" title="Ändra texten i det här blocket">Ändra</button>`;
+      const howOf = (ins) => asArr(ins?.saa_goer_du).length ? ins.saa_goer_du : asArr(ins?.how_to);
+      const howList = (xs) => xs?.length ? `<ol class="how">${((n) => xs.map((h) => /^\*[^*].*\*$/.test(h.trim()) ? `<li class="how-sec">${mdInline(h)}</li>` : `<li value="${++n}">${mdInline(h)}</li>`).join(""))(0)}</ol>` : "";
+      const promptBox = prompts.length ? `<div class="label">Prompterna · klistras in ordagrant</div>${prompts.map((x, n) => `<div class="st-prompt"><textarea readonly rows="${Math.min(6, 1 + Math.ceil(x.length / 90))}" id="st-prompt-${n}" aria-label="Prompt ${n + 1}">${esc(x)}</textarea><button class="btn sm" data-copy-el="st-prompt-${n}">Kopiera</button></div>`).join("")}` : "";
+      const layerHead = (tag, words, at) => `<div class="st-lh">${tag}<span class="meta">${words}</span>${editBtn(at)}</div>`;
+      const mi = custOwn ? s.method_instruktion || null : null, ci = custOwn ? s.customer_instruktion || s.instruktion || null : null;
+      const genHow = custOwn ? (howOf(mi).length ? howOf(mi) : lines(s.recipe?.how)) : how;
+      const general = `<div class="st-layer">${layerHead(`<span class="chip lt" title="Metoden: gäller alla kunder">Allmänt</span>`, "så görs steget hos alla kunder", "all")}`
+        + (editAt === "all" ? stepTextCard(t, s) : "")
+        + ((custOwn ? mi?.syfte || mi?.purpose : s.instruktion?.syfte) ? `<p style="margin:0 0 8px">${esc(custOwn ? mi.syfte || mi.purpose : s.instruktion.syfte)}</p>` : "")
+        + (s.recipe?.needs ? `<div class="label">Vad behövs</div><div class="st-pre">${mdInline(s.recipe.needs)}</div>` : "")
+        + (genHow?.length ? `<div class="label">Så gör du</div>${howList(genHow)}` : `<div class="meta">Ingen beskrivning än.</div>`)
+        + (s.recipe?.check ? `<div class="label">Kontrollera</div><div class="st-pre">${mdInline(s.recipe.check)}</div>` : "")
+        + (custOwn ? "" : promptBox)
+        + ((s.leaves || []).length ? `<div class="meta" style="margin-top:8px">Lämnar: ${s.leaves.map((lv) => esc(lbl(lv))).join(", ")}</div>` : "")
+        + (custOwn ? `<p class="meta st-line">För ${esc(cust)} gäller kundens egen text nedan i stället för den här.</p>` : "") + `</div>`;
+      const customer = custOwn || diffs.length || editAt === "customer" ? `<div class="st-layer cust">${layerHead(`<span class="chip lt" title="Kundens sätt: gäller bara ${esc(cust)}">För ${esc(cust)}</span>`, custOwn ? "kundens egen text, gäller i stället för den allmänna" : "bara det som skiljer", "customer")}`
+        + (editAt === "customer" ? stepTextCard(t, s) : "")
+        + (diffs.length ? `<p class="meta st-line">${diffs.map(esc).join(" · ")}</p>` : "")
+        + (custOwn ? ((ci?.syfte || ci?.purpose) ? `<p style="margin:0 0 8px">${esc(ci.syfte || ci.purpose)}</p>` : "")
+          + (howOf(ci).length ? `<div class="label">Så gör du</div>${howList(howOf(ci))}` : "")
+          + (asArr(ci?.far_inte || ci?.must_not).length ? `<div class="label">Får inte</div><ul class="how">${asArr(ci.far_inte || ci.must_not).map((x) => `<li>${mdInline(x)}</li>`).join("")}</ul>` : "")
+          + (asArr(ci?.fraaga_naer || ci?.ask_when).length ? `<div class="label">Fråga när</div><ul class="how">${asArr(ci.fraaga_naer || ci.ask_when).map((x) => `<li>${mdInline(x)}</li>`).join("")}</ul>` : "")
+          + promptBox : "") + `</div>` : "";
+      const assignment = own || s.added || deps || editAt === "task" ? `<div class="st-layer task">${layerHead(assignmentTag, "gäller bara den här leveransen", "task")}`
+        + (editAt === "task" ? stepTextCard(t, s) : "")
+        + (own ? `<p class="meta st-line">Egen instruktion: <button class="linkbtn" data-fget="${esc(own.ref)}" data-fname="${esc(own.name)}">${esc(own.name)}</button></p>` : "")
+        + (s.added ? `<p class="meta st-line">Steget finns bara i den här uppgiften, inte i metoden.</p>` : "")
+        + (deps ? `<p class="meta st-line">${waitsLine(t, s).replace(/^ · /, "")}</p>` : "") + `</div>` : "";
+      const recipeCard = `<div class="card section st-recipe"><h2>Så görs det${s.done || s.external ? "" : ` <button class="btn quiet sm" data-stype="${esc(t.id)}|${esc(s.step)}" title="Låt en människa, Claude eller kod göra steget">Byt typ</button>`}${s.done ? "" : ` <button class="btn quiet sm" data-wait-open="${esc(t.id)}|${esc(s.step)}" title="Steget väntar på ett besked utifrån: vem, frågan och när vi påminner">Väntar på …</button>`}${eclBtn("step", skey)}</h2>`
+        + general + customer + assignment
+        + (deps ? "" : waitsLine(t, s) ? `<p class="meta st-line">${waitsLine(t, s).replace(/^ · /, "")}</p>` : "") + `</div>`;
+      const moreOpen = state.pal?.task === t.id || LV.open[`stmore|${t.id}|${s.step}`];
+      const details = `<details class="st-more" data-st-more="${esc(t.id)}|${esc(s.step)}"${moreOpen ? " open" : ""}><summary>Detaljer: material, kedjan och det som behövs</summary>`
+        + `<div class="card section"><h2>Material <span class="meta">det arbetet utgår från</span> <button class="btn quiet sm" data-mat-add="${esc(t.id)}|${esc(s.step)}">Lägg till material</button></h2>${materialRows(t, s)}</div>`
         + materialCard(t, s, true)
         + `<div class="card section"><h2>Kedjan ${t.method ? `<button class="linkbtn" data-open-method="${esc(t.method)}" title="Öppna metoden — där den kan ändras för alla">${esc(lbl(t.method_named, "metoden"))} ${ic("arrow")}</button>` : ""}`
         + `${t.method ? ` <button class="btn quiet sm" data-change="${esc(t.id)}">Ändra stegen för ${esc(lbl(t.customer, "kunden"))}</button>` : ""}`
@@ -4792,17 +4875,26 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
           + `<button class="addstep" data-add-step="${esc(t.id)}|${esc(x.step)}" title="Lägg till steg här" aria-label="Lägg till steg efter ${esc(x.label)}">+</button>`).join("")}</div>`
         + (state.pal?.task === t.id ? `<div id="stpal" class="stpal" role="region" aria-label="Lägg till steg">${palHtml(t)}</div>` : "") + `</div>`
         + (t.thread ? threadCard(t.thread) : "")
-        + stepWaitBanner(t, s)
-        + `<div class="ws2"><div class="card section"><h2>Behövs</h2>`
+        + `<div class="card section"><h2>Behövs</h2>`
         + (qs.length ? qs.map((o) => `<div class="need" style="cursor:pointer" data-open-q="${esc(o.id)}"><span class="no">${ic(o.step === s.step ? "stop" : "help")}</span><span class="t">${esc(headlineForOpen(o))}${o.step && o.step !== s.step ? ` <span class="meta">· stoppar «${esc(lbl(o.step_named, ""))}»</span>` : ""}</span><button class="btn sm" data-open-q="${esc(o.id)}">Svara</button></div>`).join("")
           : `<div class="need"><span class="ok">${ic("check")}</span><span class="t">Allt som behövs finns</span></div>`)
-        + `</div><div class="card section"><h2>Så görs det <button class="btn quiet sm" data-sedit="${esc(t.id)}|${esc(s.step)}" title="Skriv om stegets prompt och moment här">Ändra texten</button>${s.done || s.external ? "" : ` <button class="btn quiet sm" data-stype="${esc(t.id)}|${esc(s.step)}" title="Låt en människa, Claude eller kod göra steget">Byt typ</button>`}${s.done ? "" : ` <button class="btn quiet sm" data-wait-open="${esc(t.id)}|${esc(s.step)}" title="Steget väntar på ett besked utifrån: vem, frågan och när vi påminner">Väntar på …</button>`}${eclBtn("step", `${t.id}|${s.step}`)}</h2>`
-        + stepTextCard(t, s)
-        + (s.instruktion?.syfte ? `<p style="margin:0 0 8px">${esc(s.instruktion.syfte)}</p>` : "")
-        + (how ? `<ol class="how">${how.slice(0, 8).map((h) => `<li>${esc(h)}</li>`).join("")}</ol>` : `<div class="meta">Ingen beskrivning än.</div>`)
-        + ((s.leaves || []).length ? `<div class="meta" style="margin-top:8px">Lämnar: ${s.leaves.map((lv) => esc(lbl(lv))).join(", ")}</div>` : "") + `</div></div>`
-        + `<div class="card doarea"><h2>Gör</h2>${ipEntry(t, s)}${doArea}</div>`
-        + (!s.done && (k === "human" || k === "mixed") ? deliverBlock(t, s) : "");
+        + `</div></details>`;
+      return `<div class="wshead"><div class="titles"><span class="meta">${custDot(t.customer?.color)} ${t.customer?.id ? `<a href="${H.customer(t.customer.id)}">${esc(lbl(t.customer))}</a>` : esc(lbl(t.customer))}`
+        + ` · i uppgiften <a href="${H.delivery(dv.id, dv.implicit ? null : t.id)}">${esc(taskTitle(t))}</a>${eclBtn("task", t.id)}${dv.implicit ? "" : ` · i leveransen <a href="${H.delivery(dv.id)}">${esc(dv.label)}</a>`} · leverans ${short(t.due)} · ${methodLine(t)}</span>`
+        + `<h1><button class="fld" data-fedit="step-name|${esc(t.id)}|${esc(s.step)}" title="Byt stegets namn">${esc(s.label)}</button>${eclBtn("step", `${t.id}|${s.step}`)}</h1>`
+        + (!s.done && s.handover ? `<div class="warnnote" style="margin:4px 0 8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${ic("user")} ${s.handover.to === me() ? `${esc(lbl(s.handover.by_named, "En kollega"))} vill lämna steget till dig` : `Överlämnat till ${esc(lbl(s.handover.to_named, personName(s.handover.to)))}, väntar på ja`}${s.handover.at ? ` · ${short(s.handover.at)}` : ""}.</span>${s.handover.by === me() ? `<button class="btn sm quiet" data-withdraw="${esc(t.id)}|${esc(s.handover.to)}">Dra tillbaka</button>` : ""}</div>` : "")
+        + `<div class="line">${kindMark(k)} ${esc(kindTxt)} · ansvarig ${s.done ? esc(lbl(s.responsible, "–")) : `<button class="fld" data-handover-to="1" title="Ge steget till någon annan">${esc(lbl(s.responsible, "–"))}</button>`}`
+        + ` · ${!s.done ? `<button class="fld" data-dp-step="${esc(t.id)}|${esc(s.step)}" title="Detaljplanera steget: ledtid, timmar och vem">${short(s.start)}–${short(s.latest_end ? lastOf(s.latest_end, s.start) : lastDay(s))}</button>` : `${short(s.start)}–${short(s.latest_end ? lastOf(s.latest_end, s.start) : lastDay(s))}`}`
+        + (s.critical ? ` · <span class="chip amber">utan marginal</span>` : ` · <span class="meta">kan flyttas ${plural(s.float_days, "dag", "dagar")}</span>`)
+          + (pullChip(s) ? ` · ${pullChip(s)}` : "") + assumeChips(s)
+          + (s.added ? ` · <span class="chip">Bara i det här uppdraget</span> <button class="linkbtn" data-remove-added="${esc(t.id)}|${esc(s.step)}">Ta bort ur uppgiften</button>` : "") + (s.done ? ` · <span class="chip green">${ic("check")} ${doneText(s)}</span>` : "") + (started ? ` · ${started}` : "") + `</div></div></div>`
+        // Borta den dagen (F17): markeringen och handlingen bredvid, före allt annat.
+        + (s.done ? "" : absenceOf(t.id, s.step).map((a) => `<div class="warnnote" style="margin:4px 0 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${ic("alert")} ${esc(absenceText(a))}.</span>`
+          + `${absenceBtn(a)}${s.done ? "" : `<button class="btn sm quiet" data-dp-step="${esc(t.id)}|${esc(s.step)}">Detaljplanera…</button>`}</div>`).join(""))
+        + nowCard
+        + (ws ? workspaceCard(t, s, ws) : "")
+        + recipeCard
+        + details;
     },
 
     project() {
@@ -4864,7 +4956,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       const ids = stepIds(m), ts = methodTasks(m), vs = methodVariants(m);
       const kindTxt = { code: "Kod gör det", llm: "Claude gör det, en människa godkänner", human: "En människa gör det", mixed: "Kod och människa", ext: "Kunden eller en partner" };
       return `<div class="wshead"><div class="titles"><span class="meta">Metod${typeLabel(m.output?.[0]) ? ` · levererar ${esc(typeLabel(m.output[0]))}` : ""}</span><h1><button class="fld" data-fedit="method-name|${esc(m.id)}" title="Byt metodens namn">${esc(m.label)}</button>${eclBtn("method", m.id)}</h1>`
-        + `<div class="line">${ids.length} steg · ${ts.length ? `${ts.length} uppgift${ts.length === 1 ? "" : "er"} i planen` : "inte i planen nu"} · ${vs.length ? `${vs.length} kundflöde${vs.length === 1 ? "" : "n"}` : "inget kundflöde"}</div></div>`
+        + `<div class="line">${ids.length} steg · ${ts.length ? `${ts.length} uppgift${ts.length === 1 ? "" : "er"} i planen` : "inte i planen nu"} · ${vs.length ? `${vs.length === 1 ? "en kund" : `${vs.length} kunder`} med eget sätt` : "samma för alla kunder"}</div></div>`
         + `<button class="btn primary" data-edstart="1">Ändra metoden</button><button class="btn" data-adapt="1">Anpassa för kund</button></div>`
         + `<div class="card section"><h2>Kedjan</h2><div class="chain">${(m.parts || []).map((s, i) => `${i ? `<span class="arrow">${ic("chev")}</span>` : ""}<span class="node ${stepBlockers(s.id).length ? "removed" : ""}">${kindMark(stepKind(s.id))}<span class="l">${esc(s.label)}</span></span>`).join("")}</div></div>`
         + `<div class="card" style="margin-top:16px"><div class="head"><h2>Stegen · kan de köras?</h2>${S.lead?.loading ? `<span class="meta">hämtar ledtiderna…</span>` : ""}<span class="right"><button class="btn sm ai" data-hsuggest="1">${SP} Föreslå timmar</button></span></div>`
@@ -4877,9 +4969,9 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
             why: (bl.length ? `<span style="color:var(--amber)">Kan inte köras: ${bl.map((b) => `«${esc(b.label)}»`).join(", ")} är inte byggt</span>` : esc(kindTxt[k] || "")) + (facts ? ` · ${facts}` : ""),
             when: hasVerb(e?.label || "") ? "" : `<span style="color:var(--amber)">namnet saknar verb</span>` }); }).join("")
         + `</div>`
-        + `<div class="card" style="margin-top:16px"><div class="head"><h2>Kundflöden</h2><span class="meta">${vs.length || ""}</span></div>`
-        + (vs.length ? vs.map((v) => row({ kind: `<span class="kind human" title="Kundflöde">${ic("building")}</span>`, title: esc(v.label), cust: custLabel(v.output?.[0]), act: eclBtn("variant", v.id) })).join("")
-          : `<div class="empty"><b>Inget kundflöde.</b>Metoden används som den är hos alla kunder.</div>`) + `</div>`;
+        + `<div class="card" style="margin-top:16px"><div class="head"><h2>Kundens sätt</h2><span class="meta">${vs.length || ""}</span></div>`
+        + (vs.length ? vs.map((v) => row({ kind: `<span class="kind human" title="Kundens sätt">${ic("building")}</span>`, title: esc(v.label), cust: custLabel(v.output?.[0]), act: eclBtn("variant", v.id) })).join("")
+          : `<div class="empty"><b>Ingen kund har ett eget sätt.</b>Metoden används som den är hos alla kunder.</div>`) + `</div>`;
     },
     case() {
       const x = caseByThread(state.obj.id);
@@ -4998,8 +5090,10 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const k = s.performer_kind || "human";
     if (k === "code" && s.runnable) return { tool: "execute_step", args: { task: t.id, step: s.step },
       does: "Kör steget. Dirigenten visar först vad som ändras; inget skrivs utan bekräftelse." };
-    if (k === "llm") return { tool: "execute_step", args: { task: t.id, step: s.step, mark: "done" },
-      does: "Gör arbetet enligt stegets instruktion (plan_state: tasks[].steps[].instruktion), spara resultatet med content_save, låt en människa godkänna — och markera sedan steget klart med det här anropet." };
+    // Nästa anrop pekar på arbetet, aldrig först på att markera klart (målbilden regel 6).
+    // Vyn vet inte vad som registrerats; lägesbilden ger det exakta anropet.
+    if (k === "llm" || asArr(s.leaves).length) return { tool: "read", args: { op: "context", task: t.id, step: s.step },
+      does: "Läs stegets lägesbild och gör arbetet: den säger vad steget ska lämna och hur det sparas. Klart följer av resultatet." };
     return { tool: "execute_step", args: { task: t.id, step: s.step, mark: "done" }, does: "Markera steget klart när det är gjort för hand." };
   }
   /** En uppgift utan leverans, som en leverans med en uppgift. Härledd här; ingenting skrivs. */
@@ -5104,6 +5198,9 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       ...(!out.length && !missingOf(u).length && !laterOf(u).length ? [{ word: /^klar/.test(u.status || "klar") ? "klar" : "inte påbörjad", tone: /^klar/.test(u.status || "klar") ? "green" : "" }] : [])];
   }
   /** Metoden uppgiften görs efter: namn, version, kundvariant och om den är låst (Daniel P 2026-09-26). */
+  /* ── De tre lagren (docs/orden-i-vyn.md): Allmänt · För <kund> · I det här uppdraget ── */
+  const custName = (t) => lbl(t?.customer, "kunden");
+  const assignmentTag = `<span class="chip lt" title="Gäller bara den här leveransen">I det här uppdraget</span>`;
   function methodLine(t) {
     if (!t?.method) return "ingen metod";
     return `<span class="lv-method"><button class="linkbtn" data-open-method="${esc(t.method)}" title="Öppna metoden">${esc(lbl(t.method_named, "metoden"))}</button>`
@@ -5125,10 +5222,12 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (next) out.push(`<button class="btn sm ai" data-lv-copy="${esc(JSON.stringify({ task: t.id, step: s.step, next }))}" title="En färdig instruktion med exakt anrop, att klistra in i Claude">${SP} Kopiera till Claude</button>`);
     return out.join("");
   }
+  /** Skälet när ett steg blir klart utan sitt resultat (målbilden regel 5); det syns i leveransen. */
+  const noResultField = () => `<label class="field wide"><span>Blev det inget? Skälet · syns i leveransen</span><textarea id="no-result-why" rows="2" placeholder="T.ex. mötet gav inga beslut"></textarea></label>`;
   /** Instruktionen till Claude: meningen i klartext och anropet exakt som servern gav det. */
   function lvCopyText({ task, step, next, text }) {
     const t = taskById(task), s = stepOf(t, step);
-    if (s && kindOf(s) === "llm" && next?.args?.mark === "done") return stepChatPrompt(t, s);
+    if (s && kindOf(s) === "llm" && (next?.args?.mark === "done" || next?.args?.op === "context" || next?.args?.op === "content_save")) return stepChatPrompt(t, s);
     return [text || next?.does || "", "",
       t ? `Kund: ${lbl(t.customer, "okänd")}.` : null,
       t ? `Uppgift: ${taskTitle(t)} (id ${t.id}).` : null,
@@ -5436,7 +5535,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     `Leveransen: ${d.label}${d.implicit ? "" : ` (id ${d.id})`}. Läs läget med plan_state { ${d.implicit ? `customer: "${lbl(custOf(d), "")}"` : `delivery: "${d.id}"`} } först.`].filter(Boolean).join(" ");
   function lvMaterial(d) {
     const us = lvUnits(d), ungrouped = asArr(d.material?.rounds).flatMap((r) => asArr(r.ungrouped));
-    if (!us.length && !ungrouped.length) return `<div class="card"><div class="empty"><b>Inget material än.</b>Det stegen lämnar hamnar här, en rad per enhet.</div></div>`;
+    if (!us.length && !ungrouped.length) return `<div class="card"><div class="empty"><b>Inget skapat än.</b>Det stegen lämnar hamnar här, en rad per enhet.</div></div>`;
     const groups = new Map();
     for (const k of ["Saknas något", "Klart"]) groups.set(k, []);
     for (const x of us) { const k = unitGroup(d, x.u); groups.set(k, [...(groups.get(k) || []), x.u]); }
@@ -5488,7 +5587,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   /* ── historiken ── */
   function lvHistory(d, ts) {
     const items = d.implicit ? ts.flatMap((t) => [
-      ...liveSteps(t).filter((s) => s.done).map((s) => ({ at: s.done.at, by: personName(s.done.by?.id ?? s.done.by), text: `«${s.label}» markerat klart${s.done.note ? `: ${s.done.note}` : ""}` })),
+      ...liveSteps(t).filter((s) => s.done).map((s) => ({ at: s.done.at, by: personName(s.done.by?.id ?? s.done.by), text: `«${s.label}» markerat klart${s.done.no_result ? `, inget resultat: ${s.done.no_result}` : ""}${s.done.note ? `: ${s.done.note}` : ""}` })),
       ...(t.moved ? [{ at: t.moved.at, by: personName(t.moved.by), text: `Datumet flyttades ${t.moved.from} → ${t.moved.to}${t.moved.reason ? `: ${t.moved.reason}` : ""}` }] : []),
       ...(t.revision ? [{ at: t.revision.at, by: personName(t.revision.by), text: `Ändring efter leverans: ${t.revision.what} — ny slutpunkt ${day10(t.revision.due)}` }] : [])])
       : asArr(d.history).map((h) => ({ ...h, by: personName(h.by) }));
@@ -5937,7 +6036,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   function famMeeting(dv, ts) {
     const all = ts.flatMap((t) => roundSteps(t).map((s) => ({ t, s })));
     const open = all.filter((x) => !x.s.done), done = all.filter((x) => x.s.done);
-    const row = ({ t, s }) => `<li><span><a href="${H.delivery(dv.id, t.id, s.step)}">${esc(s.label)}</a>${lvStepSub(t, s)}</span><span class="meta">${esc(s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, ""))}${s.done ? ` · ${short(s.done.at)}` : ` · ${short(lastDay(s))}`}</span></li>`;
+    const row = ({ t, s }) => `<li><span><a href="${H.delivery(dv.id, t.id, s.step)}">${esc(s.label)}</a>${lvStepSub(t, s)}</span><span class="meta">${esc(s.external ? lbl(s.waiting?.on, "") : lbl(s.responsible, ""))}${s.done ? ` · ${short(s.done.at)}${s.done.no_result ? ` · inget resultat: ${esc(s.done.no_result)}` : ""}` : ` · ${short(lastDay(s))}`}</span></li>`;
     return `<div class="lv-sec"><h2>Agenda och utfall</h2><span class="n">${esc(lvCountAll(ts))}</span></div><div class="card lv-card"><div class="fam-two">`
       + `<div><h3>Agenda</h3>${open.length ? `<ol class="fam-list" style="padding-left:18px;list-style:decimal">${open.map(row).join("")}</ol>` : `<div class="meta">Allt på agendan är gjort.</div>`}</div>`
       + `<div><h3>Utfall</h3>${done.length ? `<ul class="fam-list">${done.map(row).join("")}</ul>` : `<div class="meta">Inget är avklarat än.</div>`}</div></div></div>`;
@@ -6812,7 +6911,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const [word, tone] = st.kind === "late" && st.days_late ? [`${plural(st.days_late, "dag", "dagar")} efter löftet`, "red"] : STATUS_CHIP[st.kind] || STATUS_CHIP.on_time;
     const types = [...ts.reduce((m, t) => m.set(lbl(t.deliverable, "Uppgift"), (m.get(lbl(t.deliverable, "Uppgift")) || 0) + 1), new Map())]
       .map(([k, n]) => n > 1 ? `${n} ${k}` : k).join(", ");
-    const nDone = ts.filter(partDone).length, nMine = ts.filter((t) => !partDone(t) && partMine(t)).length;
+    const nDone = ts.filter(partDone).length, nMine = ts.filter((t) => partStatus(t).key === "mine").length;
     const h = st.kind === "late" ? st.holding : null;
     const fact = (v, l) => `<div class="pv-fact"><b>${v}</b><span>${l}</span></div>`;
     const card = (t) => {
@@ -6826,9 +6925,14 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return `<div class="pv"><div class="pv-eyebrow">Leverans</div><div class="pv-head"><h1>${esc(d.label)}</h1>${d.closed ? "" : chip(word, tone)}</div>`
       + `<div class="pv-sub">${c?.id ? `<a href="${H.customer(c.id)}">${esc(lbl(c))}</a> · ` : ""}${plural(ts.length, "del", "delar")}${types ? ` · ${esc(types)}` : ""}</div>`
       + `<div class="pv-facts">${fact(st.promised ? short(st.promised) : "–", "lovat kunden")}${st.kind === "delivered" ? fact(short(st.delivered_at), "levererad") : fact(st.likely ? short(st.likely) : "–", "beräknat klart")}`
-      + `${fact(`${nDone} av ${ts.length}`, "delar klara")}${fact(String(nMine), "väntar på dig")}</div>`
+      + `${fact(`${nDone} av ${ts.length}`, "delar klara")}${fact(String(nMine), nMine === 1 ? "del är din tur" : "delar är din tur")}</div>`
       + (h ? `<div class="pv-hold">Det som håller uppe: «${esc(h.label)}» · ${esc(stepWhen(h))}</div>` : "")
+      + importantSection(d, ts)
       + `<div class="lv-sec"><h2>Delarna</h2></div><div class="pv-grid">${ts.map(card).join("")}</div>`
+      + lvFold(d, "made", `${ic("mat")} Det som skapats, per del`, nOrNone(ts.reduce((n, t) => n + asArr(t.outputs).length + asArr(t.steps).reduce((m, s) => m + asArr(s.drafts).length, 0), 0)), () => madePerPart(d, ts))
+      + lvFold(d, "inputs", `${ic("mat")} Material för hela leveransen`, nOrNone(asArr(ts[0]?.materials).filter((m) => m.level === "delivery").length),
+        () => `<div class="card section">${asArr(ts[0]?.materials).filter((m) => m.level === "delivery").length ? materialRows({ materials: asArr(ts[0]?.materials).filter((m) => m.level === "delivery") }, null) : `<div class="meta">Inget material för hela leveransen. Det som läggs här syns i varje del och för Claude i varje steg.</div>`}`
+          + (ts[0] ? `<div class="bar-actions"><button class="btn quiet sm" data-mat-add="${esc(ts[0].id)}|">Lägg till material</button></div>` : "") + `</div>`)
       + `<div class="lv-sec"><h2>Om leveransen</h2></div><div class="pv-about">`
       + (st.kind === "late" || st.kind === "on_time" ? link("Flytta kundens datum", `data-lv-promise="${ts.length === 1 ? `task|${esc(ts[0].id)}` : `delivery|${esc(d.id)}`}|${esc(st.likely && st.promised && st.likely > st.promised ? st.likely : st.promised || "")}"`) : "")
       + (!d.closed ? link("Be Claude möblera om", `data-lv-rearrange="${esc(d.id)}"`) : "")
@@ -6967,14 +7071,16 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const who = lbl(roundSteps(t).find((y) => !y.done)?.responsible, "");
     return `<div class="pp"><nav class="pp-left" aria-label="Leveransens delar"><a class="pp-back" href="${H.delivery(d.id)}">← Leveransen</a><div class="pp-dn">${esc(d.label)}</div>${ts.map(item).join("")}</nav>`
       + `<div class="pp-mid"><div class="pp-eyebrow">${esc(lbl(t.deliverable, "Uppgift"))}</div><div class="pv-head"><h1>${esc(title)}</h1>${late}</div>`
-      + `<div class="pv-sub">${[t.due ? `Klart ${short(day10(t.due))}` : "", who].filter(Boolean).map(esc).join(" · ")}${t.method ? ` · ${methodLine(t)}` : ""}</div>`
+      + `<div class="pv-sub">${[t.due ? `Leverans ${short(day10(t.due))}` : "", who].filter(Boolean).map(esc).join(" · ")}${t.method ? ` · ${methodLine(t)}` : ""}</div>`
       + `<div class="pp-cols"><div class="pp-right"><div><div class="lv-sec"><h2>Det du ska göra nu</h2></div>${postNow(d, t)}</div>`
       + `<div><div class="lv-sec"><h2>Stegen</h2><span class="n">${esc(lvCount(t))}</span></div>${noMethod(t) ? "" : postSteps(d, t, o.step)}</div></div>`
       + `<div class="pp-center"><div class="lv-sec"><h2>Det som skapats</h2></div>${postMade(d, t)}`
+      + lvFold(d, "inputs", `${ic("mat")} Material för delen`, nOrNone(materialsHere(t, null).length),
+        () => `<div class="card section">${materialRows(t, null)}<div class="bar-actions"><button class="btn quiet sm" data-mat-add="${esc(t.id)}|">Lägg till material</button></div></div>`)
       + lvFold(d, "steps", `${ic("upp")} Alla steg, med detaljer`, esc(lvCount(t)),
         () => `<div class="card lv-card"><div style="padding:4px 16px 12px">${fullOccasion(t) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(t))}</div>` : ""}${waitEdges(t)}${dpEntry([t], "uppgiften")}${lvRounds(d, t, o.step)}</div></div>`, !!o.step)
-      + lvFold(d, "material", `${ic("mat")} Material och filer`, "", () => lvMaterial({ ...d, material: t.material || null }))
-      + lvFold(d, "history", "Historik för posten", "", () => lvHistory(d, [t]))
+      + lvFold(d, "material", `${ic("mat")} Det som skapats, per enhet`, "", () => lvMaterial({ ...d, material: t.material || null }))
+      + lvFold(d, "history", "Historik för delen", "", () => lvHistory(d, [t]))
       + `</div></div></div></div>`;
   }
   function pageDelivery() {
@@ -7212,18 +7318,18 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const outside = ts.some((t) => t.outside_contract), bare = ts.filter((t) => !liveSteps(t).length).length;
     const mine = ts.some((t) => { const c = currentStep(t); return c && !c.external && (c.responsible?.id ?? c.responsible) === me(); });
     const out = ts.some((t) => t.live);
-    const chips = [late ? chip(plural(late, "uppgift sen", "uppgifter sena"), "red") : "", mine ? chip("din tur", "accent") : "",
+    const chips = [late ? chip(plural(late, "del sen", "delar sena"), "red") : "", mine ? chip("din tur", "accent") : "",
       out ? chip("ute", "green") : "", bare ? chip(`${bare} utan metod`, "amber") : "", outside ? chip("utanför avtalet", "amber") : "",
       d.closed ? chip("avslutad") : ""].join("");
     const lines = ts.filter((t) => liveSteps(t).length).map((t) => ({ t, c: currentStep(t) }));
     const shown = lines.slice(0, 4);
     return `<div class="card lv-card" data-lv-href="${H.delivery(d.id)}" tabindex="0">`
       + `<div class="dc-head"><span class="kbox lev">${ic("lev")}</span><div style="min-width:0;flex:1"><h3><a href="${H.delivery(d.id)}">${esc(d.label)}</a></h3>`
-      + `<div class="who">${esc(lbl(custOf(d), ""))} · ${plural(ts.length, "uppgift", "uppgifter")} · slutdatum ${short(d.moved?.to || d.due)}</div></div></div>`
+      + `<div class="who">${esc(lbl(custOf(d), ""))} · ${plural(ts.length, "del", "delar")} · slutdatum ${short(d.moved?.to || d.due)}</div></div></div>`
       + lvTimeline(d, ts, true)
       + `<div class="dc-where"><span class="k">Nu</span><span class="v" title="${esc(where ? `${where.label}` : "")}">${where ? `<b>${esc(stepOf(taskById(where.task), where.step)?.label || where.label)}</b>${where.who ? ` · ${esc(where.who)}` : ""}${where.date ? ` · ${short(where.date)}` : ""}` : "alla steg är klara"}</span></div>`
       + (ts.length > 1 && shown.length ? `<ul class="dc-tasks">${shown.map(({ t, c }) => `<li><span>${esc(taskTitle(t))}: <b>${esc(c ? c.label : "klar")}</b></span><span>${lvCount(t)}</span></li>`).join("")}`
-        + (lines.length > shown.length ? `<li><span>och ${plural(lines.length - shown.length, "uppgift", "uppgifter")} till</span><span></span></li>` : "") + `</ul>` : "")
+        + (lines.length > shown.length ? `<li><span>och ${plural(lines.length - shown.length, "del", "delar")} till</span><span></span></li>` : "") + `</ul>` : "")
       + `<div class="dc-foot">${chips}<a class="go" href="${H.delivery(d.id)}">Öppna leveransen ›</a></div></div>`;
   }
   /**
@@ -8295,20 +8401,28 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const [task, step] = String(key).split("|"); const t = taskById(task), s = stepOf(t, step);
     if (!t || !s) return toast("Steget finns inte längre i planen. Hämta igen.", null, true);
     if (s.done) return toast(`${s.label} är redan klart.`);
+    if (!force) LV.noResult = null;
     const k = kindOf(s);
     const leaves = (k === "human" || k === "mixed") ? (s.leaves || []) : [];
     const approverId = s.approver ? (s.approver.id ?? s.approver) : null;
     const approver = approverId && approverId !== me() ? personName(approverId) : null;
+    if (leaves.length && force.includes("leaves") && !LV.noResult) {
+      const why = ($("#no-result-why")?.value || "").trim();
+      if (!why) return toast("Skriv varför det inte blev något — skälet syns i leveransen.", null, true);
+      LV.noResult = why.slice(0, 500);
+    }
     if (leaves.length && !force.includes("leaves"))
-      return dialog(`<h2>${esc(s.label)} ska lämna ${leaves.map((lv) => esc(lbl(lv))).join(", ")}</h2><p>Stegen efter som behöver det väntar tills det finns. Fyll i det i steget, eller markera klart ändå.</p>`
-        + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn" data-open-step="${esc(key)}">Öppna steget</button><button class="btn primary" data-quick-done="${esc(key)}" data-force="${esc(`${force} leaves`)}">Markera klart ändå</button></div>`);
+      return dialog(`<h2>${esc(s.label)} ska lämna ${leaves.map((lv) => esc(lbl(lv))).join(", ")}</h2><p>Steget blir klart när det finns. Öppna steget och lägg in det — eller, om det uttryckligen inte blev något, skriv varför.</p>`
+        + noResultField()
+        + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-open-step="${esc(key)}">Öppna steget</button><button class="btn" data-quick-done="${esc(key)}" data-force="${esc(`${force} leaves`)}">Klart utan resultat</button></div>`);
     if (approver && !force.includes("approval"))
       return dialog(`<h2>${esc(s.label)} godkänns av ${esc(approver)}</h2><p>Markera klart när godkännandet finns. Saknas det kan du skicka steget till ${esc(approver)} i stället.</p>`
         + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn" data-msg='${esc(JSON.stringify({ about: { task, step }, title: s.label }))}'>Skicka till ${esc(approver)}</button><button class="btn primary" data-quick-done="${esc(key)}" data-force="${esc(`${force} approval`)}">Det är godkänt — markera klart</button></div>`);
     closeDialog();
     return busy(btn, async () => {
       try {
-        const d = await doneFast(t, s);
+        const why = LV.noResult; LV.noResult = null;
+        const d = await doneFast(t, s, why ? { values: { no_result: why } } : {});
         const missing = (d?.delivery_missing || []).map((o) => lbl(o.what, "")).filter(Boolean);
         toast(`${s.label} är klart.${missing.length ? ` Leverans saknas: ${missing.join(", ")}.` : ""}`, undoDone(t, s));
       } catch (e) { fail("Steget markerades inte klart", e); }
@@ -8342,8 +8456,11 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const filled = (lv) => { const k = lv.name || lv.label, v = inp.parts[k] || {}; return !!(v.text?.trim() || v.link?.trim() || inp.files[k] || inp.bank?.[k]); };
     const empty = leaves.filter((lv) => !filled(lv));
     if (empty.length && !force)
-      return dialog(`<h2>${empty.map((lv) => esc(lbl(lv))).join(", ")} är inte ifyllt</h2><p>Stegen efter som behöver det kommer att vänta på det. Fyll i det, eller markera klart ändå.</p>`
-        + `<div class="bar-actions"><button class="btn quiet" data-close="1">Fyll i först</button><button class="btn" data-done="1" data-force="1">Markera klart ändå</button></div>`);
+      return dialog(`<h2>${empty.map((lv) => esc(lbl(lv))).join(", ")} är inte ifyllt</h2><p>Steget blir klart när det finns. Fyll i det — eller, om det uttryckligen inte blev något, skriv varför.</p>`
+        + noResultField()
+        + `<div class="bar-actions"><button class="btn primary" data-close="1">Fyll i först</button><button class="btn" data-done="1" data-force="1">Klart utan resultat</button></div>`);
+    const why = empty.length ? ($("#no-result-why")?.value || "").trim() : "";
+    if (empty.length && !why) return toast("Skriv varför det inte blev något — skälet syns i leveransen.", null, true);
     closeDialog();
     return busy(btn, async () => {
       try {
@@ -8357,7 +8474,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
           else if (v.link?.trim()) await call("asset_register", { ...base, mime: /^https?:\/\//i.test(v.link) ? "text/uri-list" : "text/plain", external: v.link.trim() });
           else await call("asset_register", { ...base, mime: "text/plain", text: v.text.trim() });
         }
-        await doneFast(t, s, inp.note?.trim() ? { note: inp.note.trim().slice(0, 500) } : {});
+        await doneFast(t, s, { ...(inp.note?.trim() ? { note: inp.note.trim().slice(0, 500) } : {}), ...(why ? { values: { no_result: why.slice(0, 500) } } : {}) });
         const undo = undoDone(t, s);
         const next = nextStep(taskById(t.id));
         if (next) open({ type: "step", task: t.id, step: next.step, title: next.label }); else { state.obj = null; render(); }
@@ -8654,6 +8771,102 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
    * Markera delen klar. Utför kör koddelarna fram till nästa del som inte är kod.
    */
   const PERFORMER_TXT = { code: "kod", llm: "Claude", human: "en människa" };
+  /* ── stegsidan: det du gör nu, arbetsytan och prompterna (Daniel P 2026-10-01) ── */
+  /**
+   * Prompterna i receptet, ordagrant: det som står inom «…», ”…” eller "…" och
+   * är långt nog att vara en instruktion. De klistras in i NotebookLM eller
+   * ChatGPT som de står, så de visas kopierbara och aldrig omskrivna.
+   */
+  function stepPrompts(s) {
+    const text = [s.recipe?.text || "", s.instruktion?.prompt || ""].join("\n");
+    const out = [];
+    for (const m of text.matchAll(/[«”"]([^«»”"\n]{25,})[»”"]/g)) if (!out.includes(m[1].trim())) out.push(m[1].trim());
+    return out;
+  }
+  /** Receptets fetstil (**…**, menyvägar och knappar) och kursiva avsnittsrubriker (*…*), resten som text. */
+  const mdInline = (x) => esc(x).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=$|[\s.,)])/g, "$1<i>$2</i>");
+  /** Vad du gör nu, i en mening. */
+  function stepNowText(t, s, k) {
+    if (s.done) return "Steget är klart.";
+    const ws = s.workspace;
+    if (ws) {
+      const p = ws.parts;
+      if (!p.length) return `Delarna är inte kända än: de kommer med ${ws.from}.`;
+      const by = (st) => p.find((x) => x.state === st);
+      if (by("in_progress")) return `Fortsätt med «${by("in_progress").label}» — den pågår. Ta delarna i vilken ordning du vill.`;
+      if (by("in")) return `Gå igenom «${by("in").label}»: räcker den, markera den. Annars ett varv till — Claude skriver nästa prompt.`;
+      if (by("not_started")) return `Börja på en del, till exempel «${by("not_started").label}». Ta dem i vilken ordning du vill.`;
+      return "Alla delar räcker — markera steget klart.";
+    }
+    if (k === "ext") return `Väntar på ${lbl(s.waiting?.on, "någon utanför Rotor")}.`;
+    if (k === "code") return "Kör steget. Du ser först vad som ändras, och inget ändras förrän du bekräftar.";
+    if (k === "llm") return "Claude gör steget. Läs det som kommer tillbaka, rätta det eller säg ja.";
+    if (k === "mixed") return mixedKindText(s);
+    const first = s.instruktion?.saa_goer_du?.[0] || String(s.recipe?.how || "").split(/\n+/).map((x) => x.replace(/^\d+[.)]\s*/, "")).find(Boolean);
+    return first ? `Börja med: ${first}` : "Gör steget enligt receptet nedan och markera det klart.";
+  }
+  const WS_TONE = { not_started: "", in_progress: "blue", in: "amber", enough: "green" };
+  /** Arbetsytan: en rad per del med läget och «Öppna», och det som lämnats under. */
+  function workspaceCard(t, s, ws) {
+    const key = (p) => `${t.id}|${s.step}|${p.key}`;
+    const row = (p) => {
+      const open = !!LV.open[`ws|${key(p)}`];
+      return `<li class="ws-part ${p.state}"><button class="ws-row" data-ws-toggle="${esc(key(p))}" aria-expanded="${open}">`
+        + `<span class="nm">${esc(p.label)}</span><span class="chip ${WS_TONE[p.state]}">${esc(p.state_text)}</span><span class="meta ws-open">${open ? "Stäng" : "Öppna"} ›</span></button>`
+        + (open ? `<div class="ws-body">`
+          + (p.note ? `<p class="meta">Anteckning: ${esc(p.note)}</p>` : "")
+          + (p.drafts.length ? `<div class="label">Det som lämnats</div><ul class="ws-drafts">${p.drafts.map((d) => `<li>${esc(d.name)} <span class="meta">· ${short(d.at)}</span></li>`).join("")}</ul>`
+            : `<p class="meta">Inget lämnat än. Spara rapporten till steget med ett namn som börjar med «${esc(p.label)}» — hela, aldrig en sammanfattning.</p>`)
+          + `<div class="bar-actions">`
+          + (p.state === "enough" ? `<button class="btn sm" data-ws-reopen="${esc(key(p))}">Fyll på</button>`
+            : `${p.state === "not_started" ? `<button class="btn sm" data-ws-start="${esc(key(p))}">Börja</button>` : ""}<button class="btn sm primary" data-ws-done="${esc(key(p))}">Räcker</button>`)
+          + `<button class="btn sm ai" data-ws-claude="${esc(key(p))}" title="En färdig instruktion: vad som saknas, prompten för nästa varv och om delen räcker">${SP} Kopiera till Claude</button>`
+          + `</div></div>` : "")
+        + `</li>`;
+    };
+    return `<div class="card section st-parts"><h2>Delarna <span class="meta">${esc(ws.summary)}</span></h2>`
+      + (ws.parts.length ? `<ul class="ws-parts">${ws.parts.map(row).join("")}</ul>` : `<div class="empty"><b>Inga delar än.</b>De kommer med ${esc(ws.from)}, eller lägg till en här.</div>`)
+      + (s.done ? "" : `<div class="bar-actions"><button class="btn sm quiet" data-ws-add="${esc(t.id)}|${esc(s.step)}">${ic("plus")} Lägg till en del</button><span class="meta">Varje del fylls på i varv. Steget är klart när varje del räcker — inget ja per del.</span></div>`)
+      + `</div>`;
+  }
+  /** Instruktionen till Claude för en del: vad som saknas, nästa varvs prompt, och om den räcker. */
+  function wsClaudeText(t, s, p) {
+    return [`Hjälp mig med delen «${p.label}» i steget «${s.label}» (${lbl(t.customer, "")}).`,
+      `Läs först lägesbilden: read { op: "context", task: "${t.id}", step: "${s.step}" }.`,
+      p.drafts.length ? `Det som lämnats för delen: ${p.drafts.map((d) => `«${d.name}» (read { op: "content_get", id: "${d.id}" })`).join(", ")}.` : "Inget är lämnat för delen än.",
+      s.enough ? `Så vet du att du är klar: ${s.enough}` : "",
+      "", "1. Säg kort vad delen visar hittills och vad som saknas mot det som räcker.",
+      "2. Skriv prompten för nästa varv, färdig att klistra in. Receptets fasta prompter ändras inte.",
+      `3. Säg om delen räcker. Markera den klar först när jag sagt ja: execute_step { task: "${t.id}", step: "${s.step}", part: "${p.key}", mark: "done", note }.`,
+      `Spara det du skriver med write { op: "content_save", for_task: "${t.id}", for_step: "${s.step}" } och ett namn som börjar med «${p.label}»; en ny version fyller på, den gamla står kvar.`,
+      "Gör inte min del av arbetet och hitta aldrig på källor."].filter((x) => x !== "").join("\n");
+  }
+  function wsPart(key) {
+    const [task, step, part] = String(key).split("|"); const t = taskById(task), s = stepOf(t, step);
+    const p = s?.workspace?.parts.find((x) => x.key === part);
+    return p ? { t, s, p } : null;
+  }
+  function wsWrite(btn, key, args, ok) {
+    const x = wsPart(key); if (!x) return toast("Delen finns inte längre i planen. Hämta igen.", null, true);
+    return busy(btn, async () => {
+      try { await call("execute_step", { task: x.t.id, step: x.s.step, part: x.p.key, ...args }); await lvRefresh({ task: x.t.id }); toast(ok(x.p)); }
+      catch (e) { fail("Delen ändrades inte", e); }
+    });
+  }
+  /** Nyckeln till en ny del, ur namnet: a–z, siffror och bindestreck (samma regel som servern). */
+  const wsKeyOf = (label) => label.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40).replace(/-+$/, "") || "del";
+  function wsAddSend(btn) {
+    const [task, step] = String(LV.wsAdd || "").split("|"); const t = taskById(task), s = stepOf(t, step);
+    const label = ($("#ws-label")?.value || "").trim();
+    if (!s || !label) return toast("Skriv delens namn.", null, true);
+    let k = wsKeyOf(label); const have = new Set((s.workspace?.parts || []).map((p) => p.key));
+    for (let n = 2; have.has(k); n++) k = `${wsKeyOf(label).slice(0, 36)}-${n}`;
+    return busy(btn, async () => {
+      try { closeDialog(); await call("execute_step", { task, step, part: k, start: true, values: { label } }); await lvRefresh({ task }); toast(`«${label}» är tillagd och pågår.`); }
+      catch (e) { fail("Delen lades inte till", e); }
+    });
+  }
+
   function mixedKindText(s) {
     const who = [...new Set((s.molecules || []).map((m) => PERFORMER_TXT[m.performer] || m.performer))];
     return who.length ? `Delarna görs av ${who.join(", ")}` : "Kod och människa";
@@ -8751,7 +8964,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const namn = (s.needs_values || []).join(", ");
     return [`Utför ${doingWhat(s)} nu. Dirigenten gör det med sin egen nyckel; du tar fram värdena: ${namn}.`,
       ...(s.molecule ? ["Steget har delar som Claude eller en människa gör. Dirigenten kör koddelarna fram till nästa sådan del och stannar där."] : []),
-      "", ...(s.instruktion || s.recipe ? ["Stegets instruktion:", ...instructionLines(s), ""] : []),
+      "", ...(s.instruktion || s.recipe ? ["Stegets instruktion:", ...instructionLines(s), ...layerLines(t, s), ""] : []),
       "1. Läs det tidigare steg lämnat i lägesbilden (till exempel urvalet). Läs fält och deras interna namn i kundens system med hamta när det behövs.",
       "2. Ta fram värdena. Bara de som står ovan behövs; ett värde som inte gäller lämnas som tom text \"\".",
       "   · Villkor för ett segment i HubSpot (filters) skrivs som en lista [{ property, operation: { operationType, operator, value | values } }] med fältens interna namn, till exempel { property: \"lifecyclestage\", operation: { operationType: \"ENUMERATION\", operator: \"IS_ANY_OF\", values: [\"customer\"] } }. Alla villkor i listan ska gälla. Är urvalet en uppräkning av kontakter utan fält att filtrera på: filters = { emails: [alla adresser] }, som ger en fast lista.",
@@ -8763,7 +8976,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   function writeStepTask(t, s) {
     const w = s.writes_to, sys = (w.connections || []).join(", ");
     return [`Utför ${doingWhat(s)} nu. Den ändrar i ${sys} (${w.verb} ${w.object}).`,
-      "", "Stegets instruktion:", ...instructionLines(s), "",
+      "", "Stegets instruktion:", ...instructionLines(s), ...layerLines(t, s), "",
       `1. Läs det du behöver: lägesbilden har det tidigare steg lämnat. Läs i ${sys} med hamta.`,
       `2. Gör ändringen med verktyget skriv, mot ${sys}. I vad står exakt vad som ändras: vilken post, vilka fält och värden, på vanlig svenska. Användaren ser det och säger ja eller nej.`,
       "3. Säger användaren nej: fråga vad som ska vara annorlunda. Gissa inte om.",
@@ -8816,7 +9029,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (!steg.length) return toast("Alla ogjorda steg i uppgiften är redan dina.");
     dialog(`<h2>Ta över ${esc(taskName(tk))}</h2><p>De här stegen blir dina:</p>`
       + `<div class="preview">${steg.map((x) => `<div class="row2"><span>${esc(x.label)}</span><span>från ${esc(lbl(x.responsible, "–"))}</span></div>`).join("")}</div>`
-      + `<p class="meta">Bara i den här uppgiften. Metoden ändras inte.</p>`
+      + `<p class="meta">Bara i det här uppdraget. Metoden ändras inte.</p>`
       + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-take-task-yes="${esc(tk.id)}">Ta över</button></div>`);
   }
   /**
@@ -9578,60 +9791,255 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   document.addEventListener("input", (e) => { if (e.target.id === "rm-text" || e.target.id === "rm-subject") { const x = state.remind; if (x) { x.text = $("#rm-text")?.value ?? x.text; const c = document.querySelector("[data-remind-copy]"), dr = document.querySelector("[data-remind-draft]"); if (dr) dr.disabled = !x.text.trim(); const m = document.querySelector("[data-remind-msg]"); if (c) c.disabled = !x.text.trim(); if (m) m.disabled = !x.text.trim(); } }
     else if (e.target.closest?.("#wt-on, #wt-name, #wt-q, #wt-remind, #wt-last, #wt-silent") && state.wait) { state.wait.ok = false; const s = document.querySelector("[data-wait-save]"); if (s) s.disabled = true; } });
 
-  /** Stegets text på plats: prompten och momenten, som textrutor. Kräver biblioteket (hämtas först när man klickar). */
-  async function stepTextEdit(key) {
-    const [tk, st] = key.split("|"), s = stepOf(taskById(tk), st); if (!s) return;
+  /* ── Ändra stegets text (Daniel P 2026-10-01: «Man ska kunna skriva helt enkelt och ändra text. Eller låta claude göra det om man vill») ──
+     Textrutorna visas först när man trycker Ändra. Valet «gäller» säger lagret:
+     alla kunder (metoden), bara kunden (kundens sätt) eller bara det här uppdraget
+     (uppdragets egen instruktion, sparad som material på steget). */
+  const STEP_SCOPES = { all: "Alla kunder", customer: "Bara %k", task: "Bara i det här uppdraget" };
+  /** Uppdragets egen instruktion för steget, om någon sparats (material med kind "instruction"). */
+  const ownInstruction = (t, s) => asArr(t?.materials).filter((m) => m.kind === "instruction" && m.step === s?.step).at(-1) || null;
+  async function stepTextEdit(key, at) {
+    const [tk, st] = key.split("|"), t = taskById(tk), s = stepOf(t, st); if (!s) return;
     if (!S.lib) { await refreshLib(); }
     const hi = houseInstruktion(s), mol = howTarget(s);
-    if (!hi || !mol) return toast("Steget har bara ett fritextrecept eller ingen text här. Använd Ändra med Claude.", null, true);
-    state.sedit = { key, mol, hi, prompt: hi.prompt ?? "", how: howNow(s), origPrompt: hi.prompt ?? "", origHow: howNow(s) };
+    // Ett människosteg med fritextrecept ändras som en text; ett Claude-steg som prompt och moment.
+    const mode = hi ? "instr" : s.recipe?.molecule?.id ? "recipe" : mol ? "recipe" : "none";
+    const custOwn = s.layers?.instruction === "customer" && !!t?.variant;
+    const scope = at === "all" || at === "task" ? at : at === "customer" && t?.variant ? "customer" : custOwn ? "customer" : "all";
+    // Kundens block visar kundens text; det allmänna visar metodens (de blandas inte).
+    const ci = s.customer_instruktion || s.instruktion;
+    const how = scope === "customer" && custOwn ? lines(ci?.saa_goer_du || ci?.how_to).join("\n")
+      : mode === "instr" ? howNow(s) : mode === "recipe" ? String(s.recipe?.text || "") : lines(s.instruktion?.saa_goer_du || s.instruktion?.how_to).join("\n");
+    const prompt = scope === "customer" && custOwn ? ci?.prompt ?? "" : hi?.prompt ?? s.instruktion?.prompt ?? "";
+    state.sedit = { key, mol, hi, mode, scope, at: scope, prompt, how, enough: s.enough || "", origPrompt: prompt, origHow: how, origEnough: s.enough || "", origScope: scope };
     render();
   }
   const countLines = (x) => String(x || "").split("\n").filter((y) => y.trim()).length;
   function stepTextChanges() {
     const e = state.sedit; if (!e) return [];
-    return [e.how.trim() !== e.origHow.trim() ? `Ändrar: Så gör du — ${plural(countLines(e.origHow), "moment", "moment")} → ${plural(countLines(e.how), "moment", "moment")}` : "",
-      e.prompt.trim() !== e.origPrompt.trim() ? `Ändrar: Prompten — ${e.origPrompt.length} → ${e.prompt.length} tecken` : ""].filter(Boolean);
+    return [e.how.trim() !== e.origHow.trim() ? (e.mode === "recipe" ? "Ändrar: receptet" : `Ändrar: Så gör du — ${plural(countLines(e.origHow), "moment", "moment")} → ${plural(countLines(e.how), "moment", "moment")}`) : "",
+      e.prompt.trim() !== e.origPrompt.trim() ? `Ändrar: Prompten — ${e.origPrompt.length} → ${e.prompt.length} tecken` : "",
+      e.enough.trim() !== e.origEnough.trim() ? `Ändrar: Så vet du att du är klar` : "",
+      e.scope !== e.origScope && (e.how.trim() || e.prompt.trim()) ? `Gäller: ${STEP_SCOPES[e.scope].replace("%k", "kunden")}` : ""].filter(Boolean);
   }
   function stepTextCard(t, s) {
     const e = state.sedit;
     if (!e || e.key !== `${t.id}|${s.step}`) return "";
-    const ch = stepTextChanges();
+    const ch = stepTextChanges(), cust = custName(t);
+    const radio = (v, label, d, off) => `<label class="radio"><input type="radio" name="se-scope" value="${v}" ${e.scope === v ? "checked" : ""}${off ? " disabled" : ""}><span><b>${esc(label)}</b><div class="d">${d}</div></span></label>`;
     return `<div class="editbox" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:14px">Ändra stegets text</h3>`
-      + `<label class="field wide"><span>Prompt till verktyget · valfri</span><textarea id="se-prompt" rows="6">${esc(e.prompt)}</textarea></label>`
-      + `<label class="field wide"><span>Så gör du · ett moment per rad</span><textarea id="se-how" rows="6">${esc(e.how)}</textarea></label>`
+      + (e.mode === "instr" || e.prompt ? `<label class="field wide"><span>Prompt till verktyget · valfri</span><textarea id="se-prompt" rows="6">${esc(e.prompt)}</textarea></label>` : "")
+      + `<label class="field wide"><span>${e.mode === "recipe" ? "Receptet · Vad behövs, Så gör du och Kontrollera" : "Så gör du · ett moment per rad"}</span><textarea id="se-how" rows="${e.mode === "recipe" ? 10 : 6}">${esc(e.how)}</textarea></label>`
+      + `<label class="field wide"><span>Så vet du att du är klar${e.scope === "all" ? "" : " · gäller alla kunder"}</span><textarea id="se-enough" rows="2">${esc(e.enough)}</textarea></label>`
+      + `<div class="label" style="margin-top:8px">Gäller</div>`
+      + radio("all", "Alla kunder", "Det allmänna: nästa gång steget görs, hos alla.")
+      + radio("customer", `Bara ${cust}`, t.variant ? `Kundens sätt. Det allmänna för andra kunder är orört.` : `${esc(cust)} har inget eget sätt för metoden än. Be Claude skapa det, eller välj det här uppdraget.`, !t.variant)
+      + radio("task", "Bara i det här uppdraget", "Sparas på steget i den här leveransen. Inget annat ändras.")
       + `<div class="chg" id="se-chg">${ch.length ? ch.map(esc).join("<br>") : "Inget ändrat än."}</div>`
-      + `<p class="meta">Gäller alla uppgifter med steget; det blir en ny version av stegets molekyl.</p>`
-      + `<div class="bar-actions"><button class="btn quiet" data-se-undo="1">Ångra</button><button class="btn primary" data-se-save="1"${ch.length ? "" : " disabled"}>Spara</button></div></div>`;
+      + `<div class="bar-actions"><button class="btn quiet" data-se-undo="1">Avbryt</button><button class="btn quiet" data-ecl="step|${esc(t.id)}|${esc(s.step)}" title="Kopierar stegets text och hur en ändring sparas, att klistra in i Claude">${SP} Be Claude ändra</button>`
+      + `<button class="btn primary" data-se-save="1"${ch.length ? "" : " disabled"}>Spara</button></div></div>`;
   }
   function stepTextPaint() {
     const e = state.sedit; if (!e) return;
-    const p = $("#se-prompt"), h = $("#se-how");
+    const p = $("#se-prompt"), h = $("#se-how"), n = $("#se-enough"), r = document.querySelector("input[name=se-scope]:checked");
     if (p) e.prompt = p.value;
     if (h) e.how = h.value;
+    if (n) e.enough = n.value;
+    if (r) e.scope = r.value;
     const ch = stepTextChanges(), c = $("#se-chg"), b = document.querySelector("[data-se-save]");
     if (c) c.innerHTML = ch.length ? ch.map(esc).join("<br>") : "Inget ändrat än.";
     if (b) b.disabled = !ch.length;
   }
   const stepTextNode = (e, how, prompt) => ({ id: e.mol, instruktion: { ...e.hi, saa_goer_du: lines(how), ...(prompt.trim() ? { prompt } : {}) } });
+  /** Kundens instruktion för steget: hela, med det som ändrats (varianten ersätter molekylens). */
+  function customerInstruktion(e, s) {
+    const base = e.hi || {};
+    return { purpose: base.syfte || base.purpose || s.instruktion?.syfte || s.instruktion?.purpose || s.summary || s.label,
+      read_first: asArr(base.laes_foerst || base.read_first || s.instruktion?.laes_foerst || s.instruktion?.read_first),
+      how_to: e.mode === "recipe" ? lines(e.how) : lines(e.how),
+      answer_format: base.svarsform || base.answer_format || s.instruktion?.svarsform || s.instruktion?.answer_format || "Det steget lämnar, som det står i steget.",
+      must_not: asArr(base.far_inte || base.must_not || s.instruktion?.far_inte || s.instruktion?.must_not),
+      ask_when: asArr(base.fraaga_naer || base.ask_when || s.instruktion?.fraaga_naer || s.instruktion?.ask_when),
+      ...(e.prompt.trim() ? { prompt: e.prompt } : {}) };
+  }
   function stepTextSave(btn) {
     const e = state.sedit; if (!e) return;
-    const node = stepTextNode(e, e.how, e.prompt), before = stepTextNode(e, e.origHow, e.origPrompt);
+    const [tk, st] = e.key.split("|"), t = taskById(tk), s = stepOf(t, st); if (!t || !s) return;
+    const yes = `Ja, ändrat i vyn: «${s.label}» (${STEP_SCOPES[e.scope].replace("%k", custName(t))})`.slice(0, 500);
+    const textChanged = e.how.trim() !== e.origHow.trim() || e.prompt.trim() !== e.origPrompt.trim() || e.scope !== e.origScope;
+    return busy(btn, async () => {
+      const undo = [];
+      try {
+        if (e.enough.trim() !== e.origEnough.trim()) {
+          await call("registry_define", { change: true, confirmed: true, user_approval: yes, node: { id: s.step, enough: e.enough.trim() || null } });
+          undo.push(() => call("registry_define", { change: true, confirmed: true, user_approval: "Ja, ångrat i vyn", node: { id: s.step, enough: e.origEnough || null } }));
+        }
+        if (textChanged && e.scope === "all") {
+          if (e.mode === "instr") {
+            await call("registry_define", { change: true, confirmed: true, user_approval: yes, node: stepTextNode(e, e.how, e.prompt) });
+            const before = stepTextNode(e, e.origHow, e.origPrompt);
+            undo.push(() => call("registry_define", { change: true, confirmed: true, user_approval: "Ja, ångrat i vyn", node: before }));
+          } else if (e.mol) {
+            await call("registry_define", { change: true, confirmed: true, user_approval: yes, node: { id: e.mol, instruction: e.how } });
+            undo.push(() => call("registry_define", { change: true, confirmed: true, user_approval: "Ja, ångrat i vyn", node: { id: e.mol, instruction: e.origHow } }));
+          }
+        } else if (textChanged && e.scope === "customer" && t.variant) {
+          await call("registry_define", { change: true, confirmed: true, user_approval: yes, node: { id: t.variant, instruktion: { [s.step]: customerInstruktion(e, s) } } });
+          undo.push(() => call("registry_define", { change: true, confirmed: true, user_approval: "Ja, ångrat i vyn", node: { id: t.variant, instruktion: { [s.step]: null } } }));
+        } else if (textChanged && e.scope === "task") {
+          const text = [e.prompt.trim() ? `Prompt:\n${e.prompt.trim()}\n` : "", e.mode === "recipe" ? e.how.trim() : `Så gör du:\n${lines(e.how).map((x, k) => `${k + 1}. ${x}`).join("\n")}`,
+            e.enough.trim() ? `\nSå vet du att du är klar: ${e.enough.trim()}` : ""].filter(Boolean).join("\n");
+          await call("asset_register", { asset_type: "core.asset.material", acquisition: "provided", text, mime: "text/markdown",
+            filename: `Instruktion för uppdraget – ${s.label}.md`.replace(/[\\/]/g, "-"), for_task: t.id, for_step: s.step,
+            ...(t.customer?.id ? { customer: t.customer.id } : {}),
+            material: { what: "Instruktionen för det här uppdraget", how: "Gäller i stället för det allmänna och kundens sätt, bara i den här leveransen", level: "step", kind: "instruction", ...(e.enough.trim() ? { enough: e.enough.trim() } : {}) },
+            confirmed: true, user_approval: yes });
+        }
+        state.sedit = null; await refreshLib(); await load();
+        const where = { all: "för alla kunder", customer: `för ${custName(t)}`, task: "i det här uppdraget" }[e.scope];
+        toast(`Stegets text är ändrad ${where}.`, undo.length ? () => Promise.all(undo.map((f) => f())).then(() => refreshLib()).then(load) : null);
+      } catch (x) { fail("Texten sparades inte", x); }
+    });
+  }
+  document.addEventListener("change", (e) => { if (e.target?.name === "se-scope") stepTextPaint(); });
+
+  /* ── Vad steget väntar på i andra delar (Daniel P 2026-10-01: «ändra dependencies») ──
+     Bara i en leverans med flera delar: valen är stegen i de andra delarna, och
+     det sparas som delens ordning (execute_step values.after, med to_step). */
+  function stepWaitsOn(t, s) {
+    const d = deliveryOfTask(t); if (!d || d.implicit) return [];
+    return lvAfterOf(d, t.id).filter((a) => typeof a !== "string" && a.to_step === s.step && a.step)
+      .map((a) => ({ a, t2: taskById(a.task), s2: stepOf(taskById(a.task), a.step) })).filter((x) => x.t2 && x.s2);
+  }
+  function waitsLine(t, s) {
+    const d = deliveryOfTask(t); if (!d || d.implicit || lvTasks(d).length < 2) return "";
+    const ws = stepWaitsOn(t, s);
+    return ` · ${ws.length ? `Väntar på ${ws.map((x) => `«${esc(x.s2.label)}» i ${esc(partTitle(x.t2))}`).join(", ")}` : "Väntar inte på något i andra delar"}`
+      + ` <button class="linkbtn" data-waits-edit="${esc(t.id)}|${esc(s.step)}">Ändra</button>`;
+  }
+  function waitsDialog(key) {
+    const [tk, st] = key.split("|"), t = taskById(tk), s = stepOf(t, st), d = t && deliveryOfTask(t); if (!s || !d) return;
+    const on = new Set(stepWaitsOn(t, s).map((x) => `${x.a.task}|${x.a.step}`));
+    const others = lvTasks(d).filter((x) => x.id !== t.id);
+    dialog(`<h2>Vad «${esc(s.label)}» väntar på</h2><p class="meta">Steget börjar när de valda stegen i andra delar är klara. Gäller bara i det här uppdraget.</p>`
+      + others.map((x) => `<div class="label" style="margin-top:8px">${esc(partTitle(x))}</div>` + asArr(x.steps).map((y) =>
+        `<label class="check"><input type="checkbox" data-wo="${esc(x.id)}|${esc(y.step)}" ${on.has(`${x.id}|${y.step}`) ? "checked" : ""}> <span>${esc(y.label)}</span></label>`).join("")).join("")
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-waits-save="${esc(key)}">Spara</button></div>`);
+  }
+  function waitsSave(btn, key) {
+    const [tk, st] = key.split("|"), t = taskById(tk), s = stepOf(t, st), d = t && deliveryOfTask(t); if (!s || !d) return;
+    const picked = [...document.querySelectorAll("[data-wo]")].filter((x) => x.checked).map((x) => { const [task, step] = x.dataset.wo.split("|"); return { task, step, to_step: s.step }; });
+    // Det delen väntar på för andra steg står kvar; bara det här stegets rader byts.
+    const keep = lvAfterOf(d, t.id).filter((a) => typeof a === "string" || a.to_step !== s.step);
+    return busy(btn, async () => {
+      try { await call("execute_step", { task: t.id, values: { delivery: d.id, after: [...keep, ...picked] }, confirmed: true,
+          user_approval: `Ja, ändrat i vyn: vad «${s.label}» väntar på`.slice(0, 500) });
+        closeDialog(); await load(); toast(picked.length ? `«${s.label}» väntar nu på ${plural(picked.length, "steg", "steg")} i andra delar.` : `«${s.label}» väntar inte längre på andra delar.`); }
+      catch (x) { fail("Det sparades inte", x); }
+    });
+  }
+
+  /* ── Material (Daniel P 2026-10-01): fil eller text, med vad det är och hur det används,
+     på steget, delen eller hela leveransen. Syns för Claude i lägesbilden. ── */
+  const MAT_LEVEL = { step: "för steget", task: "för delen", delivery: "för hela leveransen" };
+  const nOrNone = (n) => n ? plural(n, "sak", "saker") : "inget än";
+  /** Materialet som gäller här: hela leveransens, delens och (på en stegsida) stegets. */
+  const materialsHere = (t, s) => asArr(t?.materials).filter((m) => m.kind !== "instruction" && (m.level !== "step" || (s && m.step === s.step)));
+  function materialRows(t, s) {
+    const ms = materialsHere(t, s);
+    return ms.length ? ms.map((m) => `<div class="need"><span class="no">${FILE_IC}</span><span class="t">${esc(m.name)} <span class="chip lt">${esc(MAT_LEVEL[m.level] || "")}</span>`
+      + `<span class="meta" style="display:block">${esc(m.what)}${m.how ? ` · så används det: ${esc(m.how)}` : ""}</span></span>`
+      + (String(m.ref).startsWith("extern:") ? "" : `<button class="btn sm" data-fget="${esc(m.ref)}" data-fname="${esc(m.name)}">Ladda ned</button>`) + `</div>`).join("")
+      : `<div class="meta">Inget material lagt hit. Lägg till det Claude och den som gör steget ska utgå från.</div>`;
+  }
+  function materialDialog(key) {
+    const [tk, st] = key.split("|"), t = taskById(tk), s = st ? stepOf(t, st) : null; if (!t) return;
+    const d = deliveryOfTask(t), inDelivery = d && !d.implicit;
+    state.mat = { task: t.id, step: s?.step || null };
+    const radio = (v, label, on, off) => `<label class="radio"><input type="radio" name="mat-level" value="${v}" ${on ? "checked" : ""}${off ? " disabled" : ""}><span><b>${esc(label)}</b></span></label>`;
+    dialog(`<h2>Lägg till material</h2><p class="meta">En fil eller en text som arbetet ska utgå från. Claude läser den i lägesbilden.</p>`
+      + `<label class="field wide"><span>Vad det är</span><input id="mat-what" maxlength="300" placeholder="t.ex. Kundens varumärkesplattform"></label>`
+      + `<label class="field wide"><span>Hur det ska användas · valfritt</span><textarea id="mat-how" rows="2" placeholder="t.ex. Tonläget i avsnitt 3 gäller alla texter"></textarea></label>`
+      + `<label class="field wide"><span>Text · eller välj en fil nedan</span><textarea id="mat-text" rows="4"></textarea></label>`
+      + `<label class="btn sm">${ic("upload")} Välj fil<input type="file" hidden id="mat-file"></label> <span class="meta" id="mat-fname"></span>`
+      + `<div class="label" style="margin-top:12px">Gäller</div>`
+      + (s ? radio("step", `Steget «${s.label}»`, true) : "") + radio("task", `Delen «${partTitle(t)}»`, !s)
+      + radio("delivery", inDelivery ? `Hela leveransen «${d.label}»` : "Hela leveransen · delen ligger inte i en leverans", false, !inDelivery)
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-mat-save="1">Lägg till</button></div>`);
+  }
+  function materialSave(btn) {
+    const m = state.mat, t = m && taskById(m.task); if (!t) return;
+    const what = $("#mat-what")?.value.trim(), how = $("#mat-how")?.value.trim(), text = $("#mat-text")?.value.trim(), f = $("#mat-file")?.files?.[0];
+    const level = document.querySelector("input[name=mat-level]:checked")?.value || "task";
+    if (!what) return toast("Skriv vad det är — det är det Claude och kollegan läser först.", null, true);
+    if (!text && !f) return toast("Skriv en text eller välj en fil.", null, true);
+    const fields = { asset_type: "core.asset.material", acquisition: "provided", for_task: t.id, ...(level === "step" && m.step ? { for_step: m.step } : {}),
+      ...(t.customer?.id ? { customer: t.customer.id } : {}), material: { what, ...(how ? { how } : {}), level } };
     return busy(btn, async () => {
       try {
-        await call("registry_define", { change: true, node });
-        const undo = () => call("registry_define", { change: true, node: before }).then(() => refreshLib()).then(load);
-        state.sedit = null; await refreshLib(); await load();
-        toast("Stegets text är ändrad. Ny version sparad.", undo);
-      } catch (x) { fail("Texten sparades inte", x); }
+        if (f) await sendFile(f, fields);
+        else await call("asset_register", { ...fields, text, mime: "text/markdown", filename: `${what}.md`.replace(/[\\/]/g, "-").slice(0, 120),
+          confirmed: true, user_approval: `Ja i vyn: lägg till material «${what}»`.slice(0, 500) });
+        closeDialog(); state.mat = null; await load(); toast(`«${what}» är tillagt ${MAT_LEVEL[level]}.`);
+      } catch (x) { fail("Materialet lades inte till", x); }
+    });
+  }
+  document.addEventListener("change", (e) => { if (e.target?.id === "mat-file") { const n = $("#mat-fname"); if (n) n.textContent = e.target.files?.[0]?.name || ""; } });
+
+  /* ── Viktiga dokument i leveransen (Daniel P 2026-10-01: «inga tveksamheter») ──
+     Godkända texter från steg med ett ja blir viktiga av sig själva; allt annat märks
+     för hand. Den senaste märkningen gäller, och «Inte viktigt» tar bort också ett automatiskt. */
+  function importantDocs(d, ts) {
+    const marks = new Map(asArr(d?.important).map((m) => [m.ref, m.on])), out = new Map();
+    for (const t of ts) for (const s of asArr(t.steps)) for (const dr of asArr(s.drafts)) {
+      const auto = !!dr.approved_at && !!(s.approver || s.approval_why), m = marks.get(dr.id);
+      if (m === true || (m === undefined && auto))
+        out.set(dr.id, { ref: dr.id, text: true, name: dr.name || "Text utan namn", t, s, at: dr.approved_at || dr.at, approved: dr.approved_at || null, auto: m === undefined });
+    }
+    for (const t of ts) for (const o of [...asArr(t.outputs).map((o) => ({ ref: o.ref, name: o.file || o.type, step: o.step, at: o.at })), ...asArr(t.materials).map((m) => ({ ref: m.ref, name: m.name, step: m.step, at: m.at }))])
+      if (marks.get(o.ref) === true && !out.has(o.ref)) out.set(o.ref, { ref: o.ref, text: false, name: o.name, t, s: stepOf(t, o.step), at: o.at, approved: null, auto: false });
+    return [...out.values()].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+  }
+  function importantSection(d, ts) {
+    const docs = importantDocs(d, ts);
+    if (!docs.length) return "";
+    return `<div class="lv-sec"><h2>Viktiga dokument</h2><span class="n">det här gäller · senaste versionen</span></div><div class="card">`
+      + docs.map((x) => `<div class="need"><span class="no">${ic("layers")}</span><span class="t">${esc(x.name)}`
+        + `<span class="meta" style="display:block">${esc(partTitle(x.t))}${x.s ? ` · ${esc(x.s.label)}` : ""} · ${x.approved ? `godkänd ${short(x.approved)}` : x.text ? `senaste version ${short(x.at)}, inte godkänd` : short(x.at)}${x.auto ? " · steget har ett ja" : ""}</span></span>`
+        + (x.text ? `<button class="btn sm" data-cget="${esc(x.ref)}" data-cname="${esc(x.name)}">Läs</button>` : `<button class="btn sm" data-fget="${esc(x.ref)}" data-fname="${esc(x.name)}">Ladda ned</button>`)
+        + `<button class="btn sm quiet" data-imp="${esc(x.t.id)}|${esc(x.ref)}|0">Inte viktigt</button></div>`).join("") + `</div>`;
+  }
+  /** Det som skapats, per del: senaste versionen av varje text och fil, med namn och var det kom ifrån. */
+  function madePerPart(d, ts) {
+    const imp = new Set(importantDocs(d, ts).map((x) => x.ref));
+    const rows = (t) => [
+      ...asArr(t.steps).flatMap((s) => asArr(s.drafts).map((dr) => ({ ref: dr.id, text: true, name: dr.name || "Text utan namn", key: dr.kind || "text", s, at: dr.at, approved: dr.approved_at }))),
+      ...asArr(t.outputs).map((o) => ({ ref: o.ref, text: false, name: o.file || o.type, key: o.type, s: stepOf(t, o.step), at: o.at, approved: null }))];
+    const parts = ts.map((t) => ({ t, rs: rows(t) })).filter((x) => x.rs.length);
+    if (!parts.length) return `<div class="card"><div class="empty"><b>Inget skapat än.</b>Det stegen skapar hamnar här, per del.</div></div>`;
+    return `<div class="card">${parts.map(({ t, rs }, i) => `<div class="group"${i ? ' style="border-top:1px solid var(--line)"' : ""}><b>${esc(partTitle(t))} · ${rs.length}</b></div>`
+      + rs.sort((a, b) => String(b.at).localeCompare(String(a.at))).map((r) => `<div class="need"><span class="no">${r.text ? ic("layers") : FILE_IC}</span><span class="t">${esc(r.name)}`
+        + `<span class="meta" style="display:block">${esc(r.key)}${r.s ? ` · från «${esc(r.s.label)}»` : ""} · ${r.approved ? `godkänd ${short(r.approved)}` : `senaste ${short(r.at)}`}</span></span>`
+        + (r.text ? `<button class="btn sm" data-cget="${esc(r.ref)}" data-cname="${esc(r.name)}">Läs</button>` : String(r.ref).startsWith("extern:") ? "" : `<button class="btn sm" data-fget="${esc(r.ref)}" data-fname="${esc(r.name)}">Ladda ned</button>`)
+        + (d && !d.implicit ? `<button class="btn sm quiet" data-imp="${esc(t.id)}|${esc(r.ref)}|${imp.has(r.ref) ? 0 : 1}">${imp.has(r.ref) ? "Inte viktigt" : "Viktigt"}</button>` : "") + `</div>`).join("")).join("")}</div>`;
+  }
+  function importantToggle(btn, v) {
+    const [task, ref, on] = v.split("|");
+    return busy(btn, async () => {
+      try { await call("asset_register", { action: "important", from_ref: ref, for_task: task, on: on === "1", confirmed: true,
+          user_approval: on === "1" ? "Ja i vyn: märk som viktigt dokument" : "Ja i vyn: inte längre ett viktigt dokument" });
+        await load(); toast(on === "1" ? "Märkt som viktigt i leveransen." : "Inte längre märkt som viktigt."); }
+      catch (x) { fail("Märkningen sparades inte", x); }
     });
   }
   document.addEventListener("input", (e) => {
     if (e.target.id === "fe-val") fieldPaint();
-    else if (e.target.id === "se-prompt" || e.target.id === "se-how") stepTextPaint();
+    else if (e.target.id === "se-prompt" || e.target.id === "se-how" || e.target.id === "se-enough") stepTextPaint();
     else if (e.target.id === "sa-text") answerAllPaint();
   });
   document.addEventListener("change", (e) => { if (e.target.dataset?.sa !== undefined) answerAllPaint(); });
+  // Detaljerna på stegsidan står öppna eller stängda som man lämnade dem.
+  document.addEventListener("toggle", (e) => { const k = e.target?.dataset?.stMore; if (k) LV.open[`stmore|${k}`] = e.target.open; }, true);
 
   /* ── Lika saker på Idag slås ihop (Daniel P 2026-09-29) ──
      Frågor med samma frågetext till samma person eller kund blir en rad, med
@@ -9805,7 +10213,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       `Steg: ${s.label} (id ${s.step}). Görs av: ${kindOf(s) === "llm" || s.molecule?.performer === "llm" ? "Claude, och en människa godkänner" : kindOf(s)}.`,
       typ ? `Steget ska lämna: ${lbl(typ)}${typ.name ? ` (${typ.name})` : ""}.` : null,
       ogjorda.length ? `Inte gjorda än, fast de ligger före: ${ogjorda.map((x) => x.label).join(", ")}. Det de skulle lämna saknas.` : null,
-      "", "Stegets instruktion:", ...instructionLines(s), "",
+      "", "Stegets instruktion:", ...instructionLines(s), ...layerLines(t, s), "",
       "Så går du till väga:",
       `1. Läs lägesbilden: read { op: "context", task: "${t.id}", step: "${s.step}" }. Den har mejltråden, det tidigare steg lämnat och kundens systemkarta — sök inte efter det igen.`,
       "2. Leta vidare med search bara om lägesbilden inte räcker. Resonera med mig där något är oklart.",
@@ -9868,7 +10276,16 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         `**Hämta först:** ${[...items, `lägesbilden \`read { op: "context", task: "${t.id}", step: "${s.step}" }\``].join("; ")}.`, "",
         `**Gör sedan så här:** ${aiMoments(s).join(" ")}${s.instruktion?.svarsform ? ` Svaret: ${s.instruktion.svarsform}` : ""}`].join("\n");
     }
-    return text + (missing.length ? `\n\n**Saknas:** ${missing.join("; ")}.` : "");
+    const layer = layerLines(t, s);
+    return text + (layer.length ? `\n\n${layer.join("\n")}` : "") + (missing.length ? `\n\n**Saknas:** ${missing.join("; ")}.` : "");
+  }
+  /** Uppdragets instruktion, klar-regeln och materialet: det som styr steget utöver det allmänna (src/plan/layers.ts). */
+  function layerLines(t, s) {
+    const mats = (Array.isArray(t?.materials) ? t.materials : []).filter((m) => m.level !== "step" || m.step === s.step);
+    const own = mats.filter((m) => m.kind === "instruction").at(-1), w = s.layers?.won || {};
+    return [own ? `Instruktionen för det här uppdraget gäller före den allmänna och kundens: read { op: "asset_get", ref: "${own.ref}" }.` : null,
+      s.enough ? `Så vet du att du är klar${w.enough === "assignment" ? " (i det här uppdraget)" : ""}: ${s.enough} Pröva resultatet mot det innan du säger att det räcker.` : null,
+      ...mats.filter((m) => m.kind !== "instruction").map((m) => `Material «${m.name}»: ${m.what}${m.how ? `. Så används det: ${m.how}` : ""} (read { op: "asset_get", ref: "${m.ref}" }).`)].filter(Boolean);
   }
   /** Prompten för en del i Så görs steget: gör den till Claude eller kod, eller lägg till en. */
   function partChatPrompt(o, { kind, i, part } = {}) {
@@ -10068,7 +10485,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (!t?.method) return toast("Uppgiften följer ingen metod än — det finns inga steg att ändra.", null, true);
     state.change = { task: t.id, draft: null };
     dialog(`<h2>Ändra stegen för ${esc(lbl(t.customer, "kunden"))}</h2>`
-      + `<p class="meta">Ändringen blir ett kundflöde: den gäller ${esc(lbl(t.customer, "kunden"))}s kommande uppgifter, och metoden står kvar för alla andra. Gäller det bara den här gången: stäng och tryck + mellan stegen i kedjan.</p>`
+      + `<p class="meta">Ändringen blir kundens sätt: den gäller ${esc(lbl(t.customer, "kunden"))}s kommande uppgifter, och det allmänna står kvar för alla andra. Gäller det bara i det här uppdraget: stäng och tryck + mellan stegen i kedjan.</p>`
       + `<div class="chain" style="margin:8px 0">${t.steps.map((x, i) => `${i ? `<span class="arrow">${ic("chev")}</span>` : ""}<span class="node ${x.done ? "done" : ""}">${x.done ? `<span class="ok" style="color:var(--green)">${ic("check")}</span>` : kindMark(kindOf(x))}<span class="l">${esc(x.label)}</span></span>`).join("")}</div>`
       + `<label class="field"><span>Vad ska ändras?</span><textarea id="chg-text" rows="3" placeholder="T.ex.: lägg till en korrekturvända efter utkastet, och hoppa över speglingen."></textarea></label>`
       + `<div id="chg-out"></div><div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn ai" data-chg-read="1">${SP} Läs och föreslå</button></div>`);
@@ -10081,7 +10498,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       $("#chg-out").innerHTML = `<div class="running"><span class="spin"></span>Claude läser ändringen…</div>`;
       try {
         const steps = t.steps.map((x, i) => `${i + 1}. id=${x.step} · ${x.label} · ${lbl(x.responsible, "utan ansvarig")}`).join("\n");
-        const draft = await sample.json([`Du läser en ändring för EN kund och skriver den som ett kundflöde — bara skillnaderna mot metoden.`,
+        const draft = await sample.json([`Du läser en ändring för EN kund och skriver den som kundens sätt (kundvarianten) — bara skillnaderna mot metoden.`,
           `Ändringen: """${text}"""`, `Kunden: ${lbl(t.customer)} (id ${t.customer?.id})`, `Grundmetoden: ${t.method}`, `Stegen i dag:\n${steps}`,
           `Ett steg som ska bort: id i remove. Byta ansvarig: responsible {stegets id: personens id}. Personer: ${peopleList().map((x) => `${x.id} (${x.label})`).join(", ")}.`,
           `Ett nytt steg: add [{step: id på ett steg som FINNS, after: id eller null}]. Finns steget inte: skriv det i gaps — hitta aldrig på ett id.`,
@@ -10089,7 +10506,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         // Claudes svar prövas innan det används: fel form är ett fel, inte ett förslag.
         const isObj = (x) => x && typeof x === "object" && !Array.isArray(x);
         if (!isObj(draft) || typeof draft.base !== "string" || !Array.isArray(draft.remove ?? []) || !isObj(draft.responsible ?? {}) || !Array.isArray(draft.add ?? []))
-          throw new Error("Claude svarade inte med ett kundflöde — försök igen, eller skriv ändringen tydligare");
+          throw new Error("Claude svarade inte med kundens sätt — försök igen, eller skriv ändringen tydligare");
         const { gaps = [], ...flow } = draft;
         const check = await call("method_build", { do: "variant", flow });
         state.change.draft = flow;
@@ -10108,7 +10525,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       // Samma utkast som visades — inte en ny tolkning av samma text.
       try { await call("method_build", { do: "variant", commit: true, flow: c.draft }); state.change = null; closeDialog();
-        await afterWrite("Kundflödet är inskrivet. Planen räknas om på de nya stegen."); }
+        await afterWrite("Kundens sätt är sparat. Planen räknas om på de nya stegen."); }
       catch (e) { fail("Ändringen skrevs inte", e); }
     });
   }
@@ -10250,7 +10667,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     state.addStep = { task, after };
     const cs = (S.agenda?.colleagues ?? []).filter((c) => c.id !== me());
     dialog(`<h2>Lägg till steg här</h2>`
-      + `<p class="meta">${esc(placeText(tk, after))}. Bara i den här uppgiften — metoden och ${esc(customerName)}s andra uppgifter ändras inte.</p>`
+      + `<p class="meta">${esc(placeText(tk, after))}. Bara i det här uppdraget — metoden och ${esc(customerName)}s andra uppgifter ändras inte.</p>`
       + `<label class="field"><span>Vad ska göras?</span><input id="as-label" maxlength="120" placeholder="T.ex.: ${esc(customerName)} godkänner testmejlet"></label>`
       + `<label class="field"><span>Vem gör det?</span><select id="as-who"><option value="">Jag</option>${cs.map((c) => `<option value="${esc(c.id)}">${esc(c.label)}</option>`).join("")}`
       + `<option value="customer">${esc(customerName)} — vi väntar på deras svar</option></select></label>`
@@ -10694,7 +11111,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   async function insertPreview(t, it, after) {
     const payload = { after, ...(it.use ? { use: it.use } : { label: it.label }), ...(it.who ? { who: it.who } : {}) };
     const x = state.insert = { task: t.id, payload, label: it.label };
-    const head = `<h2>Lägg in «${esc(it.label)}»</h2><p class="meta">${esc(placeText(t, after))}. Bara i den här uppgiften — metoden ändras inte.</p>`;
+    const head = `<h2>Lägg in «${esc(it.label)}»</h2><p class="meta">${esc(placeText(t, after))}. Bara i det här uppdraget — metoden ändras inte.</p>`;
     dialog(head + `<p class="meta">Provar platsen …</p><div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button></div>`);
     let c;
     try { c = await call("task_lock", { task: t.id, add_step: { ...payload, check: true, with_prerequisites: true } }); }
@@ -11193,7 +11610,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.ecl) { const [k, ...r] = ds.ecl.split("|"); return editWithClaude(k, r.join("|")); }
     if (ds.fedit) { const [k, ...r] = ds.fedit.split("|"); return fieldDialog(k, r.join("|")); }
     if (ds.feSave) return fieldSave(t);
-    if (ds.sedit) return stepTextEdit(ds.sedit);
+    if (ds.sedit) return stepTextEdit(ds.sedit, ds.seditAt);
     if (ds.waitOpen) return waitDialog(ds.waitOpen);
     if (ds.waitPreview) return waitPreview(t);
     if (ds.waitSave) return waitSave(t);
@@ -11208,6 +11625,11 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.stypeSave) return stepTypeSave(t);
     if (ds.seUndo) { state.sedit = null; return render(); }
     if (ds.seSave) return stepTextSave(t);
+    if (ds.waitsEdit) return waitsDialog(ds.waitsEdit);
+    if (ds.waitsSave) return waitsSave(t, ds.waitsSave);
+    if (ds.matAdd) return materialDialog(ds.matAdd);
+    if (ds.matSave) return materialSave(t);
+    if (ds.imp) return importantToggle(t, ds.imp);
     if (ds.answerAll) { try { return answerAllDialog(JSON.parse(ds.answerAll)); } catch { return; } }
     if (ds.saSave) return answerAllSave(t);
     if (ds.go) { state.screen = ds.go; state.obj = null; if (ds.mettab) state.metTab = ds.mettab;
@@ -11458,13 +11880,27 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       s2.instruktion = s2.instruktion ? { ...s2.instruktion, syfte: h.syfte, saa_goer_du: h.moments.filter(Boolean) } : null;
       if (!s2.instruktion) s2.recipe = { ...(s2.recipe || {}), how: h.moments.filter(Boolean).map((m, k) => `${k + 1}. ${m}`).join("\n"), check: h.check, needs: h.needs };
       closeDialog(); state.obj.how = null; render();
-      return toast({ all: "Arbetssättet är sparat som en ny version. Det gäller nästa gång steget görs.", customer: `Sparat i ${t2.customer}s kundflöde.`, once: "Sparat som en avvikelse för den här uppgiften." }[h.scope]); }
+      return toast({ all: "Arbetssättet är sparat som en ny version. Det gäller nästa gång steget görs.", customer: `Sparat som ${t2.customer}s sätt.`, once: "Sparat som en avvikelse för den här uppgiften." }[h.scope]); }
     // Var det finns skrivs i fältet bredvid; artefakten spärrar webbläsarens dialoger.
     if (ds.done) return markDone(t, !!ds.force);
 
     if (ds.answer) return answerQuestion(t, ds.answer);
     if (ds.handover) return answerHandover(t, ds.handover);
     if (ds.start) return startStep(t, ds.start === "true");
+    // Arbetsytan (Daniel P 2026-10-01): delarna fylls på en i taget, i valfri ordning.
+    if (ds.wsToggle) { const k = `ws|${ds.wsToggle}`; LV.open[k] = !LV.open[k]; return render(); }
+    if (ds.wsStart) return wsWrite(t, ds.wsStart, { start: true }, (p) => `«${p.label}» pågår. Andra ser att du har den.`);
+    if (ds.wsDone) return wsWrite(t, ds.wsDone, { mark: "done", note: "Räcker, markerat i vyn" }, (p) => `«${p.label}» räcker.`);
+    if (ds.wsReopen) { const x = wsPart(ds.wsReopen); return wsWrite(t, ds.wsReopen, { mark: "undone", reason: "Fylls på",
+      ...(x?.t.commitment ? { acknowledge_commitment: true, user_approval: `Fyll på (klickade Fyll på i vyn för ${x.p.label})` } : {}) }, (p) => `«${p.label}» är öppen igen. Det som lämnats står kvar.`); }
+    if (ds.wsClaude) { const x = wsPart(ds.wsClaude); return x ? copyToChat(wsClaudeText(x.t, x.s, x.p), `Hjälpen med «${x.p.label}»`) : toast("Delen finns inte längre i planen. Hämta igen.", null, true); }
+    if (ds.wsAdd) { LV.wsAdd = ds.wsAdd; dialog(`<h2>Lägg till en del</h2><label class="field wide"><span>Delens namn · t.ex. spårets rubrik</span><input id="ws-label" maxlength="200"></label>`
+      + `<p class="meta">Delen läggs till i den här uppgiften och blir påbörjad. Det som redan gjorts i de andra delarna står kvar.</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-ws-add-send="1">Lägg till</button></div>`); $("#ws-label")?.focus(); return; }
+    if (ds.wsAddSend) return wsAddSend(t);
+    if (ds.copyEl) { const el = document.getElementById(ds.copyEl); const text = el?.value ?? el?.textContent ?? "";
+      return (navigator.clipboard?.writeText(text) ?? Promise.reject(new Error("urklippet går inte att nå här")))
+        .then(() => toast("Kopierat. Klistra in det som det står."), () => { el?.select?.(); toast("Urklippet gick inte att nå — texten är markerad, kopiera den med Cmd+C.", null, true); }); }
     if (ds.doc) return toast("Klistra in eller släpp avtalet: Claude gör ett projektutkast med leveranser, ordning och frågor.", false);
     if (ds.confirmRun) return confirmRun(t);
     // Filer (B-217)
