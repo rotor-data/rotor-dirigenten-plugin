@@ -960,21 +960,32 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
 .pt-th { width: 64px; height: 80px; flex: none; border-radius: var(--r-sm); background: var(--gray-weak); border: 1px solid var(--line); overflow: hidden; display: inline-grid; place-items: center; }
 .pt-th img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pt-th.empty { background: var(--bg-subtle); border-style: dashed; }
-.pp { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: var(--s6); align-items: start; }
+.page:has(> .pp) { max-width: 1560px; }
+.pp { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--s6); align-items: start; }
 .pp-left { display: flex; flex-direction: column; gap: 2px; position: sticky; top: var(--s4); }
 .pp-back { color: var(--text-2); font-size: var(--fs-meta); text-decoration: none; } .pp-dn { font-weight: 700; margin: 2px 0 var(--s3); }
 .pp-li { display: flex; gap: 10px; align-items: center; padding: 6px 8px; border-radius: var(--r-sm); color: var(--text); text-decoration: none; border-left: 3px solid transparent; }
 .pp-li:hover { background: var(--bg-hover); } .pp-li.on { background: var(--bg-selected); border-left-color: var(--accent); }
 .pp-li .pt-th { width: 36px; height: 36px; } .pp-lt { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; } .pp-lt b { font-size: 13px; font-weight: 600; }
 .pp-mid h1 { margin: 2px 0 0; font-size: 26px; line-height: 1.2; }
-.pp-cols { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--s6); align-items: start; }
-.pp-right { order: 2; } .pp-center { order: 1; }
-.pp-made { display: flex; gap: var(--s4); padding: var(--s4) 0; border-top: 1px solid var(--line); }
+.pp-cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s5); align-items: start; }
+.pp-right { order: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 var(--s6); align-items: start; } .pp-center { order: 2; min-width: 0; }
+.pp-right .lv-sec:first-child { margin-top: 0; }
+main[data-w="l"] .pp-cols { grid-template-columns: minmax(0, 1fr) 320px; } main[data-w="l"] .pp-right { order: 2; grid-template-columns: minmax(0, 1fr); } main[data-w="l"] .pp-center { order: 1; }
+.pp-made { display: flex; flex-wrap: wrap; gap: var(--s4); padding: var(--s4) 0; border-top: 1px solid var(--line); }
 .pp-made:first-of-type { border-top: 0; }
 .pp-th { width: 96px; height: 120px; flex: none; border-radius: var(--r-sm); background: var(--gray-weak); border: 1px solid var(--line); font-size: 11px; color: var(--text-2); padding: 6px; overflow: hidden; line-height: 1.35; }
 .pp-th.later { background: var(--bg-subtle); border-style: dashed; }
 .pp-ths { display: flex; gap: 6px; flex-wrap: wrap; align-items: flex-end; }
-.pp-mb { min-width: 0; display: flex; flex-direction: column; gap: 4px; } .pp-mb b { font-size: 15px; }
+.pp-mb { min-width: 0; flex: 1 1 260px; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; } .pp-mb b { font-size: 15px; }
+.pp-th.doc { display: flex; align-items: center; justify-content: center; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.pp-links { flex-wrap: wrap; }
+.pp-read { flex: 1 1 100%; min-width: 0; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--bg); }
+.pp-readbar { display: flex; gap: var(--s2); flex-wrap: wrap; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--bg-subtle); }
+.pp-readbar .meta { margin-right: auto; }
+.pp-read .lv-text { max-height: none; border: 0; border-radius: 0; font-size: 14.5px; line-height: 1.6; padding: 14px 18px; max-width: 80ch; }
+.pp-read pre.lv-text { white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 13px; max-width: none; margin: 0; }
+.pp-sub { margin: var(--s5) 0 2px; }
 .pp-made.later b, .pp-made.later .meta { color: var(--text-3); }
 .pp-made.rendering .pp-th { position: relative; overflow: hidden; }
 .pp-made.rendering .pp-th::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--blue, #2f6fed) 22%, transparent) 50%, transparent 70%); background-size: 200% 100%; animation: pp-shimmer 1.4s linear infinite; }
@@ -991,14 +1002,19 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
 .pp-tl li.done i { background: var(--accent); border-color: var(--accent); } .pp-tl li.now i { border-color: var(--accent); border-width: 2.5px; } .pp-tl li.now .nm { font-weight: 700; }
 .pp-tl .nm { flex: 1; min-width: 0; } .pp-tl .dt { color: var(--text-2); font-size: var(--fs-meta); }
 .pp-tl li.hit { background: var(--bg-selected); border-radius: 6px; }
-@media (max-width: 900px) { .pp-cols { grid-template-columns: minmax(0, 1fr); } .pp-right { order: 1; } .pp-center { order: 2; } }
+@media (max-width: 760px) { .pp-right { grid-template-columns: minmax(0, 1fr); } }
+main[data-w="s"] .pp { grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
+main[data-w="s"] .pp-left { position: static; flex-direction: row; overflow-x: auto; gap: 8px; align-items: stretch; padding-bottom: 4px; }
+main[data-w="s"] .pp-back, main[data-w="s"] .pp-dn { flex: none; align-self: center; white-space: nowrap; } main[data-w="s"] .pp-dn { margin: 0 8px 0 0; }
+main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--line); border-left-width: 3px; background: var(--bg); }
 @media (max-width: 760px) {
   .pv-grid { grid-template-columns: minmax(0, 1fr); } .pv-facts { gap: var(--s5); }
   .pp { grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
   .pp-left { position: static; flex-direction: row; overflow-x: auto; gap: 8px; align-items: stretch; padding-bottom: 4px; }
   .pp-back, .pp-dn { flex: none; align-self: center; white-space: nowrap; } .pp-dn { margin: 0 8px 0 0; }
   .pp-li { flex: none; min-width: 190px; border: 1px solid var(--line); border-left-width: 3px; background: var(--bg); }
-  .pp-made { flex-direction: row; }
+  .pp-made { flex-direction: row; } .pp-th { width: 72px; height: 90px; }
+  .pp-read .lv-text { padding: 12px; }
 }
 @media (max-width: 760px) {
   .lv-facts { grid-template-columns: 1fr 1fr; }
@@ -1217,7 +1233,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "f0d17a9", published: "2026-10-01" };
+  const SIDA = { version: "34ced7d", published: "2026-10-01" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -2485,6 +2501,13 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     } catch { return false; }
   }
   addEventListener("pagehide", () => { clearTimeout(snapTimer); snapTimer = null; try { saveSnap(); } catch { /* inget */ } });
+  /** Sidans bredd i ord: main[data-w] är s (smal), m eller l (bred), så att layouten följer det som finns kvar när chatten är öppen. */
+  let widthWatch = false;
+  function watchWidth(m) {
+    const set = () => { const w = m.clientWidth, v = w < 1050 ? "s" : w >= 1500 ? "l" : "m"; if (m.dataset.w !== v) m.dataset.w = v; };
+    set();
+    if (!widthWatch && typeof ResizeObserver !== "undefined") { widthWatch = true; new ResizeObserver(set).observe(m); }
+  }
   function render() {
     saveSnap();
     noteMsgContext();
@@ -2516,6 +2539,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     };
     const [form, formLine] = S.plan && !S.error ? formOf(state.screen, state.obj) : [null, ""];
     m.innerHTML = `<div class="page"${form ? ` data-form="${form}"` : ""}>${formBand(form, formLine)}${fn()}</div>`;
+    watchWidth(m);
     renderCrumbs();
     placeTips(m);
     if (DP.open) dpRender();
@@ -5322,9 +5346,74 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (!LV.texts.has(id)) { LV.texts.set(id, null);
       call("content_get", { id }).then((c) => { LV.texts.set(id, c || { markdown: "" }); render(); }, () => { LV.texts.set(id, { error: true }); render(); }); }
     const c = LV.texts.get(id);
-    return !c ? `<span class="meta">Hämtar texten…</span>` : c.error ? `<span class="meta">Texten kunde inte hämtas.</span>`
+    return !c ? `<span class="meta">Hämtar texten…</span>` : c.error ? `<span class="meta">Texten kunde inte hämtas.</span> <button class="linkbtn" data-pp-retry="txt|${esc(id)}">Försök igen</button>`
       : `<div class="lv-text md">${c.title ? `<b style="display:block;margin-bottom:6px">${esc(c.title)}</b>` : ""}${md(c.markdown || "(tom)")}</div>`;
   }
+  /**
+   * Läsläget i «Det som skapats»: texten i sin helhet (inte klippt), med
+   * Kopiera och Ladda ned. En sparad text hämtas med content_get, en
+   * textfil med asset_get {ref}; stora filer kommer som länk.
+   */
+  const isTextName = (name) => /\.(md|markdown|txt|csv|json)$/i.test(String(name || ""));
+  const TXT = { files: new Map() };
+  function ppFile(ref) {
+    if (!TXT.files.has(ref)) { TXT.files.set(ref, null);
+      call("asset_get", { ref }).then(async (d) => {
+        if (d?.inline && d.data_base64) TXT.files.set(ref, { text: new TextDecoder().decode(Uint8Array.from(atob(d.data_base64), (c) => c.charCodeAt(0))), name: d.name });
+        else { const l = d?.download_url ? d : await call("asset_get", { ref, as_link: true }); TXT.files.set(ref, l?.download_url ? { link: l } : { error: true }); }
+        render();
+      }, () => { TXT.files.set(ref, { error: true }); render(); }); }
+    return TXT.files.get(ref);
+  }
+  /** Källan till en läsbar sak: «txt|<innehålls-id>» eller «file|<ref>|<namn>». */
+  function ppSource(k) {
+    const [kind, id, name] = k.split("|");
+    if (kind === "txt") { const c = LV.texts.get(id); return c && !c.error ? { text: String(c.markdown || ""), name: `${c.title || name || "text"}.md`, md: true } : null; }
+    const f = TXT.files.get(id);
+    return f?.text !== undefined ? { text: f.text, name: name || f.name || "fil.txt", md: /\.(md|markdown)$/i.test(name || f.name || "") } : null;
+  }
+  const ppBar = (k, label, close, acts = true) => `<div class="pp-readbar"><span class="meta">${esc(label)}</span>${acts ? `<button class="btn sm" data-pp-copy="${esc(k)}">Kopiera texten</button><button class="btn sm" data-pp-save="${esc(k)}">Ladda ned</button>` : ""}<button class="btn sm quiet" data-lv-toggle="${esc(close)}">Stäng</button></div>`;
+  function ppReadText(id, label, name) {
+    return `<div class="pp-read">${ppBar(`txt|${id}|${name || ""}`, label, `txt|${id}`)}${lvText(id)}</div>`;
+  }
+  function ppReadFile(ref, name) {
+    const f = ppFile(ref), k = `file|${ref}|${name}`;
+    const body = !f ? `<div class="lv-text"><span class="meta">Hämtar filen…</span></div>`
+      : f.error ? `<div class="lv-text"><span class="meta">Filen kunde inte hämtas.</span> <button class="linkbtn" data-pp-retry="file|${esc(ref)}">Försök igen</button></div>`
+      : f.link ? `<div class="lv-text"><span class="meta">Filen är för stor för att visas här.</span> <a href="${esc(f.link.download_url)}" target="_blank" rel="noopener">Öppna filen</a></div>`
+      : /\.(md|markdown)$/i.test(name) ? `<div class="lv-text md">${md(f.text || "(tom)")}</div>` : `<pre class="lv-text">${esc(f.text || "(tom)")}</pre>`;
+    return `<div class="pp-read">${ppBar(k, name, `rd|file|${ref}|${name}`, f?.text !== undefined)}${body}</div>`;
+  }
+  /** Knapparna för en fil i «Det som skapats»: läsbara filer kan läsas, alla kan hämtas. */
+  const ppFileActs = (p, many) => {
+    const nm = esc(p.name || p.part || "filen"), o = !!LV.open[`rd|file|${p.ref}|${p.name}`], tx = isTextName(p.name);
+    return `${tx ? `<button class="linkbtn" data-lv-toggle="rd|file|${esc(p.ref)}|${esc(p.name)}" aria-expanded="${o}">${o ? "Dölj" : "Läs"}${many ? ` ${nm}` : ""}</button>` : ""}`
+      + `<button class="linkbtn" data-fget="${esc(p.ref)}" data-fname="${esc(p.name || "Filen")}">Ladda ned${many ? ` ${nm}` : ""}</button>`;
+  };
+  const ppFileReaders = (files) => files.filter((p) => isTextName(p.name) && LV.open[`rd|file|${p.ref}|${p.name}`]).map((p) => ppReadFile(p.ref, p.name)).join("");
+  /** Handlingarna i läsläget; texten är redan hämtad när knappen syns. */
+  async function ppSaveText(src) {
+    try {
+      if (fileSaver === undefined) { try { fileSaver = WEB.on ? webSaver : typeof claude !== "undefined" && claude.use ? await claude.use("downloads") : null; } catch { fileSaver = null; } }
+      if (!fileSaver) throw new Error("ingen nedladdning här");
+      await fileSaver.save({ filename: src.name, data: new Blob([src.text], { type: "text/plain;charset=utf-8" }) });
+      toast(`${src.name} är sparad.`);
+    } catch (e) {
+      if (e?.code === "declined") return toast("Nedladdningen avbröts.");
+      try { await navigator.clipboard.writeText(src.text); toast("Filen kunde inte sparas härifrån. Texten är kopierad i stället.", null, true); }
+      catch { toast("Filen kunde inte sparas och urklippet går inte att nå här. Markera texten och kopiera med ⌘C.", null, true); }
+    }
+  }
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest?.("[data-pp-copy], [data-pp-save], [data-pp-retry]");
+    if (!t) return;
+    if (t.dataset.ppRetry) { const [kind, id] = t.dataset.ppRetry.split("|"); (kind === "txt" ? LV.texts : TXT.files).delete(id); return render(); }
+    const k = t.dataset.ppCopy || t.dataset.ppSave, src = ppSource(k);
+    if (!src) return toast("Texten är inte hämtad än.", null, true);
+    if (t.dataset.ppSave) return ppSaveText(src);
+    (navigator.clipboard?.writeText(src.text) ?? Promise.reject(new Error("urklippet går inte att nå här")))
+      .then(() => toast("Texten är kopierad."), () => toast("Urklippet går inte att nå här. Markera texten och kopiera med ⌘C.", null, true));
+  });
   function lvUnitDetail(d, u) {
     const cust = custOf(d)?.id, now = asArr(u.parts).filter((p) => p.kind === "file" && !p.superseded), old = asArr(u.parts).filter((p) => p.superseded);
     const out = asArr(u.out_as).filter((x) => !x.replaced_by);
@@ -5355,7 +5444,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     return `<div class="card">${[...groups].map(([k, xs], i) => `<div class="group"${i ? ' style="border-top:1px solid var(--line)"' : ""}><b${k === "Saknas något" ? ' style="color:var(--amber)"' : /^Ute/.test(k) ? ' style="color:var(--green)"' : ""}>${esc(k)} · ${xs.length}</b></div>${xs.map((u) => lvUnitRow(d, u)).join("")}`).join("")}`
       + (ungrouped.length ? `<details style="border-top:1px solid var(--line)"><summary class="lv-sum first">Övrigt, inte grupperat · ${plural(ungrouped.length, "fil", "filer")}</summary>`
         + [...new Set(ungrouped.map((f) => f.type || "Övrigt"))].map((ty) => `<div class="group"><b>${esc(ty)}</b></div>`
-          + ungrouped.filter((f) => (f.type || "Övrigt") === ty).map((f) => `<div class="row"><span class="kindcell">${FILE_IC}</span><span></span><span class="txt"><span class="t">${esc(f.name)}</span></span><span class="s when">${short(f.at)}</span><span class="acts"><button class="btn sm" data-fget="${esc(f.ref)}" data-fname="${esc(f.name)}">Ladda ned</button></span></div>`).join("")).join("")
+          + ungrouped.filter((f) => (f.type || "Övrigt") === ty).map((f) => `<div class="row"><span class="kindcell">${FILE_IC}</span><span></span><span class="txt"><span class="t">${esc(f.name)}</span></span><span class="s when">${short(f.at)}</span><span class="acts">${isMarkdownName(f.name) ? `<button class="btn sm" data-fshow="${esc(f.ref)}" data-fname="${esc(f.name)}">Läs</button>` : ""}<button class="btn sm" data-fget="${esc(f.ref)}" data-fname="${esc(f.name)}">Ladda ned</button></span></div>`).join("")).join("")
         + `</details>` : "") + `</div>`;
   }
 
@@ -6700,6 +6789,9 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     const c = currentStep(t), st = c ? stepState(t, c) : { word: "inte påbörjad", tone: "" };
     if (st.word === "din tur") return { word: `din tur: ${c.label}`, tone: "accent", done, total: steps.length, key: "mine" };
     if (t.waits && waitOfStep(t, c)) return { word: `stoppad: ${clipped(c.label, 30)}`, tone: "amber", done, total: steps.length, key: "wait" };
+    // Är något steg gjort eller påbörjat är delen igång, även om nästa steg ligger längre fram.
+    if (st.word === "inte påbörjad" && (done || steps.some((s) => s.started)))
+      return { word: c ? `pågår · nästa ${short(c.start)}` : "pågår", tone: "", done, total: steps.length, key: "wait" };
     return { ...st, done, total: steps.length, key: st.word === "inte påbörjad" ? "idle" : "wait" };
   }
   /** «Text klar · nästa: Välj bild»: vad som är gjort, ur delarna när de är kända, annars ur stegen. */
@@ -6771,10 +6863,11 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     if (x.base === "Text" && u.text) {
       lvText(u.key);
       const c = LV.texts.get(u.key), ex = c && !c.error ? String(c.markdown || "").replace(/[#*_>`\[\]]/g, "").replace(/\s+/g, " ").trim().slice(0, 110) : "";
-      const o = !!LV.open[`txt|${u.key}`];
-      return `<div class="pp-made ok"><span class="pp-th text">${esc(ex)}</span><div class="pp-mb"><b>${esc(title)}</b>`
-        + `<div class="meta">Version ${u.text.version} · ${u.text.approved ? "godkänd" : ""}${u.text.approved ? "" : `<span class="chip">inte godkänd</span>`}${u.text.reused_from ? " · återanvänd" : ""}</div>`
-        + `<div class="pp-links"><button class="linkbtn" data-lv-toggle="txt|${esc(u.key)}" aria-expanded="${o}">${o ? "Dölj" : "Läs"}</button></div>${o ? lvText(u.key) : ""}</div></div>`;
+      const o = !!LV.open[`txt|${u.key}`], nm = c?.title || u.label || "";
+      return `<div class="pp-made ok"><span class="pp-th text">${esc(ex)}</span><div class="pp-mb"><b>${esc(nm && nm !== "Text" ? nm : title)}</b>`
+        + `<div class="meta">${esc(kindLabel(u))} · Version ${u.text.version} · ${u.text.approved ? "godkänd" : ""}${u.text.approved ? "" : `<span class="chip">inte godkänd</span>`}${u.text.reused_from ? " · återanvänd" : ""}</div>`
+        + `<div class="pp-links"><button class="linkbtn" data-lv-toggle="txt|${esc(u.key)}" aria-expanded="${o}">${o ? "Dölj texten" : "Läs hela texten"}</button>`
+        + `<button class="linkbtn" data-pp-copy="txt|${esc(u.key)}|${esc(nm)}">Kopiera</button><button class="linkbtn" data-pp-save="txt|${esc(u.key)}|${esc(nm)}">Ladda ned</button></div></div>${o ? ppReadText(u.key, nm || "Texten", nm) : ""}</div>`;
     }
     const nowStep = later && cur && later.step === cur.label && !later.after, ip = nowStep ? ipEntry(t, cur) : "";
     // Ett renderingsjobb pågår för delen: «Renderas …» med formaten, tills bilderna kommer.
@@ -6783,8 +6876,11 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       : all ? `<div class="meta">${files.map((p) => esc(p.name)).join(", ") || "Klar"}</div>`
       : missing ? `<div class="meta pp-miss">Saknas: steget «${esc(missing.step || "")}» är gjort men delen finns inte.</div>`
       : nowStep ? `<div class="meta">Görs nu</div>${ip}` : `<div class="meta">${esc(laterWhen(later))}</div>`;
-    const th = files.length ? `<span class="pp-ths">${files.map((p) => lvThumb(cust, p, "mid")).join("")}</span>` : `<span class="pp-th ${all ? "" : "later"}"></span>`;
-    return `<div class="pp-made ${all ? "ok" : rendering ? "rendering" : missing ? "miss" : "later"}">${th}<div class="pp-mb"><b>${esc(title)}</b>${body}</div></div>`;
+    const docs = files.filter((p) => isTextName(p.name)), pics = files.filter((p) => !isTextName(p.name));
+    const th = pics.length ? `<span class="pp-ths">${pics.map((p) => lvThumb(cust, p, "mid")).join("")}</span>`
+      : docs.length ? `<span class="pp-th doc" aria-hidden="true">${esc((/\.(\w+)$/.exec(docs[0].name) || [])[1] || "txt")}</span>` : `<span class="pp-th ${all ? "" : "later"}"></span>`;
+    const acts = files.length ? `<div class="pp-links">${files.map((p) => ppFileActs(p, files.length > 1)).join("")}</div>` : "";
+    return `<div class="pp-made ${all ? "ok" : rendering ? "rendering" : missing ? "miss" : "later"}">${th}<div class="pp-mb"><b>${esc(title)}</b>${body}${acts}</div>${ppFileReaders(files)}</div>`;
   }
   /**
    * Renderas delen just nu? Steget som ska lämna den är en kodkörning som
@@ -6823,8 +6919,13 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
   }
   function postMade(d, t) {
     const us = partUnits(t);
-    if (!us.length) return `<div class="empty"><b>Inget skapat än.</b>Det som skapas för delen står här, och det som görs senare står grått.</div>`;
-    return us.map((u) => (us.length > 1 ? `<div class="meta" style="margin:8px 0 4px">${esc(unitName(d, u))}</div>` : "") + madeGroups(u).map((x) => madeCard(d, t, u, x)).join("")).join("");
+    if (!us.length && !asArr(t.material?.rounds).some((r) => asArr(r.ungrouped).length)) return `<div class="empty"><b>Inget skapat än.</b>Det som skapas för delen står här, och det som görs senare står grått.</div>`;
+    const gs = (u) => { const g = madeGroups(u); if (u.text && !g.some((x) => x.base === "Text")) g.unshift({ base: "Text", ratios: [], items: [{ part: "Text", state: "finns", step: null, after: null }] }); return g; };
+    const loose = [...new Map(asArr(t.material?.rounds).flatMap((r) => asArr(r.ungrouped)).map((f) => [f.ref, f])).values()];
+    return us.map((u) => (us.length > 1 ? `<div class="meta" style="margin:8px 0 4px">${esc(unitName(d, u))}</div>` : "") + gs(u).map((x) => madeCard(d, t, u, x)).join("")).join("")
+      + (loose.length ? `<div class="meta pp-sub">Övriga filer · ${plural(loose.length, "fil", "filer")}</div>` + loose.map((f) =>
+        `<div class="pp-made ok"><span class="pp-th doc" aria-hidden="true">${esc((/\.(\w+)$/.exec(f.name) || [])[1] || "fil")}</span><div class="pp-mb"><b>${esc(f.name)}</b>`
+        + `<div class="meta">${esc([f.type, f.at ? short(f.at) : ""].filter(Boolean).join(" · "))}</div><div class="pp-links">${ppFileActs(f, false)}</div></div>${ppFileReaders([f])}</div>`).join("") : "");
   }
   /** Det du ska göra nu: steget, vems tur, knapparna, och det som väntar på en fråga eller överlämning. */
   function postNow(d, t) {
@@ -6867,8 +6968,8 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     return `<div class="pp"><nav class="pp-left" aria-label="Leveransens delar"><a class="pp-back" href="${H.delivery(d.id)}">← Leveransen</a><div class="pp-dn">${esc(d.label)}</div>${ts.map(item).join("")}</nav>`
       + `<div class="pp-mid"><div class="pp-eyebrow">${esc(lbl(t.deliverable, "Uppgift"))}</div><div class="pv-head"><h1>${esc(title)}</h1>${late}</div>`
       + `<div class="pv-sub">${[t.due ? `Klart ${short(day10(t.due))}` : "", who].filter(Boolean).map(esc).join(" · ")}${t.method ? ` · ${methodLine(t)}` : ""}</div>`
-      + `<div class="pp-cols"><div class="pp-right"><div class="lv-sec"><h2>Det du ska göra nu</h2></div>${postNow(d, t)}`
-      + `<div class="lv-sec"><h2>Stegen</h2><span class="n">${esc(lvCount(t))}</span></div>${noMethod(t) ? "" : postSteps(d, t, o.step)}</div>`
+      + `<div class="pp-cols"><div class="pp-right"><div><div class="lv-sec"><h2>Det du ska göra nu</h2></div>${postNow(d, t)}</div>`
+      + `<div><div class="lv-sec"><h2>Stegen</h2><span class="n">${esc(lvCount(t))}</span></div>${noMethod(t) ? "" : postSteps(d, t, o.step)}</div></div>`
       + `<div class="pp-center"><div class="lv-sec"><h2>Det som skapats</h2></div>${postMade(d, t)}`
       + lvFold(d, "steps", `${ic("upp")} Alla steg, med detaljer`, esc(lvCount(t)),
         () => `<div class="card lv-card"><div style="padding:4px 16px 12px">${fullOccasion(t) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(t))}</div>` : ""}${waitEdges(t)}${dpEntry([t], "uppgiften")}${lvRounds(d, t, o.step)}</div></div>`, !!o.step)
@@ -6928,7 +7029,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
       + `<div class="lv-sub">${esc(kindLabel(u))} · del av «${esc(d.label)}»${u.template ? ` · gjord ur mallen «${esc(u.template.label)}»` : ""}</div>`
       + `<div class="lv-sec"><h2>Rundor</h2><span class="n">${plural(rounds.length, "runda", "rundor")}</span></div><div class="card"><div style="padding:8px 16px 12px">`
       + rounds.map((r) => { const x = r.units.find((y) => y.key === u.key), before = asArr(x.parts).filter((p) => p.superseded), cur = asArr(x.parts).filter((p) => p.kind === "file" && !p.superseded);
-        return `<div class="lv-round-h">${esc(rounds.length > 1 ? r.label.replace(/^Leverans 1$/, "Runda 1").replace(/^Revision (\d+)$/, (_, n) => `Runda ${Number(n) + 1}`) : "Leveransen")} <span class="chip ${r.status === "pågår" ? "" : "green"}">${esc(r.status === "pågår" ? "inte påbörjad" : r.status === "levererad" ? "klar" : r.status)}</span><span class="meta">${r.date ? short(r.date) : ""}${r.reason ? ` · ${esc(r.reason)}` : ""}${asArr(x.missing).length ? ` · saknas: ${x.missing.map(esc).join(", ")}` : ""}</span></div>`
+        return `<div class="lv-round-h">${esc(rounds.length > 1 ? r.label.replace(/^Leverans 1$/, "Runda 1").replace(/^Revision (\d+)$/, (_, n) => `Runda ${Number(n) + 1}`) : "Leveransen")} <span class="chip ${r.status === "pågår" ? "" : "green"}">${esc(r.status === "pågår" ? "pågår" : r.status === "levererad" ? "klar" : r.status)}</span><span class="meta">${r.date ? short(r.date) : ""}${r.reason ? ` · ${esc(r.reason)}` : ""}${asArr(x.missing).length ? ` · saknas: ${x.missing.map(esc).join(", ")}` : ""}</span></div>`
           + (before.length || cur.length ? `<div class="lv-acts" style="justify-content:flex-start;align-items:flex-end">${before.length ? `<span class="meta">Före:</span>${before.map((p) => lvThumb(cust, p)).join("")}<span class="meta">→ nu:</span>` : ""}${cur.map((p) => lvThumb(cust, p)).join("")}</div>` : ""); }).join("")
       + `</div></div>`
       + `<div class="lv-sec"><h2>Delar</h2><span class="n">${esc(asArr(u.parts).filter((p) => !p.superseded).map((p) => p.part).join(", ") || "inga")}</span></div><div class="card"><div style="padding:8px 16px">`
@@ -10680,7 +10781,7 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
     state.message = { about };
     dialog(`<h2>${to.length ? "Påminn" : "Skicka meddelande"}</h2><p class="meta">Om: ${esc(title || "–")}</p>`
       + `<div class="field"><span>Till · välj en eller flera</span><div class="opts">${cs.map((c) => `<button class="opt" data-msg-to="${esc(c.id)}" aria-pressed="${to.includes(c.id)}">${esc(c.label)}</button>`).join("")}</div></div>`
-      + `<label class="field"><span>Meddelandet</span><textarea id="msg-text" rows="4" maxlength="2000" placeholder="Vad behöver de veta?"></textarea></label>`
+      + `<label class="field"><span>Meddelandet</span><textarea id="msg-text" rows="6" maxlength="20000" placeholder="Vad behöver de veta?"></textarea></label>`
       + `<p class="meta">Det står under Meddelanden hos var och en tills de markerat det läst.</p>`
       + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-msg-send="1">Skicka</button></div>`);
   }
