@@ -1020,6 +1020,15 @@ button.chip.accent { border-color: var(--accent); }
 .ws-row .ws-open { white-space: nowrap; }
 .ws-body { padding: 0 0 12px; }
 .ws-drafts { margin: 4px 0 8px; padding-left: 18px; }
+.ws-assign { margin: 4px 0 10px; }
+.ws-assign .lv-text { max-height: 50vh; overflow: auto; }
+.bas-list { list-style: none; margin: 2px 0 8px; padding: 0; }
+.bas-row { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 4px 0; border-top: 1px solid var(--line, rgba(0,0,0,.08)); }
+.bas-row:first-child { border-top: 0; }
+.bas-t { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+.bas-a { display: flex; gap: 10px; flex-wrap: wrap; }
+.bas-row > .pp-read, .bas-row > .bas-text { flex-basis: 100%; }
+.bas-text { white-space: pre-wrap; margin: 2px 0 0; font-size: 12.5px; }
 .st-recipe .label { margin-top: 10px; }
 ol.how li.how-sec { list-style: none; margin-left: -20px; color: var(--text-2); }
 .st-pre { white-space: pre-wrap; }
@@ -1269,7 +1278,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "0925ccb", published: "2026-10-01" };
+  const SIDA = { version: "03df953", published: "2026-10-01" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1363,7 +1372,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   /*BADGE-BEGIN*/
   /** Läget i klartext: ok = senaste, new = nyare finns, unknown = /vy/version nåddes inte. */
   function versionState(own, server) {
-    if (!server) return { k: "unknown", label: "Kunde inte kontrollera" };
+    if (!server) return { k: "unknown", label: "Kunde inte kontrollera versionen" };
     return server === own ? { k: "ok", label: "Senaste" } : { k: "new", label: "Ny version finns — Uppdatera nu" };
   }
   /** Är dirigentens adress för personen en annan än den här kopians? Båda måste vara kända. */
@@ -1383,10 +1392,23 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   const dirtyNow = () => { try { return !!(S.settings && settingsChanged()) || dpCount() > 0 || !!state.cal?.draft?.length
     || [...document.querySelectorAll("textarea")].some((t) => t.value.trim()) || Object.keys(readDrafts()).length > 0; } catch { return true; } };
   const busyNow = () => INFLIGHT > 0 || !!S.phase || SELF.state === "busy" || !!DP.saving;
+  /**
+   * Serverns stämpel, läst på nytt varje gång (felrapport 2026-10-01: vyn stod
+   * på en äldre version med «Kunde inte kontrollera»). Förut lästes den bara ur
+   * hela planens svar: när det svaret kapades eller tog för lång tid, och när
+   * vyn startade ur det sparade läget (då var stämpeln den gamla), visste vyn
+   * aldrig vad servern hade. Nu frågas vägledningen, som är liten och alltid
+   * bär `views.version`; agendan som reserv.
+   */
   async function fetchServerStamp() {
-    // Stämpeln läses genom kopplingen (plan_state): sidans sandlåda i claude.ai når inte
-    // dirigentens adress direkt, och ett tyst försök först visade inget (2026-09-30).
-    return S.serverVersion || null;
+    for (const [tool, args] of [["guide", {}], ["plan_state", { agenda: true, weeks: 1, format: "kort" }]]) {
+      try {
+        const r = await withTimeout(call(tool, args), 20000, "Versionen");
+        const v = r?.views?.version;
+        if (v) { S.serverVersion = v; return v; }
+      } catch { /* prova nästa */ }
+    }
+    return null;
   }
   /** Klick på märket: kontrollera nu, utan att lägga ut något. */
   async function checkNow() {
@@ -1405,7 +1427,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       const full = el.dataset.vbadge === "full";
       el.className = `vbadge ${st.k}${full ? " full" : ""}`;
       const cant = CAN_SELF === false;
-      const act = st.k === "new" && !cant ? `<button class="vlink" data-vself="1">${esc(st.label)}</button>` : esc(st.label);
+      const act = st.k === "new" && !cant ? `<button class="vlink" data-vself="1">${esc(st.label)}</button>`
+        : st.k === "unknown" && !cant ? `${esc(st.label)} — försöker igen. <button class="vlink" data-vself="1">Hämta senaste vyn</button>` : esc(st.label);
       const noself = cant && st.k === "new" ? `<div class="vtxt">Den här vyn kan inte uppdatera sig själv — ${S.viewsUrl ? `<a class="vlink" href="${esc(S.viewsUrl)}" target="_blank" rel="noopener">öppna din vy i sidofältet</a>` : "öppna din vy i sidofältet"}</div>` : "";
       el.innerHTML = `<button data-vcheck="1" title="Kontrollera nu"><i class="vdot"></i><span class="vtxt">Version ${esc(own)} · ${esc(SIDA.published)}</span></button>`
         + `<div class="vtxt">${act}</div>${noself}`
@@ -1450,6 +1473,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     }
   }
   setInterval(() => autoCheck("tick"), AUTO.CHECK_MS);
+  // Gick versionen inte att läsa försöker vyn igen varje minut, inte var femte.
+  setInterval(() => { if (!AUTO_S.server && mcp) autoCheck("tick"); }, 60000);
 
   /*
    * Osparat går inte förlorat (Daniel P 2026-09-30): text i fält sparas lokalt
@@ -1724,12 +1749,12 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       // Hur långt fram listan räcker (Daniel P 2026-09-25): 1 = resten av veckan, 0 = allt.
       const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks(), format: "vy" }), 45000, "Listan");
       if (!a?.agenda) throw new Error("servern skickade ingen agenda — den kan vara en äldre version");
-      S.agenda = a.agenda; S.at.agenda = Date.now();
+      S.agenda = a.agenda; S.at.agenda = Date.now(); if (a.views?.version) S.serverVersion = a.views.version;
       S.phase = "Hämtar planen…"; render();
       const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "vy" }), 45000, "Planen");
       if (!p?.plan) throw new Error("servern skickade ingen plan");
       S.plan = p.plan; S.meetings = p.meetings ?? {}; S.error = null;
-      S.serverVersion = p.views?.version ?? null; S.viewsUrl = p.views?.url ?? S.viewsUrl ?? null;
+      S.serverVersion = p.views?.version ?? S.serverVersion ?? null; S.viewsUrl = p.views?.url ?? S.viewsUrl ?? null;
       S.fetchedAt = new Date(); S.phase = null; S.at.plan = Date.now();
       render();
       saveOwnAddress();
@@ -1755,7 +1780,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   }
   async function refreshPlan() {
     try { const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "vy" }), 45000, "Planen");
-      if (p?.plan) { S.plan = p.plan; S.meetings = p.meetings ?? {}; S.serverVersion = p.views?.version ?? null; S.viewsUrl = p.views?.url ?? S.viewsUrl ?? null;
+      if (p?.plan) { S.plan = p.plan; S.meetings = p.meetings ?? {}; S.serverVersion = p.views?.version ?? S.serverVersion ?? null; S.viewsUrl = p.views?.url ?? S.viewsUrl ?? null;
         S.fetchedAt = new Date(); S.at.plan = Date.now(); render(); } } catch { /* det gamla står kvar */ }
   }
   /** Bara det som blivit gammalt hämtas; resten står kvar. */
@@ -4760,7 +4785,14 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       const chosen = state.obj.choice;
       const status = o.blocking ? `<span class="chip red">stoppar planen nu</span>` : o.answer_by < TODAY ? `<span class="chip red">försenad ${diff(TODAY, o.answer_by)} d</span>` : `<span class="chip amber">svar senast ${short(o.answer_by)}</span>`;
       const handover = o.reason === "handover_pending";
-      const answer = handover
+      // En ja/nej-fråga om planen (fler delar än planen räknade med) besvaras med question_answer;
+      // ett «ja» stänger den (servern, src/plan/index.ts), förut stod den kvar med «Svara».
+      const yesNo = o.reason === "fan_out_grew";
+      const answer = yesNo
+        ? `<div class="card section"><h2>Svara</h2><p class="meta">${esc(o.proposal || "")}</p>`
+          + `<label class="field wide"><span>Motivering · valfri</span><input id="q-note" maxlength="1500"></label>`
+          + `<div class="bar-actions"><button class="btn primary" data-qyn="ja|${esc(o.id)}">Ja, planen håller</button><button class="btn quiet" data-qyn="nej|${esc(o.id)}">Nej</button></div></div>`
+        : handover
         ? `<div class="card section"><h2>Överlämning</h2><p class="meta">${esc(lbl(o.handover?.by_named, "En kollega"))} vill lämna steget till dig${o.handover?.note ? `: ${esc(o.handover.note)}` : "."}</p>`
           + `<div class="bar-actions"><button class="btn primary" data-handover="accept">Ta emot</button><button class="btn quiet" data-handover="decline">Tacka nej</button></div></div>`
         : `<div class="card section"><h2>Svara</h2>`
@@ -4818,7 +4850,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         + stepWaitBanner(t, s)
         + ipEntry(t, s) + doArea
         + (s.done ? "" : `<div class="bar-actions st-acts"><button class="btn ${(!ws || (ws.parts.length && ws.parts.every((p) => p.state === "enough"))) && !/btn[^"]*primary/.test(doArea) ? "primary" : ""}" data-done="1">${ws ? "Alla delar räcker — klart ›" : "Klart, till nästa ›"}</button>${startBtn}</div>`
-          + `<div class="st-side"><button class="btn quiet sm" data-calstep="${esc(t.id)}|${esc(s.step)}">Lägg i kalendern</button><button class="btn quiet sm" data-dp-step="${esc(t.id)}|${esc(s.step)}">Detaljplanera…</button><button class="btn quiet sm" data-handover-to="1">Ge steget till…</button><button class="btn quiet sm" data-handover-task="${esc(t.id)}" title="Alla ogjorda steg blir förslag till kollegan">Lämna över hela uppgiften…</button>${t.steps.some((x) => !x.done && !x.external && (x.responsible?.id ?? x.responsible) !== me()) ? `<button class="btn quiet sm" data-take-task="${esc(t.id)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över</button>` : ""}${msgBtn({ task: t.id, step: s.step }, s.label).replace('class="btn quiet"', 'class="btn quiet sm"')}</div>`)
+          // De sekundära handlingarna i en «Mer»-meny (Daniel P 2026-10-01), inte en rad knappar.
+          + `<div class="st-side"><button class="btn quiet sm" data-st-menu="${esc(t.id)}|${esc(s.step)}" aria-haspopup="menu">Mer ▾</button></div>`)
         // En arbetsyta lämnar per del (texten med delens namn), inte i ett block för hela steget.
         + (!s.done && !ws && (k === "human" || k === "mixed") ? deliverBlock(t, s) : "")
         + `</div>`;
@@ -4892,6 +4925,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         + (s.done ? "" : absenceOf(t.id, s.step).map((a) => `<div class="warnnote" style="margin:4px 0 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${ic("alert")} ${esc(absenceText(a))}.</span>`
           + `${absenceBtn(a)}${s.done ? "" : `<button class="btn sm quiet" data-dp-step="${esc(t.id)}|${esc(s.step)}">Detaljplanera…</button>`}</div>`).join(""))
         + nowCard
+        + basisCard(t, s)
         + (ws ? workspaceCard(t, s, ws) : "")
         + recipeCard
         + details;
@@ -8805,6 +8839,97 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const first = s.instruktion?.saa_goer_du?.[0] || String(s.recipe?.how || "").split(/\n+/).map((x) => x.replace(/^\d+[.)]\s*/, "")).find(Boolean);
     return first ? `Börja med: ${first}` : "Gör steget enligt receptet nedan och markera det klart.";
   }
+  /*
+   * Underlaget (målbilden regel 13, Daniel P 2026-10-01: «det måste ju gälla
+   * generellt, att det som ligger till grund för steget måste synas där»).
+   * Listan räknas av servern (src/plan/basis.ts, steget `basis`) och är samma
+   * som i lägesbilden och i «Kopiera till Claude». basisLines är en kopia av
+   * serverns; test/underlag.test.ts prövar att de ger samma rader.
+   */
+  /*BASIS-LINES-BEGIN*/
+  function basisLines(items) {
+    if (!items.length) return [];
+    const call = (r) => r ? ` — läs: ${r.tool} ${JSON.stringify(r.args)}` : "";
+    return ["Underlag (det steget bygger på):", ...items.map((b) =>
+      `- ${b.missing ? "Saknas: " : ""}${b.label}${b.note ? ` (${b.note})` : ""}${call(b.read)}${b.text ? `\n  ${b.text.replace(/\n/g, "\n  ")}` : ""}`)];
+  }
+  /*BASIS-LINES-END*/
+  const BASIS_GROUP = { result: "Det tidigare steg lämnat", material: "Material", important: "Viktiga dokument", customer: "Kundens sätt" };
+  /** Läskällan för en post: «txt|<id>|<namn>» eller «file|<ref>|<namn>» (samma nycklar som läsläget). */
+  const basisKey = (b) => !b.read ? null : b.read.args.op === "content_get" ? `txt|${b.read.args.id}|${b.label}` : `file|${b.read.args.ref}|${b.label}`;
+  function basisCard(t, s) {
+    const items = asArr(s.basis);
+    if (!items.length || s.done) return "";
+    const row = (b, n) => {
+      const k = basisKey(b), open = k && LV.open[`bas|${k}`], [kind, id, name] = k ? k.split("|") : [];
+      const acts = b.missing ? "" : k
+        ? `<button class="linkbtn" data-lv-toggle="bas|${esc(k)}" aria-expanded="${!!open}">${open ? "Dölj" : "Läs"}</button>`
+          + `<button class="linkbtn" data-basis-copy="${esc(k)}">Kopiera</button>`
+          + (kind === "file" ? `<button class="linkbtn" data-fget="${esc(id)}" data-fname="${esc(name)}">Ladda ned</button>` : `<button class="linkbtn" data-basis-save="${esc(k)}">Ladda ned</button>`)
+        : b.text ? `<button class="linkbtn" data-copy-el="bas-${esc(s.step)}-${n}">Kopiera</button>` : "";
+      const reader = !open ? "" : kind === "txt" ? ppReadText(id, b.label, name) : ppReadFile(id, /\.[a-z0-9]{2,5}$/i.test(name) ? name : `${name}.md`);
+      return `<li class="bas-row${b.missing ? " missing" : ""}"><span class="bas-t">${b.missing ? `<span class="chip amber">saknas</span> ` : ""}${esc(b.label)}${b.note ? ` <span class="meta">· ${esc(b.note)}</span>` : ""}</span><span class="bas-a">${acts}</span>`
+        + (b.text ? `<pre class="bas-text" id="bas-${esc(s.step)}-${n}">${esc(b.text)}</pre>` : "") + reader + `</li>`;
+    };
+    const groups = Object.keys(BASIS_GROUP).map((g) => [g, items.map((b, n) => [b, n]).filter(([b]) => b.group === g)]).filter(([, xs]) => xs.length);
+    return `<div class="card section st-basis"><h2>Underlag <span class="meta">det steget bygger på</span></h2>`
+      + groups.map(([g, xs]) => `<div class="label">${esc(BASIS_GROUP[g])}</div><ul class="bas-list">${xs.map(([b, n]) => row(b, n)).join("")}</ul>`).join("")
+      + `</div>`;
+  }
+  /** Texten bakom en läskälla, hämtad vid behov (content_get eller asset_get). */
+  async function basisText(k) {
+    const [kind, id, name] = k.split("|");
+    if (kind === "txt") { const c = await call("content_get", { id }); return { text: String(c?.markdown || ""), name: `${name || c?.title || "text"}.md` }; }
+    const d = await call("asset_get", { ref: id });
+    if (d?.inline && d.data_base64) return { text: new TextDecoder().decode(Uint8Array.from(atob(d.data_base64), (c) => c.charCodeAt(0))), name: d.name || name };
+    throw new Error("filen är för stor eller inte text — ladda ned den i stället");
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest?.("[data-basis-copy], [data-basis-save]");
+    if (!b) return;
+    busy(b, async () => {
+      try {
+        const src = await basisText(b.dataset.basisCopy || b.dataset.basisSave);
+        if (b.dataset.basisSave) return ppSaveText(src);
+        await navigator.clipboard.writeText(src.text); toast("Kopierat.");
+      } catch (err) { fail("Underlaget gick inte att hämta", err); }
+    });
+  });
+  /**
+   * Prompterna i en text, ordagrant (Daniel P 2026-10-01: «varje prompt ska ha
+   * en Kopiera-knapp och inte ligga bakom en länk»): kodblock, citatblock och
+   * det som står inom «…», ”…” eller "…" och är långt nog att vara en instruktion.
+   */
+  function textPrompts(text) {
+    const out = [], add = (x) => { const v = String(x || "").trim(); if (v.length >= 25 && !out.includes(v)) out.push(v); };
+    const src = String(text || "");
+    for (const m of src.matchAll(/```[^\n]*\n([\s\S]*?)```/g)) add(m[1]);
+    const rest = src.replace(/```[\s\S]*?```/g, "");
+    for (const m of rest.matchAll(/(?:^|\n)((?:>[^\n]*(?:\n|$))+)/g)) add(m[1].replace(/^>\s?/gm, ""));
+    for (const m of rest.replace(/(?:^|\n)(?:>[^\n]*(?:\n|$))+/g, "\n").matchAll(/[«”"]([^«»”"\n]{25,})[»”"]/g)) add(m[1]);
+    return out;
+  }
+  /** Ett uppdrag på delen, utfällt: texten, och prompterna i den var för sig med Kopiera. */
+  function wsAssignment(key, d) {
+    if (/^(bank|extern):/.test(String(d.id || ""))) {
+      const f = !String(d.id).startsWith("bank:") ? { error: true } : mcp ? ppFile(d.id) : null;
+      return `<div class="ws-assign"><div class="meta">${esc(d.name)}${d.how ? ` — ${esc(d.how)}` : ""}</div>`
+        + (f?.text !== undefined ? `<div class="lv-text md">${md(f.text)}</div>${wsPromptBoxes(key, f.text)}`
+          : f?.error || f?.link ? `<button class="linkbtn" data-fget="${esc(d.id)}" data-fname="${esc(d.name)}">Ladda ned</button>` : `<span class="meta">Hämtar…</span>`) + `</div>`;
+    }
+    // Före kopplingen (vyn startad ur det sparade läget) hämtas inget: ett tidigt fel fastnade som «kunde inte hämtas».
+    if (mcp) lvText(d.id);
+    const c = LV.texts.get(d.id);
+    return `<div class="ws-assign"><div class="meta">${esc(d.name)} · ${short(d.at)}</div>`
+      + (!c ? `<span class="meta">Hämtar uppdraget…</span>` : c.error ? `<span class="meta">Uppdraget kunde inte hämtas.</span> <button class="linkbtn" data-pp-retry="txt|${esc(d.id)}">Försök igen</button>`
+        : `<div class="lv-text md">${md(c.markdown || "(tom)")}</div>${wsPromptBoxes(key, c.markdown || "")}`) + `</div>`;
+  }
+  function wsPromptBoxes(key, text) {
+    const ps = textPrompts(text);
+    if (!ps.length) return "";
+    const base = `wsp-${String(key).replace(/[^a-z0-9]+/gi, "-")}-${String(text.length)}`;
+    return `<div class="label">Prompterna · klistras in ordagrant</div>` + ps.map((x, n) => `<div class="st-prompt"><textarea readonly data-nodraft rows="${Math.min(8, 1 + Math.ceil(x.length / 90))}" id="${base}-${n}" aria-label="Prompt ${n + 1}">${esc(x)}</textarea><button class="btn sm" data-copy-el="${base}-${n}">Kopiera</button></div>`).join("");
+  }
   const WS_TONE = { not_started: "", in_progress: "blue", in: "amber", enough: "green" };
   /** Arbetsytan: en rad per del med läget och «Öppna», och det som lämnats under. */
   function workspaceCard(t, s, ws) {
@@ -8815,12 +8940,15 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         + `<span class="nm">${esc(p.label)}</span><span class="chip ${WS_TONE[p.state]}">${esc(p.state_text)}</span><span class="meta ws-open">${open ? "Stäng" : "Öppna"} ›</span></button>`
         + (open ? `<div class="ws-body">`
           + (p.note ? `<p class="meta">Anteckning: ${esc(p.note)}</p>` : "")
-          + ((p.assignment || []).length ? `<div class="label">Uppdraget · delens instruktion</div><ul class="ws-drafts">${p.assignment.map((d) => `<li>${esc(d.name)}${d.how ? ` <span class="meta">— ${esc(d.how)}</span>` : ""} <span class="meta">· ${short(d.at)}</span></li>`).join("")}</ul>` : "")
-          + (p.drafts.length ? `<div class="label">Det som lämnats</div><ul class="ws-drafts">${p.drafts.map((d) => `<li>${esc(d.name)} <span class="meta">· ${short(d.at)}</span></li>`).join("")}</ul>`
-            : `<p class="meta">Inget lämnat än. Spara rapporten till steget med ett namn som börjar med «${esc(p.label)}» — hela, aldrig en sammanfattning.</p>`)
+          + (s.enough ? `<p class="meta st-line"><b>Så vet du att du är klar:</b> ${esc(s.enough)}</p>` : "")
+          + ((p.assignment || []).length ? `<div class="label">Uppdraget · delens instruktion</div>${p.assignment.map((d) => wsAssignment(key(p), d)).join("")}` : "")
+          + (p.drafts.length ? `<div class="label">Det som lämnats</div><ul class="ws-drafts">${p.drafts.map((d) => `<li>${esc(d.name)} <span class="meta">· ${short(d.at)}</span> <button class="linkbtn" data-lv-toggle="wsd|${esc(d.id)}">${LV.open[`wsd|${d.id}`] ? "Dölj" : "Läs"}</button>${LV.open[`wsd|${d.id}`] ? ppReadText(d.id, d.name, d.name) : ""}</li>`).join("")}</ul>`
+            : `<p class="meta">Inget lämnat än. Spara rapporten med «Spara rapport» — hela, aldrig en sammanfattning.</p>`)
           + `<div class="bar-actions">`
+          + (s.done ? "" : `<button class="btn sm${p.state === "enough" ? "" : " primary"}" data-ws-report="${esc(key(p))}">Spara rapport</button>`)
           + (p.state === "enough" ? `<button class="btn sm" data-ws-reopen="${esc(key(p))}">Fyll på</button>`
-            : `${p.state === "not_started" ? `<button class="btn sm" data-ws-start="${esc(key(p))}">Börja</button>` : ""}<button class="btn sm primary" data-ws-done="${esc(key(p))}">Räcker</button>`)
+            : `${p.state === "not_started" ? `<button class="btn sm" data-ws-start="${esc(key(p))}">Börja</button>` : ""}<button class="btn sm" data-ws-done="${esc(key(p))}">Räcker</button>`)
+          + `<button class="btn sm quiet" data-ws-note="${esc(key(p))}">Anteckning</button>`
           + `<button class="btn sm ai" data-ws-claude="${esc(key(p))}" title="En färdig instruktion: vad som saknas, prompten för nästa varv och om delen räcker">${SP} Kopiera till Claude</button>`
           + `</div></div>` : "")
         + `</li>`;
@@ -8837,6 +8965,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       (p.assignment || []).length ? `Delens uppdrag (instruktionen, det som lämnats TILL delen): ${p.assignment.map((d) => `«${d.name}»${d.how ? ` — ${d.how}` : ""}`).join(", ")}.` : "",
       p.drafts.length ? `Det som lämnats för delen: ${p.drafts.map((d) => `«${d.name}» (read { op: "content_get", id: "${d.id}" })`).join(", ")}.` : "Inget är lämnat för delen än.",
       s.enough ? `Så vet du att du är klar: ${s.enough}` : "",
+      ...basisLines(asArr(s.basis)),
       "", "1. Säg kort vad delen visar hittills och vad som saknas mot det som räcker.",
       "2. Skriv prompten för nästa varv, färdig att klistra in. Receptets fasta prompter ändras inte.",
       `3. Säg om delen räcker. Markera den klar först när jag sagt ja: execute_step { task: "${t.id}", step: "${s.step}", part: "${p.key}", mark: "done", note }.`,
@@ -8854,6 +8983,66 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       try { await call("execute_step", { task: x.t.id, step: x.s.step, part: x.p.key, ...args }); await lvRefresh({ task: x.t.id }); toast(ok(x.p)); }
       catch (e) { fail("Delen ändrades inte", e); }
+    });
+  }
+  /*
+   * Spara rapport på en del (Daniel P 2026-10-01): klistra in markdown eller
+   * välj en fil. Texten sparas med content_save { for_task, for_step, part,
+   * kind: "knowledge.research_report" } — förhandsvisad först, sparad efter
+   * klicket. En fil som inte är text går upp i bitar som i bildväljaren
+   * (sendFile) och knyts till delen med en kort text som pekar på den.
+   * Delen blir «inne».
+   */
+  const WS_REPORT = { key: null, file: null, preview: null };
+  function wsReportDialog(key) {
+    const x = wsPart(key); if (!x) return toast("Delen finns inte längre i planen. Hämta igen.", null, true);
+    WS_REPORT.key = key; WS_REPORT.file = null; WS_REPORT.preview = null;
+    dialog(`<h2>Spara rapport · ${esc(x.p.label)}</h2>`
+      + `<label class="field wide"><span>Namn</span><input id="wsr-name" maxlength="160" value="${esc(`${x.p.label} — rapport`)}"></label>`
+      + `<label class="field wide"><span>Klistra in rapporten · markdown, hela, aldrig en sammanfattning</span><textarea id="wsr-text" rows="10" placeholder="# Rubrik …"></textarea></label>`
+      + `<label class="field wide"><span>Eller välj en fil · .md och .txt läses in som text, andra filer laddas upp</span><input type="file" id="wsr-file" accept=".md,.markdown,.txt,.pdf,.docx,text/markdown,text/plain,application/pdf"></label>`
+      + `<div id="wsr-preview"></div>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-ws-report-preview="1">Förhandsvisa</button></div>`);
+    $("#wsr-file")?.addEventListener("change", async (ev) => {
+      const f = ev.target.files?.[0]; WS_REPORT.file = f || null;
+      if (f && (/\.(md|markdown|txt)$/i.test(f.name) || /^text\//.test(f.type))) { const ta = $("#wsr-text"); if (ta) ta.value = await f.text(); WS_REPORT.file = null; }
+    });
+    $("#wsr-text")?.focus();
+  }
+  const wsReportArgs = (x, name, markdown) => ({ for_task: x.t.id, for_step: x.s.step, part: x.p.key, kind: "knowledge.research_report",
+    name, title: name, markdown, ...(x.t.customer?.id ? { customer: x.t.customer.id } : {}) });
+  function wsReportPreview(btn) {
+    const x = wsPart(WS_REPORT.key); if (!x) return;
+    const name = ($("#wsr-name")?.value || "").trim() || `${x.p.label} — rapport`, text = ($("#wsr-text")?.value || "").trim(), f = WS_REPORT.file;
+    if (!text && !f) return toast("Klistra in rapporten eller välj en fil.", null, true);
+    return busy(btn, async () => {
+      const markdown = text || `Rapporten finns som fil: «${f.name}» (${fsize(f.size)}). Den laddas upp när du sparar.`;
+      // Utan confirmed: servern säger vad som skulle sparas, och varnar — inget sparas än.
+      const pv = await call("content_save", wsReportArgs(x, name, markdown)).catch((e) => ({ error: e }));
+      WS_REPORT.preview = { name, markdown, file: f };
+      const el = $("#wsr-preview");
+      if (el) el.innerHTML = `<div class="label">Förhandsvisning</div><div class="preview md" style="max-height:40vh;overflow:auto">${md(markdown)}</div>`
+        + (pv?.error ? `<p class="meta">Servern kunde inte förhandsvisa: ${esc(pv.error?.message || pv.error)}</p>` : asArr(pv?.warnings).map((w) => `<p class="warnnote">${esc(w)}</p>`).join(""))
+        + `<p class="meta">Sparas på delen «${esc(x.p.label)}» i «${esc(x.s.label)}»${f ? `, med filen ${esc(f.name)}` : ""}. Delen blir inne.</p>`;
+      const bar = $("#layer [data-ws-report-preview]")?.closest(".bar-actions");
+      if (bar) bar.innerHTML = `<button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-ws-report-save="1">Spara rapporten</button>`;
+    });
+  }
+  function wsReportSave(btn) {
+    const x = wsPart(WS_REPORT.key), pv = WS_REPORT.preview; if (!x || !pv) return;
+    return busy(btn, async () => {
+      try {
+        let markdown = pv.markdown;
+        if (pv.file) {
+          const r = await sendFile(pv.file, { asset_type: "knowledge.research_report", acquisition: "provided", for_task: x.t.id, for_step: x.s.step,
+            ...(x.t.customer?.id ? { customer: x.t.customer.id } : {}) });
+          const ref = r?.ref?.uri || r?.uri || (typeof r?.ref === "string" ? r.ref : "");
+          markdown = `Rapporten som fil: «${pv.file.name}»${ref ? ` — read { op: "asset_get", ref: "${ref}" }` : ""}.`;
+        }
+        await call("content_save", { ...wsReportArgs(x, pv.name, markdown), confirmed: true, user_approval: `Ja i vyn: spara rapporten «${pv.name}» på delen ${x.p.label}`.slice(0, 500) });
+        closeDialog(); LV.open[`ws|${WS_REPORT.key}`] = true;
+        await lvRefresh({ task: x.t.id }); toast(`Rapporten är sparad. «${x.p.label}» är inne.`);
+      } catch (e) { fail("Rapporten sparades inte", e); }
     });
   }
   /** Nyckeln till en ny del, ur namnet: a–z, siffror och bindestreck (samma regel som servern). */
@@ -10288,7 +10477,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const own = mats.filter((m) => m.kind === "instruction").at(-1), w = s.layers?.won || {};
     return [own ? `Instruktionen för det här uppdraget gäller före den allmänna och kundens: read { op: "asset_get", ref: "${own.ref}" }.` : null,
       s.enough ? `Så vet du att du är klar${w.enough === "assignment" ? " (i det här uppdraget)" : ""}: ${s.enough} Pröva resultatet mot det innan du säger att det räcker.` : null,
-      ...mats.filter((m) => m.kind !== "instruction").map((m) => `Material «${m.name}»: ${m.what}${m.how ? `. Så används det: ${m.how}` : ""} (read { op: "asset_get", ref: "${m.ref}" }).`)].filter(Boolean);
+      // Underlaget (regel 13): samma lista som lägesbilden och stegets «Underlag», ur servern (src/plan/basis.ts).
+      ...basisLines(asArr(s.basis))].filter(Boolean);
   }
   /** Prompten för en del i Så görs steget: gör den till Claude eller kod, eller lägg till en. */
   function partChatPrompt(o, { kind, i, part } = {}) {
@@ -11579,6 +11769,24 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   }
 
   const closeMenu = () => $("#menu")?.remove();
+  /** Stegets «Mer»: kalender, detaljplan, ge bort, lämna över, ta över och meddelande. */
+  function openStepMenu(btn, key) {
+    closeMenu();
+    const [tid, sid] = key.split("|"), t = taskById(tid), s = stepOf(t, sid);
+    if (!t || !s) return;
+    const m = document.createElement("div"); m.id = "menu"; m.className = "menu"; m.setAttribute("role", "menu");
+    m.innerHTML = `<button role="menuitem" data-calstep="${esc(key)}">${ic("calendar")} Lägg i kalendern</button>`
+      + `<button role="menuitem" data-dp-step="${esc(key)}">Detaljplanera…</button>`
+      + `<button role="menuitem" data-handover-to="1">Ge steget till…</button>`
+      + `<button role="menuitem" data-handover-task="${esc(t.id)}" title="Alla ogjorda steg blir förslag till kollegan">Lämna över hela uppgiften…</button>`
+      + (t.steps.some((x) => !x.done && !x.external && (x.responsible?.id ?? x.responsible) !== me()) ? `<button role="menuitem" data-take-task="${esc(t.id)}" title="Alla ogjorda steg i uppgiften blir dina">Ta över</button>` : "")
+      + `<button role="menuitem" data-msg='${esc(JSON.stringify({ about: { task: t.id, step: s.step }, title: s.label }))}'>Skicka meddelande…</button>`;
+    document.body.append(m);
+    const b = btn.getBoundingClientRect(); m.style.top = `${Math.min(innerHeight - m.offsetHeight - 8, b.bottom + 4)}px`; m.style.left = `${Math.max(8, Math.min(innerWidth - m.offsetWidth - 8, b.left))}px`;
+    m.querySelector("button")?.focus();
+  }
+  // Ett val i menyn stänger den, efter att valet gjorts.
+  document.addEventListener("click", (e) => { if (e.target.closest?.("#menu [role=menuitem]")) setTimeout(closeMenu, 0); });
   function openMenu(btn) {
     closeMenu();
     const r = btn.closest(".row, .trow, .wshead"); const ref = r?.dataset.openStep ? { openStep: r.dataset.openStep } : r?.dataset.openQ ? { openQ: r.dataset.openQ }
@@ -11601,7 +11809,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   }
   document.addEventListener("click", (e) => {
     if (suppressNextClick) { suppressNextClick = false; e.preventDefault(); return; }
-    if (!e.target.closest("#menu, [data-more]")) closeMenu();
+    if (!e.target.closest("#menu, [data-more], [data-st-menu]")) closeMenu();
     // En länk i en ruta (till exempel «Öppna i Filer» under en förhandsbild) går vidare och stänger rutan.
     if (e.target.closest("#layer a[href^='#/']")) { closeDialog(); return; }
     if (e.target.closest("a[href^='#/']") || e.target.closest("a[data-gmail]")) return;
@@ -11888,10 +12096,23 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.done) return markDone(t, !!ds.force);
 
     if (ds.answer) return answerQuestion(t, ds.answer);
+    if (ds.qyn) { const [ans, id] = ds.qyn.split(/\|(.*)/s); const note = ($("#q-note")?.value || "").trim();
+      return busy(t, async () => { try { await call("question_answer", { question: id, answer: note ? `${ans} — ${note}` : ans, answered_by: me() || "vyn" });
+        state.obj = null; await afterWrite(ans === "ja" ? "Svaret är sparat. Frågan är stängd." : "Svaret är sparat."); } catch (e) { fail("Svaret sparades inte", e); } }); }
     if (ds.handover) return answerHandover(t, ds.handover);
     if (ds.start) return startStep(t, ds.start === "true");
     // Arbetsytan (Daniel P 2026-10-01): delarna fylls på en i taget, i valfri ordning.
     if (ds.wsToggle) { const k = `ws|${ds.wsToggle}`; LV.open[k] = !LV.open[k]; return render(); }
+    if (ds.wsReport) return wsReportDialog(ds.wsReport);
+    if (ds.wsReportPreview) return wsReportPreview(t);
+    if (ds.wsReportSave) return wsReportSave(t);
+    if (ds.wsNote) { const x = wsPart(ds.wsNote); if (!x) return toast("Delen finns inte längre i planen. Hämta igen.", null, true);
+      LV.wsNote = ds.wsNote;
+      dialog(`<h2>Anteckning · ${esc(x.p.label)}</h2><label class="field wide"><span>Anteckningen · sparas på delen</span><textarea id="ws-note-text" rows="5"></textarea></label>`
+        + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-ws-note-send="1">Spara anteckningen</button></div>`);
+      $("#ws-note-text")?.focus(); return; }
+    if (ds.wsNoteSend) { const text = ($("#ws-note-text")?.value || "").trim(); if (!text) return toast("Skriv anteckningen först.", null, true);
+      return wsWrite(t, LV.wsNote, { note: text, confirmed: true, user_approval: `Ja i vyn: spara anteckningen på delen: ${text}`.slice(0, 500) }, (p) => { closeDialog(); return `Anteckningen är sparad på «${p.label}».`; }); }
     if (ds.wsStart) return wsWrite(t, ds.wsStart, { start: true }, (p) => `«${p.label}» pågår. Andra ser att du har den.`);
     if (ds.wsDone) return wsWrite(t, ds.wsDone, { mark: "done", note: "Räcker, markerat i vyn" }, (p) => `«${p.label}» räcker.`);
     if (ds.wsReopen) { const x = wsPart(ds.wsReopen); return wsWrite(t, ds.wsReopen, { mark: "undone", reason: "Fylls på",
@@ -11923,6 +12144,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.reload) { S.error = null; render(); return load(); }
     if (ds.refreshAll) return refreshAll();
     if (ds.more) return openMenu(t);
+    if (ds.stMenu) return openStepMenu(t, ds.stMenu);
   });
   document.addEventListener("keydown", (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); palette(); }
@@ -12026,7 +12248,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       checkTools();
       autoCheck("open");
       if (!web) { try { sample = await claude.use("sample"); } catch { sample = null; } }
-      renderPanel(); })
+      // Det som väntade på kopplingen (texter på stegsidan) hämtas nu.
+      render(); renderPanel(); })
     .catch((e) => { S.error = e; render(); });
 })();
 </script>
