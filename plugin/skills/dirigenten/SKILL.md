@@ -5,133 +5,78 @@ description: How the dirigenten registry, planning and delivery system fits toge
 
 # Dirigenten
 
-**This is internal guidance for you, not text to repeat.** The terms below describe how the system fits together so you can reason correctly. To people, talk about the work, never the model: say "the post needs the customer's approval before it goes up", not "the step has an approver and declares what it leaves".
-
-**Talk to the user in Swedish**, unless they write in another language.
+**Internal guidance for you, not text to repeat.** The terms below are for your reasoning. To people, talk about the work, never the model: say "the post needs the customer's approval before it goes up", not "the step has an approver". **Talk to the user in Swedish**, plain, short, most important first, unless they write in another language. No ids, node names or tool names; context before numbers.
 
 ## The tools
 
-Dirigenten has seven tools. Start with `search` (or `plan_state { agenda: true }` for what needs the person today).
+Seven tools, all through the user's `rotor-dirigenten` connector (there is no local server, and the old names `context`, `asset_get`, `intake_submit` … are not tools):
 
-- `search` — find anything: methods, steps, customers, files, the plan. A sure hit is the answer; fetch only what a row points to.
-- `guide` — the topics, the methods with their steps, and the fields of every operation: `guide { topic: "verktyg:<op>" }`. The terms: `guide { topic: "begrepp" }`.
-- `read { op, … }` — every other read: `context` (a step, a task, a case or a thread in one answer), `asset_get` (files), `content_get`, `content_search`, `content_list`, `intake_status`, `read_call`, `library_check`, `library_debt`, `measure_debt`, `classify_propose`, `bug_report` (the open reports).
-- `write { op, … }` — every other write: `intake_order`, `intake_submit`, `registry_define`, `registry_append`, `method_build`, `method_variant_build`, `molecule_build`, `workflow_build`, `task_lock`, `message`, `question_answer`, `time_report`, `note_link`, `content_save`, `content_approve`, `content_published`, `classify_accept`, `bug_report` (report or resolve).
-- `plan_state` — the plan, a task, a delivery, a person's week, the agenda.
-- `execute_step` — run, mark, move or hand over a step. The only tool that reaches a customer's system.
-- `asset_register` — register a file; with `upload_sha256: "sida"` the upload box opens in the chat.
-
-The fields of an operation are checked against that operation. When they are wrong, the error lists the fields — fix them and call again. A write without `confirmed` only shows what would change; the user's yes goes in `user_approval`, in their own words. Anything that reaches a customer or another person, a promise or agreement, an order, a change after delivery or a change in a customer's system can only be confirmed with the `preview_id` from a preview of exactly the same call: show that preview, then send its next call unchanged with the user's words. One preview confirms one call. Marking your own internal step done, notes, time reports and answers need no preview. The old tool names (`context`, `asset_get`, `intake_submit` …) are not tools any more: call them as `read`/`write` with `op`.
+- `search` — find anything. A sure hit is the answer; fetch only what a row points to.
+- `guide` — topics, methods, and the fields of every operation: `guide { topic: "verktyg:<op>" }`. The terms: `guide { topic: "begrepp" }`.
+- `read { op }` — `context` (a step, task, case or thread in one answer), `asset_get`, `content_get`, `content_search`, `content_list`, `intake_status`, `read_call`, `library_check`, `library_debt`, `measure_debt`, `classify_propose`, `bug_report`.
+- `write { op }` — `intake_order`, `intake_submit`, `registry_define`, `registry_append`, `method_build`, `method_variant_build`, `molecule_build`, `workflow_build`, `task_lock`, `message`, `question_answer`, `time_report`, `note_link`, `content_save`, `content_approve`, `content_published`, `classify_accept`, `bug_report`.
+- `plan_state` — plan, task, delivery, a person's week; `agenda: true` is what needs the person today.
+- `execute_step` — run, start, mark, move or hand over a step. The only tool that reaches a customer's system.
+- `asset_register` — register a file; `upload_sha256: "sida"` opens the upload box.
 
 ## How it fits together
 
-A **commitment** is what the tenant has promised a customer: what they get, how often, and within what time. Commitments generate **tasks**, one per thing to be delivered. Each task follows a **method** — a base method shared across customers, plus a **method variant** holding what is specific to one customer.
+A **commitment** is what the tenant promised a customer. It generates **tasks**, one per thing delivered. Each follows a **method**. Time is computed backwards from delivery; moving inside the window or a step's float changes nothing for the customer, moving the delivery is a new promise a human confirms. Everything is an append-only log: a correction is a new event.
 
-A method is **steps** in order. A step has a responsible party, a performer (code, llm or human), sometimes an approver, and declares what it leaves behind — an asset, a text, a decision, a publication. What one step leaves is what the next step consumes. When something is missing the chain stops, and the gap becomes a **requirement**: a question someone answers, or an input someone obtains. Requirements are never assumed away.
+**Three layers: Uppdrag goes before Kundens sätt, which goes before Metod.**
+- **Metod** — the general, all customers: instruction or recipe, what counts as done. Change: `registry_define { change: true }`.
+- **Kundens sätt** — one customer's differences only: who, templates, rules, values, own instruction, added steps. Change: `method_variant_build`, or `registry_define { change: true }` on the variant.
+- **Uppdrag** — this delivery: dates, status, results, steps only here (`task_lock add_step`), what the step waits on in other parts, the task's material. Edit the narrowest layer that fits.
 
-Beneath the steps are the building blocks. An **atom** is general code that does one thing against one surface. A **molecule** is a single effect: an atom bound to a concrete case, with a performer and a declared result. A **workflow** is molecules in sequence, and a method is a workflow that delivers something to a customer. This exists so the same thing is not built twice, and so the effect of a change can be seen.
+**Steps and moments.** What a person sees as a *steg* is one thing done at one time that gives a result. Inside it are *delmoment* (the registry's steps) that code or Claude runs in sequence; a person sees them only folded. A steg has `enough` («så vet du att du är klar»), a `result`, and sometimes a named person whose yes is needed. `read { op: "context" }` gives the steg first (its `enough`, prompts, material, what is `missing`), then the delmoment.
 
-When a plan needs something the library cannot do, the gap becomes an **atom proposal**: a registry entry with one effect, the surface, its inputs and outputs, the access level the effect requires, how it is to be tested, and why it is needed — with the plan and the step that asked for it. A proposal is unbuilt until code exists and its test passes. It shows up in `search` and counts as debt (`read { op: "library_debt" }`). A method that rests on a proposal can be planned and saved, but not run all the way, and the answer says where it stops. **You may propose atoms; you never create them.** The gate enforces this: a molecule binding an atom no code implements is rejected when an AI writes it. A human builds the code from the proposal with `npm run build:atom --from-proposal <id>`, which produces the code template out of the declaration, so it is never written twice.
+Underneath: an **atom** is general code doing one thing against one surface; a **molecule** is one effect (atom, performer, declared result); a **workflow** is molecules in sequence, and a method is a workflow that delivers something. When a plan needs what the library cannot do, write an **atom proposal** (one effect, surface, inputs, outputs, access level, test, why). **You may propose atoms, never create them**: a molecule binding code that does not exist is rejected. A human builds it with `npm run build:atom --from-proposal <id>`. Debt: `read { op: "library_debt" }`.
 
-Time is computed backwards from delivery. A step has an earliest and a latest day, and the distance between them is its float. When a delivery has no fixed date it has a window, and work is placed where there is capacity. Moving within the window or the float changes nothing for the customer. Moving the delivery is a new promise and is confirmed by a human.
+## Working a step
 
-Everything that has happened is an append-only log. Nothing is overwritten or deleted; state is derived from the log. A correction is a new event, never an edit of an old one.
+1. **Start and continue.** `plan_state { agenda: true }` first. `execute_step { start: true }` when you begin; `start: false` with a `note` where you stopped. Read earlier drafts (`content_get`) before redoing a step. Save what you write with `content_save { for_task, for_step }` as you go; a draft only in the chat is lost.
+2. **Everything you write is previewed first.** Show the preview to the user, then send the next call exactly as given, with `preview_id` when it has one and the user's own words in `user_approval`, verbatim. One preview confirms one call. Text for a template, file or system is shown and approved before it goes in. Only the intake sorting is exempt (`intake_submit` candidates and fetch).
+3. **Few stops.** Work stops only when something goes out to a customer or other outside party, when money or an agreement is bound, or when something is written irreversibly in a customer's system. Otherwise keep going while waiting: a requirement is `defer` or `assume`, and what is waited on is a `wait { on, question, remind }`, not "late".
+4. **Not linear.** Any step can be opened. If something is missing, get it (do it, draft it, or ask the right person) or continue on a stated assumption and fill in later. Never invent dates, owners, decisions or files; if it is not in dirigenten, say so.
+5. **Parts.** In a workspace with parts (a track, a format, a channel) fill in part by part: `execute_step { part }`, with `values: { label }` to add one. A report is saved on its part with `content_save { part }`; a newer version fills in, the old stays.
+6. **Results.** A step is not done without a result: `mark: "done"` with nothing left is refused unless `values: { no_result: "<reason>" }` is given. An approved draft with `for_step` is the result. A step done by hand leaves something (text, file, link): register it with `asset_register { for_task }` before marking done. Read only what the step reads; context already gives those keys, latest version.
+7. **Material.** Put what the work needs on the step, the part or the whole delivery: `asset_register { material: { what, how }, for_task | delivery, part }`. `action: "important"` marks an important document, shown first in the delivery; the latest approved version counts.
+8. **Wrong fields.** The error lists the fields and a ready next call. Follow it.
+9. **Notes, drafts, methods.** A step's note says where you stopped. A mail draft with attachments may be created after a yes; sending is always a human's. You may switch a task's method (`task_lock { method }`) after the user's yes, with the preview's `preview_id`.
 
-Access, visibility and decision rights are in the registry too. You see only what your session may see, and an approver is always a named person.
+Approval is asked of the person named in the registry, never of "the customer" in general. A human-performed step follows its recipe (what is needed, how, check). A step done elsewhere may be marked done; if what it should leave is missing, that is an open requirement.
+
+## Search and answers
+
+`search` with 1-5 phrasings in `q`: the customer's words and the house's, plus the customer's name. A case with a mail address or thread: search with it. Lists: `search { do: "browse", kind }`; exact label: fetch the record. The hit carries `fetch`: call only that, and stop when answered. Working a step, task or ticket: `read { op: "context" }` first, then search only the unknown.
+
+Missing a *fact*: rephrase once, browse by kind and customer, then ask the user and say what you tried. Never loop. Missing a *capability* (method, step, call): search method, step, call and atom with two phrasings or more, reuse what exists (a variant of an existing method before a new one), build only when nothing fits, and show the proposal before saving.
+
+Always fetch guidance from the server before speaking about a customer, a task or a way of working: it differs per tenant and changes. This skill holds no methods, customer data or per-customer rules. Never store a customer's customers (leads, attendees): count and place only.
 
 ## Files
 
-Files live in the content bank, addressed as `bank://<tenant>/<sha256>`, and are reached through `read { op: "asset_get" }`: the customer's files, which folder they came from, a preview, or a download link. Some tenants also keep copies elsewhere, for example in Drive; those are copies, not the source. Fetch a gallery in one call with previews, never one call per image.
+Files live in the content bank as `bank://<tenant>/<sha256>`, reached with `read { op: "asset_get" }` (previews and links; a gallery in one call). Copies elsewhere, such as Drive, are copies, not the source.
 
-## Start with the views
+## Credentials are the server's
 
-The server says where the person's views are: `views_url`, in every `plan_state` answer and in `guide`. It is the person's **own** copy of the view, because in the Claude app (Cowork, Code) a page reaches the connectors only for its owner.
+Dirigenten talks to HubSpot, Gmail, Google Calendar and the content bank from the server. Never ask for a token, key or `.env`, and never suggest one. `HUBSPOT_TOKEN is not set` means another repository (the old HubSpot CLI): say which command was missing and propose it as an atom and a molecule. An authorisation error is a server matter: report it, never route around it.
 
-1. Link the user to `views_url`, verbatim. Never guess an address, reuse one from an earlier session or open someone else's artifact.
-2. If `views_url` is missing (the answer says `own_copy_missing`): in the Claude app, publish the person's own copy with the section «The view (dirigentvyn)» below, then save its address on the person with `write { op: "registry_define", change: true, node: { id: "<the person's party id>", views_url: "<the artifact address>" } }`. Show that call before you make it. Elsewhere, or if the artifact tool is missing, give `https://rotor-dirigenten.netlify.app/vy` (the server's own page, Google login, works in any browser).
-3. The view saves its own address on the person too, silently, when its owner opens or updates it, so this step is only needed the first time.
+## Views
 
-## Know what is waiting, and continue what was started
+The server gives `views_url` (in `plan_state` and `guide`): the person's **own** copy of the view, since in the Claude app a page reaches connectors only for its owner. Link it verbatim; never guess an address or open someone else's. If it is missing (`own_copy_missing`): publish the person's copy as below, then save it with `write { op: "registry_define", change: true, node: { id: "<party id>", views_url: "<address>" } }`, shown first. Without the artifact tool, give `https://rotor-dirigenten.netlify.app/vy` (Google login). The view saves its own address when its owner opens it.
 
-`plan_state` with `agenda: true` is the person's list: what burns, what is today, what is soon, each row with the reason and the exact next call. It is the same list the views page shows. Start there when someone asks what to do, and when a session begins.
+## When a tool is missing
 
-- **Continue, never restart.** A step may be *started* by someone, with a note on where they stopped, and carry *drafts* saved to it. Read them (`read { op: "content_get", id }`) before doing the step again.
-- When you begin a step, say so: `execute_step` with `start: true`. When you stop before it is done, `start: false` with a `note` on where you are — the next person or session reads it.
-- Save what you write for a step with `write { op: "content_save", for_task, for_step, … }`, as you go. A draft that lives only in this chat is lost when the chat ends.
-- A step done by hand leaves something (text, a file or a link): register it with `asset_register` and `for_task` before marking the step done, or the steps after it wait.
+The tool list may be old: ask the user to choose «Refresh tools» on the rotor-dirigenten connector. If that does not help, remove the connector and add it again, never just add (a duplicate). Do not work around it.
 
-## Fetch guidance before you answer
+## Open or update the view (dirigentvyn)
 
-Always fetch guidance from the server before speaking about a customer, a task or a way of working. It differs per tenant and per customer and it changes. This skill holds no methods, no customer data and no per-customer rules.
+Talk Swedish, short, say what you do, then do it. The file holds no data; everything comes through the user's own connector.
 
-## Doing things
+1. Use `manifest.json` (`title`, `version`, `capabilities`) and `dirigenten.html` from this skill's folder, unedited. Only if they are missing: fetch `https://rotor-dirigenten.netlify.app/vy/manifest` and the page at its `file`.
+2. Publish `dirigenten.html` as an artifact **owned by the user**, titled "Dirigenten", with exactly the manifest's `capabilities` (the seven tools, `sample`, `downloads`, and **always `artifact: {}`**, or the update button fails). A copy with the old tool names cannot reach dirigenten: update it. If the user already has an artifact "Dirigenten", update that one so the link stays; otherwise publish a new one and tell them to pin it.
+3. Open it. If the page asks to allow connectors ("Tillåt kopplingarna"), tell the user to allow. Save the address on the person as under Views, unless `views_url` already equals it.
+4. Tell the user in one sentence: the view is theirs, it updates when they say "uppdatera dirigentvyn" after a plugin update, and the page says when a newer version exists.
 
-- Writes pass the gate. Anything that sends, publishes or costs money stops for a human's confirmation.
-- Approval is asked of the person named in the registry, never of "the customer" in general.
-- A step performed by a human follows its recipe: what is needed, how to do it, how to check it.
-- A step may be marked done even when the work happened elsewhere. If what it should leave is missing, that becomes an open requirement, not an assumption.
-- Planning writes nothing on its own.
-
-## Credentials are the server's, never yours
-
-Dirigenten talks to HubSpot, Gmail, Google Calendar and the content bank **from the server**, with credentials that live in the deployment and are readable only by it. Nobody working through this plugin needs a token, a key or a `.env` file, and no one should be asked for one.
-
-- Never ask the user for an API token, and never suggest putting one in a local file. If you are about to, you are in the wrong place: the work belongs behind dirigenten's surface.
-- The user's own access comes from signing in with their Rotor account. What they may see and do follows from that, not from what is on their machine.
-- **`HUBSPOT_TOKEN is not set` and the like mean you are in another repository** — usually the separate HubSpot CLI, which still keeps its own local secrets. That is not a setup fault to fix with a key: it is a capability that has not been moved into dirigenten yet. Say which command was missing and propose it as an atom and a molecule, so it can be run by everyone instead of by whoever has the token.
-- A tool here failing with an authorisation error is a server matter. Report it plainly — never route around it with a local script.
-
-## Sök och svara (på svenska)
-
-Det här är hur du söker och svarar. Det ersätter inte servern: fråga `guide` om det som gäller en kund eller en metod.
-
-**Sökmönster**
-- Sök först, med `search`. Ge 1–5 formuleringar i `q`: kundens egna ord och husets ord, och lägg till kundens namn. Ärendet har en mejladress eller en tråd: sök med den.
-- Vill du ha en lista, bläddra: `search { do: "browse", kind }`. Vet du den exakta etiketten: hämta hela posten.
-- Träffen bär det du ska hämta (`fetch`). Anropa bara det, och sluta när frågan är besvarad.
-- Ska du arbeta med ett steg, en uppgift eller ett ärende: läs `read { op: "context" }` först och sök sedan bara efter det som är okänt.
-- Vad som kräver personen i dag: `plan_state { agenda: true }`.
-
-**Svarsformer**
-- **Sammanhang före nummer.** Beskriv saken i ord: vad det gäller, för vilken kund och vad som ska göras. Nummer, id och koder får stå som ett tillägg, aldrig ensamma.
-- **Visa text innan den sparas.** Text som ska in i en mall, en fil eller ett system visas för användaren och godkänns först.
-- **Förhandsvisning före ja.** Det som skriver visar först vad som ändras. Användaren svarar ja, och först då skickar du förhandsvisningens nästa anrop oförändrat, med användarens egna ord.
-
-**När du inte hittar**
-- Saknas ett *faktum* (en uppgift om en kund, ett datum, en fil): formulera om och sök en gång till, bläddra på sort och kund, och fråga sedan användaren. Säg vad du försökt. Sök aldrig i en slinga.
-- Saknas en *förmåga* (en metod, ett steg, ett anrop): sök grundligt, med minst två formuleringar på metod, steg, anrop och atom. Återanvänd det som finns, helst en variant av en befintlig metod. Bygg först när inget passar, och visa förslaget för användaren innan det sparas.
-
-## Never guess
-
-What is missing becomes a question or a task. If the answer is not in dirigenten, say so and propose what would need to be found out. Never invent dates, owners, decisions or files.
-
-## Writing to people
-
-Swedish, plain language. No ids, no node names, no internal terms. Explain where a fact comes from and what it shows. Short, most important first.
-
-## When something is missing
-
-If a tool you need is absent, the cached tool list may be old. Say so, and ask the user to choose «Refresh tools» on the existing rotor-dirigenten connector. If that does not help, the connector is removed and then added again — never just added, which leaves a duplicate. Do not work around it on your own.
-
-## The view (dirigentvyn) — open or update it as the user's own page
-
-When the user asks to open or update the view: talk Swedish, keep it short, say what you do, then do it.
-
-### Why this exists
-In the Claude app (Cowork, Code) a page reaches connectors only for its **owner**. A view published by someone else shows "Dirigenten går inte att nå härifrån" here. So each person publishes their **own copy** of the view. The file contains no data — all data comes through the user's own `rotor-dirigenten` connector, with the user's own permissions.
-
-### Do this
-1. Use the files that come with this skill, in the same folder as this SKILL.md: `manifest.json` (gives `title`, `version` and `capabilities`) and `dirigenten.html` (the page). No network is needed. Do not edit the page.
-   - Only if those files are missing: fetch `https://rotor-dirigenten.netlify.app/vy/manifest` and the page at its `file`, and save the page unchanged as a local `.html` file.
-2. Publish `dirigenten.html` as an artifact **owned by the user**, with exactly the manifest's `capabilities` (the `mcp` servers and tools, `sample`, `downloads` and `artifact: {}`). **`artifact: {}` must always be included** — without it the view cannot update itself and its update button fails; check it is in the capabilities you pass, on new publishes and on every update and the title "Dirigenten".
-   - The `rotor-dirigenten` tools in the manifest are the seven: `asset_register`, `execute_step`, `guide`, `plan_state`, `read`, `search`, `write`. A copy published with the older tool names (`context`, `asset_get`, `intake_submit` …) cannot reach dirigenten any more: update it with the manifest's capabilities.
-   - If the user already has an artifact titled "Dirigenten" (list their artifacts), **update that one** so the link stays the same.
-   - Otherwise publish a new one, and tell the user to pin it.
-3. Open it for the user. If the page asks to allow connectors ("Tillåt kopplingarna"), tell the user to allow. Then save the artifact address on the person (see «Start with the views», step 2), unless `views_url` already equals it.
-4. Tell the user in one sentence: the view is theirs, it updates when they ask ("uppdatera dirigentvyn") after the plugin has been updated, and the page itself says when a newer version exists.
-
-### If something fails
-- The page says a newer version exists: the plugin is behind. Tell the user to update the plugin, then run this again.
-- The artifact tool is not available here: say so plainly, and give the user `https://rotor-dirigenten.netlify.app/vy`. It works in any browser, with Google login.
-- The page still says it cannot reach dirigenten: check that the user's `rotor-dirigenten` connector is on in claude.ai's connector settings, and that the artifact was published from the user's own account (the owner rule above).
-- Never publish someone else's copy, never change the file, never add capabilities beyond the manifest.
+If it fails: a newer version exists → the plugin is behind, update it and run this again. No artifact tool → `https://rotor-dirigenten.netlify.app/vy`. The page cannot reach dirigenten → the connector must be on in claude.ai's settings and the artifact published from the user's own account. Never publish someone else's copy, edit the file or add capabilities beyond the manifest.
