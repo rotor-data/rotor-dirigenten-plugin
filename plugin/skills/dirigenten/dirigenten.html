@@ -1269,7 +1269,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "86f94fc", published: "2026-10-01" };
+  const SIDA = { version: "0925ccb", published: "2026-10-01" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1722,11 +1722,11 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       // svarade med båda i ett (B-213).
       S.phase = "Hämtar din lista…"; render();
       // Hur långt fram listan räcker (Daniel P 2026-09-25): 1 = resten av veckan, 0 = allt.
-      const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks(), format: "full" }), 45000, "Listan");
+      const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks(), format: "vy" }), 45000, "Listan");
       if (!a?.agenda) throw new Error("servern skickade ingen agenda — den kan vara en äldre version");
       S.agenda = a.agenda; S.at.agenda = Date.now();
       S.phase = "Hämtar planen…"; render();
-      const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "full" }), 45000, "Planen");
+      const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "vy" }), 45000, "Planen");
       if (!p?.plan) throw new Error("servern skickade ingen plan");
       S.plan = p.plan; S.meetings = p.meetings ?? {}; S.error = null;
       S.serverVersion = p.views?.version ?? null; S.viewsUrl = p.views?.url ?? S.viewsUrl ?? null;
@@ -1750,11 +1750,11 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   const TTL = { agenda: 300_000, queue: 300_000, plan: 300_000, lib: 1_800_000, settings: 3_600_000 };
   const stale = (k) => !S.at[k] || Date.now() - S.at[k] > TTL[k];
   async function refreshAgenda() {
-    try { const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks(), format: "full" }), 45000, "Listan");
+    try { const a = await withTimeout(call("plan_state", { agenda: true, weeks: aheadWeeks(), format: "vy" }), 45000, "Listan");
       if (a?.agenda) { S.agenda = a.agenda; S.at.agenda = Date.now(); render(); } } catch { /* det gamla står kvar */ }
   }
   async function refreshPlan() {
-    try { const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "full" }), 45000, "Planen");
+    try { const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "vy" }), 45000, "Planen");
       if (p?.plan) { S.plan = p.plan; S.meetings = p.meetings ?? {}; S.serverVersion = p.views?.version ?? null; S.viewsUrl = p.views?.url ?? S.viewsUrl ?? null;
         S.fetchedAt = new Date(); S.at.plan = Date.now(); render(); } } catch { /* det gamla står kvar */ }
   }
@@ -7012,7 +7012,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       if (!mcp || Date.now() - started > 600_000 || state.obj?.type !== "delivery") return;
       try {
         if (document.visibilityState === "visible") {
-          const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "full" }), 45000, "Planen");
+          const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "vy" }), 45000, "Planen");
           if (p?.plan) { S.plan = p.plan; S.at.plan = Date.now(); RW.dirty = true; }
         }
         if (RW.dirty && !editingNow()) { RW.dirty = false; render(); return; }
@@ -10776,7 +10776,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   async function lvRefresh({ delivery = null, task = null } = {}) {
     try {
       if (delivery && !lvDelivery(delivery)?.implicit) {
-        const r = await call("plan_state", { delivery, weeks: state.horizon, format: "full" });
+        const r = await call("plan_state", { delivery, weeks: state.horizon, format: "vy" });
         const p = r?.plan; if (!p || !S.plan) return;
         const byId = new Map(asArr(p.tasks).map((t) => [t.id, t]));
         S.plan.tasks = S.plan.tasks.map((t) => byId.get(t.id) ?? t);
@@ -10786,7 +10786,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
           if (i >= 0) S.plan.deliveries[i] = d; else (S.plan.deliveries ||= []).push(d);
         }
       } else if (task) {
-        const r = await call("plan_state", { task, weeks: state.horizon, format: "full" });
+        const r = await call("plan_state", { task, weeks: state.horizon, format: "vy" });
         const i = tasks().findIndex((t) => t.id === task);
         if (r?.task && i >= 0) S.plan.tasks[i] = r.task;
       }
