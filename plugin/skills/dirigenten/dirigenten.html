@@ -1269,7 +1269,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "5e71cc8", published: "2026-10-01" };
+  const SIDA = { version: "a71fcd7", published: "2026-10-01" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -8815,6 +8815,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         + `<span class="nm">${esc(p.label)}</span><span class="chip ${WS_TONE[p.state]}">${esc(p.state_text)}</span><span class="meta ws-open">${open ? "Stäng" : "Öppna"} ›</span></button>`
         + (open ? `<div class="ws-body">`
           + (p.note ? `<p class="meta">Anteckning: ${esc(p.note)}</p>` : "")
+          + ((p.assignment || []).length ? `<div class="label">Uppdraget · delens instruktion</div><ul class="ws-drafts">${p.assignment.map((d) => `<li>${esc(d.name)}${d.how ? ` <span class="meta">— ${esc(d.how)}</span>` : ""} <span class="meta">· ${short(d.at)}</span></li>`).join("")}</ul>` : "")
           + (p.drafts.length ? `<div class="label">Det som lämnats</div><ul class="ws-drafts">${p.drafts.map((d) => `<li>${esc(d.name)} <span class="meta">· ${short(d.at)}</span></li>`).join("")}</ul>`
             : `<p class="meta">Inget lämnat än. Spara rapporten till steget med ett namn som börjar med «${esc(p.label)}» — hela, aldrig en sammanfattning.</p>`)
           + `<div class="bar-actions">`
@@ -8833,12 +8834,14 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   function wsClaudeText(t, s, p) {
     return [`Hjälp mig med delen «${p.label}» i steget «${s.label}» (${lbl(t.customer, "")}).`,
       `Läs först lägesbilden: read { op: "context", task: "${t.id}", step: "${s.step}" }.`,
+      (p.assignment || []).length ? `Delens uppdrag (instruktionen, det som lämnats TILL delen): ${p.assignment.map((d) => `«${d.name}»${d.how ? ` — ${d.how}` : ""}`).join(", ")}.` : "",
       p.drafts.length ? `Det som lämnats för delen: ${p.drafts.map((d) => `«${d.name}» (read { op: "content_get", id: "${d.id}" })`).join(", ")}.` : "Inget är lämnat för delen än.",
       s.enough ? `Så vet du att du är klar: ${s.enough}` : "",
       "", "1. Säg kort vad delen visar hittills och vad som saknas mot det som räcker.",
       "2. Skriv prompten för nästa varv, färdig att klistra in. Receptets fasta prompter ändras inte.",
       `3. Säg om delen räcker. Markera den klar först när jag sagt ja: execute_step { task: "${t.id}", step: "${s.step}", part: "${p.key}", mark: "done", note }.`,
-      `Spara det du skriver med write { op: "content_save", for_task: "${t.id}", for_step: "${s.step}" } och ett namn som börjar med «${p.label}»; en ny version fyller på, den gamla står kvar.`,
+      `Spara det delen lämnar (rapport, fynd) med write { op: "content_save", for_task: "${t.id}", for_step: "${s.step}" } och ett namn som börjar med «${p.label}»; en ny version fyller på, den gamla står kvar.`,
+      `En prompt eller instruktion till delen sparas med kind: "instruction" — den är delens uppdrag och gör inte delen inne.`,
       "Gör inte min del av arbetet och hitta aldrig på källor."].filter((x) => x !== "").join("\n");
   }
   function wsPart(key) {
