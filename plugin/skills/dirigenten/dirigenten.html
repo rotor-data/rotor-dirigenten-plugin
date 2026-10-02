@@ -1292,7 +1292,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "2472547", published: "2026-10-02" };
+  const SIDA = { version: "1bb7949", published: "2026-10-02" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1684,6 +1684,18 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const e = d?.error, next = e?.next_call, pid = next?.args?.preview_id;
     if (e?.code !== "PREVIEW_REQUIRED" || !input?.confirmed || input.preview_id || !pid || !sameAction(tool, input, next)) return null;
     return { ...next.args, confirmed: true, user_approval: input.user_approval ?? next.args.user_approval, preview_id: pid };
+  }
+  /**
+   * Förhandsvisa först, bekräfta sedan med kvittot (felrapport 7a464982: en
+   * överlämning i vyn gav PREVIEW_REQUIRED «Bekräftelsen saknar preview_id»).
+   * Rutan i vyn är förhandsvisningen för människan; servern får sin egen,
+   * och bekräftelsen skickar förhandsvisningens nästa anrop med dess preview_id.
+   */
+  async function previewThenConfirm(tool, args, approval) {
+    const p = await call(tool, args);
+    const next = p?.next_call ?? p?.error?.next_call;
+    if (!next?.args) throw Object.assign(new Error("Förhandsvisningen gav inget nästa anrop. Inget är skrivet."), { code: "PREVIEW_REQUIRED" });
+    return call(next.tool || tool, { ...next.args, confirmed: true, user_approval: approval });
   }
   /** Ett anrop till en koppling. Dirigenten är förvalet; Claude läser också ur HubSpot (B-229). */
   /** Pågående anrop: vyn uppdaterar sig aldrig mitt i ett (se AUTO nedan). */
@@ -4870,7 +4882,13 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
             ? `<div class="meta">Görs av ${esc(lbl(s.waiting?.on, "kunden"))}${s.waiting?.answer_by ? ` · svar behövs senast ${short(s.waiting.answer_by)}` : ""}.</div>`
             : "";
       // Börja/släpp står i samma rad som huvudknappen (GUI-städningen 2026-10-01), inte som en egen rad ovanför.
-      const startBtn = s.done || ws || doArea || k === "code" || k === "llm" || k === "ext" ? ""
+      // Saknas underlag (felrapport 65877cc5): varningen står här som i listorna. Att börja
+      // utan det går bara via «Fortsätt ändå», som sparar antagandet som anteckning.
+      const lacks = stepMissingOf(t, s);
+      const missingNote = !lacks.length ? "" : `<div class="warnnote st-lacks" style="margin:8px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span><span class="st-miss">Saknas: ${esc(lacks.map((m) => m.what).join(", "))}</span> — ta fram nu eller fortsätt ändå.</span>`
+        + (lacks[0].step ? `<button class="btn sm" data-open-step="${esc(t.id)}|${esc(lacks[0].step)}" title="Öppna steget som lämnar det">Ta fram nu</button>` : "")
+        + `<button class="btn sm quiet" data-continue-anyway="1" title="Börja ändå. Det du antar i stället sparas som en anteckning på steget.">Fortsätt ändå…</button></div>`;
+      const startBtn = s.done || ws || doArea || k === "code" || k === "llm" || k === "ext" || lacks.length ? ""
         : s.started ? `<button class="btn quiet" data-start="false">Släpp steget</button>` : `<button class="btn" data-start="true">Jag börjar på det</button>`;
       // Var steget hör hemma (etapp 5): «I uppgiften … · i leveransen …», som länkar.
       const dv = deliveryOfTask(t);
@@ -4882,6 +4900,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         + `<p class="st-do">${esc(stepNowText(t, s, k))}</p>`
         + qs.filter((o) => o.step === s.step).map((o) => `<div class="need" style="cursor:pointer" data-open-q="${esc(o.id)}"><span class="no">${ic("stop")}</span><span class="t">${esc(headlineForOpen(o))}</span><button class="btn sm" data-open-q="${esc(o.id)}">Svara</button></div>`).join("")
         + stepWaitBanner(t, s)
+        + missingNote
         + ipEntry(t, s) + doArea
         + (s.done ? "" : `<div class="bar-actions st-acts"><button class="btn ${(!ws || (ws.parts.length && ws.parts.every((p) => p.state === "enough"))) && !/btn[^"]*primary/.test(doArea) ? "primary" : ""}" data-done="1">${ws ? "Alla delar räcker — klart ›" : "Klart, till nästa ›"}</button>${startBtn}</div>`
           // De sekundära handlingarna i en «Mer»-meny (Daniel P 2026-10-01), inte en rad knappar.
@@ -5169,6 +5188,21 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (k === "llm" || asArr(s.leaves).length) return { tool: "read", args: { op: "context", task: t.id, step: s.step },
       does: "Läs stegets lägesbild och gör arbetet: den säger vad steget ska lämna och hur det sparas. Klart följer av resultatet." };
     return { tool: "execute_step", args: { task: t.id, step: s.step, mark: "done" }, does: "Markera steget klart när det är gjort för hand." };
+  }
+  /**
+   * Underlaget som saknas för steget: stegen före som inte är gjorda. Samma
+   * källa som listorna: leveransens «att göra nu» bär serverns stepMissing
+   * (src/plan/step-next.ts), och det används där det finns. Annars samma regel
+   * här: ett steg utanför ordningen, i en stängd gren eller med antaget
+   * godkännande räknas inte.
+   */
+  function stepMissingOf(t, s) {
+    if (!t || !s || s.done || s.external) return [];
+    const row = asArr(deliveryOfTask(t)?.todo).find((x) => x.task === t.id && x.step === s.step && Array.isArray(x.missing));
+    const steps = asArr(t.steps), i = steps.findIndex((x) => x.step === s.step), closed = closedSteps(t);
+    const before = i > 0 ? steps.slice(0, i).filter((x) => !x.done && !x.needed_by && !x.assumed_approved && !closed.has(x.step)) : [];
+    if (row) return row.missing.map((what) => ({ what, step: before.find((x) => x.label === what)?.step || null }));
+    return before.map((x) => ({ what: x.label, step: x.step }));
   }
   /** En uppgift utan leverans, som en leverans med en uppgift. Härledd här; ingenting skrivs. */
   function implicitDelivery(t) {
@@ -8442,6 +8476,26 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       catch (e) { fail("Kunde inte svara på överlämningen", e); }
     });
   }
+  /**
+   * «Fortsätt ändå» på stegsidan: steget påbörjas först när antagandet finns,
+   * och det sparas som stegets anteckning (execute_step start med note).
+   */
+  function continueAnywayDialog() {
+    const { t, s } = current(), lacks = stepMissingOf(t, s);
+    dialog(`<h2>Fortsätt ändå · ${esc(s.label)}</h2><p>Det här saknas: ${esc(lacks.map((m) => m.what).join(", "))}. Skriv vad du utgår från i stället. Det sparas som en anteckning på steget, och steget blir påbörjat av dig.</p>`
+      + `<label class="field wide"><span>Antagandet</span><textarea id="ca-note" rows="3" placeholder="T.ex. vi utgår från förra årets underlag tills mötet är hållet"></textarea></label>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-continue-anyway-save="1">Spara och börja</button></div>`);
+  }
+  function continueAnywaySave(btn) {
+    const { t, s } = current(), text = ($("#ca-note")?.value || "").trim();
+    if (!text) return toast("Skriv antagandet först. Utan det börjar steget inte.", null, true);
+    const lacks = stepMissingOf(t, s).map((m) => m.what).join(", ");
+    return busy(btn, async () => {
+      try { await call("execute_step", { task: t.id, step: s.step, start: true, note: `Antagande (saknas: ${lacks}): ${text}` });
+        closeDialog(); await afterWrite("Steget är påbörjat. Antagandet står som anteckning på steget."); }
+      catch (e) { fail("Steget påbörjades inte", e); }
+    });
+  }
   function startStep(btn, on) {
     const { t, s } = current();
     return busy(btn, async () => {
@@ -8766,9 +8820,12 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   }
   async function cardYes(btn, i, k) {
     const c = convo[i]?.cards?.[k]; if (!c || c.state !== "open") return;
-    const args = { ...c.args, ...(previewable(c.tool, c.args) ? { confirmed: true } : {}), user_approval: `Ja i vyn (förslag från Claude): ${c.what}`.slice(0, 500) };
+    const approval = `Ja i vyn (förslag från Claude): ${c.what}`.slice(0, 500);
+    const args = { ...c.args, ...(previewable(c.tool, c.args) ? { confirmed: true } : {}), user_approval: approval };
+    // Dirigentens bekräftelse bär förhandsvisningens preview_id (felrapport 7a464982).
+    const run = c.server === SERVER && previewable(c.tool, c.args) ? () => previewThenConfirm(c.tool, c.args, approval) : () => callOn(c.server, c.tool, args);
     return busy(btn, async () => {
-      try { await callOn(c.server, c.tool, args); c.state = "done"; toast(`Gjort: ${c.what}`); }
+      try { await run(); c.state = "done"; toast(`Gjort: ${c.what}`); }
       catch (e) { c.state = "failed"; c.error = String(e?.message || e).split(" — ")[0]; }
       saveSamtal(); renderPanel();
       const task = c.args.task, d = task ? lvDeliveryOf(task) || lvDelivery(task) : null;
@@ -9659,14 +9716,18 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   function threadSubject(thread) { return caseByThread(thread)?.subject || S.threads?.get(thread)?.detail?.thread?.subject || null; }
   /**
    * Ursprunget för en uppgift ur ett ärende (felrapport 1538bd6e): ämnesraden,
-   * vem som skickade, när det kom in och tråden. Ur posten (In) eller en
-   * hämtad tråd; saknas båda står det som finns.
+   * vem som skickade, när det kom in och tråden. Först det som sparades vid
+   * bedömningen (t.source, 2026-10-02), sedan posten (In, 60 dagar) eller en
+   * hämtad tråd; saknas allt står det som finns. En okänd avsändare sparas
+   * bara som domän.
    */
   function caseSource(t) {
     if (!t?.thread) return null;
-    const c = caseByThread(t.thread), d = S.threads?.get(t.thread)?.detail?.thread;
+    const s = t.source || null, c = caseByThread(t.thread), d = S.threads?.get(t.thread)?.detail?.thread;
     const first = asArr(d?.posts).find((p) => !p.internal);
-    return { thread: t.thread, subject: c?.subject || d?.subject || null, from: c?.party || first?.from || null,
+    const saved = s ? (s.from_name || s.from || (s.from_domain ? `någon på ${s.from_domain}` : null)) : null;
+    return { thread: t.thread, subject: s?.subject || c?.subject || d?.subject || null,
+      from: saved || c?.party || first?.from || null,
       received: t.received || c?.since || first?.at || null };
   }
   /** Ärendets egen rubrik: ämnesraden, annars hela tillfället, aldrig avklippt. */
@@ -11227,8 +11288,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     state.handoverTask = null; closeDialog();
     return lvSave({ key: `task|${h.task}`, what: "lämna över", text: `föreslaget för ${name} · sparar…`,
       change: () => {}, undo: () => {},
-      save: () => call("execute_step", { task: h.task, handover_to: to, ...(note ? { note } : {}),
-        confirmed: true, user_approval: `Ja i vyn: lämna över hela uppgiften till ${name}` }),
+      save: () => previewThenConfirm("execute_step", { task: h.task, handover_to: to, ...(note ? { note } : {}) },
+        `Ja i vyn: lämna över hela uppgiften till ${name}`),
       done: `${h.n} steg föreslagna för ${name}. Du står kvar tills ${name} tar emot dem.`,
       refresh: lvDeliveryOf(h.task) ? { delivery: lvDeliveryOf(h.task).id } : { task: h.task } });
   }
@@ -11240,8 +11301,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     state.handover = null; closeDialog();
     return lvSave({ key: `step|${h.task}|${h.step}`, what: "lämna över", text: `föreslaget för ${personName(to)} · sparar…`,
       change: () => {}, undo: () => {},
-      save: () => call("execute_step", { task: h.task, step: h.step, handover_to: to, ...(note ? { note } : {}),
-        confirmed: true, user_approval: `Ja i vyn: lämna över till ${personName(to)}` }),
+      save: () => previewThenConfirm("execute_step", { task: h.task, step: h.step, handover_to: to, ...(note ? { note } : {}) },
+        `Ja i vyn: lämna över till ${personName(to)}`),
       done: `Steget är föreslaget för ${personName(to)} och flyttas när ${personName(to)} har tagit emot det.`,
       refresh: lvDeliveryOf(h.task) ? { delivery: lvDeliveryOf(h.task).id } : { task: h.task } });
   }
@@ -12504,6 +12565,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         state.obj = null; await afterWrite(ans === "ja" ? "Svaret är sparat. Frågan är stängd." : "Svaret är sparat."); } catch (e) { fail("Svaret sparades inte", e); } }); }
     if (ds.handover) return answerHandover(t, ds.handover);
     if (ds.start) return startStep(t, ds.start === "true");
+    if (ds.continueAnyway) return continueAnywayDialog();
+    if (ds.continueAnywaySave) return continueAnywaySave(t);
     // Arbetsytan (Daniel P 2026-10-01): delarna fylls på en i taget, i valfri ordning.
     if (ds.wsToggle) { const k = `ws|${ds.wsToggle}`; LV.open[k] = !LV.open[k]; return render(); }
     if (ds.wsReport) return wsReportDialog(ds.wsReport);
