@@ -1292,7 +1292,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "1bb7949", published: "2026-10-02" };
+  const SIDA = { version: "d57dca8", published: "2026-10-02" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1754,11 +1754,17 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   const customerList = () => [...new Map(tasks().filter((t) => t.customer?.id).map((t) => [t.customer.id, t.customer])).values()];
   const peopleList = () => [...new Map(tasks().flatMap((t) => t.steps).filter((st) => st.responsible?.id).map((st) => [st.responsible.id, st.responsible])).values()];
 
+  /**
+   * Bläddringen ger 10 poster utan `limit` (src/mcp/tools/search.ts, BROWSE_LIMIT).
+   * Vyn behöver hela biblioteket: utan gränsen kom bara de tio mest använda
+   * anropen, och inga metoder (Daniel P 2026-10-02: «metoderna syns inte»).
+   */
+  const LIB_LIMIT = 10000;
   /** Biblioteket med alla sorter — bara när något behöver det, inte vid varje återkomst. */
   function loadLib() {
     if (S.libLoading || !mcp) return;
     S.libLoading = true;
-    withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort" }), 45000, "Biblioteket")
+    withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort", limit: LIB_LIMIT }), 45000, "Biblioteket")
       // Metoder ritas om när biblioteket kommit; andra ytor behöver det inte
       // och ritas inte om medan någon skriver där.
       .then((lib) => { S.lib = lib; S.libError = null; S.at.lib = Date.now(); }).catch((e) => { S.libError = e; })
@@ -1943,7 +1949,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   }
   const ensureLeadTimes = () => { if (!S.lead) loadLeadTimes(); };
   const ensureLib = () => { if (!S.lib && !S.libError) return;
-    if (!S.lib) { S.libError = null; withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort" }), 45000, "Biblioteket")
+    if (!S.lib) { S.libError = null; withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort", limit: LIB_LIMIT }), 45000, "Biblioteket")
       .then((lib) => { S.lib = lib; }).catch((e) => { S.libError = e; }).finally(() => render()); } };
 
   /** Det som går att ändra på ett steg, som det står i dag. */
@@ -10004,7 +10010,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     });
   }
   async function refreshLib() {
-    try { S.lib = await withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort" }), 45000, "Biblioteket"); } catch { /* står kvar */ }
+    try { S.lib = await withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort", limit: LIB_LIMIT }), 45000, "Biblioteket"); } catch { /* står kvar */ }
   }
   /** Byt vem som gör en del. Människa byts här; Claude och kod resoneras fram i vanliga chatten. */
   function peKind(i, kind) {
@@ -12476,7 +12482,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.ltset) return busy(t, async () => { try { await setLeadTime(ds.ltset); } catch (e) { fail("Ledtiden sattes inte", e); } });
     if (ds.ltsetall) return setAllLeadTimes(t);
     if (ds.reloadLib) { S.lib = null; S.libError = null; render();
-      return withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort" }), 45000, "Biblioteket")
+      return withTimeout(call("search", { do: "browse", include: ["call", "operation", "atom_proposal", "method", "method_variant", "step"], format: "kort", limit: LIB_LIMIT }), 45000, "Biblioteket")
         .then((lib) => { S.lib = lib; }).catch((e) => { S.libError = e; }).finally(render); }
     if (ds.copybuild) { const cmd = `npm run build:atom -- --from-proposal ${ds.copybuild}`;
       return (navigator.clipboard?.writeText(cmd) ?? Promise.reject(new Error("urklippet går inte att nå här")))
