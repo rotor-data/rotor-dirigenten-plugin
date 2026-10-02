@@ -1001,6 +1001,12 @@ main[data-w="l"] .pp-cols { grid-template-columns: minmax(0, 1fr) 320px; } main[
 .st-now .st-what { margin: 4px 0 6px; color: var(--text-2); }
 .st-now .st-do { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
 .st-now .st-line { margin: 0 0 6px; }
+.st-facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 6px 0 12px; }
+.st-facts dt { font-weight: 600; color: var(--text-2); }
+.st-facts dd { margin: 0; }
+.st-miss { color: var(--amber); font-weight: 600; }
+.st-fix { display: inline-flex; gap: 6px; flex-wrap: wrap; margin-left: 6px; vertical-align: middle; }
+@media (max-width: 560px) { .st-facts { grid-template-columns: 1fr; gap: 2px; } .st-facts dd { margin-bottom: 8px; } .st-fix { margin: 4px 0 0; } }
 .st-now .st-acts { margin-top: 8px; flex-wrap: wrap; }
 .st-now .st-side { display: flex; flex-wrap: wrap; gap: 2px var(--s1); margin: 6px 0 2px -8px; }
 a { color: var(--accent-ink); }
@@ -1019,6 +1025,14 @@ button.chip.accent { border-color: var(--accent); }
 .ws-row .nm { flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
 .ws-row .ws-open { white-space: nowrap; }
 .ws-body { padding: 0 0 12px; }
+.asg { border-left: 3px solid var(--accent, #c96442); padding: 8px 0 8px 12px; margin: 4px 0 12px; }
+.asg.missing { border-left-color: var(--amber, #b7791f); }
+.asg ol, .asg ul { margin: 4px 0 8px; padding-left: 22px; }
+.asg li { margin: 3px 0; line-height: 1.45; }
+.asg-main { font-weight: 600; margin: 2px 0 8px; }
+.asg-diff { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.asg-diff .preview { max-height: 36vh; overflow: auto; }
+@media (max-width: 640px) { .asg-diff { grid-template-columns: 1fr; } }
 .ws-drafts { margin: 4px 0 8px; padding-left: 18px; }
 .ws-assign { margin: 4px 0 10px; }
 .ws-assign .lv-text { max-height: 50vh; overflow: auto; }
@@ -1278,7 +1292,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "03df953", published: "2026-10-01" };
+  const SIDA = { version: "ec0ac71", published: "2026-10-02" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1979,7 +1993,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       + `<label class="field"><span>Ledtid i arbetsdagar ${cur.lead !== cur.orig.lead ? originMark("decided") : cur.leadOrigin ? originMark(ORIGIN_OF[cur.leadOrigin] || cur.leadOrigin) : ""}</span><input type="number" min="0" step="1" data-edfield="lead" value="${cur.lead ?? ""}" placeholder="${cur.added ? "som steget har i registret" : "t.ex. 2"}"></label></div>`
       + `<label class="field" style="margin-top:12px"><span>Så görs det (en rad per moment)</span><textarea data-edfield="how" rows="4" ${target ? "" : "disabled"} placeholder="${target ? "Skriv momenten, eller låt Claude föreslå" : ""}">${esc(cur.how)}</textarea></label>`
       + (target ? `<div class="bar-actions" style="margin-top:6px"><button class="btn sm ai" data-edhow="1">${SP} Föreslå hur det görs</button><span class="meta">utifrån namnet och vad steget lämnar · gäller alla som kör steget</span></div>`
-        : `<div class="meta" style="margin-top:4px">${p ? "Steget har ingen molekyl som görs av en människa eller Claude, så det finns inget recept att skriva här."
+        : `<div class="meta" style="margin-top:4px">${p ? "Steget har inget delmoment som görs av en människa eller Claude, så det finns inget recept att skriva här."
           : "Hur steget görs sparas på dess molekyl. Steget används inte i planen än, så vyn vet inte vilken — ändra det när steget används."}</div>`)
       + `<div class="meta" style="margin-top:8px">Krav före steget: ${(libById(cur.id)?.input || []).length ? esc(libById(cur.id).input.join(" · ")) : "inga"}</div>`
       + (sh.length ? `<div class="shared" style="margin-top:12px"><div class="label">Steget används också i ${sh.map((x) => `«${esc(x.label)}»`).join(", ")}</div><div class="meta">Namn, ansvarig, ledtid och hur det görs ändras där också. En egen kopia bara för den här metoden går inte att göra än.</div></div>` : "")
@@ -2071,7 +2085,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       try {
         const r = await sample.json([`Skriv hur steget «${x.label}» i metoden «${m.label}» görs, som moment i ordning. Svenska, verb först, en handling per moment, högst åtta.`,
           p?.summary ? `Stegets beskrivning: ${p.summary}` : "",
-          (p?.leaves || []).length ? `Steget lämnar: ${p.leaves.map((lv) => lbl(lv)).join(", ")}` : "",
+          (p?.leaves || []).length ? `Steget lämnar: ${p.leaves.map((lv) => outName(lv)).join(", ")}` : "",
           x.how ? `Momenten i dag:\n${x.how}` : "Steget har inga moment beskrivna i dag.",
           `Stegen runt omkring: ${ed.steps.filter((y) => !y.removed).map((y) => y.label).join(" → ")}`,
           "Hitta inte på system eller fakta som inte står här. Är underlaget för tunt: skriv det du vet och markera osäkra moment med (?).",
@@ -2368,7 +2382,28 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   /* ── agendan (servern räknar den i skarp drift) ── */
   /* Serverns former (B-210). Små uppslag, inga uträkningar. */
   const lbl = (n, r = "") => (n && typeof n === "object" ? n.label : n) || r;
-  const tasks = () => S.plan?.tasks ?? [];
+  /*INS-VIEW-BEGIN*/
+  /**
+   * Instruktionens sex fält heter på engelska sedan 2026-09-29 (purpose, read_first,
+   * how_to, answer_format, must_not, ask_when; src/registry/instruction-names.ts).
+   * Vyn läser de engelska och har de svenska kvar som reserv: båda namnen fylls,
+   * det engelska vinner. test/stegsida.test.ts kör blocket.
+   */
+  const INS_KEYS = [["purpose", "syfte"], ["read_first", "laes_foerst"], ["how_to", "saa_goer_du"], ["answer_format", "svarsform"], ["must_not", "far_inte"], ["ask_when", "fraaga_naer"]];
+  function viewInstruction(i) {
+    if (!i || typeof i !== "object" || Array.isArray(i)) return i;
+    for (const [en, sv] of INS_KEYS) { const v = i[en] ?? i[sv]; if (v !== undefined && v !== null) { i[en] = v; i[sv] = v; } }
+    return i;
+  }
+  function viewStepInstructions(s) {
+    for (const k of ["instruktion", "method_instruktion", "customer_instruktion"]) if (s?.[k]) viewInstruction(s[k]);
+    return s;
+  }
+  /*INS-VIEW-END*/
+  const INS_SEEN = new WeakSet();
+  const tasks = () => { const ts = S.plan?.tasks ?? [];
+    if (Array.isArray(ts) && !INS_SEEN.has(ts)) { INS_SEEN.add(ts); for (const t of ts) for (const st of t.steps || []) viewStepInstructions(st); }
+    return ts; };
   const opens = () => S.plan?.open ?? [];
   const taskById = (id) => tasks().find((t) => t.id === id) ?? null;
   const stepOf = (t, id) => t?.steps.find((s) => s.step === id) ?? null;
@@ -4676,7 +4711,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const leaves = s.leaves || [];
     return `<div class="card section" style="margin-top:16px"><h2>Det steget lämnar <span class="meta">sparas när du markerar klart</span></h2>`
       + (leaves.length ? leaves.map((lv) => { const key = lv.name || lv.label; const v = inp.parts[key] || {};
-        return `<div class="deliver" data-lvdrop="${esc(key)}"><b>${esc(lbl(lv))}</b><textarea rows="3" data-lvtext="${esc(key)}" placeholder="Skriv det här, ladda upp eller släpp en fil här, eller ange var det finns">${esc(v.text || "")}</textarea>`
+        return `<div class="deliver" data-lvdrop="${esc(key)}"><b>${esc(outName(lv))}</b><textarea rows="3" data-lvtext="${esc(key)}" placeholder="Skriv det här, ladda upp eller släpp en fil här, eller ange var det finns">${esc(v.text || "")}</textarea>`
           + `<div class="bar-actions"><label class="btn sm">${ic("upload")} Ladda upp fil<input type="file" hidden data-lvfile="${esc(key)}"></label>`
           + (t.customer?.id ? `<button class="btn sm" data-lvbank="${esc(key)}">${ic("folder")} Välj ur filbanken</button>` : "")
           + `<input class="field-inline" data-lvlink="${esc(key)}" value="${esc(v.link || "")}" placeholder="…eller var det finns: länk eller plats">`
@@ -4819,7 +4854,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       const k = kindOf(s);
       const qs = opens().filter((o) => o.task === t.id);
       const kindTxt = { code: "Kod gör steget", llm: "Claude gör steget, du godkänner", human: "En människa gör steget", mixed: mixedKindText(s), ext: "Kunden eller en partner gör steget" }[k] || "";
-      const how = s.instruktion?.saa_goer_du?.length ? s.instruktion.saa_goer_du
+      viewStepInstructions(s);
+      const how = asArr(s.instruktion?.how_to).length ? s.instruktion.how_to
         : s.recipe?.how ? String(s.recipe.how).split(/\n+/).map((x) => x.replace(/^\d+[.)]\s*/, "")).filter(Boolean) : null;
       const started = s.started ? `<span class="chip blue">påbörjat ${short(s.started.at)}${s.started.by_named ? ` av ${esc(s.started.by_named.label)}` : ""}</span>` : "";
       const ws = s.workspace || null;
@@ -4842,10 +4878,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       // Ordningen (Daniel P 2026-10-01: «själva actionen är längst ner. Det behöver vara överblickbart»):
       // vad steget är och vad du gör nu, med knappen — sedan delarna, receptet och prompterna, sist detaljerna.
       const nowCard = `<div class="card section st-now" id="st-now"><div class="pp-k">Det du ska göra nu</div>`
-        + (s.summary && String(s.summary).trim().replace(/[.!]+$/, "").toLowerCase() !== String(s.label).trim().toLowerCase() ? `<p class="st-what">${esc(s.summary)}</p>` : "")
+        + stepFacts(t, s)
         + `<p class="st-do">${esc(stepNowText(t, s, k))}</p>`
-        + (s.enough ? `<p class="meta st-line"><b>Så vet du att du är klar:</b> ${esc(s.enough)}</p>` : "")
-        + (s.approver && !s.done ? `<p class="meta st-line"><b>Ja från ${esc(approverName(t, s.approver))}</b> behövs${s.approval_why ? `, för att ${esc(s.approval_why)}` : ""}.</p>` : "")
         + qs.filter((o) => o.step === s.step).map((o) => `<div class="need" style="cursor:pointer" data-open-q="${esc(o.id)}"><span class="no">${ic("stop")}</span><span class="t">${esc(headlineForOpen(o))}</span><button class="btn sm" data-open-q="${esc(o.id)}">Svara</button></div>`).join("")
         + stepWaitBanner(t, s)
         + ipEntry(t, s) + doArea
@@ -4863,36 +4897,41 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       const own = ownInstruction(t, s), deps = !!(deliveryOfTask(t) && !deliveryOfTask(t).implicit && stepWaitsOn(t, s).length);
       const editAt = state.sedit?.key === skey ? state.sedit.at || "all" : null;
       const editBtn = (at) => s.done && at !== "all" ? "" : `<button class="btn quiet sm" data-sedit="${esc(skey)}" data-sedit-at="${at}" title="Ändra texten i det här blocket">Ändra</button>`;
-      const howOf = (ins) => asArr(ins?.saa_goer_du).length ? ins.saa_goer_du : asArr(ins?.how_to);
+      const howOf = (ins) => asArr(ins?.how_to).length ? ins.how_to : asArr(ins?.saa_goer_du);
       const howList = (xs) => xs?.length ? `<ol class="how">${((n) => xs.map((h) => /^\*[^*].*\*$/.test(h.trim()) ? `<li class="how-sec">${mdInline(h)}</li>` : `<li value="${++n}">${mdInline(h)}</li>`).join(""))(0)}</ol>` : "";
       const promptBox = prompts.length ? `<div class="label">Prompterna · klistras in ordagrant</div>${prompts.map((x, n) => `<div class="st-prompt"><textarea readonly rows="${Math.min(6, 1 + Math.ceil(x.length / 90))}" id="st-prompt-${n}" aria-label="Prompt ${n + 1}">${esc(x)}</textarea><button class="btn sm" data-copy-el="st-prompt-${n}">Kopiera</button></div>`).join("")}` : "";
       const layerHead = (tag, words, at) => `<div class="st-lh">${tag}<span class="meta">${words}</span>${editBtn(at)}</div>`;
       const mi = custOwn ? s.method_instruktion || null : null, ci = custOwn ? s.customer_instruktion || s.instruktion || null : null;
       const genHow = custOwn ? (howOf(mi).length ? howOf(mi) : lines(s.recipe?.how)) : how;
-      const general = `<div class="st-layer">${layerHead(`<span class="chip lt" title="Metoden: gäller alla kunder">Allmänt</span>`, "så görs steget hos alla kunder", "all")}`
+      const genPurpose = custOwn ? mi?.purpose : s.instruktion?.purpose;
+      const genEmpty = !genPurpose && !s.recipe?.needs && !genHow?.length && !s.recipe?.check && (custOwn || !prompts.length);
+      const general = genEmpty && editAt !== "all" ? "" : `<div class="st-layer">${layerHead(`<span class="chip lt" title="Metoden: gäller alla kunder">Allmänt</span>`, custOwn ? `gäller inte ${esc(cust)}, som har sin egen text ovan` : "så görs steget hos alla kunder", "all")}`
         + (editAt === "all" ? stepTextCard(t, s) : "")
-        + ((custOwn ? mi?.syfte || mi?.purpose : s.instruktion?.syfte) ? `<p style="margin:0 0 8px">${esc(custOwn ? mi.syfte || mi.purpose : s.instruktion.syfte)}</p>` : "")
+        + (k === "llm" && !custOwn && s.instruktion ? aiInstructionHtml(s.instruktion, esc, refName) : genPurpose ? `<p style="margin:0 0 8px">${esc(genPurpose)}</p>` : "")
         + (s.recipe?.needs ? `<div class="label">Vad behövs</div><div class="st-pre">${mdInline(s.recipe.needs)}</div>` : "")
-        + (genHow?.length ? `<div class="label">Så gör du</div>${howList(genHow)}` : `<div class="meta">Ingen beskrivning än.</div>`)
+        + (genHow?.length && !(k === "llm" && !custOwn && s.instruktion) ? `<div class="label">Momenten</div>${howList(genHow)}` : "")
         + (s.recipe?.check ? `<div class="label">Kontrollera</div><div class="st-pre">${mdInline(s.recipe.check)}</div>` : "")
         + (custOwn ? "" : promptBox)
-        + ((s.leaves || []).length ? `<div class="meta" style="margin-top:8px">Lämnar: ${s.leaves.map((lv) => esc(lbl(lv))).join(", ")}</div>` : "")
-        + (custOwn ? `<p class="meta st-line">För ${esc(cust)} gäller kundens egen text nedan i stället för den här.</p>` : "") + `</div>`;
+        + `</div>`;
       const customer = custOwn || diffs.length || editAt === "customer" ? `<div class="st-layer cust">${layerHead(`<span class="chip lt" title="Kundens sätt: gäller bara ${esc(cust)}">För ${esc(cust)}</span>`, custOwn ? "kundens egen text, gäller i stället för den allmänna" : "bara det som skiljer", "customer")}`
         + (editAt === "customer" ? stepTextCard(t, s) : "")
         + (diffs.length ? `<p class="meta st-line">${diffs.map(esc).join(" · ")}</p>` : "")
-        + (custOwn ? ((ci?.syfte || ci?.purpose) ? `<p style="margin:0 0 8px">${esc(ci.syfte || ci.purpose)}</p>` : "")
-          + (howOf(ci).length ? `<div class="label">Så gör du</div>${howList(howOf(ci))}` : "")
-          + (asArr(ci?.far_inte || ci?.must_not).length ? `<div class="label">Får inte</div><ul class="how">${asArr(ci.far_inte || ci.must_not).map((x) => `<li>${mdInline(x)}</li>`).join("")}</ul>` : "")
-          + (asArr(ci?.fraaga_naer || ci?.ask_when).length ? `<div class="label">Fråga när</div><ul class="how">${asArr(ci.fraaga_naer || ci.ask_when).map((x) => `<li>${mdInline(x)}</li>`).join("")}</ul>` : "")
+        + (custOwn ? (ci?.purpose ? `<p style="margin:0 0 8px">${esc(ci.purpose)}</p>` : "")
+          + (asArr(ci?.read_first).length ? `<div class="label">Vad behövs</div><ul class="how">${asArr(ci.read_first).map((x) => `<li>${mdInline(refName(x))}</li>`).join("")}</ul>` : "")
+          + (howOf(ci).length ? `<div class="label">Momenten</div>${howList(howOf(ci))}` : "")
+          + (asArr(ci?.must_not).length ? `<div class="label">Får inte</div><ul class="how">${asArr(ci.must_not).map((x) => `<li>${mdInline(x)}</li>`).join("")}</ul>` : "")
+          + (asArr(ci?.ask_when).length ? `<div class="label">Fråga när</div><ul class="how">${asArr(ci.ask_when).map((x) => `<li>${mdInline(x)}</li>`).join("")}</ul>` : "")
           + promptBox : "") + `</div>` : "";
       const assignment = own || s.added || deps || editAt === "task" ? `<div class="st-layer task">${layerHead(assignmentTag, "gäller bara den här leveransen", "task")}`
         + (editAt === "task" ? stepTextCard(t, s) : "")
         + (own ? `<p class="meta st-line">Egen instruktion: <button class="linkbtn" data-fget="${esc(own.ref)}" data-fname="${esc(own.name)}">${esc(own.name)}</button></p>` : "")
         + (s.added ? `<p class="meta st-line">Steget finns bara i den här uppgiften, inte i metoden.</p>` : "")
         + (deps ? `<p class="meta st-line">${waitsLine(t, s).replace(/^ · /, "")}</p>` : "") + `</div>` : "";
-      const recipeCard = `<div class="card section st-recipe"><h2>Så görs det${s.done || s.external ? "" : ` <button class="btn quiet sm" data-stype="${esc(t.id)}|${esc(s.step)}" title="Låt en människa, Claude eller kod göra steget">Byt typ</button>`}${s.done ? "" : ` <button class="btn quiet sm" data-wait-open="${esc(t.id)}|${esc(s.step)}" title="Steget väntar på ett besked utifrån: vem, frågan och när vi påminner">Väntar på …</button>`}${eclBtn("step", skey)}</h2>`
-        + general + customer + assignment
+      const noHow = !general && !customer && !assignment;
+      const recipeCard = `<div class="card section st-recipe"><h2>Så gör du${s.done || s.external ? "" : ` <button class="btn quiet sm" data-stype="${esc(t.id)}|${esc(s.step)}" title="Låt en människa, Claude eller kod göra steget">Byt typ</button>`}${s.done ? "" : ` <button class="btn quiet sm" data-wait-open="${esc(t.id)}|${esc(s.step)}" title="Steget väntar på ett besked utifrån: vem, frågan och när vi påminner">Väntar på …</button>`}${eclBtn("step", skey)}</h2>`
+        // Lagret som gäller står först: kundens egen text före den allmänna (Daniel P 2026-10-01).
+        + (custOwn ? customer + general : general + customer) + assignment + referencesBlock(s)
+        + (noHow ? `<div class="st-facts"><span class="st-miss">Receptet saknas — ta fram nu</span> ${s.done ? "" : `<span class="st-fix"><button class="btn sm" data-st-ask="${esc(skey)}|ett recept: vad som behövs, momenten och hur man kontrollerar">Be Claude ta fram det</button><button class="btn quiet sm" data-sedit="${esc(skey)}" data-sedit-at="all">Ändra texten</button></span>`}</div>` : "")
         + (deps ? "" : waitsLine(t, s) ? `<p class="meta st-line">${waitsLine(t, s).replace(/^ · /, "")}</p>` : "") + `</div>`;
       const moreOpen = state.pal?.task === t.id || LV.open[`stmore|${t.id}|${s.step}`];
       const details = `<details class="st-more" data-st-more="${esc(t.id)}|${esc(s.step)}"${moreOpen ? " open" : ""}><summary>Detaljer: material, kedjan och det som behövs</summary>`
@@ -4924,6 +4963,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         // Borta den dagen (F17): markeringen och handlingen bredvid, före allt annat.
         + (s.done ? "" : absenceOf(t.id, s.step).map((a) => `<div class="warnnote" style="margin:4px 0 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${ic("alert")} ${esc(absenceText(a))}.</span>`
           + `${absenceBtn(a)}${s.done ? "" : `<button class="btn sm quiet" data-dp-step="${esc(t.id)}|${esc(s.step)}">Detaljplanera…</button>`}</div>`).join(""))
+        + assignmentCard(t, s)
         + nowCard
         + basisCard(t, s)
         + (ws ? workspaceCard(t, s, ws) : "")
@@ -4997,7 +5037,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         + hoursPanel(m)
         + ids.map((id) => { const e = libById(id), p = stepInfo(id), lt = leadOf(id), k = stepKind(id), bl = stepBlockers(id);
           const facts = [p?.responsible ? `ansvarig ${esc(lbl(p.responsible))}` : "", lt ? `${lt.days} arbetsdag${lt.days === 1 ? "" : "ar"} ${originMark(ORIGIN_OF[lt.origin] || lt.origin)}` : "",
-            (p?.leaves || []).length ? `lämnar ${p.leaves.map((lv) => esc(lbl(lv))).join(", ")}` : ""].filter(Boolean).join(" · ");
+            (p?.leaves || []).length ? `lämnar ${p.leaves.map((lv) => esc(outName(lv))).join(", ")}` : ""].filter(Boolean).join(" · ");
           return row({ kind: kindMark(k), title: esc(e?.label || p?.label || "Steg"), attrs: `data-step-edit="${esc(id)}"`,
             act: `<button class="btn sm quiet" data-step-edit="${esc(id)}">Så görs det</button>`,
             why: (bl.length ? `<span style="color:var(--amber)">Kan inte köras: ${bl.map((b) => `«${esc(b.label)}»`).join(", ")} är inte byggt</span>` : esc(kindTxt[k] || "")) + (facts ? ` · ${facts}` : ""),
@@ -8446,7 +8486,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       LV.noResult = why.slice(0, 500);
     }
     if (leaves.length && !force.includes("leaves"))
-      return dialog(`<h2>${esc(s.label)} ska lämna ${leaves.map((lv) => esc(lbl(lv))).join(", ")}</h2><p>Steget blir klart när det finns. Öppna steget och lägg in det — eller, om det uttryckligen inte blev något, skriv varför.</p>`
+      return dialog(`<h2>${esc(s.label)} ska lämna ${leaves.map((lv) => esc(outName(lv))).join(", ")}</h2><p>Steget blir klart när det finns. Öppna steget och lägg in det — eller, om det uttryckligen inte blev något, skriv varför.</p>`
         + noResultField()
         + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-open-step="${esc(key)}">Öppna steget</button><button class="btn" data-quick-done="${esc(key)}" data-force="${esc(`${force} leaves`)}">Klart utan resultat</button></div>`);
     if (approver && !force.includes("approval"))
@@ -8490,7 +8530,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const filled = (lv) => { const k = lv.name || lv.label, v = inp.parts[k] || {}; return !!(v.text?.trim() || v.link?.trim() || inp.files[k] || inp.bank?.[k]); };
     const empty = leaves.filter((lv) => !filled(lv));
     if (empty.length && !force)
-      return dialog(`<h2>${empty.map((lv) => esc(lbl(lv))).join(", ")} är inte ifyllt</h2><p>Steget blir klart när det finns. Fyll i det — eller, om det uttryckligen inte blev något, skriv varför.</p>`
+      return dialog(`<h2>${empty.map((lv) => esc(outName(lv))).join(", ")} är inte ifyllt</h2><p>Steget blir klart när det finns. Fyll i det — eller, om det uttryckligen inte blev något, skriv varför.</p>`
         + noResultField()
         + `<div class="bar-actions"><button class="btn primary" data-close="1">Fyll i först</button><button class="btn" data-done="1" data-force="1">Klart utan resultat</button></div>`);
     const why = empty.length ? ($("#no-result-why")?.value || "").trim() : "";
@@ -8781,21 +8821,34 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         return `FEL från ${k}: ${v}: ${e?.message || e}${e?.code ? ` (${e.code})` : ""}. Kontrollera argumenten mot listan (namn, typ, * = måste anges) och ändra dem innan du försöker igen — gör inte om samma anrop.`;
       }
     } });
-  const aiMoments = (s) => (s.instruktion?.saa_goer_du?.length ? s.instruktion.saa_goer_du : ["Gör steget"]);
   const li = (xs) => (xs || []).map((x) => `<li>${esc(x)}</li>`).join("");
   /** Ett registernamn i en instruktion (core.asset.x) blir postens namn; hittas den inte blir ordet läsbart. */
   const refName = (x) => { const m = /^([a-z0-9_]+\.){2}[a-z0-9_]+(\s|$)/.exec(String(x)); if (!m) return x;
     const name = m[0].trim(), e = (S.lib?.entries || []).find((y) => y.name === name);
     return `${e?.label || name.split(".").pop().replace(/_/g, " ")}${String(x).slice(name.length)}`; };
-  function aiBrief(s) {
-    const i = s.instruktion, typ = (s.leaves || [])[0];
+  /*AI-BRIEF-BEGIN*/
+  /** Claude-stegets instruktion som vyn visar den: de sex fälten, engelska namn först, svenska som reserv. */
+  function aiInstructionHtml(i, esc, refName = (x) => x) {
+    const arr = (x) => (Array.isArray(x) ? x : x ? [x] : []).map(String).filter((y) => y.trim());
+    const li = (xs) => xs.map((x) => `<li>${esc(x)}</li>`).join("");
     const part = (label, body) => body ? `<div class="aipart"><div class="label">${label}</div>${body}</div>` : "";
-    return (i ? part("Syfte", esc(i.syfte || "")) + part("Läses först", (i.laes_foerst || []).length ? `<ul>${li(i.laes_foerst.map(refName))}</ul>` : "")
-        + part("Så gör Claude", `<ol>${li(aiMoments(s))}</ol>`) + part("Svarets form", esc(i.svarsform || ""))
-        + part("Får inte", (i.far_inte || []).length ? `<ul>${li(i.far_inte)}</ul>` : "") + part("Stannar och frågar när", (i.fraaga_naer || []).length ? `<ul>${li(i.fraaga_naer)}</ul>` : "")
+    const purpose = i.purpose ?? i.syfte, read = arr(i.read_first ?? i.laes_foerst), how = arr(i.how_to ?? i.saa_goer_du),
+      form = i.answer_format ?? i.svarsform, never = arr(i.must_not ?? i.far_inte), ask = arr(i.ask_when ?? i.fraaga_naer);
+    return part("Syfte", purpose ? esc(purpose) : "") + part("Läses först", read.length ? `<ul>${li(read.map(refName))}</ul>` : "")
+      + part("Så gör Claude", how.length ? `<ol>${li(how)}</ol>` : `<div class="meta">Momenten saknas: Claude har bara syftet att gå på.</div>`)
+      + part("Svarets form", form ? esc(form) : "") + part("Får inte", never.length ? `<ul>${li(never)}</ul>` : "")
+      + part("Stannar och frågar när", ask.length ? `<ul>${li(ask)}</ul>` : "");
+  }
+  /*AI-BRIEF-END*/
+  /** På stegsidan står instruktionen i «Så gör du»; här bara det som saknas. */
+  const aiBriefShort = (s) => stepIns(s) ? "" : aiBrief(s);
+  function aiBrief(s) {
+    const i = stepIns(s), typ = (s.leaves || [])[0];
+    const part = (label, body) => body ? `<div class="aipart"><div class="label">${label}</div>${body}</div>` : "";
+    return (i ? aiInstructionHtml(i, esc, refName)
       : s.recipe?.how || s.recipe?.text ? part("Instruktion", `<div class="posttext">${esc(s.recipe.how || s.recipe.text)}</div>`) + `<div class="meta">Instruktionen står i fri text. Läs igenom den innan du startar.</div>`
-        : `<div class="meta">Steget saknar instruktion i registret. Det går att starta, men Claude har bara stegets namn att gå på.</div>`)
-      + (typ ? part("Lämnar", esc(lbl(typ))) : "");
+        : `<div class="meta">Instruktionen saknas. Det går att starta, men Claude har bara stegets namn att gå på — ta fram den först med «Be Claude ta fram det» ovan.</div>`)
+      + (typ ? part("Lämnar", esc(outName(typ))) : "");
   }
   /**
    * Blandade steg (docs/kvar.md: «Kampanjlänkar och QR» har kod och Claude i
@@ -8819,6 +8872,52 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   }
   /** Receptets fetstil (**…**, menyvägar och knappar) och kursiva avsnittsrubriker (*…*), resten som text. */
   const mdInline = (x) => esc(x).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=$|[\s.,)])/g, "$1<i>$2</i>");
+  const aiMoments = (s) => (asArr(stepIns(s)?.how_to).length ? stepIns(s).how_to : ["Gör steget"]);
+  /** Instruktionen som gäller för steget: kundens egen när den finns, annars metodens. */
+  const stepIns = (s) => viewInstruction(s?.layers?.instruction === "customer" ? s.customer_instruktion || s.instruktion : s?.instruktion) || null;
+  /*
+   * Tillgångstypens namn i vyn (docs/orden-i-vyn.md): ett namn som bara är koden
+   * med mellanslag («print original») byts mot husets ord, annars står etiketten.
+   */
+  const OUT_WORDS = { print_original: "Tryckoriginal", proof_document: "Korrektur", image: "Bild", crm_record: "Post i kundregistret",
+    web_profile: "Webbprofil", brand_profile: "Varumärkesprofil", price_change: "Beslutad prisändring", document: "Dokument", text: "Text", pdf: "PDF",
+    research_plan: "Forskningsplanen", approved_tracks: "De godkända spåren", research_report: "Rapporten från spåret", synthesis: "Syntesen",
+    internal_basis: "Internt beslutsunderlag", external_basis: "Underlaget till kunden", write_back: "Det som skrivs tillbaka till kunskapsbanken" };
+  function outName(n) {
+    const label = lbl(n, ""), code = String(n?.name || "").split(".").pop();
+    if (code && OUT_WORDS[code] && (!label || label.toLowerCase() === code.replace(/_/g, " "))) return OUT_WORDS[code];
+    return label || (code ? code.replace(/_/g, " ") : "");
+  }
+  /** Det första i en text: en mening, utan listnummer. */
+  const firstSentence = (x) => { const l = lines(x)[0] || ""; const m = /^(.+?[.!?])(\s|$)/.exec(l); return (m ? m[1] : l).trim(); };
+  /**
+   * Stegsidans överdel, lika för alla stegtyper (Daniel P 2026-10-01: «det står liksom inte mycket alls
+   * om vad som faktiskt görs i steget»): vad du gör, vad steget lämnar, när du är klar och vems ja.
+   * Det som saknas säger det, med en väg till att ta fram det.
+   */
+  function stepFacts(t, s) {
+    const i = stepIns(s), skey = `${t.id}|${s.step}`;
+    const same = (x) => String(x || "").trim().replace(/[.!]+$/, "").toLowerCase() === String(s.label).trim().toLowerCase();
+    const what = [s.summary, i?.purpose, firstSentence(s.recipe?.text), firstSentence(s.recipe?.how)].find((x) => x && String(x).trim() && !same(x)) || "";
+    const outs = (s.leaves || []).map(outName).filter(Boolean);
+    const out = outs.length ? outs.join(", ") : i?.answer_format || "";
+    const done = s.enough || asArr(s.done_when).join(" · ") || (s.recipe?.check ? lines(s.recipe.check).join(" · ") : "");
+    const missing = (what2, ask) => s.done ? `<span class="meta">–</span>`
+      : `<span class="st-miss">saknas — ta fram nu</span> <span class="st-fix"><button class="btn sm" data-st-ask="${esc(skey)}|${esc(what2)}" title="${esc(ask)}">Be Claude ta fram det</button>`
+        + `<button class="btn quiet sm" data-sedit="${esc(skey)}" data-sedit-at="${s.layers?.instruction === "customer" ? "customer" : "all"}">Ändra texten</button></span>`;
+    const row = (k, v, what2, ask) => `<dt>${k}</dt><dd>${v ? esc(v) : missing(what2, ask)}</dd>`;
+    const yes = s.approver ? `${approverName(t, s.approver)}${s.approval_why ? `, för att ${s.approval_why}` : ""}` : "Inget ja behövs — du markerar steget klart själv.";
+    return `<dl class="st-facts">`
+      + row("Vad du gör", what, "vad du gör", "en mening om vad steget gör")
+      + row("Ut", out, "vad steget lämnar", "vad steget lämnar till stegen efter")
+      + row("Klar när", done, "när steget är klart", "så vet du att du är klar")
+      + `<dt>Ja från</dt><dd>${esc(yes)}</dd></dl>`;
+  }
+  /** Det Claude får när någon trycker «Be Claude ta fram det». */
+  function stepAskText(t, s, what) {
+    return `Steget «${s.label}» i «${taskTitle(t)}» för ${custName(t)} saknar ${what}. Läs steget med read (op: "context") och föreslå ${what}, kort och konkret, `
+      + `som en ändring jag ser och godkänner innan den sparas. Säg vilket lager den hör till: alla kunder, bara ${custName(t)} eller bara det här uppdraget.`;
+  }
   /** Vad du gör nu, i en mening. */
   function stepNowText(t, s, k) {
     if (s.done) return "Steget är klart.";
@@ -8834,10 +8933,12 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     }
     if (k === "ext") return `Väntar på ${lbl(s.waiting?.on, "någon utanför Rotor")}.`;
     if (k === "code") return "Kör steget. Du ser först vad som ändras, och inget ändras förrän du bekräftar.";
-    if (k === "llm") return "Claude gör steget. Läs det som kommer tillbaka, rätta det eller säg ja.";
+    if (k === "llm") return asArr(stepIns(s)?.how_to).length || s.recipe?.how || s.recipe?.text
+      ? "Claude gör steget. Läs det som kommer tillbaka, rätta det eller säg ja."
+      : "Instruktionen saknas: Claude har bara stegets namn att gå på. Ta fram den nu innan du startar.";
     if (k === "mixed") return mixedKindText(s);
-    const first = s.instruktion?.saa_goer_du?.[0] || String(s.recipe?.how || "").split(/\n+/).map((x) => x.replace(/^\d+[.)]\s*/, "")).find(Boolean);
-    return first ? `Börja med: ${first}` : "Gör steget enligt receptet nedan och markera det klart.";
+    const first = asArr(stepIns(s)?.how_to)[0] || String(s.recipe?.how || "").split(/\n+/).map((x) => x.replace(/^\d+[.)]\s*/, "")).find(Boolean);
+    return first ? `Börja med: ${first}` : "Receptet saknas: det står ingenstans hur steget görs. Ta fram det nu, eller gör steget och skriv vad du gjorde.";
   }
   /*
    * Underlaget (målbilden regel 13, Daniel P 2026-10-01: «det måste ju gälla
@@ -8854,7 +8955,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       `- ${b.missing ? "Saknas: " : ""}${b.label}${b.note ? ` (${b.note})` : ""}${call(b.read)}${b.text ? `\n  ${b.text.replace(/\n/g, "\n  ")}` : ""}`)];
   }
   /*BASIS-LINES-END*/
-  const BASIS_GROUP = { result: "Det tidigare steg lämnat", material: "Material", important: "Viktiga dokument", customer: "Kundens sätt" };
+  const BASIS_GROUP = { assignment: "Uppdraget", result: "Det tidigare steg lämnat", material: "Material", important: "Viktiga dokument", customer: "Kundens sätt" };
   /** Läskällan för en post: «txt|<id>|<namn>» eller «file|<ref>|<namn>» (samma nycklar som läsläget). */
   const basisKey = (b) => !b.read ? null : b.read.args.op === "content_get" ? `txt|${b.read.args.id}|${b.label}` : `file|${b.read.args.ref}|${b.label}`;
   function basisCard(t, s) {
@@ -8930,6 +9031,210 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const base = `wsp-${String(key).replace(/[^a-z0-9]+/gi, "-")}-${String(text.length)}`;
     return `<div class="label">Prompterna · klistras in ordagrant</div>` + ps.map((x, n) => `<div class="st-prompt"><textarea readonly data-nodraft rows="${Math.min(8, 1 + Math.ceil(x.length / 90))}" id="${base}-${n}" aria-label="Prompt ${n + 1}">${esc(x)}</textarea><button class="btn sm" data-copy-el="${base}-${n}">Kopiera</button></div>`).join("");
   }
+  /*
+   * Uppdraget (målbilden: varje steg har ett synligt och redigerbart uppdrag,
+   * Daniel P 2026-10-02: «Frågorna är ju alltså själva underlaget till det som
+   * ska ske där»). Uppdraget är det konkreta innehållet som styr just det här
+   * utförandet — frågebatteriet i en research, briefen till en text,
+   * specifikationen till en design, agendan till ett möte, ändringsplanen.
+   * Det står överst, före «Så gör du». Det läses ur texten som är sparad som
+   * uppdrag (kind instruction) på steget eller delen; ett avsnitt med en
+   * uppdragsrubrik («Frågebatteriet», «Brief», …) är uppdraget, annars hela
+   * texten. Spara ger en ny version av samma text (content_save med id).
+   * parseAssignment och assignmentReplace prövas i test/uppdraget.test.ts.
+   */
+  /*ASSIGNMENT-BEGIN*/
+  const ASG_HEAD = /fr[åa]gebatteri|uppdraget|\bbrief(en)?\b|specifikation|agenda|ändringsplan|forskningsfr[åa]g/i;
+  const ASG_GROUPS = [["main", /huvudfr[åa]g|main question/i], ["subs", /delfr[åa]g|^fr[åa]gor|^fr[åa]gorna|questions/i],
+    ["scope", /avgr[äa]nsning|utanf[öo]r|scope/i], ["sources", /k[äa]llor|k[äa]llorna|sources/i]];
+  function parseAssignment(text) {
+    const src = String(text || "").replace(/\r\n/g, "\n"), ls = src.split("\n");
+    const heading = (l) => { const h = /^(#{1,6})\s+(.+?)\s*#*\s*$/.exec(l); if (h) return { level: h[1].length, text: h[2] };
+      const b = /^\s*(?:\*\*|__)(.+?)(?:\*\*|__)\s*:?\s*$/.exec(l); if (b) return { level: 7, text: b[1] };
+      const c = /^([A-ZÅÄÖ][^.!?:]{0,60}):\s*$/.exec(l.trim()); return c ? { level: 8, text: c[1] } : null; };
+    let at = -1, level = 0, title = "", fence = false;
+    for (let n = 0; n < ls.length; n++) {
+      if (/^\s*```/.test(ls[n])) { fence = !fence; continue; }
+      const h = !fence && heading(ls[n]);
+      if (h && ASG_HEAD.test(h.text)) { at = n; level = h.level; title = h.text.replace(/[*_:]+$/g, "").trim(); break; }
+    }
+    let from = 0, to = ls.length;
+    if (at >= 0) {
+      from = at + 1; fence = false;
+      for (let n = from; n < ls.length; n++) {
+        if (/^\s*```/.test(ls[n])) { if (level > 6 && !fence) { to = n; break; } fence = !fence; continue; }
+        if (fence) continue;
+        const h = heading(ls[n]);
+        // Ett #-avsnitt slutar vid nästa rubrik på samma nivå eller högre; en fet rad eller etikett vid nästa
+        // #-rubrik, en etikett som inte är en av uppdragets egna, en promptrad eller ett kodblock.
+        if (h && level <= 6 && h.level <= level) { to = n; break; }
+        if (level > 6 && h && (h.level <= 6 || !ASG_GROUPS.some(([, re]) => re.test(h.text)))) { to = n; break; }
+        if (level > 6 && /^prompt/i.test(ls[n].trim())) { to = n; break; }
+      }
+    }
+    while (to > from && !ls[to - 1].trim()) to--;
+    const body = ls.slice(from, to).join("\n");
+    const start = from ? ls.slice(0, from).join("\n").length + 1 : 0;
+    const out = { title: title || null, found: at >= 0, body, start, end: start + body.length, main: null, subs: [], scope: [], sources: [], other: [] };
+    let group = null; fence = false;
+    for (const raw of ls.slice(from, to)) {
+      if (/^\s*```/.test(raw)) { fence = !fence; continue; }
+      if (fence) continue;
+      const l = raw.trim(); if (!l) continue;
+      const h = heading(raw);
+      const plain = l.replace(/^(?:\*\*|__)([^*_]+?)(?:\*\*|__)/, "$1");
+      const lab = h ? h.text : (/^([^:?]{2,40}):\s*(.*)$/.exec(plain) || [])[1];
+      const g = lab && ASG_GROUPS.find(([, re]) => re.test(lab.trim()));
+      if (g) {
+        group = g[0];
+        const rest = h ? "" : plain.replace(/^[^:?]{2,40}:\s*/, "").trim();
+        if (rest) { if (group === "main") { out.main = rest; group = "subs"; } else out[group].push(rest); }
+        continue;
+      }
+      if (h) { group = null; continue; }
+      const item = /^(?:[-*•+]|\d+[.)])\s+(.*)$/.exec(l), v = (item ? item[1] : l).replace(/^\[[ x]\]\s*/i, "").trim();
+      if (!v) continue;
+      if (group === "main") { out.main = out.main ? `${out.main} ${v}` : v; continue; }
+      if (group) { out[group].push(v); continue; }
+      if (item || /\?$/.test(v)) out.subs.push(v); else out.other.push(v);
+    }
+    return out;
+  }
+  /** Den nya texten: avsnittet bytt, och samma frågor i kodblocken (prompterna) bytta mot de nya. */
+  function assignmentReplace(text, oldBody, newBody) {
+    const src = String(text || ""), a = parseAssignment(src), nb = String(newBody).replace(/\s+$/, "");
+    let next = a.found ? src.slice(0, a.start) + nb + src.slice(a.end) : nb + "\n";
+    const before = parseAssignment(oldBody), after = parseAssignment(nb);
+    const oldQs = [before.main, ...before.subs].filter(Boolean), newQs = [after.main, ...after.subs].filter(Boolean);
+    if (!oldQs.length || !newQs.length) return next;
+    return next.replace(/```([^\n]*)\n([\s\S]*?)```/g, (whole, lang, code) => {
+      const at = oldQs.map((q) => [code.indexOf(q), q]).filter(([i]) => i >= 0);
+      if (at.length < Math.max(1, Math.ceil(oldQs.length / 2))) return whole;
+      const first = Math.min(...at.map(([i]) => i)), last = Math.max(...at.map(([i, q]) => i + q.length));
+      const lineStart = code.lastIndexOf("\n", first) + 1, nl = code.indexOf("\n", last), lineEnd = nl < 0 ? code.length : nl;
+      const prefix = (/^\s*(\d+[.)]|[-*•])\s+/.exec(code.slice(lineStart)) || [])[1] || "-";
+      // Huvudfrågan följer bara med där den stod; annars byts delfrågorna.
+      const qs = before.main && code.includes(before.main) ? newQs : after.subs.length ? after.subs : newQs;
+      const lines2 = qs.map((q, n) => `${/^\d/.test(prefix) ? `${n + 1}.` : prefix} ${q}`).join("\n");
+      return "```" + lang + "\n" + code.slice(0, lineStart) + lines2 + code.slice(lineEnd) + "```";
+    });
+  }
+  /** Ett godkänt spår som uppdragstext, när delen saknar en egen. */
+  function trackAssignmentText(tr) {
+    if (!tr) return "";
+    return [tr.main_question ? `Huvudfråga: ${tr.main_question}` : "", tr.questions.length ? `Delfrågor:\n${tr.questions.map((q, n) => `${n + 1}. ${q}`).join("\n")}` : "",
+      tr.scope.length ? `Avgränsning:\n${tr.scope.map((x) => `- ${x}`).join("\n")}` : "", tr.sources.length ? `Källor:\n${tr.sources.map((x) => `- ${x}`).join("\n")}` : ""].filter(Boolean).join("\n\n");
+  }
+  /*ASSIGNMENT-END*/
+  /**
+   * Uppdraget för ett steg eller en del: { doc (text-id eller null), text, a (tolkningen),
+   * from: "text" | "track" | null, loading }. Senaste versionen, hämtad vid behov.
+   */
+  function assignmentOf(t, s, p) {
+    const ids = p ? asArr(p.assignment).filter((d) => !/^(bank|extern):/.test(String(d.id || ""))).map((d) => ({ id: d.id, name: d.name }))
+      : asArr(s.basis).filter((b) => b.group === "assignment" && b.read?.args?.id).map((b) => ({ id: b.read.args.id, name: b.label }));
+    let loading = false, first = null;
+    for (const d of ids) {
+      if (mcp) lvText(d.id);
+      const c = LV.texts.get(d.id);
+      if (!c) { loading = true; continue; }
+      if (c.error) continue;
+      const a = parseAssignment(c.markdown || "");
+      const hit = { doc: d.id, name: d.name, text: c.markdown || "", a, from: "text", content: c };
+      if (a.found) return hit;
+      first = first || hit;
+    }
+    const tr = trackAssignmentText(p?.track);
+    if (first && (first.a.main || first.a.subs.length || !tr)) return first;
+    if (tr) return { doc: first?.doc || null, name: first?.name || null, text: first?.text || "", a: parseAssignment(tr), from: "track", trackText: tr, content: first?.content || null };
+    return { doc: null, text: "", a: null, from: null, loading };
+  }
+  function assignmentBlock(key, t, s, p) {
+    const x = assignmentOf(t, s, p), a = x.a, tr = p?.track;
+    const acts = s.done ? "" : `<div class="bar-actions"><button class="btn sm" data-asg-edit="${esc(key)}">${x.from ? "Ändra uppdraget" : "Skriv uppdraget"}</button>`
+      + `<button class="btn sm ai" data-asg-claude="${esc(key)}" title="En färdig prompt med beslutet och avgränsningen">${SP} ${x.from ? "Be Claude förbättra" : "Be Claude ta fram det"}</button></div>`;
+    if (!x.from) return x.loading ? `<div class="asg"><div class="pp-k">Uppdraget</div><span class="meta">Hämtar uppdraget…</span></div>`
+      : `<div class="asg missing"><div class="pp-k">Uppdraget</div><p><span class="st-miss">Uppdraget saknas — ta fram nu</span> <span class="meta">· vad som ska tas fram eller besvaras, i klartext</span></p>${acts}</div>`;
+    const list = (xs, ordered) => xs.length ? `<${ordered ? "ol" : "ul"}>${xs.map((q) => `<li>${mdInline(q)}</li>`).join("")}</${ordered ? "ol" : "ul"}>` : "";
+    const body = a.main || a.subs.length
+      ? (tr?.decision ? `<p class="meta"><b>Beslutet:</b> ${esc(tr.decision)}</p>` : "")
+        + (a.main ? `<div class="label">Huvudfrågan</div><p class="asg-main">${mdInline(a.main)}</p>` : "")
+        + (a.subs.length ? `<div class="label">${a.main ? "Delfrågorna" : "Frågorna"}</div>${list(a.subs, true)}` : "")
+        + (a.other.length ? `<div class="lv-text md">${md(a.other.join("\n\n"))}</div>` : "")
+        + (a.scope.length ? `<div class="label">Avgränsning</div>${list(a.scope)}` : "")
+        + (a.sources.length ? `<div class="label">Källor</div>${list(a.sources)}` : "")
+      : `<div class="lv-text md">${md(a.body || x.text)}</div>`;
+    const whence = x.from === "track" ? "ur de godkända spåren" : `${a.title ? `«${a.title}» i ` : ""}«${x.name || "uppdraget"}», senaste versionen`;
+    return `<div class="asg"><div class="pp-k">Uppdraget</div><p class="meta" style="margin:0 0 6px">${esc(whence)}</p>${body}${acts}</div>`;
+  }
+  /** Stegets eget uppdrag som kort, överst på stegsidan. En arbetsyta har uppdraget per del. */
+  function assignmentCard(t, s) {
+    const has = asArr(s.basis).some((b) => b.group === "assignment");
+    if (s.workspace && !has) return "";
+    if (s.done && !has) return "";
+    return `<div class="card section st-asg">${assignmentBlock(`${t.id}|${s.step}`, t, s, null)}</div>`;
+  }
+  /** Nyckeln «task|step» eller «task|step|part» till steget och delen. */
+  function asgTarget(key) {
+    const [task, step, part] = String(key).split("|"); const t = taskById(task), s = stepOf(t, step);
+    const p = part ? s?.workspace?.parts.find((y) => y.key === part) : null;
+    return t && s && (!part || p) ? { t, s, p, key } : null;
+  }
+  const ASG = { key: null, old: "", preview: null };
+  function asgEditDialog(key) {
+    const g = asgTarget(key); if (!g) return toast("Steget finns inte längre i planen. Hämta igen.", null, true);
+    const x = assignmentOf(g.t, g.s, g.p);
+    ASG.key = key; ASG.preview = null;
+    ASG.old = x.from === "track" ? x.trackText : x.a ? x.a.body : "";
+    dialog(`<h2>Ändra uppdraget · ${esc(g.p ? g.p.label : g.s.label)}</h2>`
+      + `<p class="meta">Lägg till, ta bort och skriv om. En fråga per rad; «Huvudfråga:», «Delfrågor:», «Avgränsning:» och «Källor:» som rubriker. Spara ger en ny version — den gamla står kvar.</p>`
+      + `<label class="field wide"><span>Uppdraget</span><textarea id="asg-text" rows="16">${esc(ASG.old)}</textarea></label>`
+      + `<div id="asg-preview"></div>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-asg-preview="1">Förhandsvisa</button></div>`);
+    $("#asg-text")?.focus();
+  }
+  function asgPreview() {
+    const g = asgTarget(ASG.key); if (!g) return;
+    const next = ($("#asg-text")?.value || "").trim();
+    if (!next) return toast("Uppdraget är tomt. Skriv det först.", null, true);
+    const x = assignmentOf(g.t, g.s, g.p);
+    const markdown = x.doc && x.text ? assignmentReplace(x.text, ASG.old, next) : next + "\n";
+    ASG.preview = { markdown, doc: x.doc, content: x.content, name: x.name };
+    const el = $("#asg-preview");
+    if (el) el.innerHTML = `<div class="asg-diff"><div><div class="label">Före</div><div class="preview md">${ASG.old ? md(ASG.old) : `<span class="meta">Inget uppdrag än.</span>`}</div></div>`
+      + `<div><div class="label">Efter</div><div class="preview md">${md(next)}</div></div></div>`
+      + `<p class="meta">${x.doc ? `Sparas som en ny version av «${esc(x.name || "uppdraget")}». Prompterna i texten som har frågorna får de nya.` : `Sparas som uppdrag på ${g.p ? `delen «${esc(g.p.label)}»` : `steget «${esc(g.s.label)}»`}.`}</p>`;
+    const bar = $("#layer [data-asg-preview]")?.closest(".bar-actions");
+    if (bar) bar.innerHTML = `<button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-asg-save="1">Spara uppdraget</button>`;
+  }
+  function asgSave(btn) {
+    const g = asgTarget(ASG.key), pv = ASG.preview; if (!g || !pv) return;
+    return busy(btn, async () => {
+      try {
+        const cur = pv.content || {};
+        const name = cur.name || pv.name || `${g.p ? g.p.label : g.s.label} · uppdrag`;
+        await call("content_save", { ...(pv.doc ? { id: pv.doc } : {}), kind: cur.kind || "instruction", name, title: cur.title || "Uppdraget",
+          markdown: pv.markdown, ...(cur.fields && Object.keys(cur.fields).length ? { fields: cur.fields } : {}),
+          for_task: g.t.id, for_step: g.s.step, ...(g.p ? { part: g.p.key } : {}), ...(g.t.customer?.id ? { customer: g.t.customer.id } : {}),
+          confirmed: true, user_approval: `Ja i vyn: spara uppdraget till ${g.p ? g.p.label : g.s.label}`.slice(0, 500) });
+        if (pv.doc) LV.texts.delete(pv.doc);
+        closeDialog(); await lvRefresh({ task: g.t.id }); toast("Uppdraget är sparat som en ny version. Den gamla står kvar.");
+      } catch (e) { fail("Uppdraget sparades inte", e); }
+    });
+  }
+  /** «Be Claude förbättra»: en färdig prompt med uppdraget, spårets beslut och avgränsningen. */
+  function asgClaudeText(g) {
+    const x = assignmentOf(g.t, g.s, g.p), tr = g.p?.track, what = g.p ? `delen «${g.p.label}» i steget «${g.s.label}»` : `steget «${g.s.label}»`;
+    return [`${x.from ? "Förbättra" : "Ta fram"} uppdraget för ${what} i «${taskTitle(g.t)}» för ${custName(g.t)}.`,
+      "Uppdraget är det konkreta innehållet som styr just det här utförandet: vad som ska tas fram eller besvaras, i klartext.",
+      `Läs först lägesbilden: read { op: "context", task: "${g.t.id}", step: "${g.s.step}" }.`,
+      tr?.decision ? `Spårets beslut: ${tr.decision}` : "", tr?.scope?.length ? `Avgränsning: ${tr.scope.join("; ")}` : "",
+      x.from ? `Uppdraget nu:\n${x.from === "track" ? x.trackText : x.a?.body || x.text}` : "Det finns inget uppdrag än.",
+      "", "1. Säg kort vad som är oklart, saknas eller överlappar.",
+      "2. Föreslå uppdraget i sin helhet, med samma rubriker (till exempel Huvudfråga, Delfrågor, Avgränsning, Källor).",
+      `3. Spara först efter mitt ja, som en ny version: write { op: "content_save", ${x.doc ? `id: "${x.doc}", ` : ""}kind: "instruction", for_task: "${g.t.id}", for_step: "${g.s.step}"${g.p ? `, part: "${g.p.key}"` : ""}, name, markdown, confirmed: true, user_approval: <det jag sa ja till> }. Det gamla står kvar.`,
+      "Hitta aldrig på källor."].filter((y) => y !== "").join("\n");
+  }
   const WS_TONE = { not_started: "", in_progress: "blue", in: "amber", enough: "green" };
   /** Arbetsytan: en rad per del med läget och «Öppna», och det som lämnats under. */
   function workspaceCard(t, s, ws) {
@@ -8939,9 +9244,10 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       return `<li class="ws-part ${p.state}"><button class="ws-row" data-ws-toggle="${esc(key(p))}" aria-expanded="${open}">`
         + `<span class="nm">${esc(p.label)}</span><span class="chip ${WS_TONE[p.state]}">${esc(p.state_text)}</span><span class="meta ws-open">${open ? "Stäng" : "Öppna"} ›</span></button>`
         + (open ? `<div class="ws-body">`
+          + assignmentBlock(key(p), t, s, p)
           + (p.note ? `<p class="meta">Anteckning: ${esc(p.note)}</p>` : "")
           + (s.enough ? `<p class="meta st-line"><b>Så vet du att du är klar:</b> ${esc(s.enough)}</p>` : "")
-          + ((p.assignment || []).length ? `<div class="label">Uppdraget · delens instruktion</div>${p.assignment.map((d) => wsAssignment(key(p), d)).join("")}` : "")
+          + ((p.assignment || []).length ? `<div class="label">Så gör du · delens instruktion och prompterna</div>${p.assignment.map((d) => wsAssignment(key(p), d)).join("")}` : "")
           + (p.drafts.length ? `<div class="label">Det som lämnats</div><ul class="ws-drafts">${p.drafts.map((d) => `<li>${esc(d.name)} <span class="meta">· ${short(d.at)}</span> <button class="linkbtn" data-lv-toggle="wsd|${esc(d.id)}">${LV.open[`wsd|${d.id}`] ? "Dölj" : "Läs"}</button>${LV.open[`wsd|${d.id}`] ? ppReadText(d.id, d.name, d.name) : ""}</li>`).join("")}</ul>`
             : `<p class="meta">Inget lämnat än. Spara rapporten med «Spara rapport» — hela, aldrig en sammanfattning.</p>`)
           + `<div class="bar-actions">`
@@ -8964,6 +9270,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       `Läs först lägesbilden: read { op: "context", task: "${t.id}", step: "${s.step}" }.`,
       (p.assignment || []).length ? `Delens uppdrag (instruktionen, det som lämnats TILL delen): ${p.assignment.map((d) => `«${d.name}»${d.how ? ` — ${d.how}` : ""}`).join(", ")}.` : "",
       p.drafts.length ? `Det som lämnats för delen: ${p.drafts.map((d) => `«${d.name}» (read { op: "content_get", id: "${d.id}" })`).join(", ")}.` : "Inget är lämnat för delen än.",
+      ((a) => a.from ? `Uppdraget (senaste versionen, det som ska besvaras eller tas fram):\n${a.from === "track" ? a.trackText : a.a.body || a.text}` : "Uppdraget saknas för delen — ta fram det först.")(assignmentOf(t, s, p)),
       s.enough ? `Så vet du att du är klar: ${s.enough}` : "",
       ...basisLines(asArr(s.basis)),
       "", "1. Säg kort vad delen visar hittills och vad som saknas mot det som räcker.",
@@ -9118,7 +9425,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
    * vanliga chatten." Knappen lägger stegets prompt i urklipp.
    */
   function aiStepCard(t, s) {
-    return aiWarnings(t, s) + aiBrief(s) + `<div class="bar-actions" style="margin-top:10px">`
+    return aiWarnings(t, s) + aiBriefShort(s) + `<div class="bar-actions" style="margin-top:10px">`
       + `<button class="btn ai primary" data-copy-step="${stepKey(t, s)}">${SP} Kopiera till Claude</button>`
       + `<button class="btn" data-copy-prompt="${stepKey(t, s)}" title="Bara stegets prompt till verktyget, med det den ska hämta först">Kopiera prompt</button>`
       + `<span class="meta">Klistra in i vanliga Claude-chatten. Där görs steget, texten skrivs i Smyra, och inget sparas förrän du sagt ja.</span></div>`;
@@ -9134,7 +9441,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const sys = (s.writes_to.connections || []).join(", ");
     // Utför bara där vyn får skriva med kopplingen: ett mejl skickas inte härifrån.
     const här = sample && (s.writes_to.connections || []).every((c) => c === "Smyra" || (CLAUDE_WRITES[c] || []).length);
-    return aiWarnings(t, s) + aiBrief(s) + `<div class="bar-actions" style="margin-top:10px">`
+    return aiWarnings(t, s) + aiBriefShort(s) + `<div class="bar-actions" style="margin-top:10px">`
       + (här ? `<button class="btn primary" data-write-run="${stepKey(t, s)}">Utför</button>` : "")
       + `<button class="btn ai${här ? " quiet" : " primary"}" data-copy-step="${stepKey(t, s)}">${SP} Kopiera till Claude</button>`
       + `<span class="meta">Claude tar fram ändringen i ${esc(sys)} och visar den. Inget ändras förrän du sagt ja.</span></div>`;
@@ -9773,15 +10080,47 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       + `<div class="bar-actions" role="group" aria-label="Typ av steg">${Object.entries(STYPE).map(([k, v]) =>
         `<button class="btn${k === cur ? " quiet" : ""}" data-stype-pick="${k}" aria-pressed="false"${k === cur ? " disabled" : ""}>${esc(v)}${k === cur ? " · nu" : ""}</button>`).join("")}</div>`
       + `<div class="chg" id="st-out" style="margin:12px 0;color:var(--text-2)">Välj vem som ska göra steget så visas vad som ändras. Inget sparas än.</div>`
-      + `<p class="meta">Det gäller alla metoder och uppgifter som använder steget. Byt tillbaka när du vill; det som saknas för den nya typen fylls på underhand.</p>`
-      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-stype-save="1" disabled>Byt</button></div>`);
+      + `<p class="meta">Det gäller steget i biblioteket: alla metoder och uppgifter som använder det, inte bara den här uppgiften. Det som saknas för den nya typen fylls på underhand.</p>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn quiet" data-stype-undo="1" title="Steget blir som det var före förra bytet. Inget tas bort.">Ångra förra bytet</button><button class="btn primary" data-stype-save="1" disabled>Byt</button></div>`);
+  }
+  /* Ångra ett byte (Daniel P 2026-10-01: «Gick inte att ångra.»). Samma väg som
+     bytet: node.switch_type { undo: true }. Utan confirmed visas vad som återställs
+     och var det gäller; med confirmed skrivs en ny version av steget. Loggen bara
+     växer, så det bytet skrev står kvar. */
+  const stepTypeUndoCall = (step, label, confirmed) => call("registry_define", { change: true,
+    ...(confirmed ? { confirmed: true, user_approval: `Ja, ångrat i vyn: ${label}` } : {}), node: { id: step, switch_type: { undo: true } } });
+  async function stepTypeUndoPick(btn) {
+    const x = state.stype; if (!x) return;
+    x.to = "undo"; x.ok = false;
+    for (const b of document.querySelectorAll("[data-stype-pick]")) b.setAttribute("aria-pressed", "false");
+    const out = $("#st-out"), save = document.querySelector("[data-stype-save]");
+    if (save) { save.disabled = true; save.textContent = "Ångra"; }
+    if (out) out.textContent = "Räknar …";
+    try {
+      const d = await stepTypeUndoCall(x.step, x.label, false);
+      if (state.stype !== x || x.to !== "undo") return;
+      const p = d?.preview;
+      if (!p) { if (out) out.textContent = d?.unchanged ? "Det finns inget byte att ångra." : "Inget att ändra."; return; }
+      x.ok = true;
+      if (out) out.innerHTML = (p.lines || []).map(esc).join("<br>");
+      if (save) save.disabled = false;
+    } catch (e) { if (out) out.textContent = e?.message || String(e); }
+  }
+  function stepTypeUndoSave(btn, x) {
+    return busy(btn, async () => {
+      try {
+        await stepTypeUndoCall(x.step, x.label, true);
+        state.stype = null; closeDialog(); await refreshLib(); await load();
+        toast(`«${x.label}» är som före bytet.`);
+      } catch (e) { fail("Ångra sparades inte", e); }
+    });
   }
   async function stepTypePick(btn, to) {
     const x = state.stype; if (!x) return;
     x.to = to; x.ok = false;
     for (const b of document.querySelectorAll("[data-stype-pick]")) b.setAttribute("aria-pressed", String(b.dataset.stypePick === to));
     const out = $("#st-out"), save = document.querySelector("[data-stype-save]");
-    if (save) save.disabled = true;
+    if (save) { save.disabled = true; save.textContent = "Byt"; }
     if (out) out.textContent = "Räknar …";
     try {
       const d = await call("registry_define", { change: true, node: { id: x.step, switch_type: { to } } });
@@ -9796,11 +10135,13 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   }
   function stepTypeSave(btn) {
     const x = state.stype; if (!x?.ok || !x.to) return;
+    if (x.to === "undo") return stepTypeUndoSave(btn, x);
     return busy(btn, async () => {
       try {
         await call("registry_define", { change: true, confirmed: true, user_approval: `Ja, bytt i vyn: ${x.label} → ${STYPE[x.to]}`, node: { id: x.step, switch_type: { to: x.to } } });
         state.stype = null; closeDialog(); await refreshLib(); await load();
-        toast(`«${x.label}» görs nu av ${STYPE[x.to].toLowerCase()}. Rätta det som är märkt (?).`);
+        const undo = () => stepTypeUndoCall(x.step, x.label, true).then(() => refreshLib()).then(load);
+        toast(`«${x.label}» görs nu av ${STYPE[x.to].toLowerCase()}, i alla uppgifter som använder steget. Rätta det som är märkt (?).`, undo);
       } catch (e) { fail("Bytet sparades inte", e); }
     });
   }
@@ -10514,6 +10855,38 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       ...(question ? [`Min fråga nu:\n${question}`, ""] : []),
       CHAT_RULES].join("\n");
   }
+  /* ── Referenser (Daniel P 2026-10-01: «Om något refereras till vill man enkelt
+     kunna använda även det utan att leta») ── Servern ger varje referens i
+     människans form (s.references.human): en länk öppnas, ett anrop körs via
+     Claude, resten kopieras. Etiketten står alltid; ett id visas aldrig ensamt. */
+  // Funktion, inte const: blocket kan ritas innan den här raden har körts.
+  function refTexts() { return (refTexts.m ||= new Map()); }
+  function referencesBlock(s) {
+    const refs = s?.references?.human || [];
+    if (!refs.length) return "";
+    const rows = refs.map((r, i) => {
+      const key = `${s.step}|${i}`;
+      refTexts().set(key, { text: r.text, label: r.label });
+      const note = r.note ? ` <span class="meta">${esc(r.note)}</span>` : "";
+      if (r.action === "open" && /^https?:\/\//i.test(r.href || ""))
+        return `<li><a class="btn quiet sm" href="${esc(r.href)}" target="_blank" rel="noopener noreferrer">Öppna: ${esc(r.label)}</a>${note}</li>`;
+      if (r.action === "run_with_claude")
+        return `<li><button class="btn quiet sm" data-ref-run="${esc(key)}" title="Lägger anropet i urklipp, färdigt att klistra in i Claude">Kör via Claude: ${esc(r.label)}</button>${note}</li>`;
+      return `<li><button class="btn quiet sm" data-ref-copy="${esc(key)}">Kopiera: ${esc(r.label)}</button>${note}</li>`;
+    }).join("");
+    return `<div class="st-layer st-refs"><p class="meta">Referenser</p><ul class="plain">${rows}</ul></div>`;
+  }
+  document.addEventListener("click", (ev) => {
+    const run = ev.target?.closest?.("[data-ref-run]");
+    const cp = ev.target?.closest?.("[data-ref-copy]");
+    const r = refTexts().get((run || cp)?.dataset?.[run ? "refRun" : "refCopy"] || "");
+    if (!r) return;
+    ev.preventDefault();
+    if (run) return copyToChat(`Kör det här mot dirigenten (${r.label}):\n${r.text}`, r.label);
+    return (navigator.clipboard?.writeText(r.text) ?? Promise.reject(new Error("urklippet går inte att nå här")))
+      .then(() => toast(`Kopierat: ${r.label}.`), () => copyToChat(r.text, r.label));
+  });
+
   /** Lägg prompten i urklipp. Går det inte, visas den markerad för ⌘C. */
   function copyToChat(text, what = "Prompten") {
     const visa = () => { dialog(`<h2>Kopiera till Claude</h2><p class="meta">${esc(what)}. Kopiera och klistra in i vanliga Claude-chatten. Den har samma verktyg mot dirigenten.</p>`
@@ -11822,6 +12195,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.fedit) { const [k, ...r] = ds.fedit.split("|"); return fieldDialog(k, r.join("|")); }
     if (ds.feSave) return fieldSave(t);
     if (ds.sedit) return stepTextEdit(ds.sedit, ds.seditAt);
+    if (ds.stAsk) { const [tid, sid, ...w] = ds.stAsk.split("|"); const t2 = taskById(tid), s2 = stepOf(t2, sid);
+      if (t2 && s2) return copyToChat(stepAskText(t2, s2, w.join("|")), `Ta fram det som saknas i «${s2.label}»`); return; }
     if (ds.waitOpen) return waitDialog(ds.waitOpen);
     if (ds.waitPreview) return waitPreview(t);
     if (ds.waitSave) return waitSave(t);
@@ -11833,6 +12208,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.remindMsg) return remindMsg(t);
     if (ds.stype) return stepTypeDialog(ds.stype);
     if (ds.stypePick) return stepTypePick(t, ds.stypePick);
+    if (ds.stypeUndo) return stepTypeUndoPick(t);
     if (ds.stypeSave) return stepTypeSave(t);
     if (ds.seUndo) { state.sedit = null; return render(); }
     if (ds.seSave) return stepTextSave(t);
@@ -12088,7 +12464,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.hwreject) { state.obj.how.proposal = null; return render(); }
     if (ds.hwreview) { const t2 = D.tasks.find((x) => x.id === state.obj.task), s2 = t2.steps.find((x) => x.id === state.obj.step); return howReview(t2, s2); }
     if (ds.hwsave) { const h = state.obj.how; const t2 = D.tasks.find((x) => x.id === state.obj.task), s2 = t2.steps.find((x) => x.id === state.obj.step);
-      s2.instruktion = s2.instruktion ? { ...s2.instruktion, syfte: h.syfte, saa_goer_du: h.moments.filter(Boolean) } : null;
+      s2.instruktion = s2.instruktion ? { ...s2.instruktion, syfte: h.syfte, purpose: h.syfte, saa_goer_du: h.moments.filter(Boolean), how_to: h.moments.filter(Boolean) } : null;
       if (!s2.instruktion) s2.recipe = { ...(s2.recipe || {}), how: h.moments.filter(Boolean).map((m, k) => `${k + 1}. ${m}`).join("\n"), check: h.check, needs: h.needs };
       closeDialog(); state.obj.how = null; render();
       return toast({ all: "Arbetssättet är sparat som en ny version. Det gäller nästa gång steget görs.", customer: `Sparat som ${t2.customer}s sätt.`, once: "Sparat som en avvikelse för den här uppgiften." }[h.scope]); }
@@ -12117,6 +12493,10 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.wsDone) return wsWrite(t, ds.wsDone, { mark: "done", note: "Räcker, markerat i vyn" }, (p) => `«${p.label}» räcker.`);
     if (ds.wsReopen) { const x = wsPart(ds.wsReopen); return wsWrite(t, ds.wsReopen, { mark: "undone", reason: "Fylls på",
       ...(x?.t.commitment ? { acknowledge_commitment: true, user_approval: `Fyll på (klickade Fyll på i vyn för ${x.p.label})` } : {}) }, (p) => `«${p.label}» är öppen igen. Det som lämnats står kvar.`); }
+    if (ds.asgEdit) return asgEditDialog(ds.asgEdit);
+    if (ds.asgPreview) return asgPreview(t);
+    if (ds.asgSave) return asgSave(t);
+    if (ds.asgClaude) { const g = asgTarget(ds.asgClaude); return g ? copyToChat(asgClaudeText(g), `Uppdraget för «${g.p ? g.p.label : g.s.label}»`) : toast("Steget finns inte längre i planen. Hämta igen.", null, true); }
     if (ds.wsClaude) { const x = wsPart(ds.wsClaude); return x ? copyToChat(wsClaudeText(x.t, x.s, x.p), `Hjälpen med «${x.p.label}»`) : toast("Delen finns inte längre i planen. Hämta igen.", null, true); }
     if (ds.wsAdd) { LV.wsAdd = ds.wsAdd; dialog(`<h2>Lägg till en del</h2><label class="field wide"><span>Delens namn · t.ex. spårets rubrik</span><input id="ws-label" maxlength="200"></label>`
       + `<p class="meta">Delen läggs till i den här uppgiften och blir påbörjad. Det som redan gjorts i de andra delarna står kvar.</p>`
