@@ -1292,7 +1292,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "ec0ac71", published: "2026-10-02" };
+  const SIDA = { version: "2472547", published: "2026-10-02" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -5461,8 +5461,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       return `<div class="trow ${st.word === "din tur" ? "mine" : st.tone === "red" ? "burn" : ""}" id="lv-todo-${esc(t.id)}-${esc(s.step)}" style="cursor:default">`
         + `<span class="ico ${k === "llm" ? "cl" : ""}">${ic(k === "llm" ? "sparkles" : x.waiting ? "user" : "ring")}</span>`
         + `<span class="t"><a href="${H.delivery(d.id, t.id, s.step)}" style="color:inherit;text-decoration:none">${esc(s.label)}</a></span>`
-        + `<span class="act lv-acts">${lvActions(t, s, x.next === undefined ? stepNextCall(t, s) : x.next)}</span>`
-        + `<span class="m">${toneChip(st)}${esc([taskTitle(t), withDelivery && !d.implicit ? d.label : ""].filter(Boolean).join(" · "))}${x.who && !/^väntar på|^din tur/.test(st.word) ? ` · ${esc(lbl(x.who))}` : ""} · ${byWhen(x.end)}</span></div>`;
+        + `<span class="act lv-acts">${lvActions(t, s, x.next === undefined ? stepNextCall(t, s) : x.next)}${x.continue_anyway ? `<button class="btn quiet sm" data-lv-copy="${esc(JSON.stringify({ task: x.task, next: x.continue_anyway, text: x.continue_anyway.does }))}">Fortsätt ändå</button>` : ""}</span>`
+        + `<span class="m">${asArr(x.missing).length ? `<span class="st-miss">Saknas: ${esc(asArr(x.missing).join(", "))} — ta fram nu eller fortsätt ändå</span> · ` : ""}${toneChip(st)}${esc([taskTitle(t), withDelivery && !d.implicit ? d.label : ""].filter(Boolean).join(" · "))}${x.who && !/^väntar på|^din tur/.test(st.word) ? ` · ${esc(lbl(x.who))}` : ""} · ${byWhen(x.end)}</span></div>`;
     }).join("");
   }
 
@@ -6055,9 +6055,10 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       const pend = LV.pending[`task|${t.id}`];
       return `<button class="lv-trow ${i ? "" : "first"}${pend && !pend.error ? (pend.leaving ? " lv-leaving" : " lv-saving") : ""}" id="lv-task-${esc(t.id)}" data-lv-task="${esc(t.id)}" aria-expanded="${o}"${lvOrderAttrs("task", d.id, t.id)}><span class="lv-fold ${o ? "open" : ""}">›</span>`
         + `<span class="kbox upp sm">${ic("upp")}</span>`
-        + `<span class="nm"><span class="t">${esc(taskTitle(t))}</span>`
+        + `<span class="nm"><span class="t">${esc(t.thread ? caseTitle(t) : taskTitle(t))}</span>`
         + `<span class="s">${esc(lbl(t.method_named, "ingen metod"))} · slutdatum ${short(due)}${dd && due && dd !== due && !d.implicit ? ` (leveransen: ${short(dd)})` : ""}${t.revision ? ` · runda ${Number(t.revision.number) + 1}` : ""}</span></span>`
         + `<span class="end">${lvDots(t)}<span class="meta">${lvCount(t)}</span>${toneChip(st)}</span></button>`
+        + caseSourceLine(t)
         + (pend ? `<div class="lv-note-row">${lvNote(pend)}</div>` : "")
         + (real.length > 1 ? `<div style="text-align:right;padding:0 16px 4px">${lvOrderButtons("task", d.id, t.id, taskTitle(t))}</div>` : "")
         + (!o && asArr(t.waits).length ? waitEdges(t) : "")
@@ -6101,10 +6102,16 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return `<div class="lv-sec"><h2>Posterna</h2><span class="n">${esc(plural(cards.length, "post", "poster"))}</span></div>`
       + `<div class="card lv-card">${cards.length ? `<div class="fam-grid">${cards.join("")}</div>` : `<div class="meta" style="padding:12px 16px">Inga poster är gjorda än.</div>`}</div>`;
   }
-  /** Ärende: tråden först, så att man ser vad kunden skrev innan man ser stegen. */
-  function famCase(dv, ts) {
-    const t = [...ts].sort((a, b) => String(day10(a.external_due || a.due) || "9").localeCompare(String(day10(b.external_due || b.due) || "9"))).find((x) => x.thread);
-    return t ? threadCard(t.thread) : "";
+  /**
+   * Ärende: tråden först, så att man ser vad kunden skrev innan man ser stegen.
+   * Tråden är det öppnade ärendets (felrapport 1538bd6e): förut valdes den
+   * tidigaste uppgiften med tråd bland alla, så ett klick på ett ärende
+   * visade ett annat ärendes tråd. Utan ett öppnat ärende visas ingen tråd;
+   * raderna bär var sitt ursprung.
+   */
+  function famCase(dv, ts, focus = ts) {
+    const t = focus.length === 1 ? focus[0] : ts.length === 1 ? ts[0] : null;
+    return t?.thread ? threadCard(t.thread) : "";
   }
   /** Möte: agendan (stegen som ska tas) och utfallet (det som är gjort, med anteckning). */
   function famMeeting(dv, ts) {
@@ -7184,7 +7191,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         () => `<div class="card lv-card"><div style="padding:4px 16px 12px">${fullOccasion(one) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(one))}</div>` : ""}${d.implicit ? "" : `<div class="lv-edge">Metod: ${methodLine(one)}${one.live ? ` · ute sedan ${short(one.live.at)}` : ""}</div>`}${waitEdges(one)}${dpEntry([one], "uppgiften")}${lvRounds(d, one, o.step)}</div></div>`, !!o.step)
       + (!d.implicit && ts.length > 1 ? lvFold(d, "tasks", `${ic("upp")} Alla uppgifter i leveransen`, plural(ts.length, "uppgift", "uppgifter"), () => `<div class="card lv-card">${lvTaskRows(d, ts, openTask, o.step)}</div>`) : "")
       : "";
-    return lvHead(d, ts) + (pageFamily(d, ts) === "case" ? famCase(d, ts) : "") + lvNow(d, ts, focus) + famBlock(d, ts) + proc + steps
+    return lvHead(d, ts) + (pageFamily(d, ts) === "case" ? famCase(d, ts, focus) : "") + lvNow(d, ts, focus) + famBlock(d, ts) + proc + steps
       + lvFold(d, "material", `${ic("mat")} Material`, dm ? `${plural(units, "enhet", "enheter")} · det som saknas något först` : "hör till varje ärende", () => dm ? lvMaterial(dm)
         : `<div class="card"><div class="empty"><b>Materialet hör till respektive ärende.</b>Öppna ett ärende för att se dess material.</div></div>`, o.sub === "material",
         units ? `<span class="lv-acts" style="margin-left:auto">${shareButtons(H.material(d.id), `materialet i ${d.label}`, lbl(custOf(d), ""))}</span>` : "")
@@ -9650,6 +9657,26 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   const allCases = () => { const q = S.queue || {}; return [...(q.waiting || []), ...(q.untriaged || []), ...(q.by_rule || []), ...(q.in_plan || []), ...(q.task_closed || []), ...(q.resolved || []), ...(q.closed_by_ack || [])]; };
   const caseByThread = (thread) => allCases().find((y) => y.thread === thread) ?? null;
   function threadSubject(thread) { return caseByThread(thread)?.subject || S.threads?.get(thread)?.detail?.thread?.subject || null; }
+  /**
+   * Ursprunget för en uppgift ur ett ärende (felrapport 1538bd6e): ämnesraden,
+   * vem som skickade, när det kom in och tråden. Ur posten (In) eller en
+   * hämtad tråd; saknas båda står det som finns.
+   */
+  function caseSource(t) {
+    if (!t?.thread) return null;
+    const c = caseByThread(t.thread), d = S.threads?.get(t.thread)?.detail?.thread;
+    const first = asArr(d?.posts).find((p) => !p.internal);
+    return { thread: t.thread, subject: c?.subject || d?.subject || null, from: c?.party || first?.from || null,
+      received: t.received || c?.since || first?.at || null };
+  }
+  /** Ärendets egen rubrik: ämnesraden, annars hela tillfället, aldrig avklippt. */
+  const caseTitle = (t) => caseSource(t)?.subject || t?.description || t?.occasion || taskTitle(t);
+  /** Raden under ett ärende: avsändare, när det kom in och länken till tråden. */
+  function caseSourceLine(t) {
+    const src = caseSource(t);
+    if (!src) return "";
+    return `<div class="lv-note-row lv-src meta">${esc(src.from || "okänd avsändare")}${src.received ? ` · kom in ${short(src.received)}` : ""} · ${gmailLink(src.thread, "linkbtn")}</div>`;
+  }
   const OUTCOME = { delivery: "blir arbete", own_reply: "eget svar räcker", resolved: "avklarat", ignored: "ignoreras",
     proposal: "i förslagslådan", waiting: "obedömt" };
   /*
