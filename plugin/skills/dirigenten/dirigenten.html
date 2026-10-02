@@ -473,6 +473,10 @@ ol.how { margin: 0; padding-left: 20px; } ol.how li { padding: 3px 0; }
 @media (max-width: 767px) { .ip .fgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 16px; border-radius: var(--r-pill); display: flex; gap: 14px; align-items: center; z-index: 60; box-shadow: var(--shadow); font-size: 13.5px; }
 .toast button { border: 0; background: none; color: #9fdcdf; font-weight: 600; }
+.savepill { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 61; background: var(--text); color: #fff; padding: 6px 12px; border-radius: var(--r-pill); font-size: 12.5px; box-shadow: var(--shadow); pointer-events: none; }
+.savepill.ok { background: var(--green); }
+.savepill.bad { background: var(--red); }
+.btn[aria-busy="true"] { opacity: .6; cursor: progress; }
 @media (max-width: 760px) { .toast { width: calc(100vw - 24px); border-radius: 14px; bottom: 70px; } }
 .palette { width: min(560px, 100%); padding: 0; gap: 0; }
 .palette input { border: 0; border-bottom: 1px solid var(--line); padding: 14px 16px; font-size: 15px; outline: none; }
@@ -1292,7 +1296,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "f0d344f", published: "2026-10-02" };
+  const SIDA = { version: "3f8198f", published: "2026-10-02" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1691,9 +1695,12 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
    * Rutan i vyn är förhandsvisningen för människan; servern får sin egen,
    * och bekräftelsen skickar förhandsvisningens nästa anrop med dess preview_id.
    */
-  async function previewThenConfirm(tool, args, approval) {
-    const p = await call(tool, args);
-    const next = p?.next_call ?? p?.error?.next_call;
+  async function previewThenConfirm(tool, args, approval, shown = null) {
+    // Har vyn redan visat serverns förhandsvisning räcker ett anrop: bekräftelsen
+    // med dess kvitto. Har kvittot gått ut svarar servern med ett nytt, och
+    // previewRetry skickar det en gång.
+    const p = shown?.args ? null : await call(tool, args);
+    const next = shown?.args ? shown : p?.next_call ?? p?.error?.next_call;
     if (!next?.args) throw Object.assign(new Error("Förhandsvisningen gav inget nästa anrop. Inget är skrivet."), { code: "PREVIEW_REQUIRED" });
     return call(next.tool || tool, { ...next.args, confirmed: true, user_approval: approval });
   }
@@ -1703,13 +1710,46 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   const READ_ONLY = /^(plan_state|intake_status|guide|search|read|library_|content_(get|list|search)|asset_get|context|measure_|plan_(estimate|questions))/;
   async function callOn(server, tool, input) {
     INFLIGHT++;
-    try { const r = await callOnRaw(server, tool, input); if (!READ_ONLY.test(tool)) setTimeout(() => { try { pruneDrafts(); } catch { /* utkasten städas nästa gång */ } }, 1500); return r; }
-    finally { INFLIGHT--; }
+    const writes = !READ_ONLY.test(tool) && !(tool === "execute_step" && isStepRead(input)) && !(previewable(tool, input || {}) && !input?.confirmed);
+    if (writes) savePill(+1);
+    let ok = false;
+    try { const r = await callOnRaw(server, tool, input); ok = true; if (writes) setTimeout(() => { try { pruneDrafts(); } catch { /* utkasten städas nästa gång */ } }, 1500); return r; }
+    finally { INFLIGHT--; if (writes) savePill(-1, ok); }
+  }
+  /** execute_step med bara uppgift och steg läser stegets läge; det sparar inget. */
+  const isStepRead = (a) => !!a && Object.keys(a).every((k) => ["task", "step", "part", "weeks", "format"].includes(k));
+  /*
+   * «Sparar…» syns så fort något skrivs, och «Sparat» när det är klart
+   * (Daniel P 2026-10-02: «man tror inte att något händer»). Aldrig tyst väntan.
+   */
+  let SAVING_N = 0, savePillTimer = null;
+  function savePill(delta, ok = true) {
+    SAVING_N = Math.max(0, SAVING_N + delta);
+    let el = document.getElementById("savepill");
+    if (!el) { el = document.createElement("div"); el.id = "savepill"; el.className = "savepill"; el.setAttribute("role", "status"); el.hidden = true; document.body.append(el); }
+    clearTimeout(savePillTimer);
+    if (SAVING_N > 0) { el.className = "savepill"; el.textContent = "Sparar…"; el.hidden = false; return; }
+    if (delta > 0) return;
+    el.className = "savepill " + (ok ? "ok" : "bad"); el.textContent = ok ? "Sparat" : "Sparades inte";
+    savePillTimer = setTimeout(() => { el.hidden = true; }, ok ? 1800 : 4000);
   }
   async function callOnRaw(server, tool, input) {
     if (!mcp) throw Object.assign(new Error(`anslutningen ${server} är inte tillgänglig här — öppna vyn i claude.ai med kopplingen på`), { code: "NOT_CONNECTED" });
     let r;
+    const asked = tool;
     if (server === SERVER) [tool, input] = newForm(tool, input);
+    /*
+     * Ett klick i vyn är människans ja (Daniel P 2026-10-02: «Det går inte att
+     * spara bedömningar … De försvinner ur inkorgen och kommer tillbaka»).
+     * Sedan #267 förhandsvisar servern varje skrivning från claude.ai som saknar
+     * user_approval, och svarar «Inget är skrivet» utan fel. Vyns knappar
+     * skickade inget ja, så bedömningen och klarmarkeringen skrevs aldrig.
+     * Nu bär varje skrivning från vyn ett ja; ett verktyg som själv
+     * förhandsvisar utan confirmed gör det fortfarande.
+     */
+    if (server === SERVER && tool !== "read" && !READ_ONLY.test(asked) && !(tool === "execute_step" && isStepRead(input))
+      && !(typeof input?.user_approval === "string" && input.user_approval.trim().length >= 2))
+      input = { ...input, user_approval: `Klick i vyn: ${input?.op || tool}` };
     const rec = { at: new Date().toISOString(), tool: server === SERVER ? (input?.op ? `${tool}:${input.op}` : tool) : `${server}/${tool}`, keys: Object.keys(input || {}) };
     RECENT.calls.push(rec); if (RECENT.calls.length > 15) RECENT.calls.shift();
     try { r = await mcp.callTool(server, tool, input); }
@@ -1719,6 +1759,11 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     try { rec.bytes = JSON.stringify(r ?? "").length; } catch { /* mätningen får inte stoppa anropet */ }
     const again = server === SERVER && previewRetry(tool, input, d);
     if (again) return callOn(server, tool, again);
+    // Skrevs ingenting fast vyn bad om det: ett fel, aldrig tyst (servern förhandsvisade i stället).
+    if (server === SERVER && d?.written === false && d?.preview?.would_write) {
+      rec.error = "NOT_WRITTEN";
+      throw Object.assign(new Error("Ingenting sparades — servern svarade med en förhandsvisning. Försök igen, och rapportera felet om det står kvar."), { code: "NOT_WRITTEN" });
+    }
     if (d?.error?.message) { rec.error = d.error.code || "fel"; throw Object.assign(new Error(d.error.message + (d.error.next_action ? " — " + d.error.next_action : "")), { code: d.error.code, context: d.error.context }); }
     return d;
   }
@@ -1854,6 +1899,27 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     try { const p = await withTimeout(call("plan_state", { weeks: state.horizon, format: "vy" }), 45000, "Planen");
       if (p?.plan) { S.plan = p.plan; S.meetings = p.meetings ?? {}; S.serverVersion = p.views?.version ?? S.serverVersion ?? null; S.viewsUrl = p.views?.url ?? S.viewsUrl ?? null;
         S.fetchedAt = new Date(); S.at.plan = Date.now(); render(); } } catch { /* det gamla står kvar */ }
+  }
+  /*
+   * Efter en skrivning (Daniel P 2026-10-02: «att spara eller bedöma tar ju
+   * otrolig tid»). Förut väntade varje skrivning på load(): listan, hela planen
+   * (5,7 MB), posten, biblioteket och meddelandena, och kvittot kom först
+   * efter allt det. Nu hämtas bara det som ändrats: uppgiften eller leveransen
+   * när den är känd (plan_state { task }, ~50 kB) och listan. Hela planen
+   * hämtas i bakgrunden, samlat för flera skrivningar, och bara där den ritas;
+   * annars blir den gammal och hämtas nästa gång den behövs.
+   */
+  let fullPlanTimer = null, queueTimerAfterWrite = null;
+  function refreshAfterWrite({ task = null, delivery = null, queue = false, lib = false } = {}) {
+    if (!S.plan) return load();
+    const shown = task || delivery ? lvRefresh({ task, delivery }) : refreshAgenda();
+    S.at.plan = 0;
+    clearTimeout(fullPlanTimer);
+    fullPlanTimer = setTimeout(() => { fullPlanTimer = null;
+      if (!task && !delivery || state.screen === "planen" || state.obj?.type === "delivery") refreshPlan(); }, 2500);
+    if (queue) { S.at.queue = 0; clearTimeout(queueTimerAfterWrite); queueTimerAfterWrite = setTimeout(() => { queueTimerAfterWrite = null; loadQueue(); }, 4000); }
+    if (lib) loadLib();
+    return shown;
   }
   /** Bara det som blivit gammalt hämtas; resten står kvar. */
   function refreshStale() {
@@ -3041,6 +3107,9 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       + (soon.length ? `<div class="zgrp"><b>Snart</b><span class="hint">${plural(soon.length, "sak", "saker")} de närmaste dagarna</span></div>`
         + (store.showSoon ? deliveryRows("soon", soon, { rowOf, dOf, worst: worstTodo }) + `<div class="zmore"><button class="linkbtn" data-toggle-soon="1">Fäll ihop Snart</button></div>`
           : `<div class="zmore">Fällt ihop, först ${short(soon[0].due)}. <button class="linkbtn" data-toggle-soon="1">Visa</button></div>`) : "");
+    // Ärenden som körs i Claude Code av mig (2026-10-02), överst.
+    const code = who === "others" || f === "q" ? [] : codeCaseRows();
+    const codeHead = code.length ? `<div class="zgrp"><b>Kör i Claude Code</b><span class="hint">${plural(code.length, "ärende", "ärenden")} med färdig prompt</span></div>${code.map(codeCaseRow).join("")}` : "";
     const filters = `<div class="filters${store.showFilters ? " open" : ""}"><div class="seg">`
       + [["mine", "Mina"], ["others", "Andras"], ["all", "Alla"]].map(([k, l]) => `<button data-who="${k}" aria-pressed="${who === k}">${l}</button>`).join("")
       + `</div><div class="seg" title="Hur långt fram listan visar">`
@@ -3049,7 +3118,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return `<div class="zone"><div class="zone-h"><h2>Att göra ${now}${late ? ` · <span style="color:var(--red)">${late} ${late === 1 ? "sen" : "sena"}</span>` : ""}</h2>`
       + `<span class="right">`
       + `<button class="btn sm quiet vis" data-show-filters="1" aria-expanded="${!!store.showFilters}">Visa: ${WHO_NAME[who]} · ${AHEAD_NAME[aheadWeeks()]} · ${FILTER_NAME[f]} ▾</button>${filters}</span></div>`
-      + `<div class="card">${body || `<div class="empty"><b>Inget är din tur just nu.</b>Allt som kommit in är bedömt, och inget steg ligger på dig i dag.</div>`}</div></div>`;
+      + `<div class="card">${codeHead + body || `<div class="empty"><b>Inget är din tur just nu.</b>Allt som kommit in är bedömt, och inget steg ligger på dig i dag.</div>`}</div></div>`;
   }
   /**
    * Borta den dagen (F17): steg som ligger på en dag då den som gör dem är
@@ -3129,7 +3198,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       try {
         for (const c of calls)
           await call(c.tool, { ...c.args, confirmed: true, user_approval: approval });
-        closeDialog(); await load();
+        closeDialog(); await refreshAfterWrite();
         toast(x.kind === "handover" ? `Förslaget har gått till ${x.to_label}.` : "Du trycker på under perioden."); }
       catch (e) { fail("Det gick inte att spara", e); }
     });
@@ -3162,8 +3231,35 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (!x?.next_call) return;
     return busy(btn, async () => {
       try { await call(x.next_call.tool, { ...x.next_call.args, confirmed: true, user_approval: `Ja i vyn: ${x.text}`.slice(0, 500) });
-        closeDialog(); await load(); toast("Sökordet är tillagt."); }
+        closeDialog(); await refreshAfterWrite(); toast("Sökordet är tillagt."); }
       catch (e) { fail("Sökordet lades inte till", e); }
+    });
+  }
+  /**
+   * Godkännarens svar i uppgiftens tråd (2026-10-02): ett ja förhandsvisas med
+   * citatet och källan och stängs med ett klick «Stämmer»; en ändring och ett
+   * oklart svar visas, inget stängs.
+   */
+  function approvalCard() {
+    const xs = S.queue?.approvals || [], shut = S.queue?.approvals_closed || [];
+    if (!xs.length && !shut.length) return "";
+    const src = (x) => `${esc(x.source.from || "")}${x.source.from ? ", " : ""}${esc((x.source.at || "").slice(0, 10))}`;
+    const row = (x, i) => trow({ cls: "", icon: x.kind === "yes" ? "check" : "help", more: false,
+      title: `${esc(x.step_label)} — ${esc(x.task_label)}`,
+      meta: chip(x.kind === "yes" ? "godkänt i tråden" : x.kind === "change" ? "ändring, inget godkännande" : "oklart — är det ett ja?", x.kind === "yes" ? "green" : x.kind === "change" ? "amber" : "blue")
+        + `«${esc(x.quote)}» <span class="meta">(${src(x)})</span>`,
+      acts: x.kind === "yes" && x.next_call ? `<button class="btn sm primary" data-approval-yes="${i}">Stämmer</button>` : "" });
+    const closed = shut.map((x) => trow({ cls: "", icon: "check", more: false, title: `${esc(x.step_label)} — ${esc(x.task_label)}`,
+      meta: chip("stängt", "green") + esc(x.quote) }));
+    return `<div class="card" style="margin-bottom:12px">${xs.map(row).join("")}${closed.join("")}</div>`;
+  }
+  function approvalYes(btn, i) {
+    const x = (S.queue?.approvals || [])[Number(i)];
+    if (!x?.next_call) return;
+    return busy(btn, async () => {
+      try { await call(x.next_call.tool, { ...x.next_call.args, confirmed: true, user_approval: `Stämmer (i vyn): «${x.quote}»`.slice(0, 500) });
+        S.queue.approvals = S.queue.approvals.filter((y) => y !== x); toast("Godkännandet är sparat och steget klart."); refreshAfterWrite({ task: x.next_call.args?.task ?? null, queue: true }); }
+      catch (e) { fail("Godkännandet sparades inte", e); }
     });
   }
   function keywordNo(i) {
@@ -3275,7 +3371,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         + (tab === "bedoma" && rows.length ? `<div style="margin-top:12px"><button class="btn ai" data-func="triage_all">${SP} Gå igenom alla ${rows.length}</button> <span class="meta">förslagen visas som kort — inget skrivs förrän du godtar</span></div>` : "");
       return `<div class="pagehead"><h1>In</h1><span class="sub">Det som kommit in, och vad det ska bli</span>`
         + `<div class="actions"><button class="btn" data-fetch-mail="1">${ic("inbox")} Hämta post</button></div></div>`
-        + queueNote()
+        + queueNote() + approvalCard()
         + `<div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" data-intab="${k}" aria-selected="${tab === k}">${l}<span class="n">${lists[k].length}</span></button>`).join("")}</div>` + body;
     },
 
@@ -5737,7 +5833,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   function lvDo(btn, n) {
     return busy(btn, async () => {
       const svar = await confirmWrite(SERVER, n.tool, n.args, n.does || "Registrera skillnaden i dirigenten.");
-      if (svar !== WRITE_NO) await load();
+      if (svar !== WRITE_NO) refreshAfterWrite({ task: n.args?.task ?? null });
     });
   }
 
@@ -5817,7 +5913,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       try {
         await call("execute_step", { ...changeArgs(d, c), confirmed: true, user_approval: `Ja, bekräfta (i vyn): ${c.preview.question || c.what}` });
-        LV.change = null; await load(); location.hash = H.delivery(d.id); toast("Ändringen efter leverans är skriven. Rundan står under uppgifterna.");
+        LV.change = null; await refreshAfterWrite({ delivery: d.id }); location.hash = H.delivery(d.id); toast("Ändringen efter leverans är skriven. Rundan står under uppgifterna.");
       } catch (e) { fail("Ändringen skrevs inte", e); }
     });
   }
@@ -5854,7 +5950,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const b = LV.bind; if (!b?.preview) return toast("Visa förhandsvisningen först.", null, true);
     return busy(btn, async () => {
       try { await call("execute_step", { ...bindArgs(b), confirmed: true, user_approval: `Ja, bekräfta (i vyn): ${b.preview}` });
-        LV.bind = null; await load(); const t = taskById(b.task);
+        LV.bind = null; await refreshAfterWrite({ task: b.task }); const t = taskById(b.task);
         location.hash = H.delivery(t?.delivery || b.task); toast("Uppgiften ligger i leveransen."); }
       catch (e) { fail("Uppgiften lades inte i leveransen", e); }
     });
@@ -6123,7 +6219,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const f = LV.promise; if (!f?.preview) return toast("Visa förhandsvisningen först.", null, true);
     return busy(btn, async () => {
       try { await call("execute_step", { ...promiseArgs(f), confirmed: true, user_approval: `Ja, bekräfta (i vyn): ${f.preview}`.slice(0, 500) });
-        LV.promise = null; await load(); toast(`Datumet är ${short(f.to)}. Det är ett nytt löfte — säg till beställaren.`); }
+        LV.promise = null; await refreshAfterWrite(); toast(`Datumet är ${short(f.to)}. Det är ett nytt löfte — säg till beställaren.`); }
       catch (e) { fail("Datumet flyttades inte", e); }
     });
   }
@@ -8145,8 +8241,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     else el.addEventListener("click", () => el.remove());
   }
   const fail = (what, e) => toast(`${what}: ${e?.message || e}`, null, true);
-  /** Efter en skrivning: hämta planen igen, så att det som visas är det som gäller. */
-  async function afterWrite(text, undo = null) { await load(); toast(text, undo); }
+  /** Efter en skrivning: kvittot direkt, och det ändrade hämtas om i bakgrunden (refreshAfterWrite). */
+  async function afterWrite(text, undo = null, scope = {}) { toast(text, undo); refreshAfterWrite(scope); }
 
   /* ── Handlingarna i stegets och frågans arbetsyta (B-211) ──────────────
      Samma anrop som den nuvarande vyn gör. Knappen stängs av medan anropet
@@ -8218,7 +8314,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       return last;
     } finally { note.done(); }
   }
-  const busy = async (btn, fn) => { if (btn) btn.disabled = true; try { return await fn(); } finally { if (btn?.isConnected) btn.disabled = false; } };
+  const busy = async (btn, fn) => { if (btn) { btn.disabled = true; btn.setAttribute("aria-busy", "true"); }
+    try { return await fn(); } finally { if (btn?.isConnected) { btn.disabled = false; btn.removeAttribute("aria-busy"); } } };
   const current = () => { const t = taskById(state.obj?.task); return { t, s: stepOf(t, state.obj?.step) }; };
 
   /* ── Bildväljaren (docs/image-picker-plan.md) ─────────────────────────────
@@ -8549,7 +8646,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const { t, s } = current();
     return busy(btn, async () => {
       try { await call("execute_step", { task: t.id, step: s.step, start: on });
-        await afterWrite(on ? "Steget är påbörjat. Andra ser att du har det." : "Steget är släppt.", on ? () => call("execute_step", { task: t.id, step: s.step, start: false }).then(load) : null); }
+        await afterWrite(on ? "Steget är påbörjat. Andra ser att du har det." : "Steget är släppt.", on ? () => call("execute_step", { task: t.id, step: s.step, start: false }).then(() => refreshAfterWrite()) : null); }
       catch (e) { fail("Kunde inte ändra steget", e); }
     });
   }
@@ -8850,7 +8947,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       if (v === "registry_define" && !previewable(v, args)) throw new Error("registry_define går bara att föreslå för din egen tid (node: { id, planning })");
       const card = { what, server: k, tool: v, args, state: "open", preview: null };
       if (previewable(v, args)) {
-        try { const d = await callOn(k, v, args); card.preview = String(d?.summary || "").replace(/^Förhandsvisning:\s*/, ""); }
+        try { const d = await callOn(k, v, args); card.preview = String(d?.summary || "").replace(/^Förhandsvisning:\s*/, "");
+          card.next = d?.next_call ?? null; }
         catch (e) { card.state = "bad"; card.preview = String(e?.message || e).split(" — ")[0]; }
       } else if (args.handover_to) {
         card.preview = `${personName(args.handover_to)} får frågan och tar över först efter sitt ja.`;
@@ -8872,7 +8970,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const approval = `Ja i vyn (förslag från Claude): ${c.what}`.slice(0, 500);
     const args = { ...c.args, ...(previewable(c.tool, c.args) ? { confirmed: true } : {}), user_approval: approval };
     // Dirigentens bekräftelse bär förhandsvisningens preview_id (felrapport 7a464982).
-    const run = c.server === SERVER && previewable(c.tool, c.args) ? () => previewThenConfirm(c.tool, c.args, approval) : () => callOn(c.server, c.tool, args);
+    const run = c.server === SERVER && previewable(c.tool, c.args) ? () => previewThenConfirm(c.tool, c.args, approval, c.next) : () => callOn(c.server, c.tool, args);
     return busy(btn, async () => {
       try { await run(); c.state = "done"; toast(`Gjort: ${c.what}`); }
       catch (e) { c.state = "failed"; c.error = String(e?.message || e).split(" — ")[0]; }
@@ -9626,7 +9724,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   function confirmNode(btn, id) {
     const c = (S.agenda?.pending_confirmation ?? []).find((x) => x.id === id);
     return busy(btn, async () => {
-      try { await call("registry_define", { confirm: id, confirmed: true, user_approval: `Ja, bekräftat i vyn: ${c?.label ?? id}` }); closeDialog(); await load(); toast("Bekräftat."); }
+      try { await call("registry_define", { confirm: id, confirmed: true, user_approval: `Ja, bekräftat i vyn: ${c?.label ?? id}` }); closeDialog(); await refreshAfterWrite(); toast("Bekräftat."); }
       catch (e) { fail("Bekräftelsen gick inte igenom", e); }
     });
   }
@@ -9683,7 +9781,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   }
   function takeTask(btn, id) {
     return busy(btn, async () => {
-      try { await call("execute_step", { task: id, take_over: true }); closeDialog(); await load(); toast("Uppgiften är din."); }
+      try { await call("execute_step", { task: id, take_over: true }); closeDialog(); toast("Uppgiften är din."); refreshAfterWrite({ task: id }); }
       catch (e) { fail("Uppgiften togs inte över", e); }
     });
   }
@@ -9695,7 +9793,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         const d = await call("execute_step", { task: t.id, step: s.step });
         // Renderingen pågår: posten visar «Renderas …» och bilderna kommer av sig själva (utan att knappen hålls upptagen).
         if (d?.pending && d.pending.state !== "failed" && d.pending.job) { followRender(t, s, d); return; }
-        if (d?.pending?.state === "failed") { await load(); return toast(`${s.label}: ${d.pending.text || "renderingen föll"}`, null, true); }
+        if (d?.pending?.state === "failed") { await refreshAfterWrite(); return toast(`${s.label}: ${d.pending.text || "renderingen föll"}`, null, true); }
         if (!d?.awaiting_confirmation) return codeResult(s.label, d);
         // Bilderna som miniatyrer med länk till filbiblioteket (felrapport c96d2186).
         const rows = wouldChangeHtml(d.would_change);
@@ -9721,8 +9819,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       }
     } catch (e) { delete LV.render[t.id]; return fail("Renderingen kunde inte följas", e); }
     delete LV.render[t.id];
-    if (d?.pending?.state === "failed") { await load(); return toast(`${s.label}: ${d.pending.text || "renderingen föll"}`, null, true); }
-    if (d?.pending) { await load(); return toast(`${s.label} pågår fortfarande: ${d.pending.progress || "renderas"}. Posten visar bilderna när de är klara.`); }
+    if (d?.pending?.state === "failed") { refreshAfterWrite({ task: t.id }); return toast(`${s.label}: ${d.pending.text || "renderingen föll"}`, null, true); }
+    if (d?.pending) { refreshAfterWrite({ task: t.id }); return toast(`${s.label} pågår fortfarande: ${d.pending.progress || "renderas"}. Posten visar bilderna när de är klara.`); }
     return codeResult(s.label, d);
   }
   /**
@@ -9730,7 +9828,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
    * Förut stod det "är kört" oavsett vad servern svarade.
    */
   async function codeResult(label, d) {
-    await load();
+    await refreshAfterWrite();
     if (d?.ok) return toast(`${label} är kört.`);
     // Ett blandat steg stannar före Claudes eller människans del. Det är inget fel.
     if (d?.waiting_on) return toast(`${label}: koddelarna är gjorda. Nästa del, ${lbl(d.waiting_on.named, "nästa del")}, görs av ${PERFORMER_TXT[d.waiting_on.performer] || "någon annan"}.`);
@@ -9762,6 +9860,28 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   }
   const allCases = () => { const q = S.queue || {}; return [...(q.waiting || []), ...(q.untriaged || []), ...(q.by_rule || []), ...(q.in_plan || []), ...(q.task_closed || []), ...(q.resolved || []), ...(q.closed_by_ack || [])]; };
   const caseByThread = (thread) => allCases().find((y) => y.thread === thread) ?? null;
+  /** Ärenden som sparas just nu: tråd → saving | saved | error. Raden visar det. */
+  const CASE_SAVING = new Map();
+  /**
+   * Det bedömda ärendet flyttas i vyns egen kopia av posten direkt, i stället
+   * för att hela posten läses om innan något syns. Posten läses om i
+   * bakgrunden (refreshAfterWrite) och rättar det som inte stämmer.
+   */
+  function moveAssessed(thread, classification, r) {
+    const q = S.queue; if (!q) return;
+    let found = null;
+    for (const k of ["untriaged", "by_rule", "waiting"]) {
+      if (!Array.isArray(q[k])) continue;
+      const i = q[k].findIndex((y) => y.thread === thread);
+      if (i >= 0) { found ||= q[k][i]; q[k].splice(i, 1); }
+    }
+    if (!found) return;
+    const o = classification.outcome;
+    const moved = { ...found, triage: { ...(found.triage || {}), outcome: o, ...(r?.task || r?.task_from ? { task: r.task || r.task_from } : {}) },
+      ...(o === "resolved" || o === "ignored" ? { handled: { why: classification.reason || OUTCOME[o] || "hanterad" } } : {}) };
+    const to = o === "waiting" ? "waiting" : o === "resolved" || o === "ignored" ? "resolved" : "in_plan";
+    (q[to] ||= []).unshift(moved);
+  }
   function threadSubject(thread) { return caseByThread(thread)?.subject || S.threads?.get(thread)?.detail?.thread?.subject || null; }
   /**
    * Ursprunget för en uppgift ur ett ärende (felrapport 1538bd6e): ämnesraden,
@@ -9788,7 +9908,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return `<div class="lv-note-row lv-src meta">${esc(src.from || "okänd avsändare")}${src.received ? ` · kom in ${short(src.received)}` : ""} · ${gmailLink(src.thread, "linkbtn")}</div>`;
   }
   const OUTCOME = { delivery: "blir arbete", own_reply: "eget svar räcker", resolved: "avklarat", ignored: "ignoreras",
-    proposal: "i förslagslådan", waiting: "obedömt" };
+    proposal: "i förslagslådan", waiting: "obedömt", claude_code: "körs i Claude Code" };
   /*
    * Åtgärden (kvar.md 19). Daniel P 2026-09-25: bedömningen gäller vilken
    * åtgärd som behövs, och "inget arbete" är ett av dess utfall. Ett val i
@@ -9819,12 +9939,52 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const n = t.named || {};
     if (t.outcome === "delivery") return `<span class="chip green">${esc(lbl(n.method, lbl(n.deliverable_type, "leverans")))}${n.customer ? ` · ${esc(lbl(n.customer))}` : ""}</span>`;
     if (t.outcome === "proposal") return `<span class="chip amber">förslag: vi levererar inte det än</span>`;
+    if (t.outcome === "claude_code") return `<span class="chip accent">Claude Code · ${esc(lbl(n.responsible, "ofördelat"))}</span>`;
     return `<span class="chip">${esc(OUTCOME[t.outcome] || t.outcome)}</span>`;
+  }
+  /*
+   * Vart ärendet gick (Daniel P 2026-10-02: «Det är högst oklart vart ärendet
+   * hamnar sen»). En rad efter varje bedömning, med länk när det finns
+   * något att öppna; samma ord i förhandsvisningen före ja (destPreview).
+   */
+  function destinationOf(x) {
+    const t = x.triage; if (!t || t.outcome === "waiting") return "";
+    const n = t.named || {}, who = lbl(n.responsible, "ofördelat");
+    if (t.outcome === "claude_code")
+      return `→ <button class="linkbtn" data-open-case="${esc(x.thread)}">Kör i Claude Code</button> · ${esc(who)}`;
+    if (t.outcome === "delivery") {
+      const task = x.handled?.task ? taskById(x.handled.task) : null, s = task && nextStep(task);
+      if (!task) return `→ ${esc(lbl(n.method, lbl(n.deliverable_type, "arbete")))} · ${esc(who)} · ingen uppgift än`;
+      const steps = task.steps || [], at = s ? steps.indexOf(s) + 1 : steps.length;
+      return `→ <button class="linkbtn" ${s ? `data-open-step="${esc(task.id)}|${esc(s.step)}"` : `data-open-case="${esc(x.thread)}"`}>Uppgift: ${esc(taskName(task))}</button>`
+        + ` · ${esc(lbl(n.method, "metod"))}${s ? ` · steg ${at} av ${steps.length}: ${esc(s.label || "")}` : " · klar"} · ${esc(lbl(s?.responsible, who))}`;
+    }
+    return `→ ${esc({ own_reply: "Eget svar, ingen uppgift", resolved: "Avklarat", ignored: "Avfört", proposal: "Förslagslådan, ingen uppgift" }[t.outcome] || OUTCOME[t.outcome] || t.outcome)}`;
+  }
+  /** Vart ärendet hamnar om det sparas så här, i förväg. */
+  function destPreview(v) {
+    const c = v.choice || "waiting", who = v.responsible ? (peopleList().find((y) => y.id === v.responsible)?.label || v.responsible) : null;
+    const cust = v.customer ? (customerList().find((y) => y.id === v.customer)?.label || lbl(v.customer)) : null;
+    if (c === "claude_code") return `Hamnar: ett ärende för ${who || "dig"} att köra i Claude Code, med en färdig prompt. Står i Att göra på Idag och under Bedömt.`;
+    if (c.startsWith("m:")) return `Hamnar: en uppgift i planen med ${libById(c.slice(2))?.label || "metoden"}${cust ? ` för ${cust}` : " — välj kund"}, ${who ? `hos ${who}` : "ofördelad (Fördela)"}. Första steget öppnas när du sparat.`;
+    if (c.startsWith("t:")) return `Hamnar: en uppgift i planen${cust ? ` för ${cust}` : ""}, ${who ? `hos ${who}` : "ofördelad"}.`;
+    return `Hamnar: ${{ own_reply: "ingen uppgift — ärendet ligger kvar tills svaret är skickat", resolved: "Avklarat, med skälet", ignored: "avfört, med skälet", proposal: "förslagslådan, ingen uppgift", waiting: "kvar i Att bedöma" }[c] || c}.`;
+  }
+  /** Kundens vanliga metoder: de som valts i kundens tidigare bedömningar, flest först. */
+  function customerMethods(cust) {
+    if (!cust) return [];
+    const n = new Map();
+    for (const y of allCases()) if (y.triage?.customer === cust && y.triage.method && libById(y.triage.method)) n.set(y.triage.method, (n.get(y.triage.method) || 0) + 1);
+    return [...n.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id);
   }
   function caseRow(x, tab) {
     const open = !x.triage || x.triage.outcome === "waiting";
+    const saving = CASE_SAVING.get(x.thread);
+    if (saving) return row({ kind: `<span class="kind human" title="Mejl">${ic("mail")}</span>`, title: esc(x.subject || "utan ämnesrad"),
+      why: `${esc(x.party || "okänd avsändare")} · ${saving === "saving" ? `<span class="chip">Sparar…</span>` : saving === "saved" ? `<span class="chip green">Sparat</span>` : `<span class="chip amber">Sparades inte</span>`}`,
+      when: short(x.last_at || x.since), late: false, act: "", attrs: `data-open-case="${esc(x.thread)}"` });
     return row({ kind: `<span class="kind human" title="Mejl">${ic("mail")}</span>`, title: esc(x.subject || "utan ämnesrad"),
-      why: `${esc(x.party || "okänd avsändare")}${x.cc_only ? " · vi på kopia" : ""}${x.workdays != null ? ` · ${x.workdays} arbetsdagar` : ""} · ${x.handled ? `<span class="chip green">${esc(x.handled.why)}</span>` : triageChip(x)}${x.returned ? ` · <span class="chip amber">kunden skrev igen</span>` : ""}${x.rule ? ` · <span class="chip">regel: ${esc(x.rule.label || "")}</span>` : ""}`,
+      why: `${esc(x.party || "okänd avsändare")}${x.cc_only ? " · vi på kopia" : ""}${x.workdays != null ? ` · ${x.workdays} arbetsdagar` : ""} · ${x.handled ? `<span class="chip green">${esc(x.handled.why)}</span>` : triageChip(x)}${x.returned ? ` · <span class="chip amber">kunden skrev igen</span>` : ""}${x.rule ? ` · <span class="chip">regel: ${esc(x.rule.label || "")}</span>` : ""}${destinationOf(x) ? ` <span class="dest">${destinationOf(x)}</span>` : ""}`,
       when: short(x.last_at || x.since), late: !!x.workdays && x.workdays >= 5 && tab === "bedoma",
       act: (open && tab === "bedoma" ? `<button class="btn sm ai" data-assess="${esc(x.thread)}">${SP} Bedöm</button>`
         : `<button class="btn sm" data-open-case="${esc(x.thread)}">Öppna</button>`)
@@ -9836,22 +9996,42 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const opt = (list, v, empty) => `<option value="">${empty}</option>` + list.map((o) => `<option value="${esc(o.id)}" ${o.id === v ? "selected" : ""}>${esc(o.label)}</option>`).join("");
     const v = choiceOf(p);
     const suggested = [...new Set(p.suggested || [])].filter((id) => libById(id));
-    const rest = methodEntries().filter((m) => !suggested.includes(m.id));
+    const usual = customerMethods(p.customer).filter((id) => !suggested.includes(id));
+    // Hela listan bara när man söker i den (Daniel P 2026-10-02: «helt omöjligt … i en jättelista av metoder»).
+    const rest = methodEntries().filter((m) => !suggested.includes(m.id) && !usual.includes(m.id));
     const choice = `<select data-pf="choice">`
+      + `<optgroup label="Förval"><option value="claude_code" ${v === "claude_code" ? "selected" : ""}>Kör i Claude Code — ingen metod behövs, en färdig prompt</option></optgroup>`
       + (v.startsWith("t:") ? `<option value="${esc(v)}" selected>${esc(typeLabel(v.slice(2)) || "Arbete")} · metoden väljs senare</option>` : "")
       + (suggested.length ? `<optgroup label="Passar ärendet">${suggested.map((id) => methodOption(id, v)).join("")}</optgroup>` : "")
+      + (usual.length ? `<optgroup label="Kundens vanliga metoder">${usual.map((id) => methodOption(id, v)).join("")}</optgroup>` : "")
       + `<optgroup label="Inget arbete">${Object.entries(NO_WORK).map(([k, l]) => `<option value="${k}" ${k === v ? "selected" : ""}>${l}</option>`).join("")}</optgroup>`
       + `<optgroup label="Något vi inte levererar än"><option value="proposal" ${v === "proposal" ? "selected" : ""}>Blir ett förslag i förslagslådan, ingen uppgift</option></optgroup>`
-      + (rest.length ? `<optgroup label="Alla metoder">${rest.map((m) => methodOption(m.id, v)).join("")}</optgroup>` : "")
+      + (rest.length ? `<optgroup label="Alla metoder · sök för att visa" data-all-methods="1">${rest.map((m) => v === `m:${m.id}` ? methodOption(m.id, v) : methodOption(m.id, v).replace("<option ", "<option hidden ")).join("")}</optgroup>` : "")
       + `<option value="waiting" ${v === "waiting" ? "selected" : ""}>Vet inte än</option></select>`;
     return `<div class="fields" data-proposal="${esc(key)}">`
-      + `<label class="field wide"><span>Åtgärd · metoden avgör vad kunden får</span>${choice}</label>`
+      + `<label class="field wide"><span>Åtgärd · Kör i Claude Code, eller en metod (den avgör vad kunden får)</span>${choice}`
+      + `<input type="search" data-pf-find="1" placeholder="Sök bland alla metoder" aria-label="Sök bland alla metoder" style="margin-top:6px"></label>`
       + `<label class="field"><span>Kund</span><select data-pf="customer">${opt(customerList(), p.customer, "–")}</select></label>`
       + `<label class="field"><span>Vem gör det</span><select data-pf="responsible">${opt(peopleList(), p.responsible, "ofördelat")}</select></label>`
       + `<label class="field wide"><span>Vad som ska göras · för ett förslag: vad kunden ber om</span><textarea rows="2" data-pf="svar_kravs">${esc(p.svar_kravs || "")}</textarea></label>`
       + `<label class="field wide"><span>Varför · krävs för avklarat och ignoreras</span><textarea rows="2" data-pf="varfor">${esc(p.varfor || "")}</textarea></label></div>`
-      + (p.las_inte ? `<div class="meta">Läste inte: ${esc(p.las_inte)}</div>` : "");
+      + (p.las_inte ? `<div class="meta">Läste inte: ${esc(p.las_inte)}</div>` : "")
+      + `<div class="meta" data-pf-dest="1" style="margin-top:6px">${esc(destPreview({ ...p, choice: v }))}</div>`;
   }
+  // Sök i hela metodlistan, och vart ärendet hamnar när fälten ändras.
+  const repaintDest = (box) => { const d = box.querySelector("[data-pf-dest]"); if (d) d.textContent = destPreview(readFields(box.dataset.proposal)); };
+  document.addEventListener("input", (e) => {
+    const box = e.target.closest?.("[data-proposal]"); if (!box) return;
+    if (e.target.dataset.pfFind) {
+      const q = e.target.value.trim().toLowerCase(), sel = box.querySelector('[data-pf="choice"]');
+      const all = [...(sel?.querySelectorAll("[data-all-methods] option") || [])];
+      for (const o of all) o.hidden = !q || !o.textContent.toLowerCase().includes(q);
+      const first = q && all.find((o) => !o.hidden);
+      if (first && sel) sel.value = first.value;
+    }
+    repaintDest(box);
+  });
+  document.addEventListener("change", (e) => { const box = e.target.closest?.("[data-proposal]"); if (box) repaintDest(box); });
   const readFields = (key) => { const box = document.querySelector(`[data-proposal="${CSS.escape(key)}"]`); const v = {};
     for (const el of box?.querySelectorAll("[data-pf]") || []) v[el.dataset.pf] = el.value.trim();
     return v; };
@@ -9863,18 +10043,53 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       + (p.own ? `<button class="btn quiet" data-assess-cancel="1">Avbryt</button>` : `<button class="btn quiet" data-reject="${esc(x.thread)}">Avvisa…</button>`) + `</div></div>`;
     const t = x.triage;
     return (t && t.outcome !== "waiting" ? `<div class="meta" style="margin-bottom:8px">Bedömt: ${triageChip(x)}${t.reason ? ` — ${esc(t.reason)}` : ""}</div>` : "")
+      + (destinationOf(x) ? `<div class="meta dest" style="margin-bottom:8px">${destinationOf(x)}</div>` : "")
+      + (t?.outcome === "claude_code" && t.prompt ? codeAssignment(x.thread, t.prompt) : "")
       + `<div class="bar-actions"><button class="btn ai" data-assess="${esc(x.thread)}">${SP} Låt Claude bedöma</button>`
       + `<button class="btn" data-assess-own="${esc(x.thread)}">Bedöm själv</button>`
       + (x.handled && x.handled.kind !== "in_plan" ? "" : `<button class="btn quiet" data-handled="${esc(x.thread)}">Hanterad</button>`) + `</div>`;
   }
 
+  /*
+   * Kör i Claude Code (2026-10-02). Förhandsvisningen är serverns: prompten
+   * och vart ärendet hamnar. Inget skrivs förrän Spara; prompten går att
+   * ändra före, och det som står i rutan är det som sparas.
+   */
+  const CODE = { thread: null, classification: null };
+  async function codePreview(thread, classification) {
+    const r = await call("classify_accept", { thread, classification, answered_by: "vyn" });
+    CODE.thread = thread; CODE.classification = { ...classification, responsible: classification.responsible || r?.responsible?.id };
+    dialog(`<h2>Kör i Claude Code</h2><p class="meta">${esc(r?.destination || "")} Inget är sparat än.</p>`
+      + `<label class="field wide"><span>Prompten · klistras in i Claude Code, går att ändra före</span><textarea id="code-prompt" rows="18" data-nodraft>${esc(r?.prompt || "")}</textarea></label>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn" data-copy-el="code-prompt">Kopiera prompt till Claude Code</button>${sample ? `<button class="btn ai" data-code-panel="1">${SP} Öppna i Claude</button>` : ""}`
+      + `<button class="btn primary" data-code-save="1">Spara och ge till ${esc(r?.responsible?.label || "den ansvarige")}</button></div>`);
+    return r;
+  }
+  /** Uppdraget på ett ärende som körs i Claude Code: prompten, med Kopiera och Öppna i Claude. */
+  function codeAssignment(thread, prompt) {
+    const id = `code-asg-${thread}`;
+    return `<div class="asg"><div class="pp-k">Uppdraget</div><p class="meta" style="margin:0 0 6px">Prompten till Claude Code, som den sparades vid bedömningen.</p>`
+      + `<div class="st-prompt"><textarea readonly data-nodraft rows="12" id="${esc(id)}" aria-label="Prompten">${esc(prompt)}</textarea></div>`
+      + `<div class="bar-actions"><button class="btn primary" data-copy-el="${esc(id)}">Kopiera till Claude Code</button>${sample ? `<button class="btn ai" data-code-panel="${esc(thread)}">${SP} Öppna i Claude</button>` : ""}</div></div>`;
+  }
+  /** Ärenden som ska köras i Claude Code av mig, för Att göra på Idag. */
+  function codeCaseRows() {
+    const mine = me(); if (!mine) return [];
+    return allCases().filter((x, n, all) => all.findIndex((y) => y.thread === x.thread) === n
+      && x.triage?.outcome === "claude_code" && x.triage.responsible === mine && x.state !== "answered");
+  }
+  function codeCaseRow(x) { return trow({ cls: "mine", icon: "sparkles", icls: "cl", title: x.subject || "Ärende utan ämnesrad", attrs: `data-open-case="${esc(x.thread)}"`, more: false,
+    acts: (x.triage.prompt ? `<textarea hidden id="code-row-${esc(x.thread)}">${esc(x.triage.prompt)}</textarea><button class="btn sm ai" data-copy-el="code-row-${esc(x.thread)}">${SP} Kopiera till Claude Code</button>` : "")
+      + `<button class="btn sm" data-open-case="${esc(x.thread)}">Öppna ärendet ›</button>`,
+    meta: chip("Kör i Claude Code", "accent") + esc(lbl(x.triage.named?.customer, x.party || "")) }); }
   const ASSESSMENT_RULES = ["DIN UPPGIFT ÄR ATT VÄLJA ÅTGÄRD — vilken metod som gör ärendet, eller att inget arbete behövs. Inte att sortera i fack.", "",
     "1. KRÄVS ARBETE? Ska någon felsöka, rätta, sätta upp, skriva, ta fram eller utreda något — välj metoden som gör det (choice = metodens id). Metoderna som passar ärendet står först; passar ingen av dem, välj bland alla. Ett fel eller en fråga om något vi redan levererar är ett supportärende: välj den supportmetod som passar (fel eller fråga).",
     "2. NÅGOT VI INTE LEVERERAR ÄN? Ber kunden om en sorts leverans vi inte gör i dag (till exempel e-postmarknadsföring) och ingen metod gör det: proposal, och skriv i svar_kravs vad kunden ber om. Det blir ett förslag, ingen uppgift.",
     "3. AVKLARAT? Visar tråden SJÄLV att saken är gjord: resolved, med skäl. Att tråden är gammal räcker inte.",
     "4. SKA INTE BLI NÅGOT? ignored, med skäl.",
     "5. RÄCKER ETT SVAR? own_reply — men bara när ärendet är ute ur världen i och med svaret. Kräver det att någon GÖR något är det punkt 1.",
-    "6. FÖRSTÅR DU INTE VAD ÄRENDET GÄLLER? waiting, och skriv rakt ut vad du inte förstår."];
+    "6. FÖRSTÅR DU INTE VAD ÄRENDET GÄLLER? waiting, och skriv rakt ut vad du inte förstår.",
+    "7. KRÄVS ARBETE MEN PASSAR INGEN METOD TYDLIGT? claude_code: ärendet körs i Claude Code av en av oss, med en färdig prompt. Det är förvalet när inget annat är tydligt — välj hellre det än en metod som bara nästan passar. Skriv i svar_kravs vad kunden ber om."];
   const objections = new Map();
   /**
    * Metoderna som passar ärendet (kvar.md 19): sökningens ram och adressens
@@ -9916,16 +10131,18 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       "customer krävs när du väljer en metod: en uppgift hör till en kunds åtagande.", "", ...ASSESSMENT_RULES, "",
       ...(o ? [`DU HAR FÖRESLAGIT EN GÅNG, och människan sa att det inte stämde. Förra: ${JSON.stringify(o.prev)}. Invändningen: ${o.why}. Bemöt den.`] : []),
       "Svara med ENBART JSON:",
-      '{"choice":"<metodens id>|own_reply|resolved|ignored|proposal|waiting","customer":"<id>","responsible":"<id eller tom>","svar_kravs":"<vad som ska göras, eller vad kunden ber om>","varfor":"<skälet, ur tråden>","las_inte":"<vad som saknades, eller tom>"}'].filter(Boolean).join("\n");
+      '{"choice":"<metodens id>|claude_code|own_reply|resolved|ignored|proposal|waiting","customer":"<id>","responsible":"<id eller tom>","svar_kravs":"<vad som ska göras, eller vad kunden ber om>","varfor":"<skälet, ur tråden>","las_inte":"<vad som saknades, eller tom>"}'].filter(Boolean).join("\n");
     const p = await sample.json(prompt, { modelTier: "default" });
     const c = String(p?.choice || "");
     const isMethod = !!libById(c) && libById(c).kind === "method";
-    if (!p || !(isMethod || NO_WORK[c] || c === "proposal" || c === "waiting")) throw new Error("Claude svarade inte med en åtgärd");
+    if (!p || !(isMethod || NO_WORK[c] || c === "proposal" || c === "waiting" || c === "claude_code")) throw new Error("Claude svarade inte med en åtgärd");
     return { ...p, choice: isMethod ? `m:${c}` : c, suggested, _thread: x.thread, _posts: posts.length };
   }
   /** Fälten som en bedömning: åtgärden blir utfall, och metod med vad kunden får. */
   function classificationOf(v) {
     const c = v.choice || "waiting";
+    if (c === "claude_code") return { outcome: c, ...(v.customer ? { customer: v.customer } : {}),
+      responsible: v.responsible || me(), ...(v.svar_kravs ? { action: v.svar_kravs } : {}), ...(v.varfor ? { reason: v.varfor } : {}) };
     const work = c.startsWith("m:") || c.startsWith("t:");
     return { outcome: work ? "delivery" : c,
       ...(c.startsWith("m:") ? { method: c.slice(2), deliverable_type: methodDelivers(c.slice(2)) } : {}),
@@ -9942,9 +10159,19 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       throw new Error("skriv varför — skälet står kvar och går att läsa efteråt");
     if (classification.outcome === "proposal" && !classification.action)
       throw new Error("skriv vad kunden ber om — det är förslaget");
-    const r = await call("classify_accept", { thread, classification, answered_by: "vyn" });
-    if (quiet) return r;
-    await load();
+    if (classification.outcome === "claude_code" && !classification.confirmed) return codePreview(thread, classification);
+    // Raden säger «Sparar…» direkt, och flyttas när servern sagt ja (Daniel P 2026-10-02).
+    CASE_SAVING.set(thread, "saving"); render();
+    let r;
+    try { r = await call("classify_accept", { thread, classification, answered_by: "vyn" }); }
+    catch (e) { CASE_SAVING.set(thread, "error"); render();
+      setTimeout(() => { if (CASE_SAVING.get(thread) === "error") { CASE_SAVING.delete(thread); render(); } }, 6000); throw e; }
+    CASE_SAVING.set(thread, "saved"); moveAssessed(thread, classification, r);
+    setTimeout(() => { if (CASE_SAVING.get(thread) === "saved") { CASE_SAVING.delete(thread); render(); } }, 4000);
+    if (classification.outcome === "claude_code") { closeDialogOnly(); await refreshAfterWrite({ queue: true }); toast(r?.destination || "Bedömt: körs i Claude Code."); return r; }
+    const made = r?.task || r?.task_from || null;
+    if (quiet) { refreshAfterWrite({ task: made, queue: true }); return r; }
+    await refreshAfterWrite({ task: made, queue: true });
     if (r?.task_from) {
       const t = taskById(r.task || r.task_from), n = t && nextStep(t);
       if (n) { open({ type: "step", task: t.id, step: n.step, title: n.label });
@@ -9991,7 +10218,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         user_approval: `Ja, lägg in beställningen (i vyn): ${input.deliverable_type} till ${input.customer}` }); }
       catch (e) { return say(`Beställningen lades inte in: ${e?.message || e}`); }
       closeDialogOnly();
-      await load();
+      await refreshAfterWrite({ task: r?.task ?? null });
       const t = taskById(r?.task), n = t && nextStep(t);
       if (n) open({ type: "step", task: t.id, step: n.step, title: n.label });
       toast(r?.duplicate ? "Beställningen fanns redan. Inget skrevs igen."
@@ -10045,8 +10272,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       try {
         await call("registry_define", { change: true, node: { id: o.op, calls } });
-        const undo = () => call("registry_define", { change: true, node: { id: o.op, calls: before } }).then(() => refreshLib()).then(load);
-        await refreshLib(); await load();
+        const undo = () => call("registry_define", { change: true, node: { id: o.op, calls: before } }).then(() => refreshLib()).then(() => refreshAfterWrite());
+        await refreshLib(); refreshAfterWrite();
         o.orig = JSON.stringify(o.calls); o.check = null; render();
         toast(`Ny version av «${o.title}» är sparad.`, undo);
       } catch (e) { fail("Versionen sparades inte", e); }
@@ -10195,8 +10422,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       try {
         await call("registry_define", { change: true, node: { id: f.node, [f.field]: val } });
-        const undo = () => call("registry_define", { change: true, node: { id: f.node, [f.field]: f.old } }).then(() => refreshLib()).then(load);
-        closeDialog(); await refreshLib(); await load();
+        const undo = () => call("registry_define", { change: true, node: { id: f.node, [f.field]: f.old } }).then(() => refreshLib()).then(() => refreshAfterWrite());
+        closeDialog(); await refreshLib(); refreshAfterWrite();
         toast(`${f.what} är ändrat till «${val}».`, undo);
       } catch (e) { fail("Namnet sparades inte", e); }
     });
@@ -10247,7 +10474,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       try {
         await stepTypeUndoCall(x.step, x.label, true);
-        state.stype = null; closeDialog(); await refreshLib(); await load();
+        state.stype = null; closeDialog(); await refreshLib(); refreshAfterWrite();
         toast(`«${x.label}» är som före bytet.`);
       } catch (e) { fail("Ångra sparades inte", e); }
     });
@@ -10276,8 +10503,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       try {
         await call("registry_define", { change: true, confirmed: true, user_approval: `Ja, bytt i vyn: ${x.label} → ${STYPE[x.to]}`, node: { id: x.step, switch_type: { to: x.to } } });
-        state.stype = null; closeDialog(); await refreshLib(); await load();
-        const undo = () => stepTypeUndoCall(x.step, x.label, true).then(() => refreshLib()).then(load);
+        state.stype = null; closeDialog(); await refreshLib(); refreshAfterWrite();
+        const undo = () => stepTypeUndoCall(x.step, x.label, true).then(() => refreshLib()).then(() => refreshAfterWrite());
         toast(`«${x.label}» görs nu av ${STYPE[x.to].toLowerCase()}, i alla uppgifter som använder steget. Rätta det som är märkt (?).`, undo);
       } catch (e) { fail("Bytet sparades inte", e); }
     });
@@ -10339,7 +10566,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       try {
         await call("execute_step", { ...x.args, confirmed: true, user_approval: `Ja, väntan sparad i vyn: ${x.args.values.wait.question}`.slice(0, 500) });
-        const { task, step, cur } = x; state.wait = null; closeDialog(); await load();
+        const { task, step, cur } = x; state.wait = null; closeDialog(); refreshAfterWrite({ task });
         toast("Väntan är sparad. Steget räknas inte som sent.", cur ? null : () => call("execute_step", { task, ...(step ? { step } : {}), values: { wait: null }, reason: "Ångrad direkt i vyn", confirmed: true, user_approval: "Ja, ångra väntan (vyn)" }).then(() => load()));
       } catch (e) { fail("Väntan sparades inte", e); }
     });
@@ -10351,7 +10578,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       try {
         await call("execute_step", { task: x.task, ...(x.step ? { step: x.step } : {}), values: { wait: null }, reason: why.trim(), confirmed: true, user_approval: `Ja, väntan borttagen i vyn: ${why.trim()}`.slice(0, 500) });
-        state.wait = null; closeDialog(); await load(); toast("Väntan är borttagen.");
+        state.wait = null; closeDialog(); await refreshAfterWrite(); toast("Väntan är borttagen.");
       } catch (e) { fail("Väntan togs inte bort", e); }
     });
   }
@@ -10565,9 +10792,9 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
             material: { what: "Instruktionen för det här uppdraget", how: "Gäller i stället för det allmänna och kundens sätt, bara i den här leveransen", level: "step", kind: "instruction", ...(e.enough.trim() ? { enough: e.enough.trim() } : {}) },
             confirmed: true, user_approval: yes });
         }
-        state.sedit = null; await refreshLib(); await load();
+        state.sedit = null; await refreshLib(); refreshAfterWrite();
         const where = { all: "för alla kunder", customer: `för ${custName(t)}`, task: "i det här uppdraget" }[e.scope];
-        toast(`Stegets text är ändrad ${where}.`, undo.length ? () => Promise.all(undo.map((f) => f())).then(() => refreshLib()).then(load) : null);
+        toast(`Stegets text är ändrad ${where}.`, undo.length ? () => Promise.all(undo.map((f) => f())).then(() => refreshLib()).then(() => refreshAfterWrite()) : null);
       } catch (x) { fail("Texten sparades inte", x); }
     });
   }
@@ -10604,7 +10831,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       try { await call("execute_step", { task: t.id, values: { delivery: d.id, after: [...keep, ...picked] }, confirmed: true,
           user_approval: `Ja, ändrat i vyn: vad «${s.label}» väntar på`.slice(0, 500) });
-        closeDialog(); await load(); toast(picked.length ? `«${s.label}» väntar nu på ${plural(picked.length, "steg", "steg")} i andra delar.` : `«${s.label}» väntar inte längre på andra delar.`); }
+        closeDialog(); await refreshAfterWrite(); toast(picked.length ? `«${s.label}» väntar nu på ${plural(picked.length, "steg", "steg")} i andra delar.` : `«${s.label}» väntar inte längre på andra delar.`); }
       catch (x) { fail("Det sparades inte", x); }
     });
   }
@@ -10650,7 +10877,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         if (f) await sendFile(f, fields);
         else await call("asset_register", { ...fields, text, mime: "text/markdown", filename: `${what}.md`.replace(/[\\/]/g, "-").slice(0, 120),
           confirmed: true, user_approval: `Ja i vyn: lägg till material «${what}»`.slice(0, 500) });
-        closeDialog(); state.mat = null; await load(); toast(`«${what}» är tillagt ${MAT_LEVEL[level]}.`);
+        closeDialog(); state.mat = null; await refreshAfterWrite(); toast(`«${what}» är tillagt ${MAT_LEVEL[level]}.`);
       } catch (x) { fail("Materialet lades inte till", x); }
     });
   }
@@ -10698,7 +10925,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     return busy(btn, async () => {
       try { await call("asset_register", { action: "important", from_ref: ref, for_task: task, on: on === "1", confirmed: true,
           user_approval: on === "1" ? "Ja i vyn: märk som viktigt dokument" : "Ja i vyn: inte längre ett viktigt dokument" });
-        await load(); toast(on === "1" ? "Märkt som viktigt i leveransen." : "Inte längre märkt som viktigt."); }
+        await refreshAfterWrite(); toast(on === "1" ? "Märkt som viktigt i leveransen." : "Inte längre märkt som viktigt."); }
       catch (x) { fail("Märkningen sparades inte", x); }
     });
   }
@@ -11489,6 +11716,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         const r = await call("plan_state", { task, weeks: state.horizon, format: "vy" });
         const i = tasks().findIndex((t) => t.id === task);
         if (r?.task && i >= 0) S.plan.tasks[i] = r.task;
+        else if (r?.task && S.plan) S.plan.tasks.push(r.task);
       }
     } catch { /* det flyttade står kvar; nästa hämtning rättar */ }
     render();
@@ -12373,6 +12601,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.confirmNode) return confirmNodeDialog(ds.confirmNode);
     if (ds.confirmNodeYes) return confirmNode(t, ds.confirmNodeYes);
     if (ds.kwYes !== undefined) return keywordYes(t, ds.kwYes);
+    if (ds.approvalYes !== undefined) return approvalYes(t, ds.approvalYes);
     if (ds.kwNo !== undefined) return keywordNo(ds.kwNo);
     if (ds.kw !== undefined) return keywordDialog(ds.kw);
     if (ds.suggestionYes !== undefined) return suggestionYes(t, ds.suggestionYes);
@@ -12565,8 +12794,15 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       state.obj.proposal = null; closeDialog(); render(); return toast("Förslaget avvisat. Skälet följer med nästa bedömning."); }
     if (ds.assessOwn) return busy(t, async () => { await deliverableTypes(); await libReady();
       const x = caseByThread(ds.assessOwn);
-      state.obj.proposal = { own: true, choice: "waiting", suggested: (x?.methods || []).map((m) => m.method) }; render(); });
+      state.obj.proposal = { own: true, choice: "claude_code", responsible: me(), customer: x?.triage?.customer || "", suggested: (x?.methods || []).map((m) => m.method) }; render(); });
     if (ds.assessCancel) { state.obj.proposal = null; return render(); }
+    if (ds.codeSave) return busy(t, async () => { try {
+      await acceptAssessment(CODE.thread, { ...CODE.classification, prompt: $("#code-prompt")?.value || "", confirmed: true });
+    } catch (e) { fail("Bedömningen sparades inte", e); } });
+    if (ds.codePanel) { const text = ds.codePanel === "1" ? $("#code-prompt")?.value : caseByThread(ds.codePanel)?.triage?.prompt;
+      closeDialogOnly(); document.body.classList.remove("panel-closed"); if (innerWidth <= 1200) document.body.classList.add("panel-open");
+      renderPanel(); const box = $("#ask"); if (box) { box.value = text || ""; box.focus(); }
+      return toast("Prompten står i rutan. Skicka den, eller kopiera den till Claude Code."); }
     /* Hanterad (2026-09-29): tråden väntar inte på oss längre. Ett kort skäl, som står i loggen; skriver kunden igen kommer tråden tillbaka. */
     if (ds.handled) return dialog(`<h2>Markera som hanterad</h2><p class="meta">«${esc(threadSubject(ds.handled) || "ärendet")}» lämnar «väntar på oss». Skälet står kvar i loggen och går att läsa efteråt. Skriver kunden igen kommer tråden tillbaka.</p>`
       + `<label class="field"><span>Skäl · kort</span><input id="hand-why" type="text" maxlength="200" placeholder="till exempel: besvarat per telefon"></label>`
@@ -12574,12 +12810,12 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.handledOk) { const why = $("#hand-why")?.value.trim();
       if (!why) return toast("Skriv ett kort skäl — det står kvar i loggen.", null, true);
       return busy(t, async () => { try { await acceptAssessment(ds.handledOk, { outcome: "resolved", reason: why }, { quiet: true });
-        closeDialog(); state.obj = null; await load(); toast("Markerad som hanterad."); } catch (e) { fail("Markeringen sparades inte", e); } }); }
-    if (ds.acceptOne !== undefined && t.hasAttribute("data-accept-one")) return busy(t, async () => { try { await acceptBatchItem(+ds.acceptOne); await load(); } catch (e) { fail("Förslaget sparades inte", e); } });
+        closeDialog(); state.obj = null; render(); toast("Markerad som hanterad."); } catch (e) { fail("Markeringen sparades inte", e); } }); }
+    if (ds.acceptOne !== undefined && t.hasAttribute("data-accept-one")) return busy(t, async () => { try { await acceptBatchItem(+ds.acceptOne); render(); } catch (e) { fail("Förslaget sparades inte", e); } });
     if (ds.acceptAll) return busy(t, async () => { let n = 0;
       for (let k = 0; k < state.batch.items.length; k++) { const i = state.batch.items[k]; if (!i.p || i.saved) continue;
         try { await acceptBatchItem(k); n++; } catch (e) { i.error = e.message || String(e); } }
-      await load(); toast(`${n} ärenden bedömda.`); });
+      render(); toast(`${n} ärenden bedömda.`); });
     if (ds.batchClose) { state.batch = null; return render(); }
     if (ds.fetchMail) return busy(t, async () => { try { const d = await call("intake_submit", { fetch: { source: "gmail" } });
       await loadQueue(); toast(d?.fetched != null ? `Hämtade ${d.fetched} nya.` : "Posten är hämtad."); } catch (e) { fail("Posten hämtades inte", e); } });
