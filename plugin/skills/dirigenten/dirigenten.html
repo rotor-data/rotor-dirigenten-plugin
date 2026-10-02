@@ -1292,7 +1292,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "bd4dc15", published: "2026-10-02" };
+  const SIDA = { version: "f0d344f", published: "2026-10-02" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1714,7 +1714,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     RECENT.calls.push(rec); if (RECENT.calls.length > 15) RECENT.calls.shift();
     try { r = await mcp.callTool(server, tool, input); }
     catch (e) { const again = server === SERVER && previewRetry(tool, input, data(e?.result)); if (again) return callOn(server, tool, again);
-      const f = data(e?.result)?.error; rec.error = f?.code || e?.code || String(e?.message || e).slice(0, 200); throw f ? Object.assign(new Error(f.message + (f.next_action ? " — " + f.next_action : "")), { code: f.code }) : e; }
+      const f = data(e?.result)?.error; rec.error = f?.code || e?.code || String(e?.message || e).slice(0, 200); throw f ? Object.assign(new Error(f.message + (f.next_action ? " — " + f.next_action : "")), { code: f.code, context: f.context }) : e; }
     const d = data(r);
     try { rec.bytes = JSON.stringify(r ?? "").length; } catch { /* mätningen får inte stoppa anropet */ }
     const again = server === SERVER && previewRetry(tool, input, d);
@@ -1744,20 +1744,41 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (S.queueRetryAt && Date.now() < S.queueRetryAt) { render(); return; }
     try { const d = await withTimeout(call("intake_status", { queue: true, days: 60, format: "full" }), 45000, "Posten");
       S.queue = d?.queue ?? null; S.queueError = null; S.at.queue = Date.now();
-      S.queueRetryAt = d?.queue?.limited_until ? Date.parse(d.queue.limited_until) : 0; }
+      S.queueRetryAt = d?.queue?.limited_until ? Date.parse(d.queue.limited_until) : 0;
+      // Första läsningen sker i omgångar (2026-10-02): det som hunnit läsas visas, och nästa omgång läses av sig själv.
+      S.queueMoreAt = d?.queue?.loading_older ? Date.parse(d.queue.loading_older.next_read_at) || Date.now() + 20000 : 0; }
     catch (e) {
       S.queueError = e; S.at.queue = Date.now();
       S.queueRetryAt = e?.code === "RATE_LIMITED" ? Date.now() + 1000 * (Number(e?.context?.retry_after_s) || 60) : 0;
     }
     if (S.queueRetryAt) S.at.queue = S.queueRetryAt - TTL.queue;
+    scheduleQueueRetry();
     render();
   }
+  /*
+   * När vilan gått ut läses posten igen av sig själv (Daniel P 2026-10-02,
+   * efter #300: «posten går inte överhuvudtaget»). Förut stod vyn kvar med
+   * «läses igen om 60 s» tills nästa femminutersrunda eller ett fönsterbyte,
+   * och siffran stod still. Bara en timer åt gången; ingen loop, för varje
+   * försök väntar den tid Google angett.
+   */
+  let queueTimer = null;
+  function scheduleQueueRetry() {
+    if (queueTimer) { clearTimeout(queueTimer); queueTimer = null; }
+    const at = Math.max(S.queueRetryAt || 0, S.queueMoreAt || 0);
+    if (!at) return;
+    queueTimer = setTimeout(() => { queueTimer = null; loadQueue(); }, Math.max(0, at - Date.now()) + 500);
+  }
+  /** Klockslaget då posten läses igen, så att texten inte står still på «om 60 s». */
+  const queueRetryClock = () => new Date(S.queueRetryAt).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   /** Raden om posten: när den lästes, och om Google begränsar läsningen just nu. */
   function queueNote() {
+    const more = S.queueMoreAt && S.queue?.loading_older
+      ? `<div class="meta" style="margin:0 0 12px">Läser fortfarande in äldre post — ${S.queue.loading_older.threads} trådar kvar. Det som syns är det som hunnit läsas.</div>` : "";
     const wait = S.queueRetryAt ? Math.max(0, Math.ceil((S.queueRetryAt - Date.now()) / 1000)) : 0;
-    if (!wait) return "";
+    if (!wait) return more;
     const read = S.queue?.read_at ? Math.max(1, Math.round((Date.now() - Date.parse(S.queue.read_at)) / 60000)) : null;
-    return `<div class="meta" style="margin:0 0 12px">Google begränsar läsningen en kort stund${read ? ` — posten är läst för ${read} min sedan` : ""}. Nästa läsning om ${wait} s.</div>`;
+    return `<div class="meta" style="margin:0 0 12px">Google begränsar läsningen en kort stund${read ? ` — posten är läst för ${read} min sedan` : ""}. Nästa läsning kl. ${queueRetryClock()}.</div>` + more;
   }
   /** Leveranstyperna ett ärende kan bli: guide, annars det metoderna levererar. */
   async function deliverableTypes() {
@@ -3241,7 +3262,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     in() {
       const q = S.queue;
       if (S.queueError && !q) return S.queueError.code === "RATE_LIMITED"
-        ? `<div class="pagehead"><h1>In</h1></div><div class="empty"><b>Google begränsar läsningen en kort stund.</b>Kopplingen är inte fel. Posten läses igen ${S.queueRetryAt ? `om ${Math.max(0, Math.ceil((S.queueRetryAt - Date.now()) / 1000))} s` : "strax"}.</div>`
+        ? `<div class="pagehead"><h1>In</h1></div><div class="empty"><b>Google begränsar läsningen en kort stund.</b>Kopplingen är inte fel. Posten läses igen ${S.queueRetryAt ? `kl. ${queueRetryClock()}, av sig själv` : "strax"}.</div>`
         : `<div class="pagehead"><h1>In</h1></div><div class="empty"><b>Posten kunde inte läsas.</b>${esc(S.queueError.message)}<div style="margin-top:12px"><button class="btn" data-reload-queue="1">Hämta igen</button></div></div>`;
       if (!q) return `<div class="pagehead"><h1>In</h1></div><div class="empty"><b>Hämtar posten…</b></div>`;
       const lists = queueLists(q);
