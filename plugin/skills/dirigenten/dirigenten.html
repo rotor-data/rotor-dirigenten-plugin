@@ -299,6 +299,13 @@ ol.moments input { flex: 1; min-width: 0; border: 1px solid var(--line-strong); 
 .post { padding: 10px 0; border-top: 1px solid var(--line); }
 .post:first-child { border-top: 0; }
 .posttext { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 4px; }
+/* Skärmdumpar i mejl (2026-10-02): miniatyrer, klick öppnar stor. */
+.mailimgs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.mailimg { display: inline-grid; place-items: center; width: 88px; height: 66px; padding: 0; border-radius: 5px; overflow: hidden; border: 1px solid var(--line); background: var(--gray-weak); cursor: zoom-in; }
+.mailimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mailimg .meta { font-size: 10px; padding: 2px 4px; overflow-wrap: anywhere; }
+.dialog.wide { max-width: min(1100px, 94vw); width: auto; }
+.mailimg-full img { max-width: 100%; max-height: 75vh; display: block; margin: 8px auto; }
 .inmsg .msgtext { white-space: pre-wrap; overflow-wrap: anywhere; }
 .row:hover { background: var(--bg-hover); }
 .row .t { font-weight: 600; font-size: var(--fs-row); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1296,7 +1303,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "3f8198f", published: "2026-10-02" };
+  const SIDA = { version: "4b81edd", published: "2026-10-02" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -11313,7 +11320,52 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   /** Mottagarna i prompten till Claude: " (till a; kopia b)". */
   const recipientsText = (p) => { const r = [p.to?.length ? `till ${p.to.join(", ")}` : "", p.cc?.length ? `kopia ${p.cc.join(", ")}` : ""].filter(Boolean).join("; "); return r ? ` (${r})` : ""; };
   /** Trådens poster, samma utseende i ärendet och i steget. */
-  const postsHtml = (posts, watched) => posts.map((p) => `<div class="post"><div class="meta"><b>${esc(p.internal ? "Vi" : (p.from || "motparten"))}</b>${p.at ? ` · ${short(p.at)}` : ""}</div>${recipientsHtml(p, watched)}<div class="posttext">${esc(p.text || p.excerpt || "(ingen text)")}</div></div>`).join("");
+  const postsHtml = (posts, watched, thread) => posts.map((p) => `<div class="post"><div class="meta"><b>${esc(p.internal ? "Vi" : (p.from || "motparten"))}</b>${p.at ? ` · ${short(p.at)}` : ""}</div>${recipientsHtml(p, watched)}<div class="posttext">${esc(p.text || p.excerpt || "(ingen text)")}</div>${thread && p.images?.length ? mailImagesHtml(thread, p) : ""}</div>`).join("");
+  /**
+   * Skärmdumparna i ett mejl (2026-10-02): miniatyrer som i bildväljaren, och
+   * ett klick öppnar bilden stor. Servern har redan sållat bort ikoner och
+   * signaturer. Bilderna hämtas genom kopplingen och finns bara i sidans minne.
+   */
+  const MAILIMG = new Map();
+  const mailImgKey = (thread, id) => `${thread}|${id}`;
+  const mailImgTag = (c, name) => `<img alt="${esc(name)}" src="data:${esc(c.mime)};base64,${esc(c.data)}">`;
+  function loadMailImage(thread, id, size) {
+    const k = mailImgKey(thread, id), c = MAILIMG.get(k) || {};
+    if (c[size] || c[`${size}Loading`]) return c[`${size}Loading`] || Promise.resolve(c[size]);
+    const promise = withTimeout(call("intake_status", { thread, image: id, size, for_view: true }), 45000, "Bilden")
+      .then((d) => { const got = d?.data ? { data: d.data, mime: d.mime || "image/png" } : null;
+        MAILIMG.set(k, { ...MAILIMG.get(k), [size]: got, [`${size}Loading`]: null, ...(got ? {} : { error: "ingen bild" }) }); return got; },
+        (e) => { MAILIMG.set(k, { ...MAILIMG.get(k), [`${size}Loading`]: null, error: e?.message || String(e) }); return null; })
+      .then((got) => { if (size === "thumb") for (const el of document.querySelectorAll("[data-mail-image]"))
+        if (el.dataset.mailImage === k) el.innerHTML = got ? mailImgTag(got, el.title) : `<span class="meta">${esc(el.title.split(" · ")[0])}</span>`; return got; });
+    MAILIMG.set(k, { ...c, [`${size}Loading`]: promise });
+    return promise;
+  }
+  function mailImagesHtml(thread, p) {
+    if (!thread || !p.images?.length) return "";
+    return `<div class="mailimgs">${p.images.map((im) => {
+      const k = mailImgKey(thread, im.id), c = MAILIMG.get(k);
+      if (!c?.thumb && !c?.error) loadMailImage(thread, im.id, "thumb");
+      const title = `${im.filename} · ${Math.max(1, Math.round((im.size || 0) / 1024))} kB`;
+      return `<button type="button" class="mailimg" data-mail-image="${esc(k)}" data-mail-thread="${esc(thread)}" data-mail-id="${esc(im.id)}" title="${esc(title)}">`
+        + `${c?.thumb ? mailImgTag(c.thumb, title) : `<span class="meta">${esc(im.filename)}</span>`}</button>`;
+    }).join("")}</div>`;
+  }
+  async function openMailImage(thread, id, name) {
+    dialog(`<div class="mailimg-big"><div class="meta">${esc(name)}</div><div id="mailimg-full" class="meta">Hämtar bilden…</div>`
+      + `<div class="bar-actions"><button class="btn sm" data-close-overlay="1">Stäng</button></div></div>`);
+    $("#layer .dialog")?.classList.add("wide");
+    const got = await loadMailImage(thread, id, "full");
+    const el = $("#mailimg-full");
+    if (el) el.outerHTML = got ? `<div class="mailimg-full">${mailImgTag(got, name)}</div>`
+      : `<div class="meta">Bilden gick inte att hämta: ${esc(MAILIMG.get(mailImgKey(thread, id))?.error || "okänt fel")}.</div>`;
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest?.("[data-mail-image]");
+    if (!b) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    openMailImage(b.dataset.mailThread, b.dataset.mailId, b.title);
+  });
   /**
    * Mejltråden i ett steg vars uppgift kom ur ett ärende (B-224). Hämtas en
    * gång per tråd och visning, när steget öppnas.
@@ -11341,7 +11393,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (!c) fetchThread(thread);
     const posts = c?.detail?.thread?.posts;
     return c?.error ? `<div class="meta">Tråden kunde inte hämtas: ${esc(c.error)}.</div><div class="bar-actions"><button class="btn sm" data-thread-retry="${esc(thread)}">Försök igen</button></div>`
-      : !posts ? `<div class="meta">Hämtar tråden…</div>` : posts.length ? postsHtml(posts, c.detail.thread.mailbox) : `<div class="meta">Tråden är tom.</div>`;
+      : !posts ? `<div class="meta">Hämtar tråden…</div>` : posts.length ? postsHtml(posts, c.detail.thread.mailbox, thread) : `<div class="meta">Tråden är tom.</div>`;
   }
   /** Tråden i Gmail, i tittarens eget konto (authuser). Saknas e-posten öppnas Gmails förvalda konto. */
   const gmailUrl = (thread) => `https://mail.google.com/mail/${S.agenda?.email ? `?authuser=${encodeURIComponent(S.agenda.email)}` : ""}#all/${encodeURIComponent(thread)}`;
