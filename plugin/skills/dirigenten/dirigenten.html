@@ -880,6 +880,50 @@ dialog.dp.dragging, dialog.dp.dragging * { cursor: grabbing !important; user-sel
 .lv-sum.first { border-top: 0; }
 .lv-fold { display: inline-flex; width: 16px; justify-content: center; color: var(--text-3); transition: transform .15s; flex: none; }
 .lv-fold.open { transform: rotate(90deg); }
+/* Kön för en löpande leverans (Daniel P 2026-10-03) */
+.q-sum { margin: 4px 0 10px; }
+.q-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+.q-tab { border: 1px solid var(--line); background: none; color: var(--text); border-radius: 999px; padding: 5px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.q-tab .n { color: var(--text-2); margin-left: 2px; }
+.q-tab.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+.q-tab.on .n { color: inherit; opacity: .7; }
+.q-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+.q-wrap.has-sel { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+.q-headrow, .q-row { display: grid; grid-template-columns: minmax(0, 1fr) 150px 170px; gap: 2px 14px; align-items: start; padding: 8px var(--s4); }
+.q-headrow { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); padding-top: 10px; padding-bottom: 6px; }
+.q-row { border: 0; border-top: 1px solid var(--line); background: none; width: 100%; text-align: left; cursor: pointer; color: var(--text); font: inherit; }
+.q-row:hover { background: var(--bg-hover); }
+.q-row.on { background: var(--bg-selected); box-shadow: inset 3px 0 0 var(--accent); }
+.q-subj { display: flex; flex-direction: column; min-width: 0; }
+.q-subj .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.q-subj .s { font-size: 12.5px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.q-subj .q-next { color: var(--text); opacity: .85; }
+.q-state { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; font-size: 12.5px; }
+.q-left { font-size: 12.5px; }
+.q-left.red { color: var(--red); font-weight: 600; }
+.q-left.amber { color: var(--amber); font-weight: 600; }
+.q-wrap.has-sel .q-headrow, .q-wrap.has-sel .q-row { grid-template-columns: minmax(0, 1fr) 120px; }
+.q-wrap.has-sel .q-headrow > :nth-child(3) { display: none; }
+.q-wrap.has-sel .q-row .q-left { grid-column: 1 / -1; }
+.q-line { display: grid; grid-template-columns: 30px minmax(0, 1fr); border-top: 1px solid var(--line); }
+.q-line .q-row { border-top: 0; }
+.q-pick { display: flex; justify-content: center; padding-top: 10px; }
+.q-list .q-headrow { padding-left: calc(var(--s4) + 30px); }
+.q-pickbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.rel-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 4px 0; }
+.q-panel { padding: 14px 16px; position: sticky; top: 8px; max-height: calc(100vh - 24px); overflow: auto; }
+.q-ph { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.q-ph h2 { margin: 0; font-size: 17px; }
+.q-pm { margin: 6px 0 10px; }
+.q-pnext { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+.q-pnext .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); margin-bottom: 2px; }
+@media (max-width: 900px) {
+  .q-wrap.has-sel { grid-template-columns: minmax(0, 1fr); }
+  .q-panel { position: fixed; inset: 0; z-index: 60; max-height: none; border-radius: 0; background: var(--bg); }
+  .q-headrow { display: none; }
+  .q-row, .q-wrap.has-sel .q-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .q-row .q-left { grid-column: 1 / -1; }
+}
 .lv-trow { display: grid; grid-template-columns: 18px 22px minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; padding: 8px var(--s4); border: 0; border-top: 1px solid var(--line); background: none; width: 100%; text-align: left; cursor: pointer; color: var(--text); }
 .lv-trow:hover { background: var(--bg-hover); }
 .lv-trow.first { border-top: 0; }
@@ -1303,7 +1347,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "b36db47", published: "2026-10-03" };
+  const SIDA = { version: "620a8f2", published: "2026-10-03" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1831,6 +1875,22 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (!wait) return more;
     const read = S.queue?.read_at ? Math.max(1, Math.round((Date.now() - Date.parse(S.queue.read_at)) / 60000)) : null;
     return `<div class="meta" style="margin:0 0 12px">Google begränsar läsningen en kort stund${read ? ` — posten är läst för ${read} min sedan` : ""}. Nästa läsning kl. ${queueRetryClock()}.</div>` + more;
+  }
+  /**
+   * Raden överst i In om posten som ligger i en löpande leverans (2026-10-03):
+   * «3 obedömda supportmejl ligger i Freebo support», med länk. In visar bara
+   * det som inte hör till någon löpande leverans, och raden gör att inget
+   * försvinner.
+   */
+  function elsewhereNote() {
+    const q = S.queue; if (!q) return "";
+    const by = new Map();
+    for (const x of [...(q.untriaged || []), ...(q.by_rule || [])]) {
+      const d = caseDelivery(x); if (!d) continue;
+      const e = by.get(d.id) || { d, threads: new Set() }; e.threads.add(x.thread); by.set(d.id, e);
+    }
+    return [...by.values()].map(({ d, threads }) => `<div class="meta" style="margin:0 0 12px">${plural(threads.size, "obedömt supportmejl ligger", "obedömda supportmejl ligger")} i `
+      + `<a href="${H.delivery(d.id)}" data-q-untriaged="1">${esc(d.label)}</a> och bedöms där.</div>`).join("");
   }
   /** Leveranstyperna ett ärende kan bli: guide, annars det metoderna levererar. */
   async function deliverableTypes() {
@@ -3378,7 +3438,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         + (tab === "bedoma" && rows.length ? `<div style="margin-top:12px"><button class="btn ai" data-func="triage_all">${SP} Gå igenom alla ${rows.length}</button> <span class="meta">förslagen visas som kort — inget skrivs förrän du godtar</span></div>` : "");
       return `<div class="pagehead"><h1>In</h1><span class="sub">Det som kommit in, och vad det ska bli</span>`
         + `<div class="actions"><button class="btn" data-fetch-mail="1">${ic("inbox")} Hämta post</button></div></div>`
-        + queueNote() + approvalCard()
+        + queueNote() + elsewhereNote() + approvalCard()
         + `<div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" data-intab="${k}" aria-selected="${tab === k}">${l}<span class="n">${lists[k].length}</span></button>`).join("")}</div>` + body;
     },
 
@@ -5225,7 +5285,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       return `<div class="wshead"><div class="titles"><span class="meta">Ärende · ${esc(x.party || "okänd avsändare")} · ${x.messages} ${x.messages === 1 ? "post" : "poster"}${x.since ? ` · väntat sedan ${short(x.since)}` : ""}</span><h1>${esc(x.subject || "utan ämnesrad")}</h1>`
         + `<div class="line">${triageChip(x)}</div></div><div class="bar-actions">${msgBtn({ thread: x.thread }, x.subject || "ärendet")}${gmailLink(x.thread)}</div></div>`
         + `<div class="ws2"><div class="card section"><h2>Tråden</h2>${thread}</div>`
-        + `<div class="card section"><h2>Bedömning</h2>${assessBlock(x)}</div></div>`;
+        + `<div class="card section"><h2>Bedömning</h2>${assessBlock(x)}</div></div>` + relatedBlock(x.thread);
     },
 
     neworder() {
@@ -7350,6 +7410,180 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       + lvFold(d, "history", "Historik för delen", "", () => lvHistory(d, [t]))
       + `</div></div></div></div>`;
   }
+  /* ── Kön för en löpande leverans (Daniel P 2026-10-03: *"Man behöver ha en vy
+     som är anpassad efter att det är många som kommer in"*). En rad per ärende:
+     ämnet, vem som skrev, när det kom in, läget, vem som har det och svarstiden
+     kvar enligt kundens regel (src/plan/order-choice.ts dueFromReceipt). Ingen
+     gemensam «nästa handling»: varje rad säger vad som är nästa på just det
+     ärendet. Ett klick öppnar ärendet i panelen bredvid listan. ── */
+  const Q = { filter: null, sel: null, delivery: null, pick: new Set() };
+  // Markerade rader för Lös tillsammans (2026-10-03).
+  document.addEventListener("change", (e) => {
+    const box = e.target.closest?.("[data-q-pick]"); if (!box) return;
+    if (box.checked) Q.pick.add(box.dataset.qPick); else Q.pick.delete(box.dataset.qPick);
+    render();
+  });
+  const Q_TABS = [["untriaged", "Obedömda"], ["new", "Nya"], ["doing", "Pågår"], ["customer", "Väntar på kund"], ["done", "Klara senaste 7 dagarna"]];
+  /** Dagen ärendet blev klart: leveransen utanför, annars det senast klara steget. */
+  const qDoneAt = (t) => day10(t.delivered_externally?.at) || liveSteps(t).map((s) => day10(s.done?.at)).filter(isDay).sort().at(-1) || null;
+  const qDone = (t) => !!t.delivered_externally || (liveSteps(t).length > 0 && liveSteps(t).every((s) => s.done || s.assumed_approved));
+  /** Ärendets läge i fyra ord: ny, pågår, väntar på kund, klar. */
+  function qState(t) {
+    if (qDone(t)) return "done";
+    const w = openWait(t), cur = currentStep(t);
+    if (w || (cur && (cur.external || cur.customer_side))) return "customer";
+    if (liveSteps(t).some((s) => s.done || s.started)) return "doing";
+    return "new";
+  }
+  const Q_WORD = { untriaged: ["obedömd", "amber"], new: ["ny", "accent"], doing: ["pågår", ""], customer: ["väntar på kund", ""], done: ["klar", "green"] };
+  /** När ärendet kom in, i relativ tid: «för 2 timmar sedan», «i går 10:02», «för 4 dagar sedan». */
+  function qAgo(at) {
+    if (!at) return "–";
+    const t = new Date(at), ms = Date.now() - t.getTime();
+    if (!isFinite(ms)) return short(at);
+    const hm = /T\d/.test(String(at)) ? ` ${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}` : "";
+    if (ms < 3600e3 && ms >= 0 && hm) return ms < 120e3 ? "nyss" : `för ${Math.round(ms / 60e3)} minuter sedan`;
+    const days = diff(TODAY, day10(at));
+    if (days <= 0) return hm ? `i dag${hm}` : "i dag";
+    if (days === 1) return `i går${hm}`;
+    return `för ${days} dagar sedan`;
+  }
+  /** Svarstiden kvar: kundens datum på ärendet mot i dag. Klar och väntan på kunden räknas inte. */
+  function qLeft(t, st) {
+    const due = day10(t.external_due || t.due);
+    if (st === "done") return { text: `klar ${short(qDoneAt(t))}`, tone: "", sort: "9" };
+    if (!isDay(due)) return { text: "ingen svarstid", tone: "", sort: "8" };
+    if (st === "customer") return { text: "väntar på kunden, inte sent hos oss", tone: "", sort: `7${due}` };
+    const n = diff(due, TODAY);
+    if (n < 0) return { text: `svarstiden gick ut ${short(due)}`, tone: "red", sort: `0${due}` };
+    if (n === 0) return { text: "svar senast i dag", tone: "amber", sort: `1${due}` };
+    return { text: `svar senast ${short(due)} · ${plural(n, "dag", "dagar")} kvar`, tone: n === 1 ? "amber" : "", sort: `1${due}` };
+  }
+  /** Det som är nästa på just det här ärendet, och vem som har det. */
+  function qNext(t, st) {
+    if (st === "done") return "";
+    const w = openWait(t);
+    if (w) return `${waitWho(w)}${w.remind ? ` · påminn ${short(w.remind)}` : ""}`;
+    if (!liveSteps(t).length) return "Inga steg än: välj hur ärendet ska göras";
+    const cur = currentStep(t);
+    if (!cur) return "";
+    const who = cur.external ? lbl(cur.waiting?.on, "någon utanför Rotor") : whoWord(cur.responsible) || "ingen utsedd";
+    return `Nästa: ${cur.label} · ${who}`;
+  }
+  const qWho = (t) => { const cur = currentStep(t); return cur ? (cur.external ? lbl(cur.waiting?.on, "") : whoWord(cur.responsible)) : ""; };
+  /** Ärendena i kön: de öppna och de som blivit klara de senaste sju dagarna. */
+  function qRows(d) {
+    const since = add(TODAY, -7);
+    return asArr(d.tasks).map(taskById).filter(Boolean).map((t) => ({ t, st: qState(t) }))
+      .filter(({ t, st }) => st !== "done" || (qDoneAt(t) || "") >= since)
+      .map((r) => ({ ...r, left: qLeft(r.t, r.st), src: caseSource(r.t) }));
+  }
+  const qTitle = (t) => t.thread ? caseTitle(t) : taskTitle(t);
+  /*
+   * Posten i kön (2026-10-03): mejlen till leveransens brevlåda som inte blivit
+   * en uppgift. Obedömda står först; bedömda utan uppgift (Kör i Claude Code,
+   * eget svar) står under Pågår och de avklarade under Klara. Blir ärendet en
+   * uppgift står uppgiften i stället, aldrig båda.
+   */
+  function qCases(d) {
+    const q = S.queue; if (!q) return [];
+    const taskThreads = new Set(tasks().map((t) => t.thread).filter(Boolean));
+    const since = add(TODAY, -7), seen = new Set(), out = [];
+    const put = (xs, st) => { for (const x of xs || []) {
+      if (seen.has(x.thread) || taskThreads.has(x.thread) || caseDelivery(x)?.id !== d.id) continue;
+      seen.add(x.thread);
+      const open = !x.triage || x.triage.outcome === "waiting";
+      const state = st === "assess" ? (open ? "untriaged" : "doing") : st;
+      if (state === "done" && (day10(x.last_at || x.since) || "") < since) continue;
+      out.push({ x, st: state });
+    } };
+    put(q.untriaged, "assess"); put(q.by_rule, "assess"); put(q.waiting, "assess");
+    put(q.in_plan, "doing"); put(q.task_closed, "done"); put(q.resolved, "done"); put(q.closed_by_ack, "done");
+    return out;
+  }
+  function qCaseRow(r) {
+    const { x, st } = r, on = Q.sel === `case:${x.thread}`, [w, tone] = Q_WORD[st];
+    const saving = CASE_SAVING.get(x.thread);
+    const left = st === "untriaged" ? `${x.workdays ? `väntat ${plural(x.workdays, "arbetsdag", "arbetsdagar")}` : "kom in nyss"} · bedöm först` : st === "done" ? (x.handled?.why || "avklarat") : "";
+    return `<div class="q-line">${qPick(st !== "done" ? x.thread : null)}<button class="q-row${on ? " on" : ""}" data-q-open="case:${esc(x.thread)}" aria-pressed="${on}">`
+      + `<span class="q-subj"><span class="t">${esc(x.subject || "utan ämnesrad")}</span>`
+      + `<span class="s">${esc(x.party || "okänd avsändare")} · kom in ${esc(qAgo(x.since || x.last_at))}</span>`
+      + (st === "untriaged" ? `<span class="s q-next">Nästa: bedöm vad ärendet ska bli</span>` : "") + `</span>`
+      + `<span class="q-state">${saving ? chip(saving === "saving" ? "sparar…" : saving === "saved" ? "sparat" : "sparades inte", saving === "error" ? "amber" : "green") : st === "untriaged" ? chip(w, tone) : triageChip(x)}</span>`
+      + `<span class="q-left${st === "untriaged" && x.workdays >= 5 ? " red" : ""}">${esc(left)}</span></button></div>`;
+  }
+  /*
+   * Markera flera rader → Lös tillsammans (2026-10-03). Bara ärenden med en
+   * mejltråd och som inte är klara; svepet blir ett Kör i Claude Code med en
+   * gemensam prompt, och varje tråd får sitt eget svar.
+   */
+  const qPick = (thread) => thread
+    ? `<label class="q-pick" title="Markera för Lös tillsammans"><input type="checkbox" data-q-pick="${esc(thread)}" ${Q.pick?.has(thread) ? "checked" : ""} aria-label="Markera ärendet"></label>`
+    : `<span class="q-pick"></span>`;
+  function qPickBar() {
+    const n = Q.pick?.size || 0; if (!n) return "";
+    return `<div class="q-pickbar meta"><span>${plural(n, "ärende markerat", "ärenden markerade")}</span>`
+      + `<button class="btn sm ai" data-q-together="1" ${n < 2 ? "disabled title=\"Markera minst två ärenden\"" : ""}>${SP} Lös tillsammans</button>`
+      + `<button class="btn sm quiet" data-q-unpick="1">Avmarkera</button></div>`;
+  }
+  /** Panelen för ett mejl i kön: bedömningen, samma ruta som i In, och tråden. */
+  function qCasePanel(d, x) {
+    return `<aside class="q-panel card" aria-label="Mejlet"><div class="q-ph"><h2>${esc(x.subject || "utan ämnesrad")}</h2>`
+      + `<button class="btn quiet sm" data-q-close="1" aria-label="Stäng mejlet">Stäng ✕</button></div>`
+      + `<div class="meta q-pm">${triageChip(x)} ${esc(x.party || "okänd avsändare")} · kom in ${esc(qAgo(x.since || x.last_at))} · ${gmailLink(x.thread, "linkbtn")}</div>`
+      + `<div class="q-pnext"><div class="k">Bedömning · vad ska ärendet bli?</div>${assessBlock(x)}</div>`
+      + relatedBlock(x.thread)
+      + `<div class="lv-sec"><h2>Mejltråden</h2></div><div class="card lv-card"><div class="rullbar-trad" style="padding:10px 12px">${threadBody(x.thread)}</div></div></aside>`;
+  }
+  function qRow(d, r) {
+    const { t, st, left, src } = r, [w, tone] = Q_WORD[st], on = Q.sel === t.id;
+    const next = qNext(t, st), who = qWho(t);
+    return `<div class="q-line">${qPick(st !== "done" ? t.thread : null)}<button class="q-row${on ? " on" : ""}" data-q-open="${esc(t.id)}" aria-pressed="${on}">`
+      + `<span class="q-subj"><span class="t">${esc(qTitle(t))}</span>`
+      + `<span class="s">${esc(src?.from || lbl(t.customer, ""))} · kom in ${esc(qAgo(src?.received || t.received))}</span>`
+      + (next ? `<span class="s q-next">${esc(next)}</span>` : "") + `</span>`
+      + `<span class="q-state">${chip(w, tone)}${who && st !== "done" ? `<span class="meta">${esc(who)}</span>` : ""}</span>`
+      + `<span class="q-left${left.tone ? ` ${left.tone}` : ""}">${esc(left.text)}</span></button></div>`;
+  }
+  /** Panelen: det öppnade ärendet med tråd, skärmdumpar, steg och handlingarna. */
+  function qPanel(d, t) {
+    const st = qState(t), left = qLeft(t, st), src = caseSource(t), cur = currentStep(t), [w, tone] = Q_WORD[st];
+    const c = t.thread ? caseByThread(t.thread) : null, prompt = c?.triage?.outcome === "claude_code" ? c.triage.prompt : null;
+    const next = cur && !cur.done ? (asArr(d.todo).find((x) => x.task === t.id && x.step === cur.step)?.next ?? stepNextCall(t, cur)) : null;
+    const code = prompt ? codeAssignment(t.thread, prompt)
+      : next && !cur.external ? `<button class="btn sm ai" data-lv-copy="${esc(JSON.stringify({ task: t.id, step: cur.step, next }))}" title="En färdig instruktion för steget, att klistra in i Claude Code">${SP} Kör i Claude Code</button>` : "";
+    return `<aside class="q-panel card" aria-label="Ärendet"><div class="q-ph"><h2>${esc(qTitle(t))}</h2>`
+      + `<button class="btn quiet sm" data-q-close="1" aria-label="Stäng ärendet">Stäng ✕</button></div>`
+      + `<div class="meta q-pm">${chip(w, tone)} ${esc(src?.from || lbl(t.customer, ""))} · kom in ${esc(qAgo(src?.received || t.received))} · <span class="q-left${left.tone ? ` ${left.tone}` : ""}">${esc(left.text)}</span></div>`
+      + (st !== "done" ? `<div class="q-pnext"><div class="k">Nästa på det här ärendet</div><div>${esc(qNext(t, st) || "Inget kvar att göra.")}</div>`
+        + `<div class="lv-acts" style="justify-content:flex-start">${cur ? lvActions(t, cur, cur.external ? null : next).replace(/<button class="btn sm ai" data-lv-copy=[^]*?<\/button>/, "") : ""}${prompt ? "" : code}</div>${prompt ? code : ""}</div>` : "")
+      + (t.thread ? relatedBlock(t.thread) + threadCard(t.thread) : fullOccasion(t) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(t))}</div>` : "")
+      + `<div class="lv-sec"><h2>Stegen</h2><span class="n">${esc(lvCount(t))} · görs enligt ${esc(lbl(t.method_named, "ingen metod"))}</span></div>`
+      + `<div class="card lv-card">${lvProcess(d, t, null)}</div>`
+      + `<div style="margin-top:10px"><a class="btn sm" href="${H.delivery(d.id, t.id)}">Öppna ärendets arbetsyta ›</a></div></aside>`;
+  }
+  /** Kön: flikarna med antal, listan sorterad på svarstiden, och panelen när ett ärende är öppet. */
+  function lvQueue(d) {
+    if (Q.delivery !== d.id) { Q.delivery = d.id; Q.sel = null; Q.pick.clear(); }
+    const rows = qRows(d), cases = qCases(d);
+    const count = (k) => rows.filter((r) => r.st === k).length + cases.filter((r) => r.st === k).length;
+    if (!Q.filter) Q.filter = count("untriaged") ? "untriaged" : "new";
+    const shownCases = cases.filter((r) => r.st === Q.filter);
+    const shown = rows.filter((r) => r.st === Q.filter)
+      .sort((a, b) => Q.filter === "done" ? String(qDoneAt(b.t)).localeCompare(String(qDoneAt(a.t)))
+        : a.left.sort.localeCompare(b.left.sort) || String(qTitle(a.t)).localeCompare(String(qTitle(b.t)), "sv"));
+    const selCase = Q.sel?.startsWith("case:") ? caseByThread(Q.sel.slice(5)) : null;
+    const sel = Q.sel && !Q.sel.startsWith("case:") ? taskById(Q.sel) : null;
+    const over = rows.filter((r) => r.left.tone === "red").length;
+    const tabs = `<div class="q-tabs" role="tablist">${Q_TABS.map(([k, label]) => `<button role="tab" class="q-tab${Q.filter === k ? " on" : ""}" aria-selected="${Q.filter === k}" data-q-filter="${k}">${esc(label)} <span class="n">${count(k)}</span></button>`).join("")}</div>`;
+    const empty = { untriaged: "Inga obedömda mejl. Det som kommer till leveransens brevlåda hamnar här först.", new: "Inga nya ärenden. Det som kommer in hamnar här.", doing: "Inget ärende pågår just nu.",
+      customer: "Inget ärende väntar på kunden.", done: "Inget ärende har blivit klart de senaste sju dagarna." }[Q.filter];
+    const list = `<div class="card lv-card q-list"><div class="q-headrow"><span>Ärende</span><span>Läge · vem</span><span>Svarstid kvar</span></div>`
+      + (shownCases.length || shown.length ? shownCases.map(qCaseRow).join("") + shown.map((r) => qRow(d, r)).join("") : `<div class="meta" style="padding:14px 16px">${empty}</div>`) + `</div>`;
+    const open = rows.filter((r) => r.st !== "done").length, waiting = count("untriaged");
+    return `<div class="q-sum meta">${waiting ? `${plural(waiting, "obedömt mejl", "obedömda mejl")} · ` : ""}${plural(open, "öppet ärende", "öppna ärenden")}${over ? ` · <span style="color:var(--red)">${over} där svarstiden har gått ut</span>` : " · inget har passerat svarstiden"} · sorterat på svarstiden, den som går ut först står överst</div>`
+      + tabs + qPickBar() + `<div class="q-wrap${sel || selCase ? " has-sel" : ""}">${list}${sel ? qPanel(d, sel) : selCase ? qCasePanel(d, selCase) : ""}</div>`;
+  }
   function pageDelivery() {
     const o = state.obj, d = lvDelivery(o.id);
     if (!d) { CRUMBS = [screenCrumb(), ["Hittas inte", null]]; return `<div class="empty"><b>Leveransen finns inte i planen.</b>Den kan vara avslutad, eller ligga längre fram än planen räcker.<div style="margin-top:12px"><a class="btn" href="${H.screen(state.screen)}">Tillbaka</a></div></div>`; }
@@ -7357,6 +7591,14 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const t = o.task ? taskById(o.task) : null, s = t && o.step ? stepOf(t, o.step) : null;
     // En leverans med flera delar: översikten för hela leveransen, och en arbetsyta för varje del.
     if (!d.implicit && !d.ongoing && !o.sub) return t && ts.includes(t) ? pagePost(d, ts, t, o) : pageLeverans(d, ts);
+    // En löpande leverans är en kö (Daniel P 2026-10-03); ett ärende öppnas i panelen. Steget och materialet har egna sidor.
+    if (d.ongoing && !d.implicit && !o.sub && !o.step) {
+      if (o.task) { Q.delivery = d.id; Q.sel = o.task; }
+      CRUMBS = pathCrumbs(d, null, null, []);
+      if (Q.sel && !Q.sel.startsWith("case:") && taskById(Q.sel)) openMirror(Q.sel);
+      return lvHead(d, ts) + lvQueue(d)
+        + lvFold(d, "history", `Historik`, plural(asArr(d.history).length, "händelse", "händelser"), () => lvHistory(d, ts));
+    }
     if (o.task) LV.open[`task|${d.id}`] = o.task;
     if (d.implicit) LV.open[`task|${d.id}`] = d.id;
     const openTask = LV.open[`task|${d.id}`] || null;
@@ -7794,7 +8036,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   });
   /* Leveransens egna knappar. Länkarna är vanliga adresser (#/…) och går genom hashchange. */
   document.addEventListener("click", (e) => {
-    const t = e.target.closest?.("[data-lv-phase], [data-lv-href], [data-lv-toggle], [data-lv-task], [data-lv-unit], [data-lv-idagtask], [data-lv-copy], [data-lv-do], [data-lv-done], [data-lv-done-send], [data-lv-chg-preview], [data-lv-chg-yes], [data-lv-bind], [data-lv-bind-close], [data-lv-bind-preview], [data-lv-bind-yes], [data-lv-own], [data-lv-promise], [data-lv-promise-close], [data-lv-promise-preview], [data-lv-promise-yes], [data-lv-preview], [data-lv-preview-yes]");
+    const t = e.target.closest?.("[data-lv-phase], [data-lv-href], [data-lv-toggle], [data-lv-task], [data-lv-unit], [data-lv-idagtask], [data-lv-copy], [data-lv-do], [data-lv-done], [data-lv-done-send], [data-lv-chg-preview], [data-lv-chg-yes], [data-lv-bind], [data-lv-bind-close], [data-lv-bind-preview], [data-lv-bind-yes], [data-lv-own], [data-lv-promise], [data-lv-promise-close], [data-lv-promise-preview], [data-lv-promise-yes], [data-lv-preview], [data-lv-preview-yes], [data-q-open], [data-q-filter], [data-q-close], [data-q-untriaged]");
     if (!t) return;
     const ds = t.dataset;
     // En rad som länk: knappar och länkar på raden gör sitt eget.
@@ -7803,6 +8045,11 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       if (inner && inner !== t && t.contains(inner)) return; location.hash = ds.lvHref; return; }
     if (ds.lvToggle) { LV.open[ds.lvToggle] = !LV.open[ds.lvToggle]; return render(); }
     if (ds.lvIdagtask) { const [dd, task] = ds.lvIdagtask.split("|"); LV.open[`idagtask|${dd}`] = LV.open[`idagtask|${dd}`] === task ? null : task; return render(); }
+    if (ds.qOpen) { Q.sel = Q.sel === ds.qOpen ? null : ds.qOpen; return render(); }
+    if (ds.qFilter) { Q.filter = ds.qFilter; return render(); }
+    // Länken i In: kön öppnas på Obedömda; själva navigeringen går genom hashchange.
+    if (ds.qUntriaged) { Q.filter = "untriaged"; Q.sel = null; return; }
+    if (ds.qClose) { Q.sel = null; const o = state.obj; if (o?.task) state.obj = { type: "delivery", id: o.id }; return render(); }
     if (ds.lvTask) { const o = state.obj; if (o?.type !== "delivery") return;
       const k = `task|${o.id}`, open = LV.open[k] !== ds.lvTask; LV.open[k] = open ? ds.lvTask : null;
       state.obj = { type: "delivery", id: o.id, ...(open ? { task: ds.lvTask } : {}) }; return render(); }
@@ -9858,7 +10105,20 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
    * Listorna är serverns (SupportQueue): den räknar vad som är obedömt, vad en
    * regel täcker och vad som är avklarat. Vyn filtrerar inte fram egna.
    */
+  /**
+   * Den löpande leveransen ett ärende hör till (Daniel P 2026-10-03: *"slå
+   * ihop inboxen (för supportmail i alla fall) dit som oklassificerade"*):
+   * brevlådans mall (capture_route.delivery_template) och leveransen ur den i
+   * planen. Finns ingen sådan leverans i planen står ärendet kvar i In — inget
+   * försvinner. En tråd står på ett ställe: i leveransens kö eller i In.
+   */
+  function caseDelivery(x) {
+    const tpl = x?.delivery_template;
+    if (!tpl) return null;
+    return realDeliveries().find((d) => d.ongoing && !d.closed && (d.template?.id ?? d.template) === tpl) || null;
+  }
   function queueLists(q) {
+    q = Object.fromEntries(Object.entries(q).map(([k, v]) => [k, Array.isArray(v) ? v.filter((x) => !caseDelivery(x)) : v]));
     const toAssess = [...(q.untriaged || []), ...(q.by_rule || [])];
     const open = new Set(toAssess.map((x) => x.thread));
     // Insorterade följs i planen (Bedömt); klara uppgifter, hanterade och tack är avklarade.
@@ -10042,12 +10302,14 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   const readFields = (key) => { const box = document.querySelector(`[data-proposal="${CSS.escape(key)}"]`); const v = {};
     for (const el of box?.querySelectorAll("[data-pf]") || []) v[el.dataset.pf] = el.value.trim();
     return v; };
+  /** Bedömningsförslagen per tråd, så att rutan fungerar både i In och i leveransens kö (2026-10-03). */
+  const PROP = new Map();
   function assessBlock(x) {
-    const p = state.obj.proposal;
+    const p = PROP.get(x.thread);
     if (p) return `<div class="suggest"><div class="from">${p.own ? "Din bedömning" : `${SP} Förslag från Claude <span class="why">grundat i tråden</span>`}</div>`
       + proposalFields(p, x.thread)
       + `<div class="bar-actions"><button class="btn primary" data-accept="${esc(x.thread)}">Spara bedömningen</button>`
-      + (p.own ? `<button class="btn quiet" data-assess-cancel="1">Avbryt</button>` : `<button class="btn quiet" data-reject="${esc(x.thread)}">Avvisa…</button>`) + `</div></div>`;
+      + (p.own ? `<button class="btn quiet" data-assess-cancel="${esc(x.thread)}">Avbryt</button>` : `<button class="btn quiet" data-reject="${esc(x.thread)}">Avvisa…</button>`) + `</div></div>`;
     const t = x.triage;
     return (t && t.outcome !== "waiting" ? `<div class="meta" style="margin-bottom:8px">Bedömt: ${triageChip(x)}${t.reason ? ` — ${esc(t.reason)}` : ""}</div>` : "")
       + (destinationOf(x) ? `<div class="meta dest" style="margin-bottom:8px">${destinationOf(x)}</div>` : "")
@@ -10077,7 +10339,35 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const id = `code-asg-${thread}`;
     return `<div class="asg"><div class="pp-k">Uppdraget</div><p class="meta" style="margin:0 0 6px">Prompten till Claude Code, som den sparades vid bedömningen.</p>`
       + `<div class="st-prompt"><textarea readonly data-nodraft rows="12" id="${esc(id)}" aria-label="Prompten">${esc(prompt)}</textarea></div>`
-      + `<div class="bar-actions"><button class="btn primary" data-copy-el="${esc(id)}">Kopiera till Claude Code</button>${sample ? `<button class="btn ai" data-code-panel="${esc(thread)}">${SP} Öppna i Claude</button>` : ""}</div></div>`;
+      + `<div class="bar-actions"><button class="btn primary" data-copy-el="${esc(id)}">Kopiera till Claude Code</button>${sample ? `<button class="btn ai" data-code-panel="${esc(thread)}">${SP} Öppna i Claude</button>` : ""}`
+      + (asArr(caseByThread(thread)?.triage?.together).length ? `<button class="btn" data-sweep="${esc(thread)}" title="Stänger varje ärendes Lös-steg och visar ett svarsutkast per tråd">Svepet är klart…</button>` : "") + `</div></div>`;
+  }
+  /*
+   * Relaterade ärenden (2026-10-03): kopplade och föreslagna, ur trådens svar
+   * (intake_status thread → related). Ett förslag kopplas med Koppla, efter en
+   * förhandsvisning: relaterat, samma orsak eller fristående.
+   */
+  const REL_WORD = { related: "Relaterat", same_cause: "Samma orsak", standalone: "Fristående" };
+  function relatedBlock(thread) {
+    const r = S.threads?.get(thread)?.detail?.related;
+    const linked = asArr(r?.linked), sugg = asArr(r?.suggested);
+    if (!linked.length && !sugg.length) return "";
+    return `<div class="lv-sec"><h2>Relaterade ärenden</h2><span class="n">${linked.length ? `${linked.length} kopplade` : ""}${linked.length && sugg.length ? " · " : ""}${sugg.length ? `${sugg.length} föreslagna` : ""}</span></div>`
+      + `<div class="card lv-card" style="padding:8px 12px">`
+      + linked.map((l) => `<div class="rel-row"><button class="linkbtn" data-open-case="${esc(l.thread)}">${esc(l.subject || l.thread)}</button>${chip(l.relation_plain || REL_WORD[l.relation] || "kopplat", "green")}</div>`).join("")
+      + sugg.map((s) => `<div class="rel-row"><span>${esc(s.subject || s.thread)}</span><span class="meta">kan hänga ihop: ${esc(asArr(s.because).join("; "))}</span>`
+        + `<select data-rel-kind="${esc(s.thread)}" aria-label="Hur ärendena hänger ihop">${Object.entries(REL_WORD).map(([k, l]) => `<option value="${k}" ${k === s.relation ? "selected" : ""}>${l}</option>`).join("")}</select>`
+        + `<button class="btn sm" data-relate="${esc(thread)}|${esc(s.thread)}">Koppla</button></div>`).join("")
+      + `</div>`;
+  }
+  const REL = { thread: null, other: null, relation: null };
+  const SWEEP = { thread: null, together: [], summary: "", replies: [] };
+  function sweepDialog(thread) {
+    const x = caseByThread(thread), together = asArr(x?.triage?.together);
+    Object.assign(SWEEP, { thread, together, summary: "", replies: [] });
+    dialog(`<h2>Svepet är klart</h2><p class="meta">${plural(together.length + 1, "ärende", "ärenden")} löstes tillsammans: ${[thread, ...together].map((t) => `«${esc(threadSubject(t) || t)}»`).join(", ")}. Varje ärendes Lös-steg stängs, och varje tråd får ett eget svarsutkast att läsa före sparandet. Inget skickas härifrån.</p>`
+      + `<label class="field wide"><span>Vad gjorde svepet? · en mening, den står på stegen och i svaren</span><textarea id="sweep-sum" rows="3"></textarea></label>`
+      + `<div id="sweep-out"></div><div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn" data-sweep-preview="1">Förhandsvisa</button></div>`);
   }
   /** Ärenden som ska köras i Claude Code av mig, för Att göra på Idag. */
   function codeCaseRows() {
@@ -10173,12 +10463,18 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     try { r = await call("classify_accept", { thread, classification, answered_by: "vyn" }); }
     catch (e) { CASE_SAVING.set(thread, "error"); render();
       setTimeout(() => { if (CASE_SAVING.get(thread) === "error") { CASE_SAVING.delete(thread); render(); } }, 6000); throw e; }
-    CASE_SAVING.set(thread, "saved"); moveAssessed(thread, classification, r);
+    CASE_SAVING.set(thread, "saved"); PROP.delete(thread); moveAssessed(thread, classification, r);
     setTimeout(() => { if (CASE_SAVING.get(thread) === "saved") { CASE_SAVING.delete(thread); render(); } }, 4000);
     if (classification.outcome === "claude_code") { closeDialogOnly(); await refreshAfterWrite({ queue: true }); toast(r?.destination || "Bedömt: körs i Claude Code."); return r; }
     const made = r?.task || r?.task_from || null;
     if (quiet) { refreshAfterWrite({ task: made, queue: true }); return r; }
     await refreshAfterWrite({ task: made, queue: true });
+    // I leveransens kö stannar man i kön, med uppgiften ärendet blev öppen i panelen (2026-10-03).
+    if (state.obj?.type === "delivery") {
+      if (made && taskById(made)) { Q.sel = made; Q.filter = qState(taskById(made)); }
+      render(); toast(made ? "Ärendet är nu en uppgift i kön." : `Bedömt: ${classification.method ? libById(classification.method)?.label || OUTCOME.delivery : OUTCOME[classification.outcome]}.`);
+      return r;
+    }
     if (r?.task_from) {
       const t = taskById(r.task || r.task_from), n = t && nextStep(t);
       if (n) { open({ type: "step", task: t.id, step: n.step, title: n.label });
@@ -11414,9 +11710,12 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   async function assessOne(btn, thread) {
     const x = caseByThread(thread);
     if (!x) return;
-    if (state.obj?.type !== "case" || state.obj.id !== thread) await openCase(thread);
+    // I leveransens kö bedöms ärendet där det står (2026-10-03); annars öppnas det i In.
+    if (state.obj?.type === "delivery") { deliverableTypes(); fetchThread(thread); }
+    else if (state.obj?.type !== "case" || state.obj.id !== thread) await openCase(thread);
     running = { label: `Claude bedömer «${x.subject || "ärendet"}»`, since: Date.now(), abort: new AbortController() }; renderPanel();
-    try { state.obj.proposal = await proposeFor(x); render(); }
+    try { const p = await proposeFor(x), dc = caseDelivery(x)?.customer;
+      PROP.set(thread, { ...p, customer: p.customer || dc?.id || dc || "" }); render(); }
     catch (e) { fail("Bedömningen kom inte fram", e); }
     finally { running = null; renderPanel(); }
   }
@@ -12840,16 +13139,17 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
         () => toast("Markerat — kopiera med ⌘C.", null)); }
     if (ds.assess) return assessOne(t, ds.assess);
     if (ds.accept) return busy(t, async () => { try { await acceptAssessment(ds.accept, classificationOf(readFields(ds.accept))); } catch (e) { fail("Bedömningen sparades inte", e); } });
-    if (ds.reject) { const p = state.obj.proposal;
+    if (ds.reject) {
       return dialog(`<h2>Varför stämmer det inte?</h2><label class="field"><span>Skälet följer med när Claude bedömer igen · valfritt</span><textarea id="rej-why" rows="3"></textarea></label><div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn" data-reject-ok="${esc(ds.reject)}">Avvisa förslaget</button></div>`); }
-    if (ds.rejectOk) { objections.set(ds.rejectOk, { prev: state.obj.proposal, why: $("#rej-why")?.value.trim() || "(inget skäl angivet)" });
-      state.obj.proposal = null; closeDialog(); render(); return toast("Förslaget avvisat. Skälet följer med nästa bedömning."); }
+    if (ds.rejectOk) { objections.set(ds.rejectOk, { prev: PROP.get(ds.rejectOk), why: $("#rej-why")?.value.trim() || "(inget skäl angivet)" });
+      PROP.delete(ds.rejectOk); closeDialog(); render(); return toast("Förslaget avvisat. Skälet följer med nästa bedömning."); }
     if (ds.assessOwn) return busy(t, async () => { await deliverableTypes(); await libReady();
-      const x = caseByThread(ds.assessOwn);
-      state.obj.proposal = { own: true, choice: "claude_code", responsible: me(), customer: x?.triage?.customer || "", suggested: (x?.methods || []).map((m) => m.method) }; render(); });
-    if (ds.assessCancel) { state.obj.proposal = null; return render(); }
+      const x = caseByThread(ds.assessOwn), dc = caseDelivery(x)?.customer;
+      PROP.set(ds.assessOwn, { own: true, choice: "claude_code", responsible: me(), customer: x?.triage?.customer || dc?.id || dc || "", suggested: (x?.methods || []).map((m) => m.method) }); render(); });
+    if (ds.assessCancel) { PROP.delete(ds.assessCancel); return render(); }
     if (ds.codeSave) return busy(t, async () => { try {
       await acceptAssessment(CODE.thread, { ...CODE.classification, prompt: $("#code-prompt")?.value || "", confirmed: true });
+      if (asArr(CODE.classification?.together).length) { Q.pick?.clear(); render(); }
     } catch (e) { fail("Bedömningen sparades inte", e); } });
     if (ds.codePanel) { const text = ds.codePanel === "1" ? $("#code-prompt")?.value : caseByThread(ds.codePanel)?.triage?.prompt;
       closeDialogOnly(); document.body.classList.remove("panel-closed"); if (innerWidth <= 1200) document.body.classList.add("panel-open");
@@ -12858,11 +13158,62 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     /* Hanterad (2026-09-29): tråden väntar inte på oss längre. Ett kort skäl, som står i loggen; skriver kunden igen kommer tråden tillbaka. */
     if (ds.handled) return dialog(`<h2>Markera som hanterad</h2><p class="meta">«${esc(threadSubject(ds.handled) || "ärendet")}» lämnar «väntar på oss». Skälet står kvar i loggen och går att läsa efteråt. Skriver kunden igen kommer tråden tillbaka.</p>`
       + `<label class="field"><span>Skäl · kort</span><input id="hand-why" type="text" maxlength="200" placeholder="till exempel: besvarat per telefon"></label>`
+      + `<label class="field"><span>Hur lång tid tog ärendet? · timmar, förval ur uppskattningen</span><input id="hand-hours" type="number" min="0" step="0.25" value="${esc(String(S.queue?.support_time_default ?? ""))}"></label>`
       + `<div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-handled-ok="${esc(ds.handled)}">Markera hanterad</button></div>`);
     if (ds.handledOk) { const why = $("#hand-why")?.value.trim();
       if (!why) return toast("Skriv ett kort skäl — det står kvar i loggen.", null, true);
-      return busy(t, async () => { try { await acceptAssessment(ds.handledOk, { outcome: "resolved", reason: why }, { quiet: true });
+      const hours = parseFloat(($("#hand-hours")?.value || "").replace(",", ".")), together = asArr(caseByThread(ds.handledOk)?.triage?.together);
+      return busy(t, async () => { try { await acceptAssessment(ds.handledOk, { outcome: "resolved", reason: why,
+        ...(hours > 0 ? { hours } : {}), ...(together.length ? { together } : {}) }, { quiet: true });
         closeDialog(); state.obj = null; render(); toast("Markerad som hanterad."); } catch (e) { fail("Markeringen sparades inte", e); } }); }
+    if (ds.relate) { const [thread, other] = ds.relate.split("|"), relation = document.querySelector(`[data-rel-kind="${CSS.escape(other)}"]`)?.value || "related";
+      return busy(t, async () => { try {
+        await call("classify_accept", { thread, relate: { with: other, relation } });
+        Object.assign(REL, { thread, other, relation });
+        const a = threadSubject(thread) || "ärendet", b = threadSubject(other) || "det andra ärendet";
+        const what = relation === "same_cause" ? `«${b}» knyts till «${a}» som samma orsak: ett ärende, och båda trådarna visar det.`
+          : relation === "related" ? `«${a}» och «${b}» kopplas som relaterade: båda visar varandra.`
+            : `«${b}» markeras som fristående från «${a}» och föreslås inte igen.`;
+        dialog(`<h2>Koppla ärendena</h2><p>${esc(what)}</p><p class="meta">Inget är sparat än.</p><div class="bar-actions"><button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-relate-ok="1">Koppla</button></div>`);
+      } catch (e) { fail("Kopplingen gick inte att förhandsvisa", e); } }); }
+    if (ds.relateOk) return busy(t, async () => { try {
+      await call("classify_accept", { thread: REL.thread, relate: { with: REL.other, relation: REL.relation, confirmed: true } });
+      closeDialog(); await fetchThread(REL.thread, true); render(); toast("Ärendena är kopplade.");
+    } catch (e) { fail("Kopplingen sparades inte", e); } });
+    if (ds.qUnpick) { Q.pick?.clear(); return render(); }
+    if (ds.qTogether) { const threads = [...(Q.pick || [])]; if (threads.length < 2) return toast("Markera minst två ärenden.", null, true);
+      const first = threads[0], cust = caseByThread(first)?.triage?.customer || tasks().find((x) => x.thread === first)?.customer?.id;
+      return busy(t, async () => { try { await deliverableTypes(); await codePreview(first, { outcome: "claude_code", responsible: me(), together: threads.slice(1), ...(cust ? { customer: cust } : {}) }); }
+        catch (e) { fail("Svepet gick inte att förhandsvisa", e); } }); }
+    if (ds.sweep) return sweepDialog(ds.sweep);
+    if (ds.sweepPreview) { const summary = $("#sweep-sum")?.value.trim();
+      if (!summary) return toast("Skriv vad svepet gjorde.", null, true);
+      SWEEP.summary = summary;
+      return busy(t, async () => { try {
+        const r = await call("classify_accept", { thread: SWEEP.thread, sweep: { together: SWEEP.together, summary } });
+        const closing = asArr(r?.closing), replies = asArr(r?.replies);
+        $("#sweep-out").innerHTML = `<div class="suggest"><div class="from">Förhandsvisning — inget är sparat</div>`
+          + `<div class="meta">${closing.length ? `Lös-steget stängs i ${plural(closing.length, "ärende", "ärenden")}: ${closing.map((c) => `«${esc(threadSubject(c.thread) || c.thread)}»`).join(", ")}.` : "Inget Lös-steg att stänga: ärendena är inte uppgifter med supportmetoden, eller stegen är redan klara."}</div>`
+          + `<div class="meta">${replies.length ? `${plural(replies.length, "svarsutkast", "svarsutkast")} visas när svepet är registrerat.` : "Inget svarssteg att spara utkast på."}</div></div>`;
+        const bar = $("#layer [data-sweep-preview]")?.closest(".bar-actions");
+        if (bar) bar.innerHTML = `<button class="btn quiet" data-close="1">Avbryt</button><button class="btn primary" data-sweep-ok="1">Registrera svepet</button>`;
+      } catch (e) { fail("Svepet gick inte att förhandsvisa", e); } }); }
+    if (ds.sweepOk) return busy(t, async () => { try {
+      const r = await call("classify_accept", { thread: SWEEP.thread, sweep: { together: SWEEP.together, summary: SWEEP.summary, confirmed: true } });
+      SWEEP.replies = asArr(r?.replies);
+      refreshAfterWrite({ queue: true });
+      dialog(`<h2>Svepet är registrerat</h2><p class="meta">${plural(asArr(r?.closing).length, "Lös-steg stängt", "Lös-steg stängda")}. Läs och ändra varje svarsutkast; Spara lägger det på svarssteget. Inget skickas.</p>`
+        + SWEEP.replies.map((x, n) => `<label class="field wide"><span>Svar · ${esc(threadSubject(x.thread) || x.thread)}</span><textarea id="sweep-draft-${n}" rows="7" data-nodraft>${esc(x.draft || "")}</textarea></label>`
+          + `<div class="bar-actions"><button class="btn sm" data-sweep-draft="${n}">Spara utkastet</button></div>`).join("")
+        + `<div class="bar-actions"><button class="btn quiet" data-close="1">Stäng</button></div>`);
+    } catch (e) { fail("Svepet registrerades inte", e); } });
+    if (ds.sweepDraft !== undefined && t.hasAttribute("data-sweep-draft")) { const x = SWEEP.replies[+ds.sweepDraft], markdown = $(`#sweep-draft-${ds.sweepDraft}`)?.value.trim();
+      if (!x || !markdown) return toast("Utkastet är tomt.", null, true);
+      const { op: _op, ...args } = x.preview?.args || {};
+      return busy(t, async () => { try {
+        await call("content_save", { ...args, markdown, confirmed: true, user_approval: `Ja i vyn: spara svarsutkastet till «${threadSubject(x.thread) || x.thread}»`.slice(0, 500) });
+        t.disabled = true; t.textContent = "Sparat"; toast("Svarsutkastet är sparat på svarssteget.");
+      } catch (e) { fail("Utkastet sparades inte", e); } }); }
     if (ds.acceptOne !== undefined && t.hasAttribute("data-accept-one")) return busy(t, async () => { try { await acceptBatchItem(+ds.acceptOne); render(); } catch (e) { fail("Förslaget sparades inte", e); } });
     if (ds.acceptAll) return busy(t, async () => { let n = 0;
       for (let k = 0; k < state.batch.items.length; k++) { const i = state.batch.items[k]; if (!i.p || i.saved) continue;
