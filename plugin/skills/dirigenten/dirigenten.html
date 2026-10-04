@@ -1347,7 +1347,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "a3ae66c", published: "2026-10-04" };
+  const SIDA = { version: "7aa2e3b", published: "2026-10-04" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -7453,7 +7453,8 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     const due = day10(t.external_due || t.due);
     if (st === "done") return { text: `klar ${short(qDoneAt(t))}`, tone: "", sort: "9" };
     if (!isDay(due)) return { text: "ingen svarstid", tone: "", sort: "8" };
-    if (st === "customer") return { text: "väntar på kunden, inte sent hos oss", tone: "", sort: `7${due}` };
+    // Väntan stoppar svarstiden (2026-10-04): planen flyttar fristen med dagarna vi väntat (src/plan/waits.ts pausedDays).
+    if (st === "customer") return { text: "svarstiden står still medan vi väntar på kunden", tone: "", sort: `7${due}` };
     const n = diff(due, TODAY);
     if (n < 0) return { text: `svarstiden gick ut ${short(due)}`, tone: "red", sort: `0${due}` };
     if (n === 0) return { text: "svar senast i dag", tone: "amber", sort: `1${due}` };
@@ -7463,6 +7464,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
   function qNext(t, st) {
     if (st === "done") return "";
     const w = openWait(t);
+    if (w && t.thread) return `Väntar på svar från kund — vi har frågat${w.at ? ` ${short(day10(w.at))}` : ""}: ${String(w.question || "").replace(/^Vi har frågat:\s*/, "")}${w.remind ? ` · påminn ${short(w.remind)}` : ""}`;
     if (w) return `${waitWho(w)}${w.remind ? ` · påminn ${short(w.remind)}` : ""}`;
     if (!liveSteps(t).length) return "Inga steg än: välj hur ärendet ska göras";
     const cur = currentStep(t);
@@ -7556,7 +7558,9 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
       + `<button class="btn quiet sm" data-q-close="1" aria-label="Stäng ärendet">Stäng ✕</button></div>`
       + `<div class="meta q-pm">${chip(w, tone)} ${esc(src?.from || lbl(t.customer, ""))} · kom in ${esc(qAgo(src?.received || t.received))} · <span class="q-left${left.tone ? ` ${left.tone}` : ""}">${esc(left.text)}</span></div>`
       + (st !== "done" ? `<div class="q-pnext"><div class="k">Nästa på det här ärendet</div><div>${esc(qNext(t, st) || "Inget kvar att göra.")}</div>`
-        + `<div class="lv-acts" style="justify-content:flex-start">${cur ? lvActions(t, cur, cur.external ? null : next).replace(/<button class="btn sm ai" data-lv-copy=[^]*?<\/button>/, "") : ""}${prompt ? "" : code}</div>${prompt ? code : ""}</div>` : "")
+        + `<div class="lv-acts" style="justify-content:flex-start">${cur ? lvActions(t, cur, cur.external ? null : next).replace(/<button class="btn sm ai" data-lv-copy=[^]*?<\/button>/, "") : ""}${prompt ? "" : code}`
+        + (t.thread && st !== "customer" ? `<button class="btn sm" data-q-ask="${esc(t.id)}" title="Skriv frågorna som saknas: ett utkast läggs i tråden och ärendet väntar på kunden">Fråga kunden</button>` : "")
+        + `</div>${prompt ? code : ""}</div>` : "")
       + (t.thread ? relatedBlock(t.thread) + threadCard(t.thread) : fullOccasion(t) ? `<div class="lv-edge" style="white-space:pre-wrap">${esc(fullOccasion(t))}</div>` : "")
       + `<div class="lv-sec"><h2>Stegen</h2><span class="n">${esc(lvCount(t))} · görs enligt ${esc(lbl(t.method_named, "ingen metod"))}</span></div>`
       + `<div class="card lv-card">${lvProcess(d, t, null)}</div>`
@@ -10886,6 +10890,57 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     });
   }
 
+  /* ── Fråga kunden (Daniel P 2026-10-04, «Scrive x Hubspot») ──
+     Samma sak som utfallet «Behöver mer från kunden» på Bedöm: frågorna blir ett
+     svarsutkast i tråden (en människa skickar), ärendet väntar på kunden med
+     påminnelse om tre arbetsdagar, och svarstiden står still. Skrivs genom
+     write { op: "classify_accept", thread, ask } — förhandsvisas först. */
+  const ASK_DEFAULT = ["Exakt vilket felmeddelande visas? En skärmdump hjälper.", "Vilken affär (namn eller länk) gäller det?",
+    "Vilket fält och vilket format står värdet i i dag?"];
+  function askDialog(taskId) {
+    const t = taskById(taskId); if (!t?.thread) return toast("Ärendet har ingen mejltråd.", null, true);
+    state.ask = { task: t.id, thread: t.thread, ok: null };
+    dialog(`<h2>Fråga kunden</h2>`
+      + `<p class="meta">Skriv det som saknas för att kunna lösa «${esc(qTitle(t))}», en fråga per rad. Ett utkast läggs i tråden — inget skickas härifrån. Ärendet väntar sedan på kunden och svarstiden står still. När kunden svarar i tråden föreslås att ärendet går tillbaka till bedömningen.</p>`
+      + `<label class="field wide"><span>Frågorna · en per rad</span><textarea id="ask-q" rows="5">${esc(ASK_DEFAULT.join("\n"))}</textarea></label>`
+      + `<label class="field"><span>Påminn · förval tre arbetsdagar</span><input id="ask-remind" type="date" value=""></label>`
+      + `<div class="chg" id="ask-out" style="margin:8px 0;color:var(--text-2);white-space:pre-wrap">Förhandsvisa för att se utkastet och vad som sparas.</div>`
+      + `<div class="bar-actions"><button class="btn quiet" data-close="1">Stäng</button><button class="btn" data-ask-preview="1">Förhandsvisa</button>`
+      + `<button class="btn primary" data-ask-save="1" disabled>Ja, fråga kunden</button></div>`);
+  }
+  const askArgs = () => {
+    const x = state.ask; if (!x) return null;
+    const questions = String($("#ask-q")?.value || "").split("\n").map((s) => s.trim()).filter(Boolean);
+    const remind = String($("#ask-remind")?.value || "").trim();
+    return { op: "classify_accept", thread: x.thread, ask: { questions, ...(remind ? { remind } : {}) } };
+  };
+  async function askPreview() {
+    const x = state.ask, a = askArgs(), out = $("#ask-out"), save = document.querySelector("[data-ask-save]");
+    if (!x || !a) return;
+    if (!a.ask.questions.length) { if (out) out.textContent = "Skriv minst en fråga."; return; }
+    x.ok = null; if (save) save.disabled = true; if (out) out.textContent = "Räknar …";
+    try {
+      const d = await call("write", a);
+      if (state.ask !== x) return;
+      x.ok = { args: a, save: d?.save || null };
+      if (out) out.textContent = String(d?.summary || "").replace(/^Förhandsvisning:\s*/, "").replace(/\n\nInget är skrivet\.$/, "");
+      if (save) save.disabled = false;
+    } catch (e) { if (out) out.textContent = e?.message || String(e); }
+  }
+  function askSave(btn) {
+    const x = state.ask; if (!x?.ok) return;
+    const approval = `Ja, fråga kunden (vyn): ${x.ok.args.ask.questions.join(" ")}`.slice(0, 500);
+    return busy(btn, async () => {
+      try {
+        const d = await call("write", { ...x.ok.args, ask: { ...x.ok.args.ask, confirmed: true }, user_approval: approval });
+        const s = d?.save || x.ok.save;
+        if (s) await call(s.tool, { ...s.args, confirmed: true, user_approval: approval });
+        state.ask = null; closeDialog(); await refreshAfterWrite({ task: x.task });
+        toast(s ? "Utkastet ligger i ärendet och väntan är satt. Skicka utkastet i tråden." : "Väntan är satt. Skriv frågan i tråden.");
+      } catch (e) { fail("Frågan sparades inte", e); }
+    });
+  }
+
   /* ── Skriv påminnelse (Daniel P 2026-09-29) ──
      Från påminnelsedagen. Molekylen core.call.draft_reminder (registret, performer
      llm) har den fasta prompten; vyn hämtar den därifrån och skriver ingen egen.
@@ -12917,6 +12972,9 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
     if (ds.waitPreview) return waitPreview(t);
     if (ds.waitSave) return waitSave(t);
     if (ds.waitClear) return waitClear(t);
+    if (ds.qAsk) return askDialog(ds.qAsk);
+    if (ds.askPreview) return askPreview(t);
+    if (ds.askSave) return askSave(t);
     if (ds.remindOpen) return remindDialog(ds.remindOpen);
     if (ds.remindWrite) return remindWrite(t);
     if (ds.remindDraft) return remindDraft(t);
