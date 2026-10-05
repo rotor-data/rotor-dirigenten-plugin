@@ -1347,7 +1347,7 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
      som servern — skriv inte raden för hand. Servern svarar med sin version i
      plan_state (views.version), och skiljer de sig säger sidan det: en gammal
      publicering fungerar ofta ändå, men saknar det som byggts sedan dess. */
-  const SIDA = { version: "53432e9", published: "2026-10-05" };
+  const SIDA = { version: "54476e7", published: "2026-10-05" };
   /**
    * Vyn uppdaterar sig själv (knappen «Uppdatera vyn»): hämtar den nya sidan
    * och lägger ut den som ny version av samma artefakt. Först direkt från
@@ -1691,11 +1691,12 @@ main[data-w="s"] .pp-li { flex: none; min-width: 190px; border: 1px solid var(--
    */
   const VIEW_OPS = {
     read: ["context", "intake_status", "classify_propose", "library_check", "library_debt", "measure_debt",
-      "read_call", "content_search", "content_list", "asset_get", "content_get", "bug_report", "view_file", "image_picker"],
+      "read_call", "content_search", "content_list", "asset_get", "content_get", "bug_report", "view_file", "image_picker",
+      "step_sheet", "delivery_results"],
     write: ["registry_define", "registry_append", "intake_submit", "intake_order", "classify_accept",
       "molecule_build", "workflow_build", "method_build", "method_variant_build",
       "question_answer", "time_report", "task_lock", "message", "note_link",
-      "content_save", "content_approve", "content_published", "bug_report"],
+      "content_save", "content_approve", "content_published", "step_edit", "bug_report"],
   };
   const MODE_OPS = {
     "intake_submit.order": "intake_order", "library_check.debt": "library_debt", "library_check.measure": "measure_debt",
