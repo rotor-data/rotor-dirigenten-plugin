@@ -568,7 +568,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "8ee3636", published: "2026-10-06" };
+  const SIDA = { version: "10dab4d", published: "2026-10-06" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -697,8 +697,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (!x.server || x.server === x.own) return "none";
     if (x.server === x.lastPublished) return "none";
     if (x.failedAt && x.now - x.failedAt < AUTO.RETRY_MS) return "none";
-    if (x.trigger === "open") return "now";
     const calm = !x.busy && !x.dirty && !x.dialogOpen;
+    // Vid öppning bara när inga ark är öppna: en sida som laddats om med arken återställda byts inte ut under fötterna.
+    if (x.trigger === "open") return calm ? "now" : "offer";
     if (calm && (x.hidden || x.idleMs >= AUTO.IDLE_MS)) return "now";
     return "offer";
   }
@@ -1065,10 +1066,15 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   /** Webbläsarens historik så som vyn skrivit den, för att ⌫ ska gå bakåt i den i stället för att skriva en ny rad. */
   const NAV = { list: [hereRaw()], at: 0, pending: false };
   const hereHash = () => { try { const h = location.hash || ""; return /^#\/?[a-z]/.test(h) ? sheetsHash(hashSheets(h)) : ""; } catch { return ""; } };
+  /** Arkstacken i minnet också: i artefakten kan claude.ai ladda om sidan utan adressen (#/…), och arken ska ligga kvar då. */
+  const STACK = "v6.sheets", STACK_MS = 2 * 3600_000;
+  function rememberStack(h) { try { globalThis.localStorage?.setItem(STACK, JSON.stringify({ at: Date.now(), hash: h })); } catch { /* utan lagring: bara adressen */ } }
+  function recallStack() { try { const m = JSON.parse(globalThis.localStorage?.getItem(STACK) || "null"); return m && Date.now() - m.at < STACK_MS && typeof m.hash === "string" ? m.hash : ""; } catch { return ""; } }
   function syncHash() {
     if (NAV.pending) return;
     const want = sheetsHash(S.sheets), now = NAV.list[NAV.at];
     if (want === now) return;
+    rememberStack(want);
     let url = want;
     try { if (!want) url = `${location.pathname || ""}${location.search || ""}`; } catch { /* inget */ }
     try {
@@ -1152,7 +1158,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         put({ loading: false, case: d });
         if (d?.thread) call("read", { op: "intake_status", thread: d.thread, all_posts: true })
           .then((t) => put({ thread: t?.thread || { posts: [] } })).catch((e) => put({ threadError: e.message || String(e) }));
-      }).catch((e) => put({ loading: false, error: e }));
+      }).catch((e) => { if (caseWithoutThread(e)) caseAsPart(x); else put({ loading: false, error: e }); });
       call("plan_state", { task: x.id, format: "plan" }).then((d) => put({ plan: d?.tasks?.[0] || null })).catch(() => put({ plan: null }));
       // Ärendets egen metod, ändring och utfall; resultaten bara för ärendet.
       call("read", { op: "delivery_results", task: x.id }).then((d) => put({ line: d?.case || null, results: (d?.results || []).filter((r) => r.task === x.id) })).catch(() => put({ line: null }));
@@ -2304,6 +2310,20 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
           + `${outcomeOf.get(t.id) ? `<span class="otag">${esc(outcomeOf.get(t.id))}</span>` : ""}<span class="mmeta">${senderHtml(t.from, t.from_email)}${t.done} av ${t.total}${t.current ? ` · ${esc(t.current.label)}` : ""}${t.current ? ` · ${esc(t.current.label)}` : ""}${t.late ? " · sent" : ""}${t.current?.step && isRunning(t.id, t.current.step) ? " · igång" : ""}</span></div>`).join("") + `</div>`).join("")
       + (total > CASES_SHOWN ? `<div class="doacts"><button class="link" data-act="cases-all" data-key="sheet:${esc(x.id)}">${all ? "Visa färre" : `Visa alla ${total}`}</button></div>` : "");
   }
+  /** Uppgiften har ingen mejltråd: den är inget supportärende. */
+  const caseWithoutThread = (e) => /ingen mejltråd/.test(String(e?.message || e || ""));
+  /** Ett ärendeark för en uppgift utan tråd byts mot uppgiften: leveransens ark med uppgiften utfälld, utan felruta. */
+  function caseAsPart(x) {
+    const i = S.sheets.findIndex((y) => y === x || (y.kind === "case" && y.id === x.id));
+    if (i < 0) return;
+    const { [sheetKey(x)]: _gone, ...rest } = S.sheetData; S.sheetData = rest;
+    const parent = rowOfTask(x.id)?.key || null;
+    const part = { kind: "part", id: x.id, parent, label: x.label, scroll: 0, tab: null };
+    S.sheets = [...S.sheets.slice(0, i), ...(parent && !S.sheets.slice(0, i).some((y) => y.kind === "delivery" && y.id === parent)
+      ? [{ kind: "delivery", id: parent, label: rowOfTask(x.id).label, scroll: 0, tab: null }] : []), part, ...S.sheets.slice(i + 1)];
+    for (const y of S.sheets) if (!S.sheetData[sheetKey(y)]) fetchSheet(y);
+    render();
+  }
   function openCase(task, label) { openSheet("case", task, (label || "Ärendet").replace(/^Supportärende \(|\)$/g, "").slice(0, 60)); }
   function caseSheetHtml(x) {
     const sd = S.sheetData[sheetKey(x)] || {}, c = sd.case;
@@ -3259,13 +3279,14 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
    */
   function findCase(task) {
     const o = S.data;
-    for (const r of o?.rows || []) { const c = (r.cases || []).find((y) => y.task === task);
+    // Bara ett supportärende (en uppgift i en löpande ström) är ett ärende; en uppgift i en vanlig leverans öppnas som sin del.
+    for (const r of o?.rows || []) { if (r.kind !== "stream") continue; const c = (r.cases || []).find((y) => y.task === task);
       if (c) return { title: c.title, step: c.step || null, stepLabel: c.now >= 0 ? o.names[c.now] : null, who: c.who >= 0 ? o.names[c.who] : null, row: r }; }
     for (const k of Object.keys(S.sheetData)) {
-      const t = (S.sheetData[k].delivery?.tasks || []).find((y) => y.id === task);
+      const t = S.sheetData[k].stream ? (S.sheetData[k].delivery?.tasks || []).find((y) => y.id === task) : null;
       if (t) return { title: caseTitle(t.label), step: t.current?.step || null, stepLabel: t.current?.label || null, who: t.current?.responsible || null, row: rowOfTask(task) };
       const sd = S.sheetData[k];
-      if (k === `case:${task}` && (sd.case || sd.plan)) { const st = (sd.plan?.steps || []).find((y) => !y.done);
+      if (k === `case:${task}` && sd.case) { const st = (sd.plan?.steps || []).find((y) => !y.done);
         return { title: sd.case?.subject || S.sheets.find((y) => y.kind === "case" && y.id === task)?.label || task, step: st?.step || null, stepLabel: st?.label || null, who: st?.who || null, row: rowOfTask(task) }; }
     }
     return null;
@@ -4956,7 +4977,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   const memory = recall();
   if (memory) { S.data = memory.data; S.seq = memory.seq; S.fetchedAt = memory.at; S.loading = false; S.refreshing = true; overlayOutbox(); }
   // En länk: översikten ur minnet, och arken ovanpå direkt med titeln ur länken. Resten fylls på när dirigenten svarar.
-  S.sheets = hashSheets(hereRaw()); relabel();
+  // Utan adress (artefakten omladdad av claude.ai): arken som var öppna senast.
+  S.sheets = hashSheets(hereRaw() || recallStack()); relabel();
   render();
   pickMcp({ claude: typeof claude !== "undefined" ? claude : undefined, document, location, fetch: (u, i) => fetch(u, i) })
     .then(({ mcp: m, web }) => { mcp = m; WEB.on = web;
