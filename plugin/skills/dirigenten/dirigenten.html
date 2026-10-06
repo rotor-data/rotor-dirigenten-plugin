@@ -161,7 +161,13 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .mmeta { color: var(--muted); font-size: 12.5px; }
 .ssteps { border-top: 1px solid var(--l4); margin-bottom: 22px; }
 .ssteps .step { margin: 0; }
-.part { font-size: 13px; font-weight: 600; padding: 14px 0 6px; }
+.part { font-size: 13px; font-weight: 600; padding: 14px 0 6px; display: flex; align-items: baseline; gap: 6px; }
+.part .fold { border: 0; background: none; padding: 0 4px 0 0; font: 11px var(--mono); color: var(--t3) !important; width: 16px; }
+/* Materialet per del: resultat först, grunddokument, övrigt (Daniel P 2026-10-06). */
+.mcat { font: 10.5px var(--mono); letter-spacing: .06em; color: var(--t3); text-transform: uppercase; margin: 6px 0 6px; }
+.msub { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+.mcat + .made, .msub + .made { margin-bottom: 14px; }
+.mgrp { margin-left: 22px; margin-bottom: 12px; }
 .margin { font-size: 13px; line-height: 1.6; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .margin .mh { font-size: 12px; color: var(--muted); margin-top: 16px; }
 .margin .mh:first-child { margin-top: 0; }
@@ -235,7 +241,7 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .tbarr.sel { box-shadow: 0 0 0 2px var(--ink); }
 .tbarr .bn { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tbarr .hb { font: 10.5px var(--mono); padding: 1px 4px; border-radius: 4px; background: #fff; border: 1px solid var(--l3); cursor: ns-resize; white-space: nowrap; }
-.tbarr .edge { position: absolute; right: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; }
+.tbarr .bedge { position: absolute; right: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; }
 .tbarr.unf { overflow: visible; }
 .tbarr.unf .bn { position: absolute; left: calc(100% + 6px); overflow: visible; color: var(--t1); pointer-events: none; }
 .tbarr.clus { cursor: pointer; background: var(--s2); }
@@ -530,6 +536,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 .f1t { font-family: var(--head); font-size: 24px; font-weight: 600; margin: 4px 0; }
 .msg { border-bottom: 1px solid var(--l4); padding: 10px 0; font-size: 13.5px; }
 .msg.unread { border-left: 3px solid var(--teal); padding-left: 12px; }
+.msg.resolved .mt { color: var(--muted, #777); }
 .overd .mmeta { color: var(--red); }
 .crow .cload { width: 160px; margin-top: 8px; }
 /* Läsaren: boksida 640 × 905, marginal 34/48, Newsreader i rubrikerna. */
@@ -542,13 +549,25 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 .page { position: relative; box-sizing: border-box; background: #fff; padding: 48px 34px; box-shadow: 0 1px 1px rgba(0,0,0,.06), 0 14px 34px -16px rgba(0,0,0,.28); overflow: hidden; font-size: 12.5px; line-height: 1.62; color: var(--t1); }
 .page .run, .page .pno { position: absolute; left: 34px; right: 34px; font-size: 9.5px; color: var(--t3); letter-spacing: .04em; }
 .page .run { top: 20px; } .page .pno { bottom: 18px; text-align: right; }
-.page h1, .page h2, .page h3 { font-family: "Newsreader", Georgia, serif; font-weight: 500; color: var(--ink); letter-spacing: -.01em; }
-.page h1 { font-size: 38px; line-height: 1.12; margin: 0 0 14px; }
-.page h2 { font-size: 20px; line-height: 1.25; margin: 18px 0 6px; }
-.page h3 { font-size: 15px; margin: 14px 0 4px; }
+/* Lugn typskala (Daniel P 2026-10-06: rubrikerna var för stora): titel 28, sedan 18 · 14.5 · 12.5. */
+.page { overflow-wrap: anywhere; }
+.page h1, .page h2, .page h3, .page h4 { font-family: "Newsreader", Georgia, serif; font-weight: 500; color: var(--ink); letter-spacing: -.005em; }
+.page h1 { font-size: 28px; line-height: 1.15; margin: 0 0 16px; letter-spacing: -.01em; }
+.page h2 { font-size: 18px; line-height: 1.3; margin: 18px 0 4px; }
+.page h3 { font-size: 14.5px; line-height: 1.35; margin: 12px 0 2px; font-weight: 600; }
+.page h4 { font-size: 12.5px; line-height: 1.6; margin: 8px 0 0; font-weight: 600; font-style: italic; }
+.page h1 + h2, .page h2 + h3, .page h3 + h4 { margin-top: 4px; }
 .page p { margin: 0 0 10px; }
 .page .pli { padding-left: 14px; position: relative; margin-bottom: 3px; }
 .page .pli::before { content: "–"; position: absolute; left: 0; color: var(--t3); }
+.page .pli.num { padding-left: 20px; } .page .pli.num::before { content: attr(data-n); font-variant-numeric: tabular-nums; }
+.page hr, .mdprev hr { border: 0; border-top: 1px solid var(--l3); margin: 10px 0; }
+.page pre, .mdprev pre { font: 10.5px/1.5 var(--mono); background: var(--s1); padding: 6px 8px; border-radius: 4px; white-space: pre-wrap; margin: 0 0 10px; }
+.ptable { margin: 2px 0 12px; }
+.ptable table { width: 100%; border-collapse: collapse; font-size: 11px; line-height: 1.4; table-layout: fixed; }
+.ptable th, .ptable td { text-align: left; vertical-align: top; padding: 3px 6px 4px 0; border-bottom: 1px solid var(--l4); overflow-wrap: anywhere; }
+.ptable th { font-weight: 600; color: var(--ink); border-bottom-color: var(--l2); }
+.mdprev h4 { font-size: 14px; margin: 8px 0 2px; font-style: italic; } .mdprev .pli.num::before { content: attr(data-n) " "; }
 .page blockquote { margin: 0 0 10px; padding-left: 12px; border-left: 2px solid var(--l2); font-style: italic; }
 .rtext { font: 14.5px/1.6 var(--sans); max-width: 860px; padding: 16px 18px; margin-bottom: 22px; }
 .rtext.ro { font-family: var(--sans); font-size: 14px; line-height: 1.6; border: 0; padding: 0; }
@@ -583,7 +602,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "c25b705", published: "2026-10-06" };
+  const SIDA = { version: "7c2c0cc", published: "2026-10-06" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -925,6 +944,16 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     render();
     try {
       const r = await call("execute_step", { task, step, focus: on });
+      if (r?.written === false && r?.basis) {
+        S.data = { ...S.data, running: before };
+        const { [k]: _b, ...rb } = S.busy; S.busy = rb;
+        askBasis(r.basis, async (args) => {
+          const r2 = await call("execute_step", args);
+          if (Array.isArray(r2?.running)) S.data = { ...S.data, running: r2.running };
+          say(`«${label}» ligger i Igång.${args.user_approval ? " Underlaget är godkänt." : ""}`, r2?.undo || null);
+        });
+        return;
+      }
       S.data = { ...S.data, running: Array.isArray(r?.running) ? r.running : S.data.running.map((x) => ({ ...x, pending: false })) };
       if (!quiet) say(on ? `«${label}» ligger i Igång.` : `«${label}» är borttaget ur Igång.`, r?.undo || null);
     } catch (e) {
@@ -949,7 +978,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       await setRunning(u.args.task, u.args.step, stepLabel(u.args.task, u.args.step), u.args.focus, true);
       say("Ångrat."); render(); return;
     }
-    try { await call(u.tool, u.args); say("Ångrat."); refreshSoon(); if (S.body === "time") loadTimeline(); }
+    try { await call(u.tool, u.args); say("Ångrat."); if (u.args?.task) rereadAfterWrite(u.args.task); else refreshSoon(); if (S.body === "time") loadTimeline(); }
     catch (e) { say(`Kunde inte ångra: ${e.message || e}`, null, true); }
     render();
   }
@@ -1386,8 +1415,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + (!sd.stream && sd.layers?.text ? layersHtml(sd.layers) : "")
       + (sd.stream ? "" : methodUpdatesHtml(x, sd))
       + (!results.length ? `<div class="mmeta">${sd.loading ? "Hämtar det som skapats …" : "Inget ännu."}</div>`
-        : sd.stream || (sd.parts && results.length > 8) ? resultsByCase(x, sd, results)
-        : `<div class="made">${results.slice(0, 8).map(resultCard).join("")}</div>` + (results.length > 8 ? `<div class="mmeta">${results.length - 8} till.</div>` : ""));
+        : sd.stream || sd.parts ? resultsByCase(x, sd, results) : materialHtml(results));
     // Stegen; en leverans i flera delar visar delarna, och stegen när delen öppnas.
     const plans = sd.plans;
     const steps = sd.parts ? partsHtml(x.id, sd.parts, me) : plans ? (plans.length === 1 ? hlSheetHtml(plans[0]) : "") + planStepsHtml(plans, me)
@@ -1471,7 +1499,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       t.due ? `Klar ${fmtDay(t.due)}.` : ""].filter(Boolean).join(" ")
       : pre ? [`${pre.done_steps} av ${pre.total_steps} steg klara.`, pre.next ? `Nästa är «${pre.next.label}».` : "", pre.due ? `Klar ${fmtDay(pre.due)}.` : ""].filter(Boolean).join(" ") : "";
     const results = sd.results || [];
-    const made = `<h3 class="sh">Det som skapats</h3>` + (results.length ? `<div class="made">${results.slice(0, 8).map(resultCard).join("")}</div>`
+    const made = `<h3 class="sh">Det som skapats</h3>` + (results.length ? materialHtml(results)
       : `<div class="mmeta">${sd.loading ? "Hämtar det som skapats …" : "Inget ännu."}</div>`);
     const err = sd.error ? `<div class="banner"><span style="flex:1">Allt kunde inte läsas: ${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>` : "";
     return `<div class="slabel">Del${row?.label ? ` · ${esc(row.label)}` : ""}</div><h1 class="stitle">${rn("task", x.id, t?.label || pre?.label || x.label)}</h1><p class="sline">${esc(sentence)}</p>${pre ? stripHtml(pre.strip) : ""}`
@@ -1601,8 +1629,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
 
   /* ── Redigera text själv: markdown med förhandsvisning ── */
-  const mdHtml = (md) => `<div class="mdprev">${mdBlocks(md).map((b) => b.t === "li" ? `<div class="pli">• ${inline(b.s)}</div>`
-    : b.t === "q" ? `<blockquote>${inline(b.s)}</blockquote>` : `<${b.t}>${inline(b.s)}</${b.t}>`).join("") || `<span class="mmeta">Tomt.</span>`}</div>`;
+  const mdHtml = (md) => `<div class="mdprev">${mdBlocks(md).map((b) => blockHtml(b.t === "li" && !b.n ? { ...b, s: `• ${b.s}` } : b)).join("") || `<span class="mmeta">Tomt.</span>`}</div>`;
   /** Skriv · Förhandsvisa för fältet `id` (S.mdPrev). */
   const mdTabs = (id) => `<span class="ptabs"><button class="${S.mdPrev?.[id] ? "" : "on"}" data-act="md-mode" data-md="${esc(id)}" data-prev="">Skriv</button>`
     + `<button class="${S.mdPrev?.[id] ? "on" : ""}" data-act="md-mode" data-md="${esc(id)}" data-prev="1">Förhandsvisa</button></span>`;
@@ -1837,9 +1864,38 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     + (sh.must_not.length ? `\nDu får inte: ${sh.must_not.join("; ")}.` : "") + (sh.ask_when.length ? `\nStanna och fråga när: ${sh.ask_when.join("; ")}.` : "")
     + (brief?.text ? `\n\nLäget:\n${brief.text}` : "") + redoPrompt(stepId(sh.task, sh.step)) + `\n\nSvara med utkastet i markdown.`;
   let runTimer = null;
-  function runStart(id, toast = null) {
+  /**
+   * Underlaget är inte godkänt (Daniel P 2026-10-06): ◐-kortet frågar innan
+   * arbetet startar. «Godkänn och starta ●» godkänner det steget bygger på och
+   * startar i samma anrop; «Starta utan att godkänna» startar ändå.
+   * `basis` är serverns { question, approve, without }; `start(args)` gör anropet.
+   */
+  function askBasis(basis, start) {
+    S.confirm = { basis: { ...basis, start }, text: basis.question, verb: "Godkänn och starta", dot: true, alt: basis.without !== undefined ? "Starta utan att godkänna" : null };
+    render();
+  }
+  async function basisGo(approve) {
+    const c = S.confirm?.basis;
+    if (!c) return;
+    S.confirm = null; render();
+    const next = approve ? c.approve : c.without;
+    const args = next ? { ...next.args } : null;
+    if (args && /^</.test(String(args.user_approval || ""))) args.user_approval = approve ? "Ja (● Godkänn och starta i vyn)" : "Ja (Starta utan att godkänna i vyn)";
+    try { await c.start(args); refreshSoon(); }
+    catch (e) { say(`Kunde inte starta: ${e.message || e}. Inget ändrades.`, null, true); }
+    render();
+  }
+  function runStart(id, toast = null, asked = false) {
     const sd = S.sheetData[`step:${id}`], sh = sd?.sheet;
     if (!sh?.prompt) return;
+    // «Kör» startar arbetet: är underlaget inte godkänt frågar kortet först.
+    const ub = sh.unapproved_basis;
+    if (!asked && ub?.question && (ub.items || []).some((x) => x.auto)) {
+      const [task, step] = splitStep(id);
+      askBasis({ question: ub.question, approve: { tool: "execute_step", args: { task, step, start: true, confirmed: true, user_approval: "<svar>" } }, without: null },
+        async (args) => { if (args) await call("execute_step", args); runStart(id, toast, true); });
+      return;
+    }
     S.run = { ...(S.run || {}), [id]: { phase: "run", i: 0, text: "" } };
     copyToChat(runPrompt(sh, sd.brief), "prompten till Claude", toast);
     const n = runLines(sh).length;
@@ -1935,41 +1991,171 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     openSheet("result", id, r?.name || "Resultatet");
   }
   const FMT_TEXT = { text: "Text", report: "Rapport", image: "Bild", pdf: "PDF", table: "Tabell", mail: "Mejl", web: "Webb", decision: "Beslut" };
-  /** Markdown till block: rubriker, stycken, punkter. Det som behövs för boksidan och texten. */
-  function mdBlocks(md) {
-    const out = [];
-    let para = [];
-    const flush = () => { if (para.length) { out.push({ t: "p", s: para.join(" ") }); para = []; } };
-    for (const line of String(md || "").split(/\r?\n/)) {
-      const h = /^(#{1,3})\s+(.*)$/.exec(line), li = /^\s*(?:[-*]|\d+\.)\s+(.*)$/.exec(line);
-      if (h) { flush(); out.push({ t: `h${h[1].length}`, s: h[2] }); }
-      else if (li) { flush(); out.push({ t: "li", s: li[1] }); }
-      else if (/^\s*>\s?/.test(line)) { flush(); out.push({ t: "q", s: line.replace(/^\s*>\s?/, "") }); }
-      else if (!line.trim()) flush();
-      else para.push(line.trim());
+  /* reader-md:start — markdown till block för boksidan och texten. Provas för sig i test/v6-material.test.ts. */
+  /*
+   * Robust mot markdown som inte är ren (Daniel P 2026-10-06): den första
+   * rubriken blir titel (h1) och resten får nivå relativt den, i den ordning
+   * nivåerna används (flera #, hoppande nivåer, fet text ensam på raden och
+   * rader i versaler räknas som rubriker). Tabeller, listor med blandade
+   * markörer och indrag, citat, kod och linjer tas om hand; tomma rader slås ihop.
+   */
+  /**
+   * «VAD SPÅRET KOM FRAM TILL» → «Vad spåret kom fram till». Förkortningar som texten själv skriver
+   * i versaler mitt i vanlig text (SEO, AI) står kvar; `keep` är dem.
+   */
+  function calmCaps(s, keep) {
+    const letters = s.replace(/[^\p{L}]/gu, "");
+    if (letters.length < 4 || letters !== letters.toUpperCase() || !/\p{Lu}/u.test(letters)) return s;
+    let first = true;
+    return s.split(/(\s+)/).map((w) => {
+      if (!/\p{L}/u.test(w)) return w;
+      const bare = w.replace(/[^\p{L}]/gu, ""), lw = w.toLowerCase();
+      const out = keep.has(bare) ? w : first ? lw.charAt(0).toUpperCase() + lw.slice(1) : lw;
+      first = false;
+      return out;
+    }).join("");
+  }
+  /** Ord i versaler som står i rader som annars inte är versaler: förkortningar. */
+  function acronyms(lines) {
+    const out = new Set();
+    for (const l of lines) {
+      const letters = l.replace(/[^\p{L}]/gu, "");
+      if (!letters || letters === letters.toUpperCase()) continue;
+      for (const m of l.matchAll(/(?<![\p{L}])(\p{Lu}{2,6})(?![\p{L}])/gu)) out.add(m[1]);
     }
-    flush();
     return out;
   }
-  /** Enkel markdown på en rad: fetstil, kursiv, kod och länkar (bara http/https). Allt annat är escapat först. */
-  const inline = (s) => esc(s).replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, `<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>`).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/\*([^*]+)\*/g, "<i>$1</i>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  const cells = (line) => line.trim().replace(/^\|/, "").replace(/\|$/, "").split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, "|"));
+  const isTableSep = (line) => /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(line) && line.includes("-");
+  const isTableRow = (line) => /^\s*\|.*\|\s*$/.test(line) || (line.match(/\|/g) || []).length >= 2 && !/^\s*[-*>#]/.test(line);
+  function mdBlocks(md) {
+    const raw = [];
+    const lines = String(md || "").replace(/\r\n?/g, "\n").replace(/\t/g, "    ").replace(/ /g, " ").split("\n");
+    let para = [];
+    const flush = () => { if (para.length) { raw.push({ t: "p", s: para.join(" ") }); para = []; } };
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i], trimmed = line.trim();
+      if (/^(```|~~~)/.test(trimmed)) {
+        flush(); const code = [];
+        for (i++; i < lines.length && !/^(```|~~~)/.test(lines[i].trim()); i++) code.push(lines[i]);
+        raw.push({ t: "pre", s: code.join("\n") }); continue;
+      }
+      // Setext: en rad text med === eller --- under är en rubrik.
+      if (/^=+\s*$/.test(trimmed) && para.length === 1) { const s = para[0]; para = []; raw.push({ t: "h", lv: 1, s }); continue; }
+      if (/^-{3,}\s*$/.test(trimmed) && para.length === 1) { const s = para[0]; para = []; raw.push({ t: "h", lv: 2, s }); continue; }
+      const h = /^\s{0,3}(#{1,6})\s*(.*?)\s*#*\s*$/.exec(line);
+      if (h && h[2]) { flush(); raw.push({ t: "h", lv: h[1].length, s: h[2] }); continue; }
+      if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) { flush(); raw.push({ t: "hr" }); continue; }
+      if (isTableRow(line) && (isTableSep(lines[i + 1] || "") || isTableSep(line) || raw.at(-1)?.t === "table" && !para.length)) {
+        flush();
+        const rows = [], head = isTableSep(lines[i + 1] || "");
+        for (; i < lines.length && (isTableRow(lines[i]) || isTableSep(lines[i])); i++) if (!isTableSep(lines[i])) rows.push(cells(lines[i]));
+        i--;
+        const w = Math.max(...rows.map((r) => r.length));
+        raw.push({ t: "table", head, rows: rows.map((r) => [...r, ...Array(w - r.length).fill("")]) }); continue;
+      }
+      // Fet text ensam på raden (med eller utan kolon) är en rubrik, fet inledning följd av text är det inte.
+      const bold = /^\s*(?:\*\*|__)([^*_].{0,110}?)(?:\*\*|__)\s*:?\s*$/.exec(line);
+      if (bold && !/\*\*|__/.test(bold[1])) { flush(); raw.push({ t: "h", lv: 7, s: bold[1].replace(/:\s*$/, "") }); continue; }
+      const li = /^(\s*)(?:([-*+•–·▪◦])|(\d{1,3}|[a-zA-Z])[.)])\s+(.*)$/.exec(line);
+      if (li && (li[2] || li[3]) && li[4].trim()) {
+        flush();
+        raw.push({ t: "li", s: li[4].trim(), d: Math.min(2, Math.floor(li[1].length / 2)), n: li[3] ? `${li[3]}.` : null }); continue;
+      }
+      if (/^\s*>/.test(line)) {
+        flush(); const s = line.replace(/^\s*(>\s?)+/, "");
+        if (raw.at(-1)?.t === "q" && s) raw.at(-1).s += ` ${s}`; else if (s) raw.push({ t: "q", s }); continue;
+      }
+      if (!trimmed) { flush(); continue; }
+      // En rad som fortsätter en punkt (indragen, utan markör) hör till punkten.
+      if (!para.length && /^\s{2,}\S/.test(line) && raw.at(-1)?.t === "li") { raw.at(-1).s += ` ${trimmed}`; continue; }
+      // En rad i versaler ensam (inte en förkortning) är en rubrik.
+      const letters = trimmed.replace(/[^\p{L}]/gu, "");
+      if (!para.length && letters.length >= 6 && letters === letters.toUpperCase() && trimmed.length <= 80 && !/[.!?]$/.test(trimmed) && !(lines[i + 1] || "").trim().match(/^\S/) ) {
+        raw.push({ t: "h", lv: 7, s: trimmed.replace(/:$/, "") }); continue;
+      }
+      para.push(trimmed);
+    }
+    flush();
+    // Nivåerna: den första rubriken är titeln; resten i rang efter de nivåer som används.
+    const heads = raw.filter((b) => b.t === "h");
+    const rest = [...new Set(heads.slice(1).map((b) => b.lv))].sort((a, b) => a - b), keep = acronyms(lines);
+    return raw.map((b, k) => {
+      if (b.t !== "h") return b;
+      const s = calmCaps(b.s.replace(/^\*\*(.*)\*\*$/, "$1").replace(/^__(.*)__$/, "$1").trim(), keep);
+      if (b === heads[0]) return { t: "h1", s };
+      return { t: `h${Math.min(4, 2 + rest.indexOf(b.lv))}`, s };
+    }).filter((b, k, a) => !(b.t === "hr" && (k === 0 || a[k - 1].t === "hr" || /^h\d$/.test(a[k + 1]?.t || ""))));
+  }
+  /** Enkel markdown på en rad: fetstil, kursiv, kod och länkar (bara http/https). Allt annat är escapat först. En lång adress visas kort («exempel.se/en/myck…»), länken är hel. */
+  const inline = (s, short = (u) => { const x = u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""); return x.length > 42 ? `${x.slice(0, 40)}…` : x; }) => esc(s).replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, t, u) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${/^https?:\/\//.test(t) ? short(t) : t}</a>`).replace(/(^|[\s(])(https?:\/\/[^\s<)]+[^\s<).,;:])/g, (_, pre, u) => `${pre}<a href="${u}" target="_blank" rel="noopener noreferrer">${short(u)}</a>`).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/__([^_]+)__/g, "<b>$1</b>").replace(/(^|[^*\w])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  /** Ett block som html; samma för boksidan, texten och förhandsvisningen. */
+  const blockHtml = (b) => b.t === "li" ? `<div class="pli${b.n ? " num" : ""}"${b.d ? ` style="margin-left:${b.d * 14}px"` : ""}${b.n ? ` data-n="${esc(b.n)}"` : ""}>${inline(b.s)}</div>`
+    : b.t === "q" ? `<blockquote>${inline(b.s)}</blockquote>`
+    : b.t === "hr" ? `<hr>`
+    : b.t === "pre" ? `<pre>${esc(b.s)}</pre>`
+    : b.t === "table" ? `<div class="ptable"><table>${b.rows.map((r, i) => `<tr>${r.map((c) => i === 0 && b.head ? `<th>${inline(c)}</th>` : `<td>${inline(c)}</td>`).join("")}</tr>`).join("")}</table></div>`
+    : `<${b.t}>${inline(b.s)}</${b.t}>`;
+  /* reader-md:end */
   /** Boksidor: 640 × 905, marginal 34/48, brödtext 12.5/1.62 (≈ 20 px per rad, ≈ 86 tecken per rad). */
   const PAGE_W = 640, PAGE_H = 905;
-  function paginate(blocks) {
-    const cap = 905 - 2 * 48 - 40, perLine = 20.25, chars = 98;
-    const height = (b) => b.t === "h1" ? 62 * Math.ceil(b.s.length / 26) + 14 : b.t === "h2" ? 30 * Math.ceil(b.s.length / 44) + 18
-      : b.t === "h3" ? 24 + 10 : (Math.ceil(b.s.length / (b.t === "li" ? chars - 4 : chars)) * perLine) + (b.t === "li" ? 3 : 10);
-    const pages = [[]]; let used = 0;
-    for (const b of blocks) {
-      const h = height(b);
-      if (used + h > cap && pages.at(-1).length) { pages.push([]); used = 0; }
-      pages.at(-1).push(b); used += h;
+  /*
+   * Höjden räknas i förväg (ingen mätning i sidan): brödtext 12.5/1.62 ≈ 20 px per rad och ≈ 92 tecken,
+   * rubrikerna i den lugna skalan (28 · 18 · 14.5 · 12.5). Långa stycken och tabeller delas så att inget
+   * skärs av; en rubrik följer med nästa block till nästa sida.
+   */
+  const PAGE_CAP = 905 - 2 * 48 - 40;
+  function blockHeight(b) {
+    const lines = (n, per) => Math.max(1, Math.ceil(n / per));
+    if (b.t === "h1") return lines(b.s.length, 36) * 32 + 16;
+    if (b.t === "h2") return lines(b.s.length, 56) * 24 + 22;
+    if (b.t === "h3") return lines(b.s.length, 70) * 20 + 14;
+    if (b.t === "h4") return lines(b.s.length, 88) * 20 + 8;
+    if (b.t === "hr") return 20;
+    if (b.t === "pre") return b.s.split("\n").length * 16 + 16;
+    if (b.t === "table") {
+      const per = Math.max(8, Math.floor(572 / (b.rows[0]?.length || 1) / 5.4) - 1);
+      return b.rows.reduce((h, r) => h + Math.max(...r.map((c) => lines(String(c).length, per))) * 15 + 7, 12);
     }
+    return lines(b.s.length, b.t === "li" ? 88 - (b.d || 0) * 3 : 92) * 20.25 + (b.t === "li" ? 3 : 10);
+  }
+  /** Ett block som inte får plats på en hel sida delas: stycken vid meningar, tabeller vid rader (med rubrikraden igen). */
+  function splitBlock(b) {
+    if (blockHeight(b) <= PAGE_CAP * .9) return [b];
+    if (b.t === "table") {
+      const out = []; let cur = [];
+      const head = b.head ? [b.rows[0]] : [], body = b.head ? b.rows.slice(1) : b.rows;
+      for (const r of body) {
+        if (cur.length && blockHeight({ ...b, rows: [...head, ...cur, r] }) > PAGE_CAP * .9) { out.push({ ...b, rows: [...head, ...cur] }); cur = []; }
+        cur.push(r);
+      }
+      if (cur.length) out.push({ ...b, rows: [...head, ...cur] });
+      return out;
+    }
+    if (b.t === "p" || b.t === "q" || b.t === "li") {
+      const parts = b.s.match(/[^.!?]+[.!?]+["»”)]*\s*|[^.!?]+$/g) || [b.s], out = [];
+      let cur = "";
+      for (const x of parts) { if (cur && blockHeight({ ...b, s: cur + x }) > PAGE_CAP * .6) { out.push({ ...b, s: cur.trim() }); cur = ""; } cur += x; }
+      if (cur.trim()) out.push({ ...b, s: cur.trim() });
+      return out.map((x, i) => i ? { ...x, n: null, cont: true } : x);
+    }
+    return [b];
+  }
+  function paginate(blocks) {
+    const list = blocks.flatMap(splitBlock);
+    const pages = [[]]; let used = 0;
+    list.forEach((b, i) => {
+      const h = blockHeight(b);
+      // En rubrik står aldrig sist på en sida: den följer med blocket efter.
+      const keep = /^h\d$/.test(b.t) && list[i + 1] ? Math.min(blockHeight(list[i + 1]), 60) : 0;
+      if (used + h + keep > PAGE_CAP && pages.at(-1).length) { pages.push([]); used = 0; }
+      pages.at(-1).push(b); used += h;
+    });
     return pages;
   }
   function pageHtml(blocks, n, title) {
     return `<div class="page" style="width:${PAGE_W}px;height:${PAGE_H}px"><div class="run">${esc(title)}</div><div class="pbody">`
-      + blocks.map((b) => b.t === "li" ? `<div class="pli">${inline(b.s)}</div>` : b.t === "q" ? `<blockquote>${inline(b.s)}</blockquote>` : `<${b.t}>${inline(b.s)}</${b.t}>`).join("")
+      + blocks.map(blockHtml).join("")
       + `</div><div class="pno">${n}</div></div>`;
   }
   /** Zoom: anpassad till höjd och bredd, aldrig över 100 %. */
@@ -2043,7 +2229,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       body = `<div class="bh"><b>Texten</b><span class="mmeta">markdown · en ändring sparas som en ny version</span>${mdTabs(`result:${x.id}`)}</div>`
         + (S.mdPrev?.[`result:${x.id}`] ? mdHtml(text) : `<textarea id="result-text" class="rtext${fmt === "mail" ? " mail" : ""}" data-result="${esc(x.id)}" rows="22">${esc(text)}</textarea>`)
         + (text !== doc.markdown ? `<div class="doacts"><button class="primary" data-act="result-save"><span class="lvl d">●</span> Spara som version ${(r?.version || 1) + 1}</button><button class="quiet" data-act="result-reset">Ångra ändringen</button><span class="mmeta">Den gamla versionen finns kvar.</span></div>` : "");
-    } else if (doc?.markdown) body = `<div class="rtext ro">${mdBlocks(doc.markdown).map((b) => `<p>${inline(b.s)}</p>`).join("")}</div>`;
+    } else if (doc?.markdown) body = `<div class="rtext ro">${mdBlocks(doc.markdown).map(blockHtml).join("")}</div>`;
     else body = `<div class="mmeta">${r?.source === "decision" ? "Beslutet står i lägesbilden." : "Inget att visa här."}</div>`;
     const ftext = isFile && typeof (doc?.text ?? doc?.markdown) === "string" ? (doc.text ?? doc.markdown) : null;
     const acts = `<div class="sacts">${isFile ? `<button class="link" data-act="file-download">Ladda ner</button>`
@@ -2094,7 +2280,34 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
   /** Så många resultat per ärende i strömmens ark; «Visa alla» visar resten. */
   const RESULTS_PER_CASE = 2;
-  /** Strömmens resultat, grupperade per ärende med ärendets rubrik, nyast först. */
+  /*
+   * Materialet i kategorier (Daniel P 2026-10-06): resultaten först, oavsett
+   * utkast eller godkänt; sedan grunddokumenten per sort; sist övrigt.
+   * Kategorin räknas av servern (src/views/results.ts, materialCategory).
+   */
+  const BASIS_ORDER = ["Uppdrag", "Brief", "Plan", "Ramar", "Spårens uppdrag"];
+  function materialHtml(results) {
+    const of = (c) => results.filter((r) => (r.category || "result") === c);
+    const res = of("result"), basis = of("basis"), other = of("other");
+    const cards = (g) => `<div class="made">${g.map(resultCard).join("")}</div>`;
+    const kinds = [...new Set(basis.map((r) => r.basis || "Grunddokument"))].sort((a, b) => (BASIS_ORDER.indexOf(a) + 99) % 99 - (BASIS_ORDER.indexOf(b) + 99) % 99);
+    return (res.length ? `<div class="mcat">Resultat · ${res.length}</div>${cards(res)}` : "")
+      + (basis.length ? `<div class="mcat">Grunddokument · ${basis.length}</div>`
+        + kinds.map((k) => { const g = basis.filter((r) => (r.basis || "Grunddokument") === k); return `<div class="msub">${esc(k)} · ${g.length}</div>${cards(g)}`; }).join("") : "")
+      + (other.length ? `<div class="mcat">Övrigt · ${other.length}</div>${cards(other)}` : "");
+  }
+  /** Vilka delar som är ihopfällda, per leverans; sparas i webbläsaren (utan lagring: bara den här sessionen). */
+  const FOLD_KEY = "v6.material.fold";
+  let folds = {};
+  try { folds = JSON.parse(globalThis.localStorage?.getItem(FOLD_KEY) || "{}") || {}; } catch { folds = {}; }
+  const folded = (sheet, task) => !!folds[sheet]?.includes(task);
+  function toggleFold(sheet, task) {
+    const set = new Set(folds[sheet] || []);
+    if (set.has(task)) set.delete(task); else set.add(task);
+    folds = { ...folds, [sheet]: [...set] };
+    try { globalThis.localStorage?.setItem(FOLD_KEY, JSON.stringify(folds)); } catch { /* lagring stängd: gäller tills sidan laddas om */ }
+  }
+  /** Strömmens resultat per ärende (nyast först); en leverans i delar per del, i delarnas ordning och i kategorier. */
   function resultsByCase(x, sd, results) {
     // En leverans i delar grupperas per del (öppnar delen), en ström per ärende (öppnar ärendet).
     const byPart = !sd.stream && !!sd.parts;
@@ -2103,7 +2316,15 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       ? `<button class="link" data-act="open-part" data-task="${esc(task)}" data-parent="${esc(x.id)}" data-label="${esc(title.get(task) || task)}">${esc(title.get(task) || task)}</button>`
       : `<button class="link" data-act="open-case" data-task="${esc(task)}" data-label="${esc(title.get(task) || task)}">${esc(title.get(task) || task)}</button>`;
     const groups = new Map();
+    if (byPart) for (const p of sd.parts) groups.set(p.task, []);
     for (const r of results) groups.set(r.task, [...(groups.get(r.task) || []), r]);
+    if (byPart) return [...groups].filter(([, g]) => g.length).map(([task, g]) => {
+      const shut = folded(x.id, task);
+      const n = g.filter((r) => (r.category || "result") === "result").length;
+      return `<div class="part"><button class="fold" data-act="mat-fold" data-key="${esc(x.id)}" data-task="${esc(task)}" aria-expanded="${!shut}" title="${shut ? "Visa materialet" : "Fäll ihop"}">${shut ? "▸" : "▾"}</button>${head(task)}`
+        + `<span class="mmeta"> · ${n} resultat${g.length > n ? `, ${g.length - n} till` : ""}</span></div>`
+        + (shut ? "" : `<div class="mgrp">${materialHtml(g)}</div>`);
+    }).join("");
     const hidden = [...groups.values()].reduce((n, g) => n + Math.max(0, g.length - RESULTS_PER_CASE), 0);
     return [...groups].map(([task, g]) => `<div class="part">${head(task)}<span class="mmeta"> · ${g.length} resultat</span></div>`
       + `<div class="made">${(all ? g : g.slice(0, RESULTS_PER_CASE)).map(resultCard).join("")}</div>`).join("")
@@ -3344,17 +3565,26 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const sd = S.sheetData[sheetKey(x)] || {}, ms = sd.messages;
     if (sd.error) return `<div class="slabel">Meddelanden</div><h1 class="stitle">Meddelanden</h1><div class="banner"><span style="flex:1">${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>`;
     if (!ms) return `<div class="slabel">Meddelanden</div><h1 class="stitle">Meddelanden</h1><div class="mmeta">Hämtar …</div>`;
-    const row = (m) => `<div class="msg${m.read ? "" : " unread"}"><div class="mh3"><b>${esc(m.direction === "out" ? `Till ${m.to.map((t) => t.label).join(", ")}` : m.from.label)}</b>`
-      + `<span class="mmeta">${esc(fmtDay(m.at))}${m.about_label ? ` · om «${esc(m.about_label)}»` : ""}${m.delivery ? ` · ${esc(m.delivery.label)}` : ""}</span></div>`
-      + `<div class="mt">${esc(m.text ?? "(texten kunde inte hämtas)")}</div><div class="doacts">`
+    const row = (m) => `<div class="msg${m.resolved ? " resolved" : m.read ? "" : " unread"}"><div class="mh3"><b>${esc(m.direction === "out" ? `Till ${m.to.map((t) => t.label).join(", ")}` : m.from.label)}</b>`
+      + `<span class="mmeta">${esc(fmtDay(m.at))}${m.about_label ? ` · om «${esc(m.about_label)}»` : ""}${m.delivery ? ` · ${esc(m.delivery.label)}` : ""}${m.about_state ? ` · ${esc(m.about_state.text)}` : ""}</span></div>`
+      + `<div class="mt">${esc(m.text ?? "(texten kunde inte hämtas)")}</div>`
+      + (m.resolved ? `<div class="mmeta">Löst ${esc(fmtDay(m.resolved.at))}${m.resolved.note ? ` — ${esc(m.resolved.note)}` : ""}</div>` : "")
+      + (m.suggest_resolve ? `<div class="mmeta">Saken är klar. Markera meddelandet löst?</div>` : "")
+      + `<div class="doacts">`
       + (m.about?.task && m.about?.step ? `<button class="link" data-act="open-step" data-task="${esc(m.about.task)}" data-step="${esc(m.about.step)}" data-label="${esc(m.about_label || "")}">Öppna saken →</button>` : m.delivery ? `<button class="link" data-act="open-delivery" data-key="${esc(m.delivery.id)}">Öppna saken →</button>` : "")
       + (m.direction === "in" && !m.read ? `<button class="link" data-act="msg-read" data-id="${esc(m.id)}"><span class="lvl d">●</span> Läst</button>` : "")
-      + (m.direction === "in" ? `<button class="link" data-act="msg-reply" data-id="${esc(m.id)}">Svara</button>` : "") + `</div>`
+      + (m.direction === "in" ? `<button class="link" data-act="msg-reply" data-id="${esc(m.id)}">Svara</button>` : "")
+      + (m.direction === "in" && !m.resolved ? `<button class="link" data-act="msg-resolve-open" data-id="${esc(m.id)}">Löst …</button>` : "")
+      + (m.resolved ? `<button class="link" data-act="msg-unresolve" data-id="${esc(m.id)}">Ångra löst</button>` : "") + `</div>`
+      + (x.resolve === m.id ? `<div class="reply"><input id="msg-note" maxlength="300" placeholder="Vad gjordes? Valfritt, en kort rad" value="${esc(x.note || "")}"><div class="doacts">`
+        + `<button class="primary" data-act="msg-resolve" data-id="${esc(m.id)}"><span class="lvl d">●</span> Löst</button>`
+        + `<button class="link" data-act="msg-resolve" data-id="${esc(m.id)}" data-scope="thread"><span class="lvl d">●</span> Hela tråden löst</button></div></div>` : "")
       + (x.reply === m.id ? `<div class="reply"><textarea id="msg-text" rows="3" placeholder="Svaret hamnar på saken">${esc(x.text || "")}</textarea><div class="doacts"><button class="primary" data-act="msg-send" data-id="${esc(m.id)}"><span class="lvl d">●</span> Skicka till ${esc(m.from.label)}</button></div></div>` : "")
       + `</div>`;
-    const unread = ms.filter((m) => !m.read), rest = ms.filter((m) => m.read);
+    // Det lösta kräver inget längre men finns kvar i historiken.
+    const unread = ms.filter((m) => !m.read && !m.resolved), rest = ms.filter((m) => m.read || m.resolved);
     return `<div class="slabel">Meddelanden · 30 dagar</div><h1 class="stitle">Meddelanden</h1>`
-      + (unread.length ? `<h3 class="sh">Olästa</h3>${unread.map(row).join("")}` : "") + (rest.length ? `<h3 class="sh">Tidigare</h3>${rest.slice(0, 40).map(row).join("")}` : "")
+      + (unread.length ? `<h3 class="sh">Att svara på</h3>${unread.map(row).join("")}` : "") + (rest.length ? `<h3 class="sh">Tidigare</h3>${rest.slice(0, 40).map(row).join("")}` : "")
       + (!ms.length ? `<div class="mmeta">Inga meddelanden.</div>` : "");
   }
 
@@ -3606,16 +3836,88 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     } catch (e) { say(`Kunde inte ta över «${label}»: ${e.message || e}. Inget ändrades.`, null, true); }
     render();
   }
-  async function markDone(s) {
-    S.menu = null; S.peek = null; render();
-    if (offline()) { queue({ kind: "done", task: s.task, step: s.step, label: s.label }); return; }
+  /*
+   * Klart syns direkt (Daniel P 2026-10-06: «när man markerar ett steg som klart händer ingenting»).
+   * Förut skrev vyn och väntade på att översikten lästes om; arken (leveransen, delen, steget) låg kvar
+   * ur förhämtningen och minnet (#395) och lästes inte om, och kollen räknade egna ändringar som redan
+   * synliga. Nu: ändringen läggs in lokalt på en gång (steget, stegremsan, raden i översikten och
+   * leveransens delar), skickas, och arken läses om efteråt. Går det fel rullas allt tillbaka.
+   */
+  function patchStepDone(task, step, done) {
+    const flip = (on) => on !== done;
+    let changed = false;
+    if (S.data?.rows) S.data = { ...S.data, running: done ? (S.data.running || []).filter((x) => !(x.task === task && x.step === step)) : S.data.running,
+      rows: S.data.rows.map((r) => {
+        const i = r.tasks.indexOf(task); if (i < 0) return r;
+        let hit = false;
+        const steps = r.steps.map((x) => { if (x[0] !== i || x[1] !== step || !flip(x[3] === "done")) return x; hit = true; const y = [...x]; y[3] = done ? "done" : "todo"; return y; });
+        if (!hit) return r;
+        changed = true;
+        const state_text = String(r.state_text || "").replace(/(\d+) av (\d+) steg/, (m, a, b) => `${Math.max(0, Math.min(+b, +a + (done ? 1 : -1)))} av ${b} steg`);
+        return { ...r, steps, state_text };
+      }) };
+    for (const [k, d] of Object.entries(S.sheetData)) {
+      let n = d;
+      if (d.plans?.some((t) => t.task === task)) n = { ...n, plans: d.plans.map((t) => t.task !== task ? t : { ...t,
+        steps: t.steps.map((x) => x.step !== step || !flip(!!x.done) ? x : (({ done: _d, ...y }) => done ? { ...y, done: true } : y)(x)) }) };
+      if (d.parts?.some((p) => p.task === task)) n = { ...n, parts: d.parts.map((p) => {
+        const at = (p.strip_steps || []).indexOf(step);
+        if (p.task !== task || at < 0 || !flip(p.strip[at] === "d")) return p;
+        const plan = Object.values(S.sheetData).flatMap((y) => y.plans || []).find((t) => t.task === task);
+        const left = plan ? plan.steps.filter((x) => x.step === step ? !done : !x.done) : null;
+        return { ...p, strip: p.strip.slice(0, at) + (done ? "d" : "t") + p.strip.slice(at + 1), done_steps: p.done_steps + (done ? 1 : -1),
+          ...(left ? (left[0] ? { next: { label: left[0].label, who: left[0].who, side: left[0].side } } : { next: undefined }) : {}) };
+      }) };
+      if (d.todo?.some((t) => t.task === task && t.step === step) && done) n = { ...n, todo: d.todo.filter((t) => !(t.task === task && t.step === step)) };
+      if (k === `step:${stepId(task, step)}` && d.sheet && flip(!!d.sheet.done))
+        n = { ...n, sheet: { ...d.sheet, done: done ? { at: new Date().toISOString(), by: S.data?.party?.label || "dig", how: "vyn", no_result: null } : null } };
+      if (n !== d) { changed = true; S.sheetData = { ...S.sheetData, [k]: n }; }
+    }
+    return changed;
+  }
+  /** Efter en skrivning: arken som rör uppgiften är inaktuella, det översta läses om, och översikten. */
+  function rereadAfterWrite(task) {
+    for (const k of Object.keys(S.sheetData)) {
+      const m = /^(delivery|part|step|case):(.*)$/.exec(k); if (!m) continue;
+      const hit = m[1] === "step" ? splitStep(m[2])[0] === task : m[1] === "delivery" ? (rowOf(m[2])?.tasks || []).includes(task) || (S.sheetData[k].parts || []).some((p) => p.task === task) : m[2] === task;
+      if (hit) S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], stale: true } };
+    }
+    const t = top1(); if (t && S.sheetData[sheetKey(t)]?.stale) fetchSheet(t, true);
+    refreshSoon();
+  }
+  /** Markera klart (●) eller öppna igen: syns direkt, kvitto med Ångra, tillbaka vid fel och omläsning efteråt. */
+  async function markDone(s, done = true) {
+    S.menu = null; S.peek = null;
+    if (offline()) { if (done) queue({ kind: "done", task: s.task, step: s.step, label: s.label }); else say("Att öppna steget igen kan inte göras förrän dirigenten svarar. Inget ändrades.", null, true); render(); return; }
+    const before = { data: S.data, sheets: S.sheetData };
+    patchStepDone(s.task, s.step, done);
+    render();
     try {
-      await call("execute_step", { task: s.task, step: s.step, mark: "done" });
-      say(`«${s.label}» är klart.`, { tool: "execute_step", args: { task: s.task, step: s.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." } });
-      refreshSoon();
+      const undo = { fn: async () => {
+        const back = { data: S.data, sheets: S.sheetData };
+        patchStepDone(s.task, s.step, false); render();
+        try { await call("execute_step", { task: s.task, step: s.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." }); }
+        catch (e) { S.data = back.data; S.sheetData = back.sheets; throw e; }
+      } };
+      const r = await call("execute_step", done ? { task: s.task, step: s.step, mark: "done" } : { task: s.task, step: s.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." });
+      // Underlaget är inte godkänt: inget skrevs, så det direkta tas tillbaka tills frågan besvarats.
+      if (done && r?.written === false && r?.basis) {
+        S.data = before.data; S.sheetData = before.sheets; render();
+        askBasis(r.basis, async (args) => {
+          const back = { data: S.data, sheets: S.sheetData };
+          patchStepDone(s.task, s.step, true); render();
+          try { await call("execute_step", args); } catch (e) { S.data = back.data; S.sheetData = back.sheets; throw e; }
+          say(`«${s.label}» är klart.${args.user_approval ? " Underlaget är godkänt." : ""}`, undo);
+          rereadAfterWrite(s.task);
+        });
+        return;
+      }
+      say(done ? `«${s.label}» är klart.` : `«${s.label}» är öppet igen.`, done ? undo : null);
+      rereadAfterWrite(s.task);
     } catch (e) {
-      if (unreachable(e)) { S.error = e; queue({ kind: "done", task: s.task, step: s.step, label: s.label }); return; }
-      say(`Kunde inte markera «${s.label}» klart: ${e.message || e}. Inget ändrades.`, null, true);
+      S.data = before.data; S.sheetData = before.sheets;
+      if (unreachable(e) && done) { S.error = e; queue({ kind: "done", task: s.task, step: s.step, label: s.label }); return; }
+      say(`Kunde inte ${done ? "markera" : "öppna"} «${s.label}» ${done ? "klart" : "igen"}: ${e.message || e}. Inget ändrades.`, null, true);
     }
     render();
   }
@@ -3656,7 +3958,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
   const confirmHtml = () => !S.confirm ? "" : `<div class="confirm${S.confirm.house ? " house" : ""}" role="dialog" aria-label="Förhandsvisning"><span class="ci">${S.confirm.house ? "■" : "◐"}</span><span class="ctext">${esc(S.confirm.text)}</span>`
     + `<button class="quiet" data-act="confirm-cancel">Avbryt</button>`
-    + `<button class="go" data-act="confirm-go"${S.confirm.loading || !S.confirm.next ? " disabled" : ""}>${S.confirm.house ? "■" : "◐"} ${esc(S.confirm.verb)}${S.confirm.late ? ", nytt löfte" : ""}</button></div>`;
+    + (S.confirm.alt ? `<button class="quiet" data-act="confirm-alt">${esc(S.confirm.alt)}</button>` : "")
+    + `<button class="go" data-act="confirm-go"${S.confirm.loading || !(S.confirm.next || S.confirm.basis) ? " disabled" : ""}>${S.confirm.dot ? "" : `${S.confirm.house ? "■" : "◐"} `}${esc(S.confirm.verb)}${S.confirm.dot ? " ●" : ""}${S.confirm.late ? ", nytt löfte" : ""}</button></div>`;
 
   function menuHtml() {
     const m = S.menu;
@@ -4406,8 +4709,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const sub = g.person ? `${hh(g.bars.filter((b) => !b.st.dn).reduce((n, b) => n + (b.h || 0), 0))} h i fönstret${ov.length ? ` · över dagens tid ${ov.length} ${ov.length === 1 ? "dag" : "dagar"}` : ""}`
         : g.due ? `lovat ${shortIso(g.due)}` : "";
       const strip = ov.map((o) => `<span class="ovd${o.new ? " new" : ""}" style="left:${pct(dayIdx(tl, o.day))};width:${pct(1)}" title="${esc(`${nameOf(o.who)} ${hh(o.load)} h av ${hh(o.cap)} ${dayLabel(o.day)}`)}"></span>`).join("");
-      // Namnet står när det får plats (minst ett par ord); annars i rutan som hovras.
-      const dayPx = trackWidth() / days, fits = (b) => (b.z - b.a) * dayPx >= 64;
+      // Namnet står så långt det får plats och kortas med …, som i prototypen; hela står i rutan som hovras.
+      const dayPx = trackWidth() / days, fits = (b) => (b.z - b.a) * dayPx >= (b.cluster ? 64 : 28);
       const barHtml = (b) => {
         if (b.cluster) {
           const names = b.bars.map((x) => `${x.st.n}${x.h ? ` (${hh(x.h)} h)` : ""}`);
@@ -4422,9 +4725,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         const can = !b.st.dn && !b.st.lk && !b.st.x;
         const title = `${b.st.n} · ${b.t.n} · ${b.s === b.e ? shortIso(b.s) : `${shortIso(b.s)}–${shortIso(b.e)}`}${b.h ? ` · ${hh(b.h)} h` : ""}${b.to ? ` · föreslås för ${nameOf(b.to)}` : ""}${b.st.lk && !b.st.dn ? " · bokat, flyttas inte här" : ""}`;
         return `<div class="${cls}" data-ctx="step|${esc(b.t.id)}|${esc(b.st.id)}"${can ? ` data-bar="${esc(k)}" data-part="body"` : ""} style="left:${pct(b.a)};width:${pct(b.z - b.a)};top:${b.lane * 30 + 4}px" title="${esc(title)}">`
-          // En smal stapel har inte plats för namnet; timbrickan står när den får plats, annars i rutan som hovras.
+          // Timbrickan står när stapeln är minst tre dagar; annars står timmarna i rutan som hovras.
           + `<span class="bn">${b.unf ? `${esc(b.st.n)} <span class="mmeta">· ${esc(b.t.n)}</span>` : fits(b) ? esc(b.st.n) : ""}</span>${b.h && b.z - b.a >= 3 ? `<span class="hb"${can ? ` data-bar="${esc(k)}" data-part="hours"` : ""}>${hh(b.h)} h</span>` : ""}`
-          + (can ? `<span class="edge" data-bar="${esc(k)}" data-part="edge"></span>` : "") + `<span class="fill" style="width:${(fill * 100).toFixed(1)}%"></span></div>`;
+          + (can ? `<span class="bedge" data-bar="${esc(k)}" data-part="edge"></span>` : "") + `<span class="fill" style="width:${(fill * 100).toFixed(1)}%"></span></div>`;
       };
       const lane = g.person ? ` data-lane-person="${esc(g.person)}"` : "";
       const head1 = `<div class="tln">${esc(g.label)}${g.person === me ? " (du)" : ""}</div><div class="mmeta">${esc(sub)}</div>`;
@@ -4454,7 +4757,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     for (const d of res.deliveries) if (d.finish !== d.was) lines.push(`${rowOf(d.id)?.label || "Leveransen"} blir klar ${dayLabel(d.finish)} (var ${dayLabel(d.was)}).`);
     for (const t of res.tasks) if (!taskOf(tl, t.id)?.d && t.finish !== t.was) lines.push(`${taskOf(tl, t.id)?.n || t.id} blir klar ${dayLabel(t.finish)} (var ${dayLabel(t.was)}).`);
     const late = res.tasks.filter((t) => t.late_by > (was.get(t.id)?.late_by ?? 0));
-    for (const t of late) lines.push(`${taskOf(tl, t.id)?.n || t.id} spricker med ${t.late_by} ${t.late_by === 1 ? "dag" : "dagar"} — ett nytt löfte.`);
+    for (const t of late) { const b = was.get(t.id)?.late_by ?? 0;
+      lines.push(`${taskOf(tl, t.id)?.n || t.id} spricker med ${t.late_by} ${t.late_by === 1 ? "dag" : "dagar"}${b ? ` i stället för ${b}` : ""} — ett nytt löfte.`); }
     for (const t of res.tasks) { const b = was.get(t.id)?.late_by ?? 0;
       if (t.late_by < b) lines.push(`${taskOf(tl, t.id)?.n || t.id} ${t.late_by ? `spricker med ${t.late_by} i stället för ${b} dagar` : "håller nu"}.`); }
     if (!late.length) lines.unshift("Leveranserna håller.");
@@ -4678,6 +4982,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     catch (e) { S.error = e; if (e.code === "NO_SESSION") forget(); }
     S.loading = false; S.refreshing = false;
     render();
+    // Tid valt innan översikten kom: tidsaxeln visste inte vems den var och blev kvar på «Hämtar».
+    if (S.body === "time" && S.data && !S.time?.tl && !S.time?.loading) loadTimeline();
     prefetchOverview();
     await flushOutbox();
     schedulePoll();
@@ -4972,6 +5278,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "pal-run") { runEntry(S.pal?.res?.[Number(el.getAttribute("data-i"))]); return; }
     else if (act === "pal-open") { if (!S.pal) openPalette(); return; }
     else if (act === "confirm-go") { if (S.confirm?.house) { const t = top1(), c = t && S.sheetData[sheetKey(t)]?.case; S.confirm = null; if (c) { copyToChat(t.reply.trim(), "svaret"); gmailOpen(c.gmail_url); } return; }
+      if (S.confirm?.basis) { basisGo(true); return; }
       if (S.confirm?.run) hlRunConfirm(); else if (S.confirm?.cal) calCommit(); else if (S.confirm?.step) confirmStep(); else confirmTime(); return; }
     else if (act === "open-step") { openStep(el.getAttribute("data-task"), el.getAttribute("data-step"), el.getAttribute("data-label")); return; }
     else if (act === "open-result") { openResult(el.getAttribute("data-id")); return; }
@@ -5017,6 +5324,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "upd-take") { const t = top1(); if (t) takeUpdate(t.id, el.getAttribute("data-task")); return; }
     else if (act === "upd-leave") { S.leave = { ...(S.leave || {}), [el.getAttribute("data-task")]: true }; say("Låter vara. Leveransen följer metoden som den var."); }
     else if (act === "confirm-cancel") { S.confirm = null; }
+    else if (act === "confirm-alt") { if (S.confirm?.basis) basisGo(false); return; }
     else if (act === "more") { S.limit += PAGE; }
     else if (act === "start") { const w = el.getAttribute("data-way");
       copyToChat({ order: "Arbeta med dirigenten: jag vill lägga in en beställning. Fråga vad kunden beställt och när, och lägg in den med write { op: \"intake_order\" } efter mitt ja.",
@@ -5038,6 +5346,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         .then(() => { t.hours = ""; say(`${hh(h)} h loggade på ärendet.`); fetchSheet(t, true); }, (e) => { say(`Kunde inte logga tiden: ${e.message || e}`, null, true); render(); }); return; } }
     else if (act === "case-chat") { const t = top1(); if (t) copyToChat(`Arbeta med dirigenten: supportärendet «${t.label}» (uppgift ${t.id}). Läs det med read { op: "view_file", sheet: "case", task: "${t.id}" } och hjälp mig utreda och svara. Skicka inget utan mitt ja.`, "prompten för ärendet"); return; }
     else if (act === "order-new") { openOrder(); return; }
+    else if (act === "mat-fold") toggleFold(el.getAttribute("data-key"), el.getAttribute("data-task"));
     else if (act === "cases-all") { const k = el.getAttribute("data-key"); S.allCases = { ...S.allCases, [k]: !S.allCases[k] }; }
     else if (act === "order-way") { const t = top1(); if (t) t.way = el.getAttribute("data-way"); }
     else if (act === "order-thread") { const t = top1(); if (t) orderThread(t); return; }
@@ -5064,6 +5373,16 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       if (S.data?.messages_unread) S.data = { ...S.data, messages_unread: S.data.messages_unread - 1 };
       if (S.data?.reviews?.some((m) => m.id === id)) S.data = { ...S.data, reviews: S.data.reviews.filter((m) => m.id !== id) };
       call("write", { op: "message", read: id }).catch((e) => { say(`Kunde inte markera läst: ${e.message || e}`, null, true); render(); }); }
+    else if (act === "msg-resolve-open") { const t = top1(); if (t) { t.resolve = t.resolve === el.getAttribute("data-id") ? null : el.getAttribute("data-id"); t.note = ""; } }
+    else if (act === "msg-resolve" || act === "msg-unresolve") { const t = top1(), id = el.getAttribute("data-id"), undo = act === "msg-unresolve";
+      const sd = t && S.sheetData[sheetKey(t)], m = sd?.messages?.find((y) => y.id === id), note = undo ? "" : (t?.note || "").trim();
+      const args = { op: "message", resolve: id, ...(undo ? { undo: true } : { ...(note ? { note } : {}), ...(el.getAttribute("data-scope") === "thread" ? { scope: "thread" } : {}) }) };
+      if (!undo && m && !m.read && S.data?.messages_unread) S.data = { ...S.data, messages_unread: S.data.messages_unread - 1 };
+      if (!undo && S.data?.reviews?.some((y) => y.id === id)) S.data = { ...S.data, reviews: S.data.reviews.filter((y) => y.id !== id) };
+      call("write", args).then(() => { if (t) { t.resolve = null; t.note = ""; }
+        say(undo ? "Löst är ångrat." : "Markerat löst. Det finns kvar under Tidigare.", undo ? null : { tool: "write", args: { op: "message", resolve: id, undo: true } });
+        if (t) fetchSheet(t, true); refreshSoon(); },
+        (e) => { say(`Kunde inte ${undo ? "ångra" : "markera löst"}: ${e.message || e}`, null, true); render(); }); return; }
     else if (act === "msg-reply") { const t = top1(); if (t) { t.reply = t.reply === el.getAttribute("data-id") ? null : el.getAttribute("data-id"); t.text = ""; } }
     else if (act === "msg-send") { const t = top1(), sd = t && S.sheetData[sheetKey(t)], m = sd?.messages?.find((y) => y.id === el.getAttribute("data-id"));
       if (m && (t.text || "").trim()) { call("write", { op: "message", to: [m.from.id], text: t.text.trim(), reply_to: m.id, ...(m.about ? { about: m.about } : {}), confirmed: true })
@@ -5153,6 +5472,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (e.target?.id === "case-reply") { const t = top1(); if (t) t.reply = e.target.value; }
     else if (e.target?.id === "case-hours") { const t = top1(); if (t) t.hours = e.target.value; }
     else if (e.target?.id === "msg-text") { const t = top1(); if (t) t.text = e.target.value; }
+    else if (e.target?.id === "msg-note") { const t = top1(); if (t) t.note = e.target.value; }
     else if (e.target?.id === "order-text") { const t = top1(); if (t) { t.text = e.target.value; orderFetch(t); } }
     else if (e.target?.id === "order-thread") { const t = top1(); if (t) t.threadQ = e.target.value; }
     else if (e.target?.id === "order-meeting") { const t = top1(); if (t) t.meetingQ = e.target.value; }
