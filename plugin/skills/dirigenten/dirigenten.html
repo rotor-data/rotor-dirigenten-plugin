@@ -583,7 +583,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "c353d9c", published: "2026-10-06" };
+  const SIDA = { version: "00bd805", published: "2026-10-06" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1311,7 +1311,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       call("read", { op: "view_file", sheet: "case", task: x.id }).then((d) => {
         put({ loading: false, case: d });
         if (d?.thread) call("read", { op: "intake_status", thread: d.thread, all_posts: true })
-          .then((t) => put({ thread: t?.thread || { posts: [] } })).catch((e) => put({ threadError: e.message || String(e) }));
+          .then((t) => put({ thread: t?.thread || { posts: [] }, looksDone: t?.looks_done || null })).catch((e) => put({ threadError: e.message || String(e) }));
       }).catch((e) => { if (caseWithoutThread(e)) caseAsPart(x); else put({ loading: false, error: e }); });
       call("plan_state", { task: x.id, format: "plan" }).then((d) => put({ plan: d?.tasks?.[0] || null })).catch(() => put({ plan: null }));
       // Ärendets egen metod, ändring och utfall; resultaten bara för ärendet.
@@ -2516,10 +2516,14 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const groups = STATUS4.map(([k, l]) => { const ts = d.tasks.filter((t) => caseState(t) === k); const shown = ts.slice(0, Math.max(0, left)); left -= shown.length; return [l, shown, ts.length]; }).filter(([, ts]) => ts.length);
     const month = sd.month?.text || "";
     const outcomeOf = new Map((sd.cases || []).filter((c) => c.outcome?.chosen).map((c) => [c.task, c.outcome.chosen.label]));
+    // «Ser klart ut» ur kön (2026-10-06): uppgiften är öppen, men tråden visar att vi svarat och att inget är kvar.
+    const q = sd.queue || {}, looks = new Map([...(q.in_plan || []), ...(q.answered || []), ...(q.closed_by_ack || []), ...(q.waiting || [])]
+      .filter((c) => c.looks_done?.calls?.length).map((c) => [c.looks_done.calls[0].args.task, c.looks_done]));
+    S.caseDone = { ...(S.caseDone || {}), ...Object.fromEntries(looks) };
     return `<h3 class="sh">Ärendena</h3>${month ? `<div class="layers">${esc(month)}</div>` : ""}` + unassessedHtml(d, sd)
       + groups.map(([l, ts, n]) => `<div class="cgrp"><div class="mh2">${esc(l)} <span class="mmeta">${n}</span></div>`
         + ts.map((t) => `<div class="crow case" data-act="open-case" data-task="${esc(t.id)}" data-label="${esc(t.label)}" data-ctx="case|${esc(t.id)}" role="button"><span>${esc(caseTitle(t.label))}</span>`
-          + `${outcomeOf.get(t.id) ? `<span class="otag">${esc(outcomeOf.get(t.id))}</span>` : ""}<span class="mmeta">${senderHtml(t.from, t.from_email)}${t.done} av ${t.total}${t.current ? ` · ${esc(t.current.label)}` : ""}${t.current ? ` · ${esc(t.current.label)}` : ""}${t.late ? " · sent" : ""}${t.current?.step && isRunning(t.id, t.current.step) ? " · igång" : ""}</span></div>`).join("") + `</div>`).join("")
+          + `${outcomeOf.get(t.id) ? `<span class="otag">${esc(outcomeOf.get(t.id))}</span>` : ""}${looks.get(t.id) && caseState(t) !== "done" ? `<button class="otag" data-act="case-close" data-task="${esc(t.id)}" title="${esc(looks.get(t.id).reason)}">Ser klart ut · Stäng <span class="lvl d">●</span></button>` : ""}<span class="mmeta">${senderHtml(t.from, t.from_email)}${t.done} av ${t.total}${t.current ? ` · ${esc(t.current.label)}` : ""}${t.current ? ` · ${esc(t.current.label)}` : ""}${t.late ? " · sent" : ""}${t.current?.step && isRunning(t.id, t.current.step) ? " · igång" : ""}</span></div>`).join("") + `</div>`).join("")
       + (total > CASES_SHOWN ? `<div class="doacts"><button class="link" data-act="cases-all" data-key="sheet:${esc(x.id)}">${all ? "Visa färre" : `Visa alla ${total}`}</button></div>` : "");
   }
   /** Uppgiften har ingen mejltråd: den är inget supportärende. */
@@ -2565,6 +2569,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const how = line ? `<div class="layers">${esc(line.text)}.${line.outcome ? ` ${line.outcome.chosen ? `Utfall: <b>${esc(line.outcome.chosen.label)}</b>.` : `${esc(line.outcome.text)}.`}` : ""}</div>${upd}` : "";
     const task = `<h3 class="sh">Uppgiften</h3>${how}<div class="ssteps">${steps || `<div class="mmeta">${sd.plan === null ? "Stegen kunde inte läsas." : "Hämtar stegen …"}</div>`}</div>`;
     const posts = sd.thread?.posts || [];
+    const looks = sd.looksDone ? looksDoneHtml(x.id, sd.looksDone) : "";
     const first = posts.findIndex((p) => !p.internal);
     const thread = `<h3 class="sh">Tråden</h3>` + (sd.threadError ? `<div class="mmeta">Tråden kunde inte hämtas här: ${esc(sd.threadError)}. Öppna den i Gmail (G).</div>`
       : !sd.thread ? `<div class="mmeta">Hämtar tråden …</div>`
@@ -2581,7 +2586,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<p class="sline">${senderHtml(c.from, c.from_email, "")}</p>`
       + `<div class="sacts">${others ? `<button class="edge" data-act="take-over" data-task="${esc(x.id)}" data-label="${esc(c.subject || x.label)}" title="Stegen blir dina, utan att någon behöver svara · T"><span class="lvl d">●</span> Ta över ärendet</button>` : ""}${cur ? `<button class="edge" data-act="${on ? "unpin" : "pin"}" data-task="${esc(x.id)}" data-step="${esc(cur.step)}" data-label="${esc(cur.label)}" title="${on ? "Ta bort från Igång" : "Lägg ärendet i Igång"} · I"><span class="lvl d">●</span> ${on ? "Ta bort från Igång" : "Lägg i Igång"}</button>` : ""}`
       + `<button class="link" data-act="case-chat">Arbeta i chatten ↗</button><span class="mmeta">Högerklicka för fler handlingar</span></div></div>`
-      + chain + `<div class="sgrid"><div class="smain">${judge}${inv}${cards}${detail}${task}${thread}${time}</div><aside class="margin"><div class="mh">Kund</div>`
+      + chain + looks + `<div class="sgrid"><div class="smain">${judge}${inv}${cards}${detail}${task}${thread}${time}</div><aside class="margin"><div class="mh">Kund</div>`
       + (c.customer ? `<button class="link" data-act="open-customer" data-id="${esc(c.customer)}" data-label="${esc(c.customer_label)}">${esc(c.customer_label)}</button>` : `<div class="mmeta">Okänd</div>`)
       + `<div class="mh">Tangenter</div><div class="mmeta">G öppnar Gmail</div></aside></div>`;
   }
@@ -2592,10 +2597,27 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     try {
       const r = await call(n.tool, n.args);
       if (n.tool === "read") { say(summaryText(r) || "Prövat. Inget skrevs."); render(); return; }
-      S.confirm = { verb: n.label, text: summaryText(r) || "Förhandsvisning.", next: r?.next_call || { tool: n.tool, args: { ...n.args, confirmed: true } } };
+      // Jaet följer med, och ärendet läses om efter sparandet — annars visar arket det gamla.
+      S.confirm = { verb: n.label, text: summaryText(r) || "Förhandsvisning.", next: hlNext(r, { tool: n.tool, args: { ...n.args, confirmed: true } }, n.label), onDone: () => hlInvalidate(x.id) };
     } catch (e) { say(`Kunde inte: ${e.message || e}`, null, true); }
     render();
   }
+  /**
+   * «Ser klart ut · Stäng» (2026-10-06): tråden visar vårt svar och ingen fråga kvar,
+   * också när svaret gick direkt i Gmail. Stegen stängs i efterhand, ett i taget, efter ett ja.
+   */
+  async function caseClose(task, done) {
+    if (!done?.calls?.length) return;
+    S.confirm = { verb: "Stäng ärendet", text: `${done.steps.length === 1 ? "Steget" : `De ${done.steps.length} öppna stegen`} (${done.steps.map((s) => s.label || s.step).join(", ")}) stängs i efterhand: ${done.reason}.`,
+      next: { tool: "case-close", args: {} }, runAll: async () => {
+        for (const c of done.calls) await call(c.tool, { ...c.args, confirmed: true, user_approval: "Ja (● Stäng i vyn)" });
+        return { summary: `Ärendet är stängt: ${done.reason}.` };
+      }, onDone: () => hlInvalidate(task) };
+    render();
+  }
+  /** Förslaget som rad: ●, eftersom stängningen syns och går att öppna igen (mark: "undone"). */
+  const looksDoneHtml = (task, done) => !done ? "" : `<div class="upd"><span class="lvl d">●</span><span style="flex:1"><b>Ser klart ut</b> · ${esc(done.because)}. ${esc(done.reason)}.</span>`
+    + `<button class="go" data-act="case-close" data-task="${esc(task)}">Stäng <span class="lvl d">●</span></button></div>`;
   function gmailOpen(url) { try { globalThis.open?.(url, "_blank", "noopener"); } catch { /* ingen webbläsare */ } }
 
   /* ── Ny beställning (intaget): flera vägar in, samma resultat ──
@@ -3624,7 +3646,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     S.confirm = { ...c, loading: true };
     render();
     try {
-      const r = await call(c.next.tool, c.next.args);
+      const r = c.runAll ? await c.runAll() : await call(c.next.tool, c.next.args);
       S.confirm = null;
       say(`Genomfört. ${summaryText(r).replace(/^Genomfört \(nr [^)]*\)\.\s*/, "")}`, r?.receipt?.undo || null);
       c.onDone?.();
@@ -3683,7 +3705,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       homeless: !!(c ? c.no_method : row?.no_method) };
   }
   const hlInvalidate = (task) => { if (S.hlPlans) delete S.hlPlans[task];
-    for (const k of Object.keys(S.sheetData)) if (k === `delivery:${task}` || k === `part:${task}` || k.startsWith("delivery:d_")) S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], stale: true } };
+    for (const k of Object.keys(S.sheetData)) if (k === `delivery:${task}` || k === `part:${task}` || k === `case:${task}` || k.startsWith("delivery:d_")) S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], stale: true } };
     const t = top1(); if (t && S.sheetData[sheetKey(t)]?.stale) fetchSheet(t, true); refreshSoon(); };
   /** Förhandsvisningens nästa anrop, med jaet som knappen ger när servern väntar ett. */
   function hlNext(r, fallback, verb) {
@@ -5004,6 +5026,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       if (S.body === "cal" && !calState().data) { loadCalendar(); return; } }
     else if (act === "open-case") { openCase(el.getAttribute("data-task"), el.getAttribute("data-label")); return; }
     else if (act === "case-choice") { const t = top1(); if (t) t.choice = el.getAttribute("data-id"); }
+    else if (act === "case-close") { const task = el.getAttribute("data-task"), t = top1(); const d = t && S.sheetData[sheetKey(t)]?.looksDone
+        || (S.caseDone || {})[task]; caseClose(task, d); return; }
     else if (act === "case-call") { const t = top1(); if (t) caseCall(t, Number(el.getAttribute("data-i"))); return; }
     else if (act === "case-send") { const t = top1(), c = t && S.sheetData[sheetKey(t)]?.case; if (c) { if (!(t.reply || "").trim()) { say("Skriv svaret först.", null, true); }
       else S.confirm = { verb: "Skicka i Gmail", text: `Det här lämnar huset, till ${c.customer_label || "kunden"}: «${t.reply.trim().slice(0, 160)}${t.reply.trim().length > 160 ? " …" : ""}». Svaret kopieras och tråden öppnas i Gmail, där du skickar.`, house: true, next: { tool: "gmail", args: {} } }; } }
