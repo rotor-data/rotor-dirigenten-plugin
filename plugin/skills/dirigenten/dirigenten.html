@@ -304,7 +304,10 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 .moms { border-top: 1px solid var(--l4); margin-bottom: 8px; }
 .mom { display: grid; grid-template-columns: 22px 18px minmax(0, 1fr) 24px; gap: 10px; align-items: center; padding: 6px 4px; border-bottom: 1px solid var(--l5); }
 .mom:hover { background: var(--s2); }
-.mom input { border: 0; background: none; font: inherit; font-size: 13.5px; padding: 2px 0; color: var(--ink); }
+.mom .mtext { border: 0; background: none; font: inherit; font-size: 13.5px; padding: 2px 0; color: var(--ink); min-width: 0; white-space: normal; overflow-wrap: anywhere; cursor: text; }
+.mom textarea.mtext { width: 100%; resize: vertical; outline: 1px solid var(--l5); }
+.mom .mtext .mdprev, .mom .mtext p { margin: 0; padding: 0; }
+.mom { align-items: start; }
 .mom .mn { font: 11px var(--mono); color: var(--t3); }
 .tick { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--t3); background: #fff; padding: 0; font-size: 12px; line-height: 1; }
 .tick.on { background: var(--teal); border-color: var(--teal); color: #fff !important; }
@@ -342,6 +345,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 .upd { display: flex; gap: 10px; align-items: center; padding: 9px 12px; border-radius: 8px; border: 1.5px dashed var(--amber-b); margin-bottom: 12px; font-size: 13px; }
 .upd .go { border: 0; background: var(--ink); color: #fff !important; border-radius: 7px; padding: 5px 11px; }
 .upd .quiet { border: 1px solid var(--l2) !important; border-radius: 7px; padding: 5px 11px; background: #fff; }
+.upd-d { margin-top: 4px; } .upd-d summary { cursor: pointer; color: var(--t2); } .upd-d div { color: var(--t2); font-size: 12.5px; }
 .pst { font-size: 12.5px; color: var(--muted); }
 .pst.enough { color: var(--teal); } .pst.started { color: var(--amber); }
 /* Kalendern (fas 3): timrader 38 px (46 i dagvyn), möten randiga, pass med kundfärg, streckade tills de läggs in. */
@@ -568,7 +572,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "10dab4d", published: "2026-10-06" };
+  const SIDA = { version: "41ed662", published: "2026-10-06" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1069,6 +1073,23 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   /** Arkstacken i minnet också: i artefakten kan claude.ai ladda om sidan utan adressen (#/…), och arken ska ligga kvar då. */
   const STACK = "v6.sheets", STACK_MS = 2 * 3600_000;
   function rememberStack(h) { try { globalThis.localStorage?.setItem(STACK, JSON.stringify({ at: Date.now(), hash: h })); } catch { /* utan lagring: bara adressen */ } }
+  /* Arkens innehåll också, när sidan göms: laddar claude.ai om artefakten när fönstret kommer
+     tillbaka visas arken direkt ur kopian (inaktuella) och läses om i bakgrunden. */
+  const SHEETS_MEM = "v6.sheetdata", SHEETS_MAX = 1_500_000;
+  function rememberSheets() {
+    try {
+      const data = {};
+      for (const x of S.sheets) { const k = sheetKey(x), d = S.sheetData[k]; if (d && !d.error) { const { loading: _l, error: _e, ...rest } = d; data[k] = rest; } }
+      const text = JSON.stringify({ at: Date.now(), build: BUILD, data });
+      if (text.length > SHEETS_MAX) globalThis.localStorage?.removeItem(SHEETS_MEM); else globalThis.localStorage?.setItem(SHEETS_MEM, text);
+    } catch { /* full eller stängd: arken läses om */ }
+  }
+  function recallSheets() {
+    try { const m = JSON.parse(globalThis.localStorage?.getItem(SHEETS_MEM) || "null");
+      if (!m || m.build !== BUILD || Date.now() - m.at > STACK_MS) return;
+      for (const x of S.sheets) { const k = sheetKey(x), d = m.data?.[k]; if (d && !S.sheetData[k]) S.sheetData = { ...S.sheetData, [k]: { ...d, stale: true } }; }
+    } catch { /* stängd */ }
+  }
   function recallStack() { try { const m = JSON.parse(globalThis.localStorage?.getItem(STACK) || "null"); return m && Date.now() - m.at < STACK_MS && typeof m.hash === "string" ? m.hash : ""; } catch { return ""; } }
   function syncHash() {
     if (NAV.pending) return;
@@ -1232,7 +1253,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + (!sd.stream && sd.layers?.text ? layersHtml(sd.layers) : "")
       + (sd.stream ? "" : methodUpdatesHtml(x, sd))
       + (!results.length ? `<div class="mmeta">${sd.loading ? "Hämtar det som skapats …" : "Inget ännu."}</div>`
-        : sd.stream ? resultsByCase(x, sd, results)
+        : sd.stream || (sd.parts && results.length > 8) ? resultsByCase(x, sd, results)
         : `<div class="made">${results.slice(0, 8).map(resultCard).join("")}</div>` + (results.length > 8 ? `<div class="mmeta">${results.length - 8} till.</div>` : ""));
     // Stegen; en leverans i flera delar visar delarna, och stegen när delen öppnas.
     const plans = sd.plans;
@@ -1561,7 +1582,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const list = e.checklist ?? sh.checklist.map((c) => c.text), done = new Set(sh.checklist.filter((c) => c.done).map((c) => c.text));
       block += `<div class="bh"><b>Så gör du</b><span class="mmeta">bocka av medan du gör · skriv om ett moment där det står</span></div><div class="moms">`
         + list.map((t, i) => `<div class="mom"><button class="tick${done.has(t) ? " on" : ""}" data-act="step-tick" data-i="${i}" title="Bocka av · ●" aria-pressed="${done.has(t)}">${done.has(t) ? "✓" : ""}</button>`
-          + `<span class="mn">${i + 1}</span><input id="mom-${i}" data-step-id="${esc(x.id)}" value="${esc(t)}" aria-label="Moment ${i + 1}"><button class="quiet" data-act="mom-del" data-i="${i}" title="Ta bort">✕</button></div>`).join("")
+          + `<span class="mn">${i + 1}</span>${S.momEdit === `${x.id}|${i}` ? `<textarea id="mom-${i}" class="mtext" data-step-id="${esc(x.id)}" rows="${Math.max(2, Math.ceil(t.length / 90))}" aria-label="Moment ${i + 1}">${esc(t)}</textarea>`
+            : `<div class="mtext" data-act="mom-edit" data-i="${i}" role="button" tabindex="0" title="Skriv om momentet">${mdHtml(t)}</div>`}<button class="quiet" data-act="mom-del" data-i="${i}" title="Ta bort">✕</button></div>`).join("")
         + `</div><button class="link" data-act="mom-add">+ Lägg till moment</button>`;
     }
     if (sh.operation) block += `<div class="bh"><b>Det här körs</b><span class="mmeta">${esc(sh.operation.name)}</span></div>`
@@ -1793,7 +1815,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     flush();
     return out;
   }
-  const inline = (s) => esc(s).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/\*([^*]+)\*/g, "<i>$1</i>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  /** Enkel markdown på en rad: fetstil, kursiv, kod och länkar (bara http/https). Allt annat är escapat först. */
+  const inline = (s) => esc(s).replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, `<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>`).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/\*([^*]+)\*/g, "<i>$1</i>").replace(/`([^`]+)`/g, "<code>$1</code>");
   /** Boksidor: 640 × 905, marginal 34/48, brödtext 12.5/1.62 (≈ 20 px per rad, ≈ 86 tecken per rad). */
   const PAGE_W = 640, PAGE_H = 905;
   function paginate(blocks) {
@@ -1890,11 +1913,16 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   const RESULTS_PER_CASE = 2;
   /** Strömmens resultat, grupperade per ärende med ärendets rubrik, nyast först. */
   function resultsByCase(x, sd, results) {
-    const all = !!S.allCases[`res:${x.id}`], title = new Map((sd.cases || []).map((c) => [c.task, c.title]));
+    // En leverans i delar grupperas per del (öppnar delen), en ström per ärende (öppnar ärendet).
+    const byPart = !sd.stream && !!sd.parts;
+    const all = !!S.allCases[`res:${x.id}`], title = new Map(byPart ? sd.parts.map((p) => [p.task, p.label]) : (sd.cases || []).map((c) => [c.task, c.title]));
+    const head = (task) => byPart
+      ? `<button class="link" data-act="open-part" data-task="${esc(task)}" data-parent="${esc(x.id)}" data-label="${esc(title.get(task) || task)}">${esc(title.get(task) || task)}</button>`
+      : `<button class="link" data-act="open-case" data-task="${esc(task)}" data-label="${esc(title.get(task) || task)}">${esc(title.get(task) || task)}</button>`;
     const groups = new Map();
     for (const r of results) groups.set(r.task, [...(groups.get(r.task) || []), r]);
     const hidden = [...groups.values()].reduce((n, g) => n + Math.max(0, g.length - RESULTS_PER_CASE), 0);
-    return [...groups].map(([task, g]) => `<div class="part"><button class="link" data-act="open-case" data-task="${esc(task)}" data-label="${esc(title.get(task) || task)}">${esc(title.get(task) || task)}</button><span class="mmeta"> · ${g.length} resultat</span></div>`
+    return [...groups].map(([task, g]) => `<div class="part">${head(task)}<span class="mmeta"> · ${g.length} resultat</span></div>`
       + `<div class="made">${(all ? g : g.slice(0, RESULTS_PER_CASE)).map(resultCard).join("")}</div>`).join("")
       + (hidden || all ? `<div class="doacts"><button class="link" data-act="cases-all" data-key="res:${esc(x.id)}">${all ? "Visa bara de senaste" : `Visa alla ${results.length}`}</button></div>` : "");
   }
@@ -2068,7 +2096,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   function methodUpdatesHtml(x, sd) {
     const ups = (sd.layers?.method_updates || []).filter((u) => !(S.leave || {})[`${u.task}`]);
     if (!ups.length) return "";
-    return ups.map((u) => `<div class="upd"><span class="lvl">◐</span><span style="flex:1">Metoden har ändrats: ${esc(u.changes.join("; "))}. Påbörjade och klara steg ändras inte; egna ändringar står kvar.</span>`
+    return ups.map((u) => `<div class="upd"><span class="lvl">◐</span><span style="flex:1">Metoden har ändrats. ${esc(u.summary || `${u.changes.length} ändringar.`)} Påbörjade och klara steg ändras inte; egna ändringar står kvar.`
+      + ((u.details || []).length ? `<details class="upd-d"><summary>Visa ändringen</summary>${u.details.map((d) => `<div>${esc(d)}</div>`).join("")}</details>` : "") + `</span>`
       + `<button class="${u.preselected === "take" ? "go" : "quiet"}" data-act="upd-take" data-task="${esc(u.task)}">Ta in</button>`
       + `<button class="${u.preselected === "leave" ? "go" : "quiet"}" data-act="upd-leave" data-task="${esc(u.task)}">Låt vara</button></div>`).join("");
   }
@@ -4322,7 +4351,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   /* Kopian gäller bara sidan som sparade den: en ny utläggning kan ha ändrat
      radernas form, så en kopia från en annan sida läses om (Daniel P såg
      stegnamnen kvar efter #355). Sidans längd räcker som avtryck. */
-  const BUILD = String(globalThis.document?.documentElement?.outerHTML?.length ?? 0);
+  /* Avtrycket är skriptets egen längd och versionen, inte hela sidans: i artefakten lägger
+     claude.ai till eget i sidan, och då missade kopian vid varje omladdning (tom vy). */
+  const BUILD = `${SIDA.version}:${globalThis.document?.currentScript?.textContent?.length ?? 0}`;
   function remember() {
     try { globalThis.localStorage?.setItem(MEMORY, JSON.stringify({ build: BUILD, at: S.fetchedAt, seq: S.seq, data: S.data })); } catch { /* full eller stängd */ }
   }
@@ -4502,7 +4533,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
   const touch = () => { const wasIdle = Date.now() - lastActive > 300_000; lastActive = Date.now(); if (wasIdle) schedulePoll(); };
   /** Fliken tillbaka i fokus: en koll direkt. */
-  document.addEventListener?.("visibilitychange", () => { if (hidden()) schedulePoll(); else { lastActive = Date.now(); poll().then(schedulePoll); } });
+  document.addEventListener?.("visibilitychange", () => { if (hidden()) { rememberSheets(); schedulePoll(); } else { lastActive = Date.now(); poll().then(schedulePoll); } });
 
   const ago = (ms) => { const s = Math.max(0, Math.round((Date.now() - ms) / 1000));
     return s < 5 ? "nyss" : s < 60 ? `för ${s} sekunder sedan` : s < 3600 ? `för ${Math.round(s / 60)} ${Math.round(s / 60) === 1 ? "minut" : "minuter"} sedan` : `kl. ${new Date(ms).toTimeString().slice(0, 5)}`; };
@@ -4744,6 +4775,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "step-reset") { const t = top1(); if (t) setEdit(t.id, { label: undefined, prompt: undefined, addition: undefined, checklist: undefined, level: undefined }); }
     else if (act === "step-save") { const t = top1(); if (t) stepSave(t.id, el.getAttribute("data-layer")); return; }
     else if (act === "step-tick") { const t = top1(); if (t) tick(t.id, Number(el.getAttribute("data-i"))); return; }
+    else if (act === "mom-edit") { const t = top1(); if (t) { S.momEdit = `${t.id}|${el.getAttribute("data-i")}`; render(); const f = root.querySelector(`#mom-${el.getAttribute("data-i")}`); if (f) f.focus?.(); } }
     else if (act === "mom-add" || act === "mom-del") { const t = top1(), sh = t && sheetOf(t.id); if (sh) { const l = [...(edits(t.id).checklist ?? sh.checklist.map((c) => c.text))];
       if (act === "mom-add") l.push("Nytt moment"); else l.splice(Number(el.getAttribute("data-i")), 1); setEdit(t.id, { checklist: l }); } }
     else if (act === "step-done") { const t = top1(); if (t) { const [task, step] = splitStep(t.id); markDone({ task, step, label: sheetOf(t.id)?.label || t.label }).then(() => staleStep(t.id, task)); } return; }
@@ -4887,6 +4919,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   });
   /** Det man pekar på är det tangenterna gäller. Sparas utan att rita om. */
   root.addEventListener("mouseover", (e) => { const c = e.target.closest?.("[data-ctx]")?.getAttribute("data-ctx"); if (c) S.cur = c; });
+  root.addEventListener?.("focusout", (e) => { if (S.momEdit && /^mom-\d+$/.test(e.target?.id || "")) { S.momEdit = null; render(); } });
   root.addEventListener("input", (e) => {
     if (e.target?.id === "pal-q" && S.pal) { S.pal = { ...S.pal, q: e.target.value, i: 0 }; render(); }
     else if (e.target?.id === "mv-q" && S.mv) { S.mv = { ...S.mv, q: e.target.value, i: 0 }; render(); const inp = root.querySelector?.("#mv-q"); if (inp) { inp.focus?.(); const n = inp.value?.length || 0; inp.setSelectionRange?.(n, n); } }
@@ -4978,7 +5011,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   if (memory) { S.data = memory.data; S.seq = memory.seq; S.fetchedAt = memory.at; S.loading = false; S.refreshing = true; overlayOutbox(); }
   // En länk: översikten ur minnet, och arken ovanpå direkt med titeln ur länken. Resten fylls på när dirigenten svarar.
   // Utan adress (artefakten omladdad av claude.ai): arken som var öppna senast.
-  S.sheets = hashSheets(hereRaw() || recallStack()); relabel();
+  S.sheets = hashSheets(hereRaw() || recallStack()); relabel(); recallSheets();
+  globalThis.addEventListener?.("pagehide", rememberSheets);
   render();
   pickMcp({ claude: typeof claude !== "undefined" ? claude : undefined, document, location, fetch: (u, i) => fetch(u, i) })
     .then(({ mcp: m, web }) => { mcp = m; WEB.on = web;
