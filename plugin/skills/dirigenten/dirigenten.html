@@ -146,6 +146,17 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .mcard { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border: 1px solid var(--l3); border-radius: 8px; width: 200px; font-size: 13px; }
 .mcard b { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mcard.draft { border: 1.5px dashed var(--t3); }
+.mcard .mthumb { display: block; width: 100%; height: 96px; object-fit: cover; border-radius: 5px; background: var(--s1); margin-bottom: 4px; }
+.mcard .mex { font-size: 12px; line-height: 1.4; color: var(--t2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.fdoc { max-width: 720px; font: 15px/1.65 var(--sans); margin-bottom: 22px; }
+.fdoc h1, .fdoc h2, .fdoc h3 { font-family: "Newsreader", Georgia, serif; font-weight: 500; }
+.fexcerpt { max-width: 720px; color: var(--t2); margin-bottom: 10px; }
+.fimg { max-width: 100%; max-height: 70vh; border-radius: 8px; border: 1px solid var(--l3); display: block; margin-bottom: 16px; }
+.fimg.full { max-height: none; }
+.fpdf { width: 100%; height: 80vh; border: 1px solid var(--l3); border-radius: 8px; margin-bottom: 16px; }
+.fwhat { display: flex; gap: 16px; align-items: center; padding: 16px; border: 1px solid var(--l3); border-radius: 8px; max-width: 640px; margin-bottom: 16px; }
+.fwhat .fimg { width: 120px; margin: 0; }
+.fbig { font: 600 13px var(--mono); padding: 18px 14px; background: var(--s1); border-radius: 6px; }
 .mcard .fmt { font: 10px var(--mono); letter-spacing: .06em; color: var(--t3); }
 .mmeta { color: var(--muted); font-size: 12.5px; }
 .ssteps { border-top: 1px solid var(--l4); margin-bottom: 22px; }
@@ -572,7 +583,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "41ed662", published: "2026-10-06" };
+  const SIDA = { version: "c353d9c", published: "2026-10-06" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -625,10 +636,13 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   const release = () => { const next = waiting.shift(); if (next) next(); else running--; };
   const READS = new Set(["plan_state", "read", "search"]);
   const lostContact = (e) => e?.code === "NETWORK" || /failed to fetch|networkerror|load failed/i.test(e?.message || "");
+  const clock = () => globalThis.performance?.now?.() ?? Date.now();
   async function callOn(server, tool, input) {
     if (!mcp) throw Object.assign(new Error(`anslutningen ${server} är inte tillgänglig här`), { code: "NOT_CONNECTED" });
     let r;
+    const t0 = clock(), op = input?.op ? `${tool}.${input.op}${input.sheet ? `.${input.sheet}` : ""}` : tool, click = TIMES.bg ? "förhämtning" : TIMES.click;
     await slot();
+    const queued = Math.round(clock() - t0);
     try {
       try { r = await mcp.callTool(server, tool, input); }
       catch (e) {
@@ -640,7 +654,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       if (lostContact(e)) throw Object.assign(new Error("Kontakten med dirigenten bröts, så det här kunde inte läsas. Försök igen."), { code: "NETWORK" });
       const f = data(e?.result)?.error; throw f ? Object.assign(new Error(f.message), { code: f.code, context: f.context || null }) : e;
     }
-    finally { release(); }
+    finally { release(); timeCall(op, t0, queued, r, click); }
     const d = data(r);
     if (d?.error) throw Object.assign(new Error(d.error.message || "fel"), { code: d.error.code, context: d.error.context || null });
     // Hela texten följer med osynligt (_text): grindens råd står där, inte i datan (metodbyggaren).
@@ -649,6 +663,34 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     return d;
   }
   const call = (tool, input) => callOn(SERVER, tool, input);
+
+  /* ── Tiderna (?debug eller ⌘K «Visa tider») ──
+     Varje anrop går webbläsare → claude.ai → kopplingen → servern; antalet anrop per
+     klick och deras ordning avgör hur trögt det känns. Här står op, ms (varav i kö),
+     storlek och serverns egen tid (timing) för de senaste anropen. */
+  const TIMES = { list: [], show: /[?&#]debug\b/.test(String(globalThis.location?.href || "")), click: null, bg: false };
+  function timeCall(op, t0, queued, r, click) {
+    const ms = Math.round(clock() - t0);
+    let size = 0; try { size = JSON.stringify(r?.payload ?? r ?? null).length; } catch { /* cirkulärt */ }
+    const server = (() => { try { return data(r)?.timing || null; } catch { return null; } })();
+    const e = { at: Date.now(), op, ms, queued, size, server, click };
+    TIMES.list = [...TIMES.list.slice(-59), e];
+    try { console.debug(`[dirigenten] ${op} ${ms} ms${queued > 5 ? ` (${queued} i kö)` : ""} · ${Math.round(size / 1024)} kB${server ? ` · server ${JSON.stringify(server)}` : ""}${e.click ? ` · klick «${e.click}»` : ""}`); } catch { /* ingen konsol */ }
+    if (TIMES.show) globalThis.queueMicrotask?.(() => paintTimes());
+  }
+  /** Ett klick märker anropen som följer det, så att rutan kan räkna anrop per klick. */
+  function markClick(what) { TIMES.click = `${what} ${new Date().toTimeString().slice(0, 8)}`; }
+  function paintTimes() {
+    const doc = globalThis.document; if (!doc?.body) return;
+    let el = doc.getElementById("v6-times");
+    if (!TIMES.show) { el?.remove(); return; }
+    if (!el) { el = doc.createElement("div"); el.id = "v6-times"; el.setAttribute("style", "position:fixed;right:8px;bottom:8px;z-index:9999;max-width:min(560px,calc(100vw - 16px));max-height:40vh;overflow:auto;background:var(--bg,#fff);color:var(--ink,#111);border:1px solid var(--l4,#ccc);border-radius:6px;font:11px/1.4 ui-monospace,monospace;padding:6px 8px;box-shadow:0 2px 8px rgba(0,0,0,.15)"); doc.body.appendChild(el); }
+    const rows = TIMES.list.slice(-20).reverse();
+    const byClick = new Map(); for (const e of TIMES.list) if (e.click) byClick.set(e.click, (byClick.get(e.click) || 0) + 1);
+    el.innerHTML = `<div style="display:flex;gap:8px"><b style="flex:1">Tider · senaste klick: ${esc(TIMES.click || "–")} · ${byClick.get(TIMES.click) || 0} anrop</b><button type="button" id="v6-times-off" style="font:inherit">Stäng</button></div>`
+      + rows.map((e) => `<div>${esc(e.op)} · ${e.ms} ms${e.queued > 5 ? ` (kö ${e.queued})` : ""} · ${Math.round(e.size / 1024)} kB${e.server?.total != null ? ` · server ${e.server.total} ms` : ""}</div>`).join("");
+    const off = doc.getElementById("v6-times-off"); if (off) off.onclick = () => { TIMES.show = false; paintTimes(); };
+  }
 
 
   /* ── Verktygen vyn deklarerar (manifestet /vy/manifest räknas ur listorna, src/web/vy.ts viewManifest) ── */
@@ -1078,8 +1120,12 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   const SHEETS_MEM = "v6.sheetdata", SHEETS_MAX = 1_500_000;
   function rememberSheets() {
     try {
-      const data = {};
-      for (const x of S.sheets) { const k = sheetKey(x), d = S.sheetData[k]; if (d && !d.error) { const { loading: _l, error: _e, ...rest } = d; data[k] = rest; } }
+      // De öppna arken först, sedan de förhämtade (leverans, del, steg), så länge de ryms.
+      const data = {}, keys = [...S.sheets.map(sheetKey), ...Object.keys(S.sheetData).filter((k) => /^(delivery|part|step):/.test(k))];
+      let size = 0;
+      for (const k of new Set(keys)) { const d = S.sheetData[k]; if (!d || d.error || (!d.at && !S.sheets.some((x) => sheetKey(x) === k))) continue;
+        const { loading: _l, error: _e, pending: _p, ...rest } = d, n = JSON.stringify(rest).length;
+        if (size + n > SHEETS_MAX - 2000) continue; size += n; data[k] = rest; }
       const text = JSON.stringify({ at: Date.now(), build: BUILD, data });
       if (text.length > SHEETS_MAX) globalThis.localStorage?.removeItem(SHEETS_MEM); else globalThis.localStorage?.setItem(SHEETS_MEM, text);
     } catch { /* full eller stängd: arken läses om */ }
@@ -1087,7 +1133,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   function recallSheets() {
     try { const m = JSON.parse(globalThis.localStorage?.getItem(SHEETS_MEM) || "null");
       if (!m || m.build !== BUILD || Date.now() - m.at > STACK_MS) return;
-      for (const x of S.sheets) { const k = sheetKey(x), d = m.data?.[k]; if (d && !S.sheetData[k]) S.sheetData = { ...S.sheetData, [k]: { ...d, stale: true } }; }
+      // Alla sparade ark, också de förhämtade: de visas direkt och läses om när de öppnas.
+      for (const [k, d] of Object.entries(m.data || {})) if (d && !S.sheetData[k]) S.sheetData = { ...S.sheetData, [k]: { ...d, stale: true } };
     } catch { /* stängd */ }
   }
   function recallStack() { try { const m = JSON.parse(globalThis.localStorage?.getItem(STACK) || "null"); return m && Date.now() - m.at < STACK_MS && typeof m.hash === "string" ? m.hash : ""; } catch { return ""; } }
@@ -1137,43 +1184,129 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     } catch { /* tyst: adressen sparas då med färdigheten i stället */ }
   }
 
-  /** Det arket behöver, hämtat en gång per ark och fyllt på i S.sheetData. */
-  function fetchSheet(x, force = false) {
-    const k = sheetKey(x);
-    if (!force && S.sheetData[k] && !S.sheetData[k].error) return;
-    S.sheetData = { ...S.sheetData, [k]: { ...(S.sheetData[k] || {}), loading: true, error: null, stale: false } };
-    const put = (patch) => { S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], ...patch } }; render(); };
-    if (x.kind === "delivery") {
-      const row = rowOf(x.id), tasks = row?.tasks?.length ? row.tasks : [x.id];
-      const isDelivery = row ? row.kind === "delivery" || row.kind === "stream" : /^d_/.test(x.id);
-      const jobs = [
-        isDelivery ? call("plan_state", { delivery: x.id }).then((d) => put({ delivery: d?.delivery || null })) : Promise.resolve(),
-        call("read", isDelivery ? { op: "delivery_results", delivery: x.id } : { op: "delivery_results", task: x.id })
-          .then((d) => put({ results: d?.results || [], layers: d?.layers || null, stream: !!d?.stream, cases: d?.cases || [] })),
-        row?.kind === "stream" ? call("read", { op: "intake_status", queue: true, days: 60, format: "full" }).then((d) => put({ queue: d?.queue || null })).catch(() => put({ queue: null })) : Promise.resolve(),
-        row?.kind === "stream" && row.customer?.id ? call("read", { op: "view_file", sheet: "customer", customer: row.customer.id, tab: "overview" })
-          .then((d) => { const sp = d?.overview?.support; if (sp) put({ month: { text: `Tiden i ${monthName(sp.month)}: ${hh(sp.hours || 0)} h, ${sp.regime || "löpande · inget tak"}.` } }); }) : Promise.resolve(),
-        // En leverans i flera delar: delarna i ett anrop, och stegen när delen öppnas.
-        // En enda uppgift: dess steg direkt.
-        isDelivery && tasks.length > 1
-          ? call("plan_state", { delivery: x.id, format: "plan" }).then((d) => put({ parts: d?.parts || [] }))
-          : call("plan_state", { task: tasks[0], format: "plan" }).then((d) => put({ plans: d?.tasks?.[0] ? [d.tasks[0]] : [] })),
-      ];
-      Promise.allSettled(jobs).then((rs) => { const bad = rs.find((r) => r.status === "rejected");
-        put({ loading: false, error: bad ? bad.reason : null }); });
-    } else if (x.kind === "part") {
-      Promise.allSettled([
-        call("plan_state", { task: x.id, format: "plan" }).then((d) => put({ plans: d?.tasks?.[0] ? [d.tasks[0]] : [] })),
-        call("read", { op: "delivery_results", task: x.id }).then((d) => put({ results: d?.results || [], layers: d?.layers || null })),
-      ]).then((rs) => { const bad = rs.find((r) => r.status === "rejected"); put({ loading: false, error: bad ? bad.reason : null }); });
+  /**
+   * Bildernas förhandsbilder i «Det som skapats», lat: ett anrop för de som
+   * saknas, efter att listan visats. Sparas för besöket (filerna ändras aldrig).
+   */
+  function loadThumbs(results) {
+    S.thumbs = S.thumbs || {};
+    const refs = (results || []).filter((r) => r.thumbnail && !(r.id in S.thumbs)).map((r) => r.id).slice(0, 24);
+    if (!refs.length) return;
+    for (const id of refs) S.thumbs[id] = null;
+    call("read", { op: "asset_get", refs, forhandsbilder: true }).then((d) => {
+      for (const f of d?.files || []) if (f.thumbnail_base64) S.thumbs[f.ref] = `data:${f.thumbnail_mime};base64,${f.thumbnail_base64}`;
+      render();
+    }).catch(() => { /* utan förhandsbild visas kortet med namnet */ });
+  }
+  /* Ett ark som hämtats för mindre än FRESH_MS sedan visas som det är, utan anrop.
+     Äldre (eller förhämtat och sparat) visas direkt och läses om i bakgrunden. */
+  const FRESH_MS = 60_000, SWR_KINDS = new Set(["delivery", "part", "step"]);
+  /** Leveransens och delens ark: allt i ett anrop (read { op: "view_file", sheet: "delivery" }). */
+  function deliveryArgs(x) {
+    if (x.kind === "part") return { op: "view_file", sheet: "delivery", task: x.id };
+    const row = rowOf(x.id), tasks = row?.tasks?.length ? row.tasks : [x.id];
+    const isDelivery = row ? row.kind === "delivery" || row.kind === "stream" : /^d_/.test(x.id);
+    const stream = row?.kind === "stream";
+    return { op: "view_file", sheet: "delivery", ...(isDelivery ? { delivery: x.id } : {}),
+      ...(isDelivery && tasks.length > 1 ? { parts: true } : { task: tasks[0] }),
+      ...(stream ? { stream: true, ...(row.customer?.id ? { customer: row.customer.id } : {}) } : {}) };
+  }
+  function deliveryPatch(x, d) {
+    const sp = d?.support;
+    return { results: d?.results || [], layers: d?.layers || null, stream: !!d?.stream, cases: d?.cases || [],
+      ...(x.kind === "delivery" ? { delivery: d?.delivery || null } : {}),
+      ...(d?.parts ? { parts: d.parts } : { plans: d?.plans || [] }),
+      ...(d?.stream || "queue" in (d || {}) ? { queue: d?.queue || null } : {}),
+      ...(sp ? { month: { text: `Tiden i ${monthName(sp.month)}: ${hh(sp.hours || 0)} h, ${sp.regime || "löpande · inget tak"}.` } } : {}) };
+  }
+  /* ── Förhämtning ──
+     När översikten syns hämtas leveransarken för de översta raderna och raderna i
+     Igång i bakgrunden, när webbläsaren har tid och högst PRE_MAX åt gången, och
+     bara när inget annat anrop väntar. Hovring över en rad eller ett steg i mer än
+     150 ms hämtar det arket. Ett klick på en förhämtad rad ritar arket utan anrop. */
+  const PRE_MAX = 2, PRE_TOP = 6, PRE_HOVER_MS = 150;
+  const PRE = { queue: [], active: 0, hover: null, hoverKey: "" };
+  const idle = (fn) => (globalThis.requestIdleCallback ? globalThis.requestIdleCallback(fn, { timeout: 2000 }) : setTimeout(fn, 200));
+  function prefetch(x, front = false) {
+    if (!mcp || !x?.id) return;
+    const k = sheetKey(x), d = S.sheetData[k];
+    if (d && (d.pending || (!d.error && !d.stale && d.at && Date.now() - d.at < FRESH_MS))) return;
+    PRE.queue = PRE.queue.filter((y) => sheetKey(y) !== k);
+    if (front) PRE.queue.unshift(x); else PRE.queue.push(x);
+    pumpPrefetch(front);
+  }
+  function pumpPrefetch(now = false) {
+    const go = () => {
+      while (PRE.active < PRE_MAX && PRE.queue.length && running < LIMIT - 1) {
+        const x = PRE.queue.shift();
+        TIMES.bg = true;
+        let p; try { p = fetchSheet(x, false, true); } finally { TIMES.bg = false; }
+        if (!p) continue;
+        PRE.active++;
+        p.finally(() => { PRE.active--; if (PRE.queue.length) idle(() => pumpPrefetch()); });
+      }
+    };
+    if (now) go(); else idle(go);
+  }
+  /** Raderna överst i översikten och raderna i Igång. */
+  function prefetchOverview() {
+    if (!S.data?.rows) return;
+    const keys = [];
+    for (const r of S.data.running || []) { const row = rowOfTask(r.task); if (row) keys.push(row.key); }
+    for (const r of S.data.rows) { if (r.kind !== "inbox") keys.push(r.key); if (keys.length >= PRE_TOP + (S.data.running || []).length) break; }
+    for (const key of new Set(keys)) prefetch({ kind: "delivery", id: key });
+  }
+  /** Det hovringen pekar på: en rad eller länk till en leverans, eller ett steg. */
+  function hoverTarget(t) {
+    const st = t.closest?.('[data-act="open-step"]');
+    if (st) return { kind: "step", id: stepId(st.getAttribute("data-task"), st.getAttribute("data-step")) };
+    const ctx = t.closest?.("[data-ctx]")?.getAttribute("data-ctx");
+    if (ctx?.startsWith("step|")) { const [, task, ...rest] = ctx.split("|"); return { kind: "step", id: stepId(task, rest.join("|")) }; }
+    const part = t.closest?.('[data-act="open-part"]');
+    if (part) return { kind: "part", id: part.getAttribute("data-task") };
+    const del = t.closest?.('[data-act="open-delivery"]')?.getAttribute("data-key") || t.closest?.("[data-row]")?.getAttribute("data-row");
+    if (del && rowOf(del)?.kind !== "inbox") return { kind: "delivery", id: del };
+    return null;
+  }
+  function onHover(e) {
+    const x = hoverTarget(e.target), k = x ? sheetKey(x) : "";
+    if (k === PRE.hoverKey) return;
+    clearTimeout(PRE.hover); PRE.hoverKey = k;
+    if (x) PRE.hover = setTimeout(() => prefetch(x, true), PRE_HOVER_MS);
+  }
+
+  /** Det arket behöver, hämtat en gång per ark och fyllt på i S.sheetData. `quiet`: förhämtning, ritar inte om. */
+  function fetchSheet(x, force = false, quiet = false) {
+    const k = sheetKey(x), had = S.sheetData[k];
+    const swr = SWR_KINDS.has(x.kind);
+    if (!force && had && !had.error && (!swr || (!had.stale && had.at && Date.now() - had.at < FRESH_MS))) return null;
+    if (swr && had?.pending && !force) return had.pending;
+    // Stale-while-revalidate: det som finns ligger kvar och syns medan det nya hämtas.
+    S.sheetData = { ...S.sheetData, [k]: { ...(had || {}), loading: true, error: null, ...(swr ? {} : { stale: false }) } };
+    const shown = () => S.sheets.some((y) => sheetKey(y) === k);
+    const put = (patch) => { S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], ...patch } }; if (!quiet || shown()) render(); };
+    if (x.kind === "delivery" || x.kind === "part") {
+      const p = call("read", deliveryArgs(x))
+        .then((d) => { const e = d?.errors && Object.values(d.errors)[0];
+          put({ ...deliveryPatch(x, d), loading: false, stale: false, at: Date.now(), pending: null, error: e ? Object.assign(new Error(e.message || "fel"), { code: e.code }) : null });
+          if (!quiet || shown()) loadThumbs(d?.results); })
+        .catch((e) => put({ loading: false, pending: null, error: e }));
+      S.sheetData[k].pending = p;
+      return p;
     } else if (x.kind === "step") {
       const [task, step] = splitStep(x.id);
-      call("read", { op: "step_sheet", task, step }).then((d) => put({ loading: false, sheet: d?.sheet || null, brief: d?.brief || null }))
-        .catch((e) => put({ loading: false, error: e }));
+      const p = call("read", { op: "step_sheet", task, step }).then((d) => put({ loading: false, stale: false, at: Date.now(), pending: null, sheet: d?.sheet || null, brief: d?.brief || null }))
+        .catch((e) => put({ loading: false, pending: null, error: e }));
+      S.sheetData[k].pending = p;
+      return p;
     } else if (x.kind === "result") {
       const r = allResults().find((y) => y.id === x.id), o = r?.open || { tool: "read", args: { op: "content_get", id: x.id } };
       if (r) put({ item: r });
-      call(o.tool, o.args).then((d) => put({ loading: false, doc: d || null })).catch((e) => put({ loading: false, error: e }));
+      // En fil i banken är samma bytes för alltid: hämtad en gång räcker för hela besöket.
+      const file = /^bank:\/\//.test(x.id);
+      if (file && S.files?.[x.id]) { put({ loading: false, doc: S.files[x.id] }); return; }
+      call(o.tool, o.args).then((d) => { if (file && d && !d.download_url) S.files = { ...(S.files || {}), [x.id]: d }; put({ loading: false, doc: d || null }); })
+        .catch((e) => put({ loading: false, error: e }));
     } else if (x.kind === "case") {
       call("read", { op: "view_file", sheet: "case", task: x.id }).then((d) => {
         put({ loading: false, case: d });
@@ -1331,15 +1464,17 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const sd = S.sheetData[sheetKey(x)] || {}, row = rowOf(x.parent), me = S.data?.party?.label;
     const t = sd.plans?.[0], left = t ? t.steps.filter((s) => !s.done) : [];
     const next = left[0];
+    // Innan delen är läst: raden ur leveransens ark (namn, läge och stegremsa) direkt.
+    const pre = !t ? (S.sheetData[`delivery:${x.parent}`]?.parts || []).find((p) => p.task === x.id) || null : null;
     const sentence = t ? [`${t.steps.length - left.length} av ${t.steps.length} steg klara.`,
       next ? `Nästa är «${next.label}» hos ${next.who === me ? "dig" : next.who}.` : "",
-      t.due ? `Klar ${fmtDay(t.due)}.` : ""].filter(Boolean).join(" ") : "";
+      t.due ? `Klar ${fmtDay(t.due)}.` : ""].filter(Boolean).join(" ")
+      : pre ? [`${pre.done_steps} av ${pre.total_steps} steg klara.`, pre.next ? `Nästa är «${pre.next.label}».` : "", pre.due ? `Klar ${fmtDay(pre.due)}.` : ""].filter(Boolean).join(" ") : "";
     const results = sd.results || [];
-    const made = `<h3 class="sh">Det som skapats</h3>` + (results.length ? `<div class="made">${results.slice(0, 8).map((m) => `<div class="mcard${m.status === "draft" ? " draft" : ""}" title="${esc(m.name)}" data-act="open-result" data-id="${esc(m.id)}" role="button">`
-        + `<span class="fmt">${esc((m.format_text || m.format || "").toUpperCase())}</span><b>${esc(m.name)}</b><span class="mmeta">${esc(m.status_text || "")}${m.version ? ` · v${m.version}` : ""}</span></div>`).join("")}</div>`
+    const made = `<h3 class="sh">Det som skapats</h3>` + (results.length ? `<div class="made">${results.slice(0, 8).map(resultCard).join("")}</div>`
       : `<div class="mmeta">${sd.loading ? "Hämtar det som skapats …" : "Inget ännu."}</div>`);
     const err = sd.error ? `<div class="banner"><span style="flex:1">Allt kunde inte läsas: ${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>` : "";
-    return `<div class="slabel">Del${row?.label ? ` · ${esc(row.label)}` : ""}</div><h1 class="stitle">${rn("task", x.id, t?.label || x.label)}</h1><p class="sline">${esc(sentence)}</p>`
+    return `<div class="slabel">Del${row?.label ? ` · ${esc(row.label)}` : ""}</div><h1 class="stitle">${rn("task", x.id, t?.label || pre?.label || x.label)}</h1><p class="sline">${esc(sentence)}</p>${pre ? stripHtml(pre.strip) : ""}`
       + `<div class="sacts"><button class="link" data-act="chat" data-key="${esc(x.id)}">Arbeta i chatten ↗</button>`
       + `<button class="link" data-act="hl-move" data-task="${esc(x.id)}">Flytta till en annan leverans …</button></div>${err}`
       + `<div class="smain">${made}<h3 class="sh">Stegen</h3><div class="ssteps">${t ? hlSheetHtml(t) + planStepsHtml([t], me) : `<div class="mmeta">${sd.loading ? "Hämtar stegen …" : "Inga steg."}</div>`}</div></div>`;
@@ -1552,8 +1687,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 
   function stepSheetHtml(x) {
     const [task, step] = splitStep(x.id), sd = S.sheetData[sheetKey(x)] || {}, sh = sd.sheet;
-    if (!sh) return `<div class="slabel">Steg</div><h1 class="stitle">${esc(x.label)}</h1>`
-      + (sd.error ? `<div class="banner"><span style="flex:1">Steget kunde inte läsas: ${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>` : `<p class="sline mmeta">Hämtar steget …</p>`);
+    // Innan steget är läst: leveransen och läget ur översiktsraden direkt.
+    if (!sh) { const r0 = rowOfTask(task); return `<div class="slabel">Steg${r0 ? ` · ${esc(r0.label)}` : ""}</div><h1 class="stitle">${esc(x.label)}</h1>${r0?.state_text ? `<p class="sline">${esc(r0.state_text)}</p>` : ""}`
+      + (sd.error ? `<div class="banner"><span style="flex:1">Steget kunde inte läsas: ${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>` : `<p class="sline mmeta">Hämtar steget …</p>`); }
     const e = edits(x.id), row = rowOfTask(task);
     const label = `Steg${row ? ` · ${row.label}` : ""}${sh.customer?.label ? ` · ${sh.customer.label}` : ""}`;
     const name = `<input class="tname" id="step-label" data-step-id="${esc(x.id)}" value="${esc(e.label ?? sh.label)}" aria-label="Stegets namn">`;
@@ -1852,13 +1988,54 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<span class="mmeta">${pages.length} ${pages.length === 1 ? "sida" : "sidor"}</span></div>`
       + `<div class="reader" style="zoom:${z}">${groups.map((g) => `<div class="spread">${g.map(([p, n]) => pageHtml(p, n, title)).join("")}</div>`).join("")}</div>`;
   }
+  /** En fil: texten, bilden, PDF:en eller vad den är — aldrig ett tomt ark. Läses ur asset_get. */
+  function fileBodyHtml(x, r, sd, doc, title) {
+    const ext = (r?.file_name || doc?.name || "").split(".").at(-1)?.toUpperCase() || "";
+    const kb = (n) => n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} kB`;
+    const what = `${FMT_TEXT[r?.format] || "Fil"}${ext && ext.length <= 5 ? ` · ${ext}` : ""}${doc?.size ? ` · ${kb(doc.size)}` : ""}`;
+    const thumb = S.thumbs?.[x.id] || (doc?.thumbnail_base64 ? `data:${doc.thumbnail_mime};base64,${doc.thumbnail_base64}` : null);
+    const head = r?.excerpt ? `<div class="fexcerpt">${esc(r.excerpt)}</div>` : "";
+    if (sd.loading && !doc) return `${thumb ? `<img class="fimg" src="${thumb}" alt="">` : head}<div class="mmeta">Hämtar filen …</div>`;
+    if (sd.error && !doc) {
+      const gone = /saknas i innehållsbanken/.test(sd.error.message || "");
+      return `${thumb ? `<img class="fimg" src="${thumb}" alt="">` : head}<div class="banner"><span style="flex:1">${gone
+        ? `Filen är registrerad${r?.step?.label ? ` från «${esc(r.step.label)}»` : ""}, men själva innehållet finns inte i filbanken. Kör steget igen, eller ladda upp filen på nytt till kundens filer.`
+        : `Filen kunde inte läsas: ${esc(sd.error.message || sd.error)}.`}</span><button data-act="sheet-retry">Försök igen</button></div>`;
+    }
+    const text = doc?.text ?? doc?.markdown;
+    if (typeof text === "string") return x.book || r?.format === "report" ? readerHtml(text, title) : `<div class="fdoc">${mdHtml(text)}</div>`;
+    if (doc?.data_base64 && /^image\//.test(doc.mime)) return `<img class="fimg full" src="data:${doc.mime};base64,${doc.data_base64}" alt="${esc(title)}">`;
+    if (doc?.data_base64 && doc.mime === "application/pdf") return `<object class="fpdf" type="application/pdf" data="${pdfUrl(x.id, doc)}">`
+      + `${thumb ? `<img class="fimg" src="${thumb}" alt="">` : ""}<div class="mmeta">PDF:en kan inte visas här. Ladda ner den.</div></object>`;
+    return `<div class="fwhat">${thumb ? `<img class="fimg" src="${thumb}" alt="">` : `<span class="fbig">${esc(ext || "FIL")}</span>`}<div><b>${esc(what)}</b>`
+      + `<div class="mmeta">${doc?.download_url ? "Filen är för stor att visa här; den laddas ned via länken." : "Den här sortens fil visas inte i vyn. Ladda ner den och öppna den i programmet den hör till."}</div></div></div>`;
+  }
+  /** PDF:en som blob-adress, en gång per fil. */
+  function pdfUrl(id, doc) {
+    S.blobs = S.blobs || {};
+    if (!S.blobs[id]) { try { S.blobs[id] = URL.createObjectURL(new Blob([Uint8Array.from(atob(doc.data_base64), (c) => c.charCodeAt(0))], { type: doc.mime })); } catch { return `data:${doc.mime};base64,${doc.data_base64}`; } }
+    return S.blobs[id];
+  }
+  /** Ladda ner: ur svaret om filen kom med, annars en länk från asset_get { as_link }. */
+  async function fileDownload(x) {
+    const sd = S.sheetData[sheetKey(x)] || {}, doc = sd.doc, r = allResults().find((y) => y.id === x.id) || sd.item;
+    const name = r?.file_name || doc?.name || "fil";
+    let href = doc?.download_url || null;
+    if (!href && doc?.data_base64) href = doc.mime === "application/pdf" ? pdfUrl(x.id, doc) : `data:${doc.mime};base64,${doc.data_base64}`;
+    if (!href && typeof doc?.text === "string") href = URL.createObjectURL(new Blob([doc.text], { type: doc.mime || "text/plain" }));
+    if (!href) { try { const d = await call("read", { op: "asset_get", ref: x.id, as_link: true }); href = d?.download_url || null; } catch (e) { say(`Kunde inte hämta filen: ${e.message || e}.`, null, true); return; } }
+    if (!href) { say("Filen går inte att ladda ner härifrån.", null, true); return; }
+    const a = document.createElement("a"); a.href = href; a.download = name; a.target = "_blank"; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove();
+  }
   function resultSheetHtml(x) {
     const sd = S.sheetData[sheetKey(x)] || {}, r = allResults().find((y) => y.id === x.id) || sd.item || null, doc = sd.doc;
     const fmt = r?.format || (doc ? "text" : null);
     const label = `${FMT_TEXT[fmt] || "Resultat"}${r?.status_text ? ` · ${r.status_text}` : ""}${r?.version ? ` · v${r.version}` : ""}${r?.step?.label ? ` · från «${r.step.label}»` : ""}`;
     const title = r?.name || doc?.name || x.label;
+    const isFile = r?.source === "file" || /^bank:\/\//.test(x.id);
     let body;
-    if (sd.loading && !doc) body = `<div class="mmeta">Hämtar …</div>`;
+    if (isFile) body = fileBodyHtml(x, r, sd, doc, title);
+    else if (sd.loading && !doc) body = `<div class="mmeta">Hämtar …</div>`;
     else if (sd.error && !doc) body = `<div class="banner"><span style="flex:1">Kunde inte läsas: ${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>`;
     else if (doc?.markdown && (fmt === "report" ? !x.edit : x.book)) body = readerHtml(doc.markdown, title);
     else if (doc?.markdown !== undefined && (fmt === "text" || fmt === "mail" || fmt === "report")) {
@@ -1867,17 +2044,21 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         + (S.mdPrev?.[`result:${x.id}`] ? mdHtml(text) : `<textarea id="result-text" class="rtext${fmt === "mail" ? " mail" : ""}" data-result="${esc(x.id)}" rows="22">${esc(text)}</textarea>`)
         + (text !== doc.markdown ? `<div class="doacts"><button class="primary" data-act="result-save"><span class="lvl d">●</span> Spara som version ${(r?.version || 1) + 1}</button><button class="quiet" data-act="result-reset">Ångra ändringen</button><span class="mmeta">Den gamla versionen finns kvar.</span></div>` : "");
     } else if (doc?.markdown) body = `<div class="rtext ro">${mdBlocks(doc.markdown).map((b) => `<p>${inline(b.s)}</p>`).join("")}</div>`;
-    else body = `<div class="mmeta">${r?.source === "file" ? "Filen visas i programmet den hör till." : r?.source === "decision" ? "Beslutet står i lägesbilden." : "Inget att visa här."}</div>`;
-    const acts = `<div class="sacts">${fmt === "report" && doc?.markdown ? `<button class="link" data-act="result-edit">${x.edit ? "Visa som boksida" : "Redigera texten"}</button>` : ""}`
-      + (fmt === "text" && doc?.markdown ? `<button class="link" data-act="result-book">${x.book ? "Redigera texten" : "Läs som boksida"}</button>` : "")
-      + (doc?.markdown ? `<button class="link" data-act="result-copy">Kopiera texten</button>` : "")
+    else body = `<div class="mmeta">${r?.source === "decision" ? "Beslutet står i lägesbilden." : "Inget att visa här."}</div>`;
+    const ftext = isFile && typeof (doc?.text ?? doc?.markdown) === "string" ? (doc.text ?? doc.markdown) : null;
+    const acts = `<div class="sacts">${isFile ? `<button class="link" data-act="file-download">Ladda ner</button>`
+      + (doc?.library ? `<a class="link" href="${esc(doc.library)}" target="_blank" rel="noopener">Öppna i kundens filer</a>` : "")
+      + (ftext && r?.format !== "report" ? `<button class="link" data-act="result-book">${x.book ? "Visa som text" : "Läs som boksida"}</button>` : "")
+      + (ftext ? `<button class="link" data-act="result-copy">Kopiera texten</button>` : "") : ""}${!isFile && fmt === "report" && doc?.markdown ? `<button class="link" data-act="result-edit">${x.edit ? "Visa som boksida" : "Redigera texten"}</button>` : ""}`
+      + (!isFile && fmt === "text" && doc?.markdown ? `<button class="link" data-act="result-book">${x.book ? "Redigera texten" : "Läs som boksida"}</button>` : "")
+      + (!isFile && doc?.markdown ? `<button class="link" data-act="result-copy">Kopiera texten</button>` : "")
       + (r?.status === "draft" ? `<button class="link" data-act="draft-approve" data-id="${esc(x.id)}" data-name="${esc(title)}">● Godkänn</button>` : "")
       + (r?.status === "draft" && r.source === "content" ? declineBtn(resultSubject(r, title)) : "") + `</div>`
       + (r?.status === "draft" && r.source === "content" ? declineFormHtml(resultSubject(r, title)) : "")
       + (S.diffs?.[x.id] ? `<div class="mh">Ändringen mot förra versionen</div>${diffHtml(S.diffs[x.id].before, S.diffs[x.id].after)}` : "");
     const vers = (r?.versions || []).length ? `<h3 class="sh">Versioner</h3>${r.versions.map((v) => `<div class="crow"><b>v${v.n}</b><span>${esc(v.by)}</span><span class="mmeta">${esc(fmtDay(v.at))}</span></div>`).join("")}`
       + (r.version > r.versions.length ? `<div class="mmeta">${r.version - r.versions.length} äldre finns kvar.</div>` : "") : "";
-    return `<div class="slabel">${esc(label)}</div><h1 class="stitle">${doc?.markdown !== undefined ? rn("result", x.id, title) : esc(title)}</h1>${acts}${body}${vers}${r?.history?.length ? `<h3 class="sh">Godkännande</h3>${historyHtml(r.history)}` : ""}`;
+    return `<div class="slabel">${esc(label)}</div><h1 class="stitle">${!isFile && doc?.markdown !== undefined ? rn("result", x.id, title) : esc(title)}</h1>${acts}${body}${vers}${r?.history?.length ? `<h3 class="sh">Godkännande</h3>${historyHtml(r.history)}` : ""}`;
   }
   async function resultSave(id) {
     const r = allResults().find((y) => y.id === id), text = S.resultEdit?.[id];
@@ -1901,7 +2082,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
 
   const resultCard = (m) => `<div class="mcard${m.status === "draft" ? " draft" : ""}" title="${esc(m.name)}" data-act="open-result" data-id="${esc(m.id)}" role="button">`
+    + (m.thumbnail ? (S.thumbs?.[m.id] ? `<img class="mthumb" src="${S.thumbs[m.id]}" alt="" loading="lazy">` : `<span class="mthumb"></span>`) : "")
     + `<span class="fmt">${esc((m.format_text || m.format || "").toUpperCase())}</span><b>${esc(m.name)}</b>`
+    + (m.excerpt ? `<span class="mex">${esc(m.excerpt)}</span>` : "")
     + `<span class="mmeta">${esc(m.status_text || "")}${m.version ? ` · v${m.version}` : ""}${m.step?.label ? ` · från «${esc(m.step.label)}»` : ""}</span></div>`;
   /** Lagerraden med vad siffrorna betyder vid hovring: skillnaderna och de egna ändringarna, en per rad. */
   function layersHtml(l) {
@@ -3781,6 +3964,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const o = S.data;
     if (!o) return [];
     const out = [];
+    out.push({ id: "times", l: TIMES.show ? "Dölj tider" : "Visa tider", where: "anropen, ms och storlek", hay: fold("visa tider dolj tider anrop debug ms"), run: () => { TIMES.show = !TIMES.show; paintTimes(); } });
     out.push({ id: "order", l: "Ny beställning …", where: "skriv själv, mejltråd, möte eller chatten", key: "N", hay: fold("ny beställning order intag mejl möte lägg in"), run: () => openOrder() });
     const cur = targetOf(S.cur);
     if (cur) for (const it of menuItems(cur)) out.push({ ...it, where: cur.label, hay: fold(`${it.l} ${cur.label} ${cur.row?.label || ""}`), cur: true });
@@ -4472,6 +4656,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     catch (e) { S.error = e; if (e.code === "NO_SESSION") forget(); }
     S.loading = false; S.refreshing = false;
     render();
+    prefetchOverview();
     await flushOutbox();
     schedulePoll();
   }
@@ -4485,6 +4670,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     await poll();
     S.refreshing = false;
     render();
+    prefetchOverview();
     schedulePoll();
   }
 
@@ -4514,6 +4700,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         // Ett öppet ark följer sin sak; ett ark under läses om först när man går tillbaka till det.
         S.sheets.forEach((x, i) => { if (!sheetTouched(x, diff)) return;
           if (i === S.sheets.length - 1) fetchSheet(x, true); else S.sheetData = { ...S.sheetData, [sheetKey(x)]: { ...S.sheetData[sheetKey(x)], stale: true } }; });
+        // Förhämtade ark som inte är öppna: inaktuella, så att de visas direkt och läses om när de öppnas.
+        for (const k of Object.keys(S.sheetData)) { const m = /^(delivery|part|step):(.*)$/.exec(k);
+          if (m && !S.sheets.some((x) => sheetKey(x) === k) && (m[1] === "step" ? diff.tasks.includes(splitStep(m[2])[0]) : sheetTouched({ kind: m[1], id: m[2] }, diff))) S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], stale: true } }; }
         if (S.body === "time" && S.time?.tl && S.time.tl.tasks.some((t) => diff.tasks.includes(t.id))) loadTimeline();
       }
       S.error = null; S.checkedAt = Date.now();
@@ -4722,6 +4911,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (S.menu && el.getAttribute("data-act") !== "menu-run") S.menu = null;
     if (S.pal && !/^pal-/.test(el.getAttribute("data-act"))) S.pal = null;
     const act = el.getAttribute("data-act");
+    if (/^open-|^sheet-/.test(act)) markClick(act);
     if (/^(hl|mv)-/.test(act)) { hlAct(act, el); return; }
     if (/^(mb|vp)-/.test(act)) { mbAct(act, el); return; }
     if (act === "open-method") { openMethod(el.getAttribute("data-id"), el.getAttribute("data-label")); return; }
@@ -4798,7 +4988,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "result-book") { const t = top1(); if (t) t.book = !t.book; }
     else if (act === "result-reset") { const t = top1(); if (t) { const { [t.id]: _x, ...rest } = S.resultEdit || {}; S.resultEdit = rest; } }
     else if (act === "result-save") { const t = top1(); if (t) resultSave(t.id); return; }
-    else if (act === "result-copy") { const t = top1(), d = t && S.sheetData[sheetKey(t)]?.doc; if (d?.markdown) copyToChat(d.markdown, "texten"); return; }
+    else if (act === "result-copy") { const t = top1(), d = t && S.sheetData[sheetKey(t)]?.doc; const tx = d?.markdown ?? d?.text; if (typeof tx === "string") copyToChat(tx, "texten"); return; }
+    else if (act === "file-download") { const t = top1(); if (t) fileDownload(t); return; }
     else if (act === "zoom") { zoomBy(Number(el.getAttribute("data-d"))); return; }
     else if (act === "reader-mode") { S.reader = { ...(S.reader || {}), spread: !!el.getAttribute("data-spread"), zoom: null }; }
     else if (act === "upd-take") { const t = top1(); if (t) takeUpdate(t.id, el.getAttribute("data-task")); return; }
@@ -4918,7 +5109,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     render();
   });
   /** Det man pekar på är det tangenterna gäller. Sparas utan att rita om. */
-  root.addEventListener("mouseover", (e) => { const c = e.target.closest?.("[data-ctx]")?.getAttribute("data-ctx"); if (c) S.cur = c; });
+  root.addEventListener("mouseover", (e) => { const c = e.target.closest?.("[data-ctx]")?.getAttribute("data-ctx"); if (c) S.cur = c; onHover(e); });
   root.addEventListener?.("focusout", (e) => { if (S.momEdit && /^mom-\d+$/.test(e.target?.id || "")) { S.momEdit = null; render(); } });
   root.addEventListener("input", (e) => {
     if (e.target?.id === "pal-q" && S.pal) { S.pal = { ...S.pal, q: e.target.value, i: 0 }; render(); }
