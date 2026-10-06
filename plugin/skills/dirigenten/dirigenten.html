@@ -159,6 +159,15 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .fbig { font: 600 13px var(--mono); padding: 18px 14px; background: var(--s1); border-radius: 6px; }
 .mcard .fmt { font: 10px var(--mono); letter-spacing: .06em; color: var(--t3); }
 .mmeta { color: var(--muted); font-size: 12.5px; }
+/* «Så görs det»: varje värde med sin källa. */
+.hrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 8px 0; border-bottom: 1px solid var(--line, rgba(0,0,0,.08)); align-items: center; }
+.hrow .hval { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.hrow input, .hrow select { max-width: 100%; }
+.hrow input { min-width: 24ch; }
+.hsrc { font-size: 11.5px; color: var(--muted); border: 1px solid var(--line, rgba(0,0,0,.12)); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
+.hsrc.customer { color: var(--ink, inherit); }
+.hsrc.here { font-weight: 600; }
+.hscope { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0 10px; }
 .ssteps { border-top: 1px solid var(--l4); margin-bottom: 22px; }
 .ssteps .step { margin: 0; }
 .part { font-size: 13px; font-weight: 600; padding: 14px 0 6px; display: flex; align-items: baseline; gap: 6px; }
@@ -602,7 +611,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "7c2c0cc", published: "2026-10-06" };
+  const SIDA = { version: "284d48f", published: "2026-10-06" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1348,6 +1357,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     } else if (x.kind === "method") {
       call("read", { op: "view_file", sheet: "method", ...(mbNew(x.id) ? {} : { method: x.id }), ...(x.variant ? { variant: x.variant } : {}) })
         .then((d) => put({ loading: false, m: d, error: null })).catch((e) => put({ loading: false, error: e }));
+    } else if (x.kind === "how") {
+      call("read", { op: "view_file", sheet: "how", ...howArgs(x) }).then((d) => put({ loading: false, how: d, error: null })).catch((e) => put({ loading: false, error: e }));
     } else if (x.kind === "library") {
       call("read", libArgs(x)).then((d) => put({ loading: false, lib: d, error: null })).catch((e) => put({ loading: false, error: e }));
     } else if (x.kind === "settings") {
@@ -1406,6 +1417,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         ? `<button class="primary" data-act="pin" data-task="${esc(nextMine.task)}" data-step="${esc(nextMine.step)}" data-label="${esc(nextMine.label)}">⊕ Lägg «${esc(nextMine.label)}» i Igång <span class="lvl">●</span></button>` : "",
       row?.kind === "delivery" ? `<button class="link" data-act="show-time" data-key="${esc(x.id)}">Visa i tid</button>` : "",
       `<button class="link" data-act="chat" data-key="${esc(x.id)}">Arbeta i chatten ↗</button>`,
+      row?.tasks?.length ? `<button class="link" data-act="how-open" data-task="${esc(row.tasks[0])}" data-label="${esc(row.label)}" title="Så görs det: ansvariga, mallar, kanaler och rytm">⚙ Så görs det</button>` : "",
       row?.kind === "task" && row.tasks.length === 1 ? `<button class="link" data-act="hl-move" data-task="${esc(row.tasks[0])}">Flytta till leverans …</button>` : "",
     ].join("");
     // Det som skapats, överst: lagerraden och resultaten.
@@ -1518,6 +1530,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (tab === "overview") {
       const o = d.overview || {};
       body = `<h3 class="sh">Leveranser i översikten</h3>${rows.length ? rows.map((r) => `<div class="crow"><button class="link" data-act="open-delivery" data-key="${esc(r.key)}">${esc(r.label)}</button><span class="mmeta">${esc(r.state_text)}</span></div>`).join("") : `<div class="mmeta">Inga just nu.</div>`}`
+        + ((o.ways || []).length ? `<h3 class="sh">Så görs det</h3>${o.ways.map((w) => `<div class="crow"><button class="link" data-act="how-open" data-method="${esc(w.method)}" data-customer="${esc(x.id)}" data-label="${esc(w.label)}">⚙ ${esc(w.label)}</button><span class="mmeta">${w.own ? `${esc(genitive(sd.label || x.label))} sätt` : "som metoden"}</span></div>`).join("")}` : "")
         + `<h3 class="sh">Personer</h3>${(o.people || []).length ? o.people.map((p) => `<div class="crow"><span>${esc(p.name)}</span><span class="mmeta">${esc(p.role || "")}</span></div>`).join("") : `<div class="mmeta">Inga personer inlagda.</div>`}`
         + `<h3 class="sh">Vad vi lovat</h3>${(o.commitments || []).map((c) => `<div class="crow"><span>${esc(c.label)}</span></div>`).join("") || `<div class="mmeta">Inget projekt.</div>`}`
         + (o.support ? `<h3 class="sh">Support i ${esc(monthName(o.support.month))}</h3><div class="crow"><span>${hh(o.support.hours || 0)} h</span><span class="mmeta">${esc(o.support.regime || "")}</span></div>` : "")
@@ -3438,6 +3451,110 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     return out;
   }
 
+  /* ── «Så görs det» (Daniel P 2026-10-06: «det är inte så tydligt var man ändrar just såna
+     återkommande saker») ──
+     Ingen ny modell: det som gäller för metoden hos kunden, och i leveransen, med källan
+     per värde. Ansvarig och enkla värden ändras på plats (● med Ångra) på den nivå som är
+     vald: kundens sätt som standard, eller bara den här leveransen. Större ändringar i
+     metodbyggaren; rytmen i avtalet. Skrivningarna är de som finns: method_variant_build
+     { patch } och execute_step { handover_to }. */
+  function openHow(o) {
+    const id = o.task ? `t:${o.task}` : `m:${o.method}|${o.customer || ""}`;
+    openSheet("how", id, `Så görs det${o.label ? ` · ${o.label}` : ""}`);
+  }
+  function howArgs(x) {
+    if (x.id.startsWith("t:")) return { task: x.id.slice(2) };
+    const [method, customer] = x.id.slice(2).split("|");
+    return { method, ...(customer ? { customer } : {}) };
+  }
+  const HOW_GROUP = { templates: "Mallar och format", channels: "Kanaler", other: "Andra värden" };
+  const howData = (x) => S.sheetData[sheetKey(x)]?.how || null;
+  const howScope = (x, d) => x.scope || (d.variant ? "customer" : d.task ? "here" : "method");
+  function howSheetHtml(x) {
+    const sd = S.sheetData[sheetKey(x)] || {}, d = sd.how;
+    if (!d) return `<div class="slabel">Så görs det</div><div class="mmeta">${sd.error ? `Kunde inte läsas: ${esc(sd.error.message || sd.error)}` : "Hämtar …"}</div>`;
+    const scope = howScope(x, d), cust = d.customer?.label || "kunden", ed = x.edit || {};
+    const src = (o) => `<span class="hsrc ${esc(o.source)}" title="Kommer från ${esc(o.source_label)}">${esc(o.source_label)}</span>`;
+    const scopes = [d.variant ? ["customer", d.scope.customer] : null, d.task ? ["here", d.scope.here] : null].filter(Boolean);
+    const scopeHtml = scopes.length
+      ? `<div class="hscope"><span class="mmeta">En ändring här</span>${scopes.map(([k, l]) => `<button class="tab${scope === k ? " on" : ""}" data-act="how-scope" data-scope="${k}">${esc(l)}</button>`).join("")}</div>`
+      : `<p class="mmeta">${esc(cust)} har inget eget sätt för metoden än. Ändra i metodbyggaren; det som bara gäller ${esc(cust)} sparas där som kundens sätt.</p>`;
+    const people = (cur) => `<option value=""${cur ? "" : " selected"}>–</option>` + (d.people || []).map((p) => `<option value="${esc(p.id)}"${p.id === cur ? " selected" : ""}>${esc(p.label)}</option>`).join("");
+    const steps = d.steps.map((s) => {
+      const r = s.responsible, rEdit = scope === "customer" || scope === "here";
+      const resp = rEdit ? `<select id="how-r-${esc(s.step)}" aria-label="Ansvarig för ${esc(s.label)}">${people(r.value?.id || "")}</select>` : `<span>${esc(r.value?.label || "–")}</span>`;
+      const appr = s.approver ? `<div class="hrow"><span class="mmeta">godkänns av ${esc(s.approver.label)}</span>${src(s.approver)}</div>` : "";
+      return `<div class="hrow"><div class="hval"><b>${esc(s.label)}</b>${resp}</div>${src(r)}</div>${appr}`;
+    }).join("");
+    const groups = ["templates", "channels", "other"].map((g) => {
+      const rows = d.steps.flatMap((s) => s.values.filter((v) => v.group === g).map((v) => ({ s, v })));
+      if (!rows.length) return "";
+      const body = rows.map(({ s, v }) => {
+        const k = `${s.step}|${v.key}`, cur = ed[k] ?? v.value, dirty = ed[k] !== undefined && ed[k] !== v.value;
+        const field = scope === "customer" && d.variant && !/^\s*[{[]/.test(v.value)
+          ? `<input id="how-v-${esc(s.step)}-${esc(v.key)}" value="${esc(cur)}" aria-label="${esc(v.key)} i ${esc(s.label)}">`
+            + (dirty ? `<button class="go" data-act="how-save-v" data-step="${esc(s.step)}" data-key="${esc(v.key)}">Spara <span class="lvl d">●</span></button><button class="quiet" data-act="how-reset-v" data-k="${esc(k)}">Ångra</button>` : "")
+          : `<span>${esc(v.value.length > 90 ? `${v.value.slice(0, 90)} …` : v.value)}</span>`;
+        return `<div class="hrow"><div class="hval"><span class="mmeta">${esc(s.label)} · ${esc(v.key)}</span>${field}</div>${src(v)}</div>`;
+      }).join("");
+      return g === "other" ? `<details><summary class="sh">${HOW_GROUP[g]} (${rows.length})</summary>${body}</details>` : `<h3 class="sh">${HOW_GROUP[g]}</h3>${body}`;
+    }).join("");
+    const rec = d.recurring.length ? d.recurring.map((r) => `<div class="hrow"><div class="hval"><span>${esc(r.text)}</span></div><span class="hsrc contract">${esc(r.source_label)}</span></div>`).join("")
+      + (d.customer ? `<button class="link" data-act="how-contract" data-id="${esc(d.customer.id)}" data-label="${esc(d.customer.label)}">Ändra rytmen i avtalet ›</button>` : "")
+      : `<div class="mmeta">Ingen återkommande rytm i avtalet för den här metoden.</div>`;
+    return `<div class="slabel">Så görs det</div><h1 class="stitle">${esc(d.method.label)}${d.customer ? ` · ${esc(d.customer.label)}` : ""}</h1>`
+      + `<p class="sline">Det som gäller${d.task ? ` i ${esc(d.task.label)}` : ""}, och var varje värde kommer ifrån: metoden, ${esc(d.customer ? `${genitive(cust)} sätt` : "kundens sätt")}${d.task ? " eller den här leveransen" : ""}.${d.variant?.grounding === "proposed" ? ` ${esc(genitive(cust))} sätt är ett förslag.` : ""}</p>`
+      + scopeHtml
+      + `<h3 class="sh">Ansvarig och godkännare per steg</h3>${steps}`
+      + groups
+      + `<h3 class="sh">Rytm</h3>${rec}`
+      + `<h3 class="sh">Större ändringar</h3><p class="mmeta">Steg, ordning, instruktioner och metodens egna värden ändras i metodbyggaren.</p>`
+      + `<button class="link" data-act="open-method" data-id="${esc(d.method.id)}" data-label="${esc(d.method.label)}">Öppna metodbyggaren ›</button>`;
+  }
+  function howInput(el) {
+    const x = top1(); if (!x || x.kind !== "how") return;
+    let m;
+    if ((m = /^how-r-(.+)$/.exec(el.id))) { howSave(x, m[1], "responsible", el.value); return; }
+    if ((m = /^how-v-([^-]+)-(.+)$/.exec(el.id))) { x.edit = { ...(x.edit || {}), [`${m[1]}|${m[2]}`]: el.value }; renderKeep(); }
+  }
+  function howAct(act, el) {
+    if (act === "how-open") { openHow({ task: el.getAttribute("data-task"), method: el.getAttribute("data-method"), customer: el.getAttribute("data-customer"), label: el.getAttribute("data-label") }); return; }
+    const x = top1(); if (!x || x.kind !== "how") return;
+    if (act === "how-scope") { x.scope = el.getAttribute("data-scope"); x.edit = {}; render(); }
+    else if (act === "how-reset-v") { const { [el.getAttribute("data-k")]: _y, ...rest } = x.edit || {}; x.edit = rest; render(); }
+    else if (act === "how-save-v") { const step = el.getAttribute("data-step"), key = el.getAttribute("data-key"); howSave(x, step, key, (x.edit || {})[`${step}|${key}`]); }
+    else if (act === "how-contract") { openSheet("customer", el.getAttribute("data-id"), el.getAttribute("data-label")); const t = top1(); if (t?.kind === "customer") { t.tab = "contract"; fetchSheet(t, true); render(); } }
+  }
+  /** ● på den valda nivån. Kundens sätt: method_variant_build { patch }, Ångra skriver tillbaka det som var. Bara här: en överlämning. */
+  async function howSave(x, step, field, value) {
+    const d = howData(x), s = d?.steps.find((y) => y.step === step); if (!s) return;
+    const scope = howScope(x, d), who = (id) => d.people.find((p) => p.id === id)?.label || "ingen";
+    let c, undo = null, text;
+    if (scope === "here") {
+      if (field !== "responsible" || !value || value === s.responsible.value?.id) { render(); return; }
+      c = { tool: "execute_step", args: { task: d.task.id, step, handover_to: value, confirmed: true } };
+      text = `«${s.label}» föreslås för ${who(value)} bara i den här leveransen; ${who(value)} tar emot det.`;
+    } else if (scope === "customer" && d.variant) {
+      const mk = (set) => ({ tool: "write", args: { op: "method_variant_build", patch: { variant: d.variant.id, step, set }, confirmed: true } });
+      if (field === "responsible") {
+        const before = s.responsible.source === "customer" ? s.responsible.value?.id || null : null;
+        c = mk({ responsible: value || null }); undo = mk({ responsible: before });
+        text = `«${s.label}»: ${who(value)} är ansvarig, ${d.scope.customer}.`;
+      } else {
+        const had = s.customer_values || {};
+        c = mk({ values: { ...had, [field]: value } }); undo = mk({ values: Object.keys(had).length ? had : null });
+        text = `«${s.label}»: ${field} ändrat, ${d.scope.customer}.`;
+      }
+    } else { render(); return; }
+    try {
+      await call(c.tool, c.args);
+      if (field !== "responsible") { const { [`${step}|${field}`]: _y, ...rest } = x.edit || {}; x.edit = rest; }
+      say(text, undo ? { fn: () => call(undo.tool, undo.args) } : null);
+      fetchSheet(x, true); refreshSoon();
+    } catch (e) { say(`Kunde inte spara: ${e.message || e}. Inget ändrades.`, null, true); }
+    render();
+  }
+
   /* Inställningar → Roller och behörigheter (BESLUT 9). */
   /** Vem som får ta över mina steg: det sparade, med det jag ändrat här ovanpå. */
   function takeDraft(x) {
@@ -3642,7 +3759,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const strips = S.sheets.slice(0, -1).map((s, i) => `<button class="strip" style="left:${left(i)}px" data-act="crumb" data-i="${i}" title="Tillbaka till ${esc(s.label)}" aria-label="Tillbaka till ${esc(s.label)}"></button>`).join("");
     const crumbs = [`<button data-act="crumb" data-i="-1">Översikt</button>`, ...S.sheets.slice(0, -1).map((s, i) => `<button data-act="crumb" data-i="${i}">${esc(s.label)}</button>`), `<b>${esc(x.label)}</b>`].join(`<span class="cs">/</span>`);
     const prev = n > 1 ? S.sheets[n - 2].label : "Översikt";
-    const body = linkStateHtml(x, n > 1 ? S.sheets[n - 2].label : null) ?? { delivery: deliverySheet, part: partSheet, step: stepSheetHtml, result: resultSheetHtml, case: caseSheetHtml, library: librarySheetHtml, method: methodSheetHtml, settings: settingsSheetHtml,
+    const body = linkStateHtml(x, n > 1 ? S.sheets[n - 2].label : null) ?? { delivery: deliverySheet, part: partSheet, step: stepSheetHtml, result: resultSheetHtml, case: caseSheetHtml, library: librarySheetHtml, method: methodSheetHtml, how: howSheetHtml, settings: settingsSheetHtml,
       focus: focusSheetHtml, messages: messagesSheetHtml, inbox: inboxSheetHtml, chat: chatSheetHtml, person: personSheetHtml, order: orderSheetHtml }[x.kind]?.(x) ?? customerSheet(x);
     return `<div class="sheets"><div class="scrim" data-act="sheet-back"></div>${strips}`
       + `<section class="sheet" style="left:${left(n - 1)}px" data-i="${n - 1}" role="dialog" aria-label="${esc(x.label)}" data-sheet="${esc(sheetKey(x))}">`
@@ -4304,6 +4421,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
           out.push({ ...it, l: /«/.test(it.l) ? it.l : `${it.l}: «${st.label}»`, where: r.label, hay: fold(`${it.l} ${st.label} ${r.label} ${r.customer?.label || ""}`) });
       }
     }
+    for (const r of o.rows) if (r.kind !== "inbox" && r.tasks?.length)
+      out.push({ id: "how", l: `Inställningar för ${r.label}`, where: "så görs det", hay: fold(`inställningar så görs det ansvarig mall kanal ${r.label} ${r.customer?.label || ""}`), run: () => openHow({ task: r.tasks[0], label: r.label }) });
+    for (const m of S.methodIndex || []) out.push({ id: "how", l: `Inställningar för metoden ${m.label}`, where: "så görs det", hay: fold(`inställningar så görs det metoden ${m.label}`), run: () => openHow({ method: m.id, label: m.label }) });
     out.push(...hlPalette(), ...mbPalette());
     return out;
   }
@@ -5242,6 +5362,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (/^open-|^sheet-/.test(act)) markClick(act);
     if (/^(hl|mv)-/.test(act)) { hlAct(act, el); return; }
     if (/^(mb|vp)-/.test(act)) { mbAct(act, el); return; }
+    if (/^how-/.test(act)) { howAct(act, el); return; }
     if (act === "open-method") { openMethod(el.getAttribute("data-id"), el.getAttribute("data-label")); return; }
     if (act === "method-new") { newMethod(); return; }
     if (act === "lens") { S.lens = el.getAttribute("data-lens"); S.person = null; S.showHidden = false; }
@@ -5459,6 +5580,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (e.target?.id === "mv-q" && S.mv) { S.mv = { ...S.mv, q: e.target.value, i: 0 }; render(); const inp = root.querySelector?.("#mv-q"); if (inp) { inp.focus?.(); const n = inp.value?.length || 0; inp.setSelectionRange?.(n, n); } }
     else if (e.target?.id === "hl-steps") { const t = e.target.getAttribute?.("data-task"); if (t) { const st = hlState(t), had = !!st.text.trim(); st.text = e.target.value; if (had !== !!st.text.trim() || /\n/.test(e.data || "") || e.inputType === "insertLineBreak") renderKeep(); } }
     else if (/^(mb|vp)-/.test(e.target?.id || "")) mbInput(e.target);
+    else if (/^how-/.test(e.target?.id || "")) howInput(e.target);
     else if (e.target?.id === "list-q") { S.filterQ = e.target.value; S.limit = PAGE; render(); }
     else if (e.target?.id === "rename-input") { if (S.rename) S.rename.value = e.target.value; }
     else if (e.target?.id === "step-addition") { const id = top1()?.id; if (id) { setEdit(id, { addition: e.target.value }); renderKeep(); } }
