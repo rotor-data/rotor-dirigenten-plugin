@@ -1,6 +1,6 @@
 ---
 name: dirigenten
-description: How the dirigenten registry, planning and delivery system fits together, and how to work in it. Use whenever someone asks what is promised, what is planned, what is late, which questions are waiting, who does what, where a customer's files are, or how something is delivered — and before acting on any task, step, requirement or file in dirigenten. Also opens or updates the dirigent view (Idag, In, Planen, Metoder) as the user's own artifact: "dirigentvyn", "vyn", "Idag-sidan", "planen", or when the view says it is outdated or cannot reach dirigenten.
+description: How the dirigenten registry, planning and delivery system fits together, and how to work in it. Use whenever someone asks what is promised, what is planned, what is late, which questions are waiting, who does what, where a customer's files are, or how something is delivered — and before acting on any task, step, requirement or file in dirigenten. Also opens or updates the dirigent view (Översikten with lenses, sheets and ⌘K) as the user's own artifact: "dirigentvyn", "vyn", "översikten", or when the view says it is outdated or cannot reach dirigenten.
 ---
 
 # Dirigenten
@@ -75,8 +75,8 @@ The tool list may be old: ask the user to choose «Refresh tools» on the rotor-
 Talk Swedish, short, say what you do, then do it. The file holds no data; everything comes through the user's own connector.
 
 1. Use `manifest.json` (`title`, `version`, `capabilities`) and `dirigenten.html` from this skill's folder, unedited. Only if they are missing: fetch `https://rotor-dirigenten.netlify.app/vy/manifest` and the page at its `file`.
-2. Publish `dirigenten.html` as an artifact **owned by the user**, titled "Dirigenten", with exactly the manifest's `capabilities` (the seven tools, `sample`, `downloads`, and **always `artifact: {}`**, or the update button fails). A copy with the old tool names cannot reach dirigenten: update it. If the user already has an artifact "Dirigenten", update that one so the link stays; otherwise publish a new one and tell them to pin it.
+2. Publish `dirigenten.html` as an artifact **owned by the user**, titled "Dirigenten", with exactly the manifest's `capabilities` (the tools it lists, `sample`, and **always `artifact: {}`**, or the view cannot update itself). A copy with the old tool names cannot reach dirigenten: update it. If the user already has an artifact "Dirigenten", update that one so the link stays; otherwise publish a new one and tell them to pin it.
 3. Open it. If the page asks to allow connectors ("Tillåt kopplingarna"), tell the user to allow. Save the address on the person as under Views, unless `views_url` already equals it.
-4. Tell the user in one sentence: the view is theirs, it updates when they say "uppdatera dirigentvyn" after a plugin update, and the page says when a newer version exists.
+4. Tell the user in one sentence: the view is theirs, it updates itself when the server has a newer one (the version mark at the top right says so; «Uppdatera nu» does it directly), and "uppdatera dirigentvyn" works too.
 
 If it fails: a newer version exists → the plugin is behind, update it and run this again. No artifact tool → `https://rotor-dirigenten.netlify.app/vy`. The page cannot reach dirigenten → the connector must be on in claude.ai's settings and the artifact published from the user's own account. Never publish someone else's copy, edit the file or add capabilities beyond the manifest.

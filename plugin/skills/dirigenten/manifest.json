@@ -1,6 +1,6 @@
 {
  "title": "Dirigenten",
- "version": "ff15c8d",
+ "version": "bafbdab",
  "file": "https://rotor-dirigenten.netlify.app/vy/fil",
  "capabilities": {
   "mcp": {
@@ -13,43 +13,12 @@
       "guide",
       "plan_state",
       "read",
-      "search",
       "write"
-     ]
-    },
-    {
-     "server": "HubSpot",
-     "tools": [
-      "search_crm_objects",
-      "get_crm_objects",
-      "query_crm_data",
-      "search_owners",
-      "search_properties",
-      "get_properties",
-      "search_conversations",
-      "get_conversation_channel_metadata",
-      "discover_hubspot_schema",
-      "get_organization_details",
-      "get_user_details",
-      "read_campaign_data",
-      "get_campaign_attribution_reports",
-      "get_content_analytics_report",
-      "get_marketing_email_analytics",
-      "tool_guidance",
-      "manage_crm_objects",
-      "manage_campaign_objects",
-      "manage_marketing_email",
-      "manage_blog_post",
-      "manage_landing_page",
-      "manage_website_page",
-      "manage_segment",
-      "manage_saved_reports"
      ]
     }
    ]
   },
   "sample": {},
-  "downloads": true,
   "artifact": {}
  }
 }
