@@ -568,7 +568,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "bafbdab", published: "2026-10-06" };
+  const SIDA = { version: "8ee3636", published: "2026-10-06" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -956,7 +956,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      aldrig historiken (den är claude.ai:s): adressen skrivs över på plats.
      En kopierad länk går alltid till /vy, eftersom den fungerar för alla i huset. */
   const LINK_KIND = { delivery: "leverans", part: "del", step: "steg", case: "arende", customer: "kund", result: "resultat", method: "metod",
-    person: "person", library: "bibliotek", messages: "meddelanden", settings: "installningar", focus: "fokus" };
+    person: "person", library: "bibliotek", messages: "meddelanden", settings: "installningar", focus: "fokus", inbox: "inkommet" };
   const KIND_LINK = Object.fromEntries(Object.entries(LINK_KIND).map(([k, v]) => [v, k]));
   const VY_URL = "https://rotor-dirigenten.netlify.app/vy";
   const slugOf = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48).replace(/-+$/, "");
@@ -1163,6 +1163,10 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       call("read", libArgs(x)).then((d) => put({ loading: false, lib: d, error: null })).catch((e) => put({ loading: false, error: e }));
     } else if (x.kind === "settings") {
       call("plan_state", { settings: true }).then((d) => put({ loading: false, settings: d?.settings || d, admin: d?.settings?.admin || d?.admin || null })).catch((e) => put({ loading: false, error: e }));
+    } else if (x.kind === "inbox") {
+      call("read", { op: "intake_status", queue: true, days: 60, format: "full" })
+        .then((d) => put({ loading: false, queue: d?.queue || null, read_at: d?.read?.read_at || d?.queue?.read?.read_at || new Date().toISOString(), error: null }))
+        .catch((e) => put({ loading: false, error: e }));
     } else if (x.kind === "messages") {
       call("plan_state", { messages: true }).then((d) => put({ loading: false, messages: Array.isArray(d?.messages) ? d.messages : [] })).catch((e) => put({ loading: false, error: e }));
     } else if (x.kind === "person") {
@@ -1316,7 +1320,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 
   function customerSheet(x) {
     const sd = S.sheetData[sheetKey(x)] || {}, tab = x.tab || "overview", d = sd[tab];
-    const tabs = (d?.tabs || sd.overview?.tabs || [{ id: "overview", label: "Översikt" }, { id: "files", label: "Filbanken" }, { id: "contract", label: "Avtalet" }])
+    const tabs = (d?.tabs || sd.overview?.tabs || [{ id: "overview", label: "Översikt" }, { id: "files", label: "Filbanken" }, { id: "intake", label: "Så kommer det in" }, { id: "contract", label: "Avtalet" }])
       .map((t) => `<button class="tab${t.id === tab ? " on" : ""}" data-act="customer-tab" data-tab="${esc(t.id)}">${esc(t.label)}${t.locked ? " · låst" : ""}</button>`).join("");
     const rows = (S.data?.rows || []).filter((r) => r.customer?.id === x.id);
     let body = "";
@@ -1326,11 +1330,20 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       body = `<h3 class="sh">Leveranser i översikten</h3>${rows.length ? rows.map((r) => `<div class="crow"><button class="link" data-act="open-delivery" data-key="${esc(r.key)}">${esc(r.label)}</button><span class="mmeta">${esc(r.state_text)}</span></div>`).join("") : `<div class="mmeta">Inga just nu.</div>`}`
         + `<h3 class="sh">Personer</h3>${(o.people || []).length ? o.people.map((p) => `<div class="crow"><span>${esc(p.name)}</span><span class="mmeta">${esc(p.role || "")}</span></div>`).join("") : `<div class="mmeta">Inga personer inlagda.</div>`}`
         + `<h3 class="sh">Vad vi lovat</h3>${(o.commitments || []).map((c) => `<div class="crow"><span>${esc(c.label)}</span></div>`).join("") || `<div class="mmeta">Inget projekt.</div>`}`
-        + (o.support ? `<h3 class="sh">Support i ${esc(monthName(o.support.month))}</h3><div class="crow"><span>${hh(o.support.hours || 0)} h</span><span class="mmeta">${esc(o.support.regime || "")}</span></div>` : "");
+        + (o.support ? `<h3 class="sh">Support i ${esc(monthName(o.support.month))}</h3><div class="crow"><span>${hh(o.support.hours || 0)} h</span><span class="mmeta">${esc(o.support.regime || "")}</span></div>` : "")
+        + ((o.possible || []).length ? `<h3 class="sh">Möjligt</h3>${o.possible.map((p) => `<div class="crow"><span>${esc(p.label || "Mejl")}</span><span class="mmeta">${esc(shortIso(p.at))}</span></div>`).join("")}` : "");
     } else if (tab === "files") {
       const f = d.files || { total: 0, files: [] };
       body = `<div class="mmeta">${f.total} filer${f.files.length < f.total ? `, de ${f.files.length} senaste visas` : ""}.</div>`
         + f.files.slice(0, 40).map((x) => `<div class="crow"><span>${esc(x.name || x.label || "fil")}</span><span class="mmeta">${esc(shortIso(x.at))}</span></div>`).join("");
+    } else if (tab === "intake") {
+      // Så kommer det in (v6 del 1, skiss 1F): källa · väg · blir · antal i månaden.
+      const k = d.intake || { sources: [] };
+      const KIND = { label: "Mapp", to: "Till", from: "Från" };
+      const WAY = { support: "Support", order: "Beställning", possibility: "Möjligt", nothing: "Behöver inget", inbox: "Inkommet" };
+      body = (k.sources || []).length ? k.sources.map((src) => `<div class="crow${src.enabled === false ? " dim" : ""}"><span>${esc(KIND[src.kind] || "")} ${esc(src.value)}${src.owner ? ` <span class="mmeta">i ${esc(src.owner.label)}s brevlåda</span>` : ""}</span>`
+          + `<span class="mmeta">${src.way ? esc(WAY[src.way] || src.way) : "Ingen väg vald"} · ${src.this_month} i ${esc(monthName(k.month))}</span></div>`).join("")
+        : `<div class="mmeta">Ingen bevakad källa för kunden.</div>`;
     } else if (tab === "contract") {
       const c = d.contract || {};
       body = c.locked && c.denied ? deniedHtml(c.denied, `${genitive(x.label)} avtal`, { act: "customer-tab", tab: "overview", label: `Öppna ${genitive(x.label)} översikt`, text: "Översikten och filbanken ser du som vanligt." })
@@ -3031,6 +3044,48 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
 
   /* Meddelanden: överlämningar, Claude, kollegor och kunder. Svaret hamnar på saken. */
+  /* ── Inkommet (v6 del 1, skiss 1E): bara det som inte hittade sin väg ──
+     Fel adress, husadressen, okänd avsändare, osäker plats. Varje rad: en primär
+     handling och «Läs mejlet». Inga bedömningar här: support bedöms i ärendet,
+     beställningar i beställningen. Flytten är ● med Ångra (classify_accept route). */
+  const WAY_TO = { case: "Support", order: "Beställning", possibility: "Möjligt", nothing: "Behöver inget", inbox: "Inkommet" };
+  const clockOf = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? "" : d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }); };
+  function inboxSheetHtml(x) {
+    const sd = S.sheetData[sheetKey(x)] || {}, q = sd.queue;
+    const head = `<div class="slabel">Inkommet</div><h1 class="stitle">Inkommet</h1>`;
+    if (sd.error && !q) return head + `<div class="banner"><span style="flex:1">Gmail svarar inte.${sd.read_at ? ` Visar det som lästes ${esc(clockOf(sd.read_at))}.` : ""}</span><button data-act="sheet-retry">Försök igen</button></div>`;
+    if (!q) return head + `<div class="mmeta">Hämtar …</div>`;
+    const today = new Date().toISOString().slice(0, 10);
+    const found = [...(q.untriaged || []), ...(q.waiting || [])].filter((c, i, a) => a.findIndex((y) => y.thread === c.thread) === i)
+      .filter((c) => c.route?.automatic && String(c.last_at || "").slice(0, 10) === today);
+    const last = found.map((c) => c.last_at).sort().pop();
+    const rows = q.inbox || [];
+    const line = rows.length
+      ? `${found.length} mejl sorterades automatiskt i dag.`
+      : `Inget att sortera. ${found.length} mejl i dag${last ? `, senast ${clockOf(last)}` : ""}.`;
+    const row = (c) => {
+      const moved = c.route?.why === "moved" && c.route?.by ? `<span class="mmeta">${esc(c.route.by)} flyttade det ${esc(clockOf(c.route.at))}</span>` : "";
+      const primary = c.suggested ? [c.suggested] : ["case", "order"];
+      const btn = (to, cls) => `<button class="${cls}" data-act="inbox-route" data-thread="${esc(c.thread)}" data-to="${esc(to)}" data-label="${esc(c.subject)}"><span class="lvl d">●</span> ${esc(WAY_TO[to])}</button>`;
+      const open = x.read === c.thread;
+      const text = open ? (c.history || []).map((p) => `<div class="mt"><b>${esc(p.from || "")}</b> ${esc(p.excerpt || "")}</div>`).join("") : "";
+      return `<div class="msg"><div class="mh3"><b>${esc(c.subject || "utan ämnesrad")}</b><span class="mmeta">${esc(c.party || "")}${c.mailbox ? ` · ${esc(c.mailbox)}` : ""}</span></div>`
+        + text + `<div class="doacts">${moved || primary.map((to, i) => btn(to, i === 0 ? "primary" : "link")).join("")}`
+        + (c.suggested === "nothing" || moved ? "" : btn("nothing", "link"))
+        + `<button class="link" data-act="inbox-read" data-thread="${esc(c.thread)}">${open ? "Dölj mejlet" : "Läs mejlet"}</button></div></div>`;
+    };
+    return head + `<p class="sline">${esc(line)}</p>`
+      + (sd.error ? `<div class="banner"><span style="flex:1">Gmail svarar inte. Visar det som lästes ${esc(clockOf(sd.read_at))}.</span><button data-act="sheet-retry">Försök igen</button></div>` : "")
+      + rows.map(row).join("");
+  }
+  async function routeInbox(thread, to, label) {
+    try {
+      const r = await call("write", { op: "classify_accept", thread, classification: { route: { to } } });
+      say(`«${label}» flyttat till ${WAY_TO[to]}.`, r?.next ? { tool: r.next.tool, args: r.next.args } : null);
+      const t = top1(); if (t) fetchSheet(t, true);
+    } catch (e) { say(`Kunde inte flytta «${label}»: ${e.message || e}. Inget ändrades.`, null, true); }
+  }
+
   function messagesSheetHtml(x) {
     const sd = S.sheetData[sheetKey(x)] || {}, ms = sd.messages;
     if (sd.error) return `<div class="slabel">Meddelanden</div><h1 class="stitle">Meddelanden</h1><div class="banner"><span style="flex:1">${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>`;
@@ -3104,7 +3159,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const crumbs = [`<button data-act="crumb" data-i="-1">Översikt</button>`, ...S.sheets.slice(0, -1).map((s, i) => `<button data-act="crumb" data-i="${i}">${esc(s.label)}</button>`), `<b>${esc(x.label)}</b>`].join(`<span class="cs">/</span>`);
     const prev = n > 1 ? S.sheets[n - 2].label : "Översikt";
     const body = linkStateHtml(x, n > 1 ? S.sheets[n - 2].label : null) ?? { delivery: deliverySheet, part: partSheet, step: stepSheetHtml, result: resultSheetHtml, case: caseSheetHtml, library: librarySheetHtml, method: methodSheetHtml, settings: settingsSheetHtml,
-      focus: focusSheetHtml, messages: messagesSheetHtml, chat: chatSheetHtml, person: personSheetHtml, order: orderSheetHtml }[x.kind]?.(x) ?? customerSheet(x);
+      focus: focusSheetHtml, messages: messagesSheetHtml, inbox: inboxSheetHtml, chat: chatSheetHtml, person: personSheetHtml, order: orderSheetHtml }[x.kind]?.(x) ?? customerSheet(x);
     return `<div class="sheets"><div class="scrim" data-act="sheet-back"></div>${strips}`
       + `<section class="sheet" style="left:${left(n - 1)}px" data-i="${n - 1}" role="dialog" aria-label="${esc(x.label)}" data-sheet="${esc(sheetKey(x))}">`
       + `<header class="shead"><button class="back" data-act="sheet-back" title="Tillbaka · ⌫">‹ ${esc(prev)}</button><nav class="crumbs">${crumbs}</nav>`
@@ -4457,7 +4512,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 
   function stepsList(o, r, inSheet = false) {
     if (r.kind === "inbox") return `<div class="steps"><div class="step"><span></span><span class="meta" style="grid-column:span 3">${r.inbox?.new
-      ? `${r.inbox.new} nya, den äldsta ${r.inbox.oldest_days ? `${r.inbox.oldest_days} d gammal` : "från i dag"}. Bedöms i In i nuvarande vyn.` : "Inget nytt i posten."}</span></div></div>`;
+      ? `${r.inbox.new} nya, den äldsta ${r.inbox.oldest_days ? `${r.inbox.oldest_days} d gammal` : "från i dag"}. Bedöms i In i nuvarande vyn.` : "Inget nytt i posten."}</span></div>`
+      + `<div class="step"><span></span><span class="meta" style="grid-column:span 3"><button class="link" data-act="open-inbox">Öppna Inkommet: mejl som inte hittade sin väg →</button></span></div></div>`;
     const me = S.data.party?.label;
     if (r.cases) return casesList(o, r, me);
     if (r.no_method && r.tasks.length === 1) return `<div class="steps">${homelessHtml(r.tasks[0], r.label, hlPlan(r.tasks[0]))}`
@@ -4629,6 +4685,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       flushOutbox(); }
     else if (act === "pin" || act === "unpin") { setRunning(el.getAttribute("data-task"), el.getAttribute("data-step"), el.getAttribute("data-label") || "", act === "pin"); return; }
     else if (act === "undo") { undoToast(); return; }
+    else if (act === "inbox-route") { routeInbox(el.getAttribute("data-thread"), el.getAttribute("data-to"), el.getAttribute("data-label") || "Mejlet"); return; }
+    else if (act === "inbox-read") { const t = top1(); if (t?.kind === "inbox") { const th = el.getAttribute("data-thread"); t.read = t.read === th ? null : th; render(); } return; }
+    else if (act === "open-inbox") { openSheet("inbox", "all", "Inkommet"); return; }
     else if (act === "open-part") { openPart(el.getAttribute("data-task"), el.getAttribute("data-parent"), el.getAttribute("data-label")); return; }
     else if (act === "take-over") { takeOver(el.getAttribute("data-task"), el.getAttribute("data-step") || null, el.getAttribute("data-label") || ""); return; }
     else if (act === "set-take") { const t = top1(); if (t) { t.take = { ...(t.take || {}), allow: el.getAttribute("data-allow") }; render(); } return; }
