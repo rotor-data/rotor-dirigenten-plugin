@@ -233,58 +233,115 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .pal .pw { color: var(--t3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
 .pal .pe { padding: 10px 12px; color: var(--muted); font-size: 13px; }
 .pal .pf { border-top: 1px solid var(--l4); margin-top: 4px; padding: 7px 12px 5px; font: 11px var(--mono); color: var(--t3); }
-/* Tid (1.5): 210 px etiketter, staplar 22 px med radie 5, en 3 px linje för timmarna. */
+/* Tid omgjord (docs/design/v6/tid): ett steg per rad, 230 px etiketter, ramen är spannet och fyllnaden timmarna. */
+.zleg { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 10.5px var(--mono); color: var(--muted); align-items: center; margin-left: auto; }
+.zleg > span { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
+.zleg i { display: inline-block; width: 20px; height: 9px; border: 1px solid var(--l1); border-radius: 3px; }
+.zleg .zl-fill { background: linear-gradient(90deg, var(--t3) 0 40%, transparent 40%); }
+.zleg .zl-busy { width: 11px; border: 0; background: repeating-linear-gradient(135deg, var(--t3) 0 2px, var(--l3) 2px 4px); }
+.zleg .zl-now { color: var(--teal); }
+.zbox { border-top: 1px solid var(--l3); overflow-x: auto; }
+.zin { min-width: 640px; }
+.zrow { display: grid; grid-template-columns: 230px minmax(0, 1fr); border-bottom: 1px solid var(--l5); }
+.zrow.zgrp { border-bottom-color: var(--l4); }
+.zhead { font: 10.5px var(--mono); color: var(--t3); letter-spacing: .03em; border-bottom: 1px solid var(--ink); }
+.zhead .zl { padding: 9px 14px; }
+.zl { display: flex; align-items: center; gap: 6px; padding: 0 12px 0 32px; min-width: 0; font-size: 12.5px; }
+.zgrp .zl { padding-left: 10px; }
+.zcaret { border: 0; background: none; padding: 0 2px; width: 16px; color: var(--t2) !important; font-size: 12px; }
+.zgn { min-width: 0; }
+.zgrp .zn { font-weight: 600; font-size: 13px; }
+.zn { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zn.late { color: var(--red); }
+.zdim { color: var(--t3); font-weight: 400; }
+.zsub { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zsub.red { color: var(--red); } .zsub.amber { color: var(--amber-t); }
+.zini { font: 10.5px var(--mono); color: var(--t3); flex: none; }
+.zini.red { color: var(--red); }
+.zstep.on { background: var(--s2); }
+.ztrack { position: relative; overflow: hidden; }
+.zpast { position: absolute; top: 0; bottom: 0; left: 0; background: var(--s4); }
+.zdl { position: absolute; top: 9px; padding-left: 6px; white-space: nowrap; }
+.zdl.now { color: var(--teal); }
+.zbar { position: absolute; top: 8px; height: 14px; box-sizing: border-box; border: 1px solid var(--l1); background: var(--white); border-radius: 4px; z-index: 2; }
+.zbar .zf { position: absolute; left: 0; top: 0; bottom: 0; background: var(--t3); border-radius: 3px 0 0 3px; }
+.zbar .zh { position: absolute; left: 100%; top: -1px; margin-left: 6px; font: 10.5px/14px var(--mono); color: var(--muted); white-space: nowrap; }
+.zbar.late { border-color: var(--red-b); background: var(--red-s2); }
+.zbar.cust { border-color: var(--amber-b); background: repeating-linear-gradient(135deg, var(--s4) 0 3px, var(--amber-s) 3px 6px); }
+.zbar.cust .zh { color: var(--amber-t); }
+.zbar.booked { border-color: var(--teal); } .zbar.booked .zf { background: var(--teal); }
+.zbar.sel { border: 1.5px solid var(--ink); }
+.ztx { position: absolute; top: 7px; font: 10.5px/16px var(--mono); white-space: nowrap; color: var(--t2); }
+.ztx.late { color: var(--red); }
+.zstrip { position: absolute; top: 19px; height: 8px; border-radius: 4px; background: var(--l1); }
+.zstrip.over { background: var(--red-b); }
+.zstrip.dlate { background: var(--red-s2); border: 1.5px dashed var(--red); box-sizing: border-box; }
+.zstrip.dmoved { background: var(--s4); border: 1.5px dashed var(--amber); box-sizing: border-box; }
+.zdia { position: absolute; top: 17px; width: 11px; height: 11px; margin-left: -6px; transform: rotate(45deg); background: var(--ink); border: 2px solid var(--white); box-sizing: content-box; }
+.zdia.late { background: var(--red); }
+.zcell { position: absolute; bottom: 8px; display: flex; flex-direction: column-reverse; }
+.zcell i { display: block; flex: none; }
+.zcb { background: repeating-linear-gradient(135deg, var(--t3) 0 2px, var(--l3) 2px 4px); }
+.zcw { background: var(--l1); } .zcw.over { background: var(--red); }
+.zcell em { position: absolute; bottom: 100%; left: -8px; right: -8px; text-align: center; font: normal 9.5px var(--mono); color: var(--red); white-space: nowrap; }
+.zcap { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--l1); }
+.zsel { width: 6px; height: 6px; border-radius: 50%; background: transparent; flex: none; margin-left: -14px; margin-right: 2px; }
+.zstep.on .zsel { background: var(--ink); }
+.zstep .zl { cursor: pointer; } .zgrp .zl { cursor: pointer; user-select: none; }
+.zbar { cursor: pointer; }
+.zbar.draft { border: 1.5px dashed var(--amber); background: var(--amber-s); } .zbar.draft .zf { background: var(--amber); } .zbar.draft .zh { color: var(--amber-t); }
+.zbar.draft.sel { border-color: var(--ink); }
+.zghost { position: absolute; top: 8px; height: 14px; box-sizing: border-box; border: 1px dashed var(--l1); border-radius: 4px; }
+.zin { position: relative; }
+.zin.hascard { padding-bottom: 300px; }
+.zcard { position: absolute; width: 370px; max-width: calc(100% - 24px); box-sizing: border-box; background: var(--white); border-radius: 10px; box-shadow: 0 14px 38px rgba(28,28,26,.2), 0 0 0 1px var(--l3); padding: 14px 16px; font-size: 12.5px; z-index: 20; }
+.zch { display: flex; justify-content: space-between; gap: 10px; } .zch .lbl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zct { font-size: 15px; font-weight: 600; margin: 3px 0 2px; line-height: 1.3; }
+.zcg { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 8px 10px; align-items: center; margin-top: 10px; }
+.zspan { display: flex; gap: 4px 6px; align-items: center; flex-wrap: wrap; }
+.znudge { display: inline-flex; align-items: center; border: 1px solid var(--l2); border-radius: 6px; font: 11.5px var(--mono); white-space: nowrap; }
+.znudge button { border: 0; background: none; padding: 1px 6px; color: var(--muted) !important; }
+.zhrs { display: inline-flex; align-items: center; gap: 4px; border: 1.5px solid var(--ink); border-radius: 6px; padding: 1px 7px; font: 12px var(--mono); }
+.zhrs input { width: 42px; border: 0; outline: 0; font: 12px var(--mono); padding: 0; background: transparent; color: var(--ink); }
+.zhrs span { color: var(--t3); }
+.zpre { font: 11px var(--mono); border: 1px solid var(--l2); border-radius: 5px; padding: 0 6px; background: var(--white); }
+.zlist { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.zover { color: var(--red); margin-top: 8px; }
+.zcb2 { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; } .zcb2 kbd { font: 10.5px var(--mono); color: var(--t3); }
+.zpick { border-top: 1px solid var(--l4); margin-top: 10px; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.zpick button { display: flex; justify-content: space-between; gap: 10px; padding: 3px 6px; border: 0; border-radius: 5px; background: var(--s3); text-align: left; }
+.zpick .mono { font: 11px var(--mono); color: var(--teal); }
+.ztag { position: absolute; top: 5px; display: flex; gap: 6px; z-index: 6; pointer-events: none; }
+.ztag span { font-size: 11.5px; line-height: 19px; border-radius: 5px; padding: 0 7px; white-space: nowrap; }
+.ztag .t1 { color: var(--white); background: var(--ink); font: 10.5px/19px var(--mono); }
+.ztag .t2 { color: var(--amber-t); background: var(--s4); border: 1px solid var(--amber-b); }
+.zbar[data-zbar] { cursor: grab; touch-action: none; user-select: none; }
+.zat { align-self: start; }
+.zli { display: flex; gap: 6px; min-width: 0; align-items: baseline; }
+.zx { border: 0; background: none; padding: 0 2px; color: var(--t3) !important; }
+.zadd { text-align: left; font-size: 12.5px; }
+.zopts { display: flex; flex-direction: column; gap: 2px; border-left: 2px solid var(--l3); padding-left: 8px; }
+.zopts button { border: 0; background: none; padding: 1px 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+.zfoot { position: fixed; z-index: 65; left: 0; right: 0; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 28px; border-top: 1.5px dashed var(--amber-b); background: var(--s4); box-shadow: 0 -10px 30px -18px rgba(28,28,26,.3); font-size: 12.5px; }
+.zfc { display: flex; gap: 6px; align-items: center; white-space: nowrap; font-size: 13px; } .zfc .ci { color: var(--amber); }
+.zchip { white-space: nowrap; border: 1px solid var(--l3); border-radius: 14px; padding: 2px 9px; background: var(--white); }
+.zchip.bad { border-color: var(--red-b); background: var(--red-s2); color: var(--red); }
+.zconf { flex-basis: 100%; color: var(--red); }
+.zfb { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+.zfb kbd { font: 10.5px var(--mono); opacity: .7; }
+.zfb .go { border: 0; background: var(--ink); color: #fff !important; border-radius: 8px; padding: 6px 12px; white-space: nowrap; }
+.zfb .go:disabled { background: var(--t2); }
+.zfb .quiet { border: 0; background: none; color: var(--t2) !important; white-space: nowrap; }
+@media (max-width: 700px) { .zfoot { padding: 10px 16px; } .zcard { left: 12px !important; } .zrow { grid-template-columns: 150px minmax(0, 1fr); } .zl { padding-left: 18px; } .zleg { display: none; } }
+/* Tid (docs/design/v6/tid): raden överst, veckorna, helgerna och i dag. */
 .tbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; font-size: 13px; }
 .seg2, .wks, .nav { display: flex; gap: 2px; }
 .seg2 button, .wks button, .nav button { border: 0; background: none; padding: 4px 9px; border-radius: 6px; font-size: 13px; color: var(--muted) !important; }
 .seg2 button.on, .wks button.on { color: var(--ink) !important; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
 .nav button:hover, .wks button:hover, .seg2 button:hover { background: var(--s2); }
-.tscope { color: var(--muted); }
-.qm { margin-left: auto; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--l2); background: #fff; font-size: 12px; padding: 0; }
-.thelp { position: relative; display: grid; gap: 6px; padding: 12px 70px 12px 14px; border-radius: 10px; background: var(--s1); font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
-.thelp .quiet { position: absolute; right: 10px; top: 8px; border: 0; background: none; color: var(--muted) !important; font-size: 12.5px; }
-.tbox { border-top: 1px solid var(--l3); }
-.tgrid { display: grid; grid-template-columns: 210px minmax(0, 1fr); }
-.thead { font: 11px var(--mono); color: var(--t3); border-bottom: 1px solid var(--l4); }
-.thead .tl { padding: 8px 12px; }
-.thead .tt { position: relative; height: 30px; }
 .wk { position: absolute; top: 8px; padding-left: 6px; border-left: 1px solid var(--l4); white-space: nowrap; overflow: hidden; }
-.trow { border-bottom: 1px solid var(--l4); }
-.trow .tl { padding: 10px 12px; }
-.tln { font-weight: 500; font-size: 13.5px; }
-.tracks { position: relative; }
 .wkend { position: absolute; top: 0; bottom: 0; background: var(--s3); }
 .tnow { position: absolute; top: 0; bottom: 0; width: 1.5px; background: var(--teal); opacity: .5; }
-.ovd { position: absolute; top: 0; height: 3px; background: var(--red-b); }
-.ovd.new { background: var(--red); }
-.tbarr { position: absolute; height: 22px; box-sizing: border-box; border-radius: 5px; background: var(--s1); border: 1px solid var(--l2); display: flex; align-items: center; gap: 6px; padding: 0 6px 0 7px; font-size: 12px; overflow: hidden; cursor: grab; user-select: none; touch-action: none; }
-.tbarr:hover { box-shadow: 0 2px 8px rgba(28,28,26,.12); }
-.tbarr.mine { background: var(--teal-l2); border-color: var(--teal-l); }
-.tbarr.done { opacity: .5; cursor: default; }
-.tbarr.locked { cursor: default; }
-.tbarr.cust { background: #faf6ee; border: 1px dashed var(--cust-seg); cursor: default; }
-.tbarr.draft { border: 1.5px dashed var(--amber); background: var(--amber-s); }
-.tbarr.sel { box-shadow: 0 0 0 2px var(--ink); }
-.tbarr .bn { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tbarr .hb { font: 10.5px var(--mono); padding: 1px 4px; border-radius: 4px; background: #fff; border: 1px solid var(--l3); cursor: ns-resize; white-space: nowrap; }
-.tbarr .bedge { position: absolute; right: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; }
-.tbarr.unf { overflow: visible; }
-.tbarr.unf .bn { position: absolute; left: calc(100% + 6px); overflow: visible; color: var(--t1); pointer-events: none; }
-.tbarr.clus { cursor: pointer; background: var(--s2); }
-.tbarr.clus.mine { background: var(--teal-l2); }
-.tbarr .cn { font: 600 10.5px var(--mono); min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; background: var(--ink); color: #fff; display: inline-flex; align-items: center; justify-content: center; flex: none; }
-.tsub .tl { padding: 6px 12px 6px 24px; }
-.tsn { font-size: 12.5px; color: var(--t1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tper { border-bottom: 1px solid var(--l3); }
-.tper .tl { padding: 10px 12px 6px; }
-.tbarr .fill { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--t1); opacity: .55; }
-.dhint { position: fixed; z-index: 70; left: 50%; top: 14px; transform: translateX(-50%); padding: 6px 12px; border-radius: 8px; background: var(--ink); color: #fff; font-size: 13px; }
-.tfoot { position: fixed; z-index: 65; left: 0; right: 0; bottom: 0; padding: 12px 30px 14px; background: #fff; border-top: 1.5px dashed var(--amber-b); box-shadow: 0 -10px 30px -18px rgba(28,28,26,.3); font-size: 13.5px; }
-.tf1 { display: flex; align-items: center; gap: 12px; }
-.tf1 .ci { color: var(--amber); }
-.tf1 .quiet { margin-left: auto; border: 0; background: none; color: var(--muted) !important; }
-.tf1 .go { border: 0; background: var(--ink); color: #fff !important; border-radius: 8px; padding: 7px 13px; }
-.tf2 { margin-top: 6px; color: var(--t1); line-height: 1.5; }
 .tfoot ~ .toast, .tfoot ~ .confirm { bottom: 130px; }
 /* Tillstånden (1.6). */
 .banner .bdot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); flex: none; }
@@ -634,7 +691,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "cad8411", published: "2026-10-06" };
+  const SIDA = { version: "9ee039d", published: "2026-10-07" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -950,7 +1007,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         : `<button class="ct" data-act="open-task" data-task="${esc(x.task)}" title="Öppna ${esc(x.delivery_label || "leveransen")}">${esc(x.label)}</button>`)
       + `${x.delivery_label ? `<span class="cw">${esc(x.delivery_label)}</span>` : ""}${x.queued ? `<span class="cw">väntar på att skickas</span>` : ""}`
       + `<button class="cx" data-act="unpin" data-task="${esc(x.task)}" data-step="${esc(x.step)}" data-label="${esc(x.label)}" title="Ta bort från Igång ●" aria-label="Ta bort ${esc(x.label)} från Igång">×</button></span>`; }).join("");
-    return `<div class="igang" data-slot="igang"><span class="lbl">IGÅNG</span>${chips || `<span style="color:var(--muted)">Inget igång. Tryck ⊕ på ett steg du vill hålla på med.</span>`}</div>`;
+    const nd = S.time?.tl ? Object.keys(S.time.changes || {}).length : tzSavedDraft().length;
+    const draft = nd ? `<span class="chip wait"><span class="cdot"></span><button class="ct" data-act="tz-open-draft" title="Öppna Tid">Tid: ${nd} ${nd === 1 ? "ändring" : "ändringar"}, inte genomförda</button></span>` : "";
+    return `<div class="igang" data-slot="igang"><span class="lbl">IGÅNG</span>${draft}${chips || (draft ? "" : `<span style="color:var(--muted)">Inget igång. Tryck ⊕ på ett steg du vill hålla på med.</span>`)}</div>`;
   }
   let toastTimer = null;
   /** Kvittot: längst ner i mitten, med Ångra i 8 s. Ett fel står kvar lite längre. */
@@ -4028,9 +4087,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (S.body !== "time" || !T?.tl) return false;
     const t = taskOf(T.tl, s.task), st = t?.steps.find((x) => x.id === s.step);
     if (!st || st.dn || st.lk) return false;
-    const p = placed(consequences(), t, st);
-    if (how.to) draftSet(s.task, s.step, { to: how.to });
-    if (how.shift) draftSet(s.task, s.step, { start: workdayFrom(p.s, how.shift), end: workdayFrom(p.e, how.shift) });
+    if (how.to) tzOp({ kind: "person", keys: [`${s.task}|${s.step}`], to: how.to });
+    if (how.shift) tzOp({ kind: "move", keys: [`${s.task}|${s.step}`], delta: how.shift });
     S.menu = null; render();
     return true;
   }
@@ -4179,6 +4237,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   function selbarHtml() {
     const n = selCount();
     if (!n) return "";
+    if (n === 1 && tzCardKey()) return ""; // i Tid är kortet åtgärden för ett steg
     const items = selItems(), acts = selActions(items);
     S.selActs = acts;
     return `<div class="selbar" role="toolbar" aria-label="Åtgärder för markerade"><b>${n} ${n === 1 ? "vald" : "valda"}</b>`
@@ -4729,7 +4788,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
   /** Stegen i en uppgift med ändringarna lagda, i planens regel (se överst). */
   function placeTask(t, mine, isWork) {
-      const chained = t.steps.some((x) => (x.a ?? []).length > 0);
+      const afterOf = (x) => mine.get(x.id)?.after ?? x.a ?? [];
+      const chained = t.steps.some((x) => afterOf(x).length > 0);
       // Två slutdagar per steg, som i planen: kedjans (`ch`: start plus spannets
       // arbetsdagar — det stegen efter räknar från) och den verkliga (`ne`).
       const ch = new Map(), ne = new Map(), moved = new Map();
@@ -4745,7 +4805,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
           const c = mine.get(st.id);
           const h = c?.hours !== undefined ? c.hours : st.h;
           const w = c?.to ?? st.w;
-          const preds = chained ? (st.a ?? []) : i > 0 ? [t.steps[i - 1].id] : [];
+          const preds = chained ? afterOf(st) : i > 0 ? [t.steps[i - 1].id] : [];
           if (st.lk || st.dn) {
               ch.set(st.id, st.e);
               ne.set(st.id, st.e);
@@ -4857,7 +4917,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const steps = [];
       const conflicts = [];
       const tasks = after.map(({ t, placed }) => {
-          const chained = t.steps.some((x) => (x.a ?? []).length > 0);
+          const mine = byTask.get(t.id) ?? none;
+          const afterOf = (x) => mine.get(x.id)?.after ?? x.a ?? [];
+          const chained = t.steps.some((x) => afterOf(x).length > 0);
           const at = new Map(t.steps.map((x, i) => [x.id, placed[i]]));
           t.steps.forEach((st, i) => {
               const p = placed[i];
@@ -4865,7 +4927,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
                   steps.push({ task: t.id, step: st.id, s: p.s, e: p.e, h: p.h, w: p.w, how: p.how });
               if (st.dn)
                   return;
-              const preds = chained ? (st.a ?? []) : i > 0 ? [t.steps[i - 1].id] : [];
+              const preds = chained ? afterOf(st) : i > 0 ? [t.steps[i - 1].id] : [];
               for (const q of preds) {
                   const pe = at.get(q);
                   if (pe && pe.e > p.s && !t.steps.find((x) => x.id === q)?.dn)
@@ -4901,6 +4963,231 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
   const placeTaskCache = (before, t) => before.find((b) => b.t === t).placed;
   /* ── slut på whatIf ── */
+  /* ── applyOp: kopia av src/plan/time-preview.ts, så som tsc skriver den (dist); test/v6-tid.test.ts prövar att den är lika ── */
+  const P_DAY = 86_400_000;
+  const pIso = (ms) => new Date(ms).toISOString().slice(0, 10);
+  const pPlus = (day, n) => pIso(Date.parse(day) + n * P_DAY);
+  const P_WD = ["sön", "mån", "tis", "ons", "tor", "fre", "lör"];
+  const P_MON = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
+  /** «tor 8 okt». */
+  const previewDay = (day) => {
+      const d = new Date(Date.parse(day));
+      return `${P_WD[d.getUTCDay()]} ${d.getUTCDate()} ${P_MON[d.getUTCMonth()]}`;
+  };
+  /** Timmar i kvartar, minst en kvart. */
+  const quarterHours = (h) => Math.max(0.25, Math.round(h * 4) / 4);
+  /**
+   * Följderna av `op` på utkastet `draft`. Ren: rör varken `tl` eller `draft`.
+   */
+  function applyOp(tl, draft, op, whatIf) {
+      const off = new Set(tl.off);
+      const isWork = (d) => { const w = new Date(Date.parse(d)).getUTCDay(); return w !== 0 && w !== 6 && !off.has(d); };
+      // Arbetsdagens nummer räknat från fönstrets början; en ledig dag får nästa arbetsdags nummer.
+      const idx = (d) => {
+          let n = 0;
+          if (d >= tl.from) {
+              for (let x = tl.from; x < d; x = pPlus(x, 1))
+                  if (isWork(x))
+                      n++;
+          }
+          else
+              for (let x = d; x < tl.from; x = pPlus(x, 1))
+                  if (isWork(x))
+                      n--;
+          return n;
+      };
+      const shift = (d, n) => {
+          let x = d;
+          while (!isWork(x))
+              x = pPlus(x, 1);
+          for (let k = 0; k < Math.abs(n);) {
+              x = pPlus(x, n > 0 ? 1 : -1);
+              if (isWork(x))
+                  k++;
+          }
+          return x;
+      };
+      const key = (task, step) => `${task}|${step}`;
+      const merged = new Map();
+      for (const c of draft)
+          merged.set(key(c.task, c.step), { ...(merged.get(key(c.task, c.step)) ?? {}), ...c });
+      const now = whatIf(tl, [...merged.values()]);
+      const steps = new Map();
+      for (const t of tl.tasks)
+          for (const st of t.steps)
+              steps.set(key(t.id, st.id), { t, st });
+      const at = (k) => {
+          const x = steps.get(k), c = merged.get(k), p = now.steps.find((y) => key(y.task, y.step) === k);
+          const s = p?.s ?? x.st.s, e = p?.e ?? x.st.e;
+          return { ...x, s, e, end: s === e ? pPlus(s, 1) : e, h: p ? p.h : x.st.h, w: p?.w ?? x.st.w,
+              after: c?.after ?? x.st.a ?? [], batch: c?.batch !== undefined ? c.batch : x.st.b ?? null };
+      };
+      const waiters = (k) => {
+          const { t, st } = steps.get(k);
+          return t.steps.filter((y) => !y.dn && (merged.get(key(t.id, y.id))?.after ?? y.a ?? []).includes(st.id)).map((y) => key(t.id, y.id));
+      };
+      const name = (k) => steps.get(k)?.st.n ?? k;
+      const set = new Set(op.keys.filter((k) => steps.has(k) && !steps.get(k).st.dn && !steps.get(k).st.lk));
+      const out = new Map(merged);
+      const put = (k, patch) => {
+          const [task, step] = k.split("|");
+          out.set(k, { ...(out.get(k) ?? { task, step }), ...patch });
+      };
+      let stop = null, d = op.delta ?? 0, veva = 0;
+      const predStop = (p) => `Kan inte börja före «${name(p)}» är klart, ${previewDay(pPlus(at(p).end, -1))}`;
+      const depStop = (w) => `Stannar här · «${name(w)}» väntar på det här och börjar ${previewDay(at(w).s)} · släpp ⌥ så följer det med`;
+      if (op.kind === "move") {
+          // Hela urvalet stannar vid det första stoppet (Daniel P 2026-10-07).
+          for (const k of set)
+              for (const p of at(k).after) {
+                  const pk = key(steps.get(k).t.id, p);
+                  if (set.has(pk) || !steps.has(pk) || steps.get(pk).st.dn)
+                      continue;
+                  const lim = idx(at(pk).end) - idx(at(k).s);
+                  if (d < lim) {
+                      d = lim;
+                      stop = predStop(pk);
+                  }
+              }
+          if (op.alt)
+              for (const k of set)
+                  for (const w of waiters(k)) {
+                      if (set.has(w))
+                          continue;
+                      const lim = idx(at(w).s) - idx(at(k).end);
+                      if (d > lim) {
+                          d = Math.max(lim, 0);
+                          stop = depStop(w);
+                      }
+                  }
+          // I samma veva: samma antal dagar, inom leveransen. Inte med ⌥.
+          const moving = new Set(set);
+          if (!op.alt && d)
+              for (const k of set) {
+                  const b = at(k).batch, g = steps.get(k).t.d ?? steps.get(k).t.id;
+                  if (!b)
+                      continue;
+                  for (const [o, x] of steps)
+                      if (!moving.has(o) && !x.st.dn && !x.st.lk && (x.t.d ?? x.t.id) === g && at(o).batch === b) {
+                          moving.add(o);
+                          veva++;
+                      }
+              }
+          if (d)
+              for (const k of moving) {
+                  const a = at(k);
+                  put(k, { start: shift(a.s, d), end: a.s === a.e ? shift(a.s, d) : shift(a.e, d) });
+              }
+      }
+      else if (op.kind === "start" || op.kind === "end") {
+          const k = op.keys[0], a = at(k);
+          if (set.has(k)) {
+              if (op.kind === "start") {
+                  let ns = shift(a.s, d);
+                  for (const p of a.after) {
+                      const pk = key(a.t.id, p);
+                      if (steps.has(pk) && !steps.get(pk).st.dn && ns < at(pk).end) {
+                          ns = at(pk).end;
+                          stop = predStop(pk);
+                      }
+                  }
+                  const last = pPlus(a.end, -1);
+                  if (ns > last)
+                      ns = last;
+                  put(k, { start: ns, end: a.e < ns ? ns : a.e });
+              }
+              else {
+                  let ne = shift(a.end, d);
+                  const min = shift(a.s, 1);
+                  if (ne < min)
+                      ne = min;
+                  if (op.alt)
+                      for (const w of waiters(k))
+                          if (ne > at(w).s) {
+                              ne = at(w).s > min ? at(w).s : min;
+                              stop = depStop(w);
+                          }
+                  put(k, { start: a.s, end: ne });
+              }
+          }
+      }
+      else if (op.kind === "hours") {
+          for (const k of set)
+              if (!steps.get(k).st.x)
+                  put(k, { hours: quarterHours(op.hours ?? 0.25) });
+      }
+      else if (op.kind === "person") {
+          for (const k of set)
+              if (!steps.get(k).st.x && op.to)
+                  put(k, { to: op.to });
+      }
+      else if (op.kind === "waits") {
+          const k = op.keys[0];
+          if (set.has(k)) {
+              const t = steps.get(k).t, mine = steps.get(k).st.id;
+              // En cirkel tas inte: det steget ska vänta på väntar redan, direkt eller genom andra, på det här.
+              const reaches = (from, to) => {
+                  const seen = new Set(), q = [from];
+                  while (q.length) {
+                      const x = q.pop();
+                      if (x === to)
+                          return true;
+                      if (seen.has(x))
+                          continue;
+                      seen.add(x);
+                      q.push(...(out.get(key(t.id, x))?.after ?? t.steps.find((y) => y.id === x)?.a ?? []));
+                  }
+                  return false;
+              };
+              const want = (op.after ?? []).filter((p) => p !== mine && t.steps.some((y) => y.id === p));
+              const bad = want.find((p) => !(at(k).after).includes(p) && reaches(p, mine));
+              if (bad)
+                  stop = `«${name(key(t.id, bad))}» väntar redan på det här — det blir en cirkel`;
+              else {
+                  put(k, { after: want });
+                  // Ett steg det nu väntar på slutar senare: steget skjuts fram dit (regel 7).
+                  let need = "";
+                  for (const p of want) {
+                      const e = at(key(t.id, p)).end;
+                      if (e > need)
+                          need = e;
+                  }
+                  const a = at(k);
+                  if (need && a.s < need) {
+                      const len = idx(a.end) - idx(a.s);
+                      const s = shift(need, 0);
+                      put(k, { start: s, end: a.s === a.e ? s : shift(s, len) });
+                  }
+              }
+          }
+      }
+      else if (op.kind === "batch") {
+          for (const k of set)
+              put(k, { batch: op.batch ?? null });
+      }
+      // Det som inte längre skiljer sig från planen tas bort ur utkastet.
+      const changes = [...out.values()].map((c) => {
+          const x = steps.get(key(c.task, c.step)).st, y = { ...c };
+          if (y["start"] === x.s && y["end"] === x.e) {
+              delete y["start"];
+              delete y["end"];
+          }
+          if (y["hours"] === x.h)
+              delete y["hours"];
+          if (y["to"] === x.w)
+              delete y["to"];
+          if (y["batch"] !== undefined && (y["batch"] ?? null) === (x.b ?? null))
+              delete y["batch"];
+          if (Array.isArray(y["after"]) && y["after"].join() === (x.a ?? []).join())
+              delete y["after"];
+          return y;
+      }).filter((c) => Object.keys(c).length > 2);
+      const res = whatIf(tl, changes);
+      const before = new Set(now.steps.filter((s) => s.how === "pushed").map((s) => key(s.task, s.step)));
+      const follow = res.steps.filter((s) => s.how === "pushed" && !before.has(key(s.task, s.step))).length + veva;
+      return { changes, stop, delta: op.kind === "move" ? d : 0, follow, veva };
+  }
+  /* ── slut på applyOp ── */
 
   /* ── Tid (FAS1 1.5): samma rader på en tidsaxel, per leverans eller per person ──
      Tidsaxeln hämtas en gång (plan_state { timeline }); medan man drar räknas följderna
@@ -4911,33 +5198,11 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   const mondayOf = (iso) => { const d = new Date(`${iso}T00:00:00Z`).getUTCDay(); return isoAdd(iso, d === 0 ? -6 : 1 - d); };
   const isoWeek = (iso) => { const d = new Date(`${iso}T00:00:00Z`); const day = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - day);
     const y = new Date(Date.UTC(d.getUTCFullYear(), 0, 1)); return Math.ceil(((d - y) / DAY_MS + 1) / 7); };
-  let helpShown = true;
-  try { helpShown = globalThis.localStorage?.getItem("v6.time.help") !== "hidden"; } catch { /* lagring stängd */ }
-
   function timeState() {
-    if (!S.time) S.time = { group: "person", weeks: 4, from: null, scope: null, tl: null, loading: false, error: null, changes: {}, sel: {}, drag: null, help: helpShown };
+    if (!S.time) S.time = { group: "delivery", weeks: 4, from: null, tl: null, loading: false, error: null, changes: {}, zopen: {} };
     return S.time;
   }
-  /** Vems eller vilken leverans tidsaxel: kollegans lins, en leverans ur arket, annars min. */
-  function timeScope() {
-    const T = timeState();
-    if (T.scope) return T.scope;
-    return { party: S.person || S.data?.party?.id };
-  }
-  async function loadTimeline() {
-    const T = timeState(), sc = timeScope();
-    if (!sc.party && !sc.delivery) return;
-    const from = T.from || mondayOf(S.data?.today || new Date().toISOString().slice(0, 10));
-    T.from = from; T.loading = true; T.error = null;
-    render();
-    try {
-      const d = await call("plan_state", { timeline: { ...sc, weeks: T.weeks, since: from } });
-      if (!d?.timeline) throw Object.assign(new Error("Svaret saknade tidsaxeln."), { code: "SHAPE" });
-      T.tl = d.timeline; T.loadedFor = JSON.stringify([sc, T.weeks, from]);
-    } catch (e) { T.error = e; }
-    T.loading = false;
-    render();
-  }
+  const loadTimeline = () => loadTid();
   const changeList = () => Object.values(timeState().changes);
   /** Följderna just nu, räknade lokalt. Samma regel som planen (src/plan/what-if.ts). */
   function consequences() {
@@ -4954,277 +5219,503 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   const nameOf = (id) => timeState().tl?.people?.[id]?.n || (S.data?.colleagues || []).find((c) => c.id === id)?.label
     || (S.data?.party?.id === id ? S.data.party.label : id);
   const taskOf = (tl, id) => tl.tasks.find((t) => t.id === id);
-  /** Ändra ett steg i utkastet; `null` tar bort fältet. Tomt utkast för steget försvinner. */
-  function draftSet(task, step, patch) {
-    const T = timeState(), k = `${task}|${step}`;
-    const cur = { ...(T.changes[k] || { task, step }), ...patch };
-    for (const f of Object.keys(cur)) if (cur[f] === null) delete cur[f];
-    const t = taskOf(T.tl, task), st = t?.steps.find((x) => x.id === step);
-    if (st) { if (cur.to === st.w) delete cur.to; if (cur.hours === st.h) delete cur.hours;
-      if (cur.start === st.s && cur.end === st.e) { delete cur.start; delete cur.end; } }
-    const next = { ...T.changes };
-    if (Object.keys(cur).length > 2) next[k] = cur; else delete next[k];
-    T.changes = next;
-  }
   /** Var steget ligger efter utkastet: whatIf för ändrade och skjutna, annars som det var. */
   function placed(res, t, st) {
     const p = res?.steps.find((x) => x.task === t.id && x.step === st.id);
     return p ? { s: p.s, e: p.e, h: p.h, w: p.w, how: p.how } : { s: st.s, e: st.e, h: st.h, w: st.w, how: null };
   }
-  const workdaysIn = (tl, s, e) => { let n = 0; const off = new Set(tl.off || []);
-    for (let d = s; d < e || (d === s && s === e); d = isoAdd(d, 1)) { const w = new Date(`${d}T00:00:00Z`).getUTCDay(); if (w && w !== 6 && !off.has(d)) n++; if (s === e) break; }
-    return Math.max(1, n); };
 
-  /** Raderna i Tid: grupper med körfält, staplarna packade så att de inte går över varandra. */
-  function timeGroups(tl, res) {
-    const T = timeState(), me = S.data?.party?.id;
-    const bars = [];
-    for (const t of tl.tasks) for (const st of t.steps) {
-      if (st.dn) continue; // det som är klart ligger inte i tiden längre
-      const p = placed(res, t, st);
-      const pending = T.changes[`${t.id}|${st.id}`]?.to;
-      bars.push({ t, st, ...p, owner: pending || p.w, to: pending || null, key: `${t.id}|${st.id}` });
-    }
-    let groups;
-    if (T.group === "person") {
-      const ids = [...new Set([...(me ? [me] : []), ...Object.keys(tl.people || {}), ...(S.data?.colleagues || []).map((c) => c.id)])];
-      groups = ids.map((id) => ({ id, label: nameOf(id), person: id, bars: bars.filter((b) => !b.st.x && b.owner === id) }));
-      const cust = bars.filter((b) => b.st.x);
-      if (cust.length) groups.push({ id: "x", label: "Väntar på kunden", bars: cust });
-    } else {
-      const by = new Map();
-      // En leverans för sig visas del för del; annars en grupp per leverans.
-      const perPart = tl.scope === "delivery";
-      for (const b of bars) { const k = perPart ? b.t.id : b.t.d || b.t.id; if (!by.has(k)) by.set(k, []); by.get(k).push(b); }
-      groups = [...by].map(([k, bs]) => ({ id: k, label: perPart ? bs[0].t.n : rowOf(k)?.label || bs[0].t.n, due: bs[0].t.due, bars: bs }));
-    }
-    const days = tl.days;
-    for (const g of groups) {
-      for (const b of g.bars) {
-        const a = Math.max(0, dayIdx(tl, b.s)), z = Math.min(days, Math.max(a + 1, dayIdx(tl, b.e) + (b.s === b.e ? 1 : 0)));
-        if (z <= 0 || a >= days) { b.out = true; continue; }
-        b.a = a; b.z = z;
-      }
-      // Per person: en rad per leverans (eller uppgift utan leverans) med namnet, så att
-      // tjugo korta steg inte blir tjugo körfält utan namn. Per leverans: raden är leveransen.
-      const by = new Map();
-      for (const b of g.bars) { if (b.out) continue; const k = g.person ? b.t.d || b.t.id : g.id; if (!by.has(k)) by.set(k, []); by.get(k).push(b); }
-      g.subs = [...by].map(([k, bs]) => ({ id: k, label: g.person ? rowOf(k)?.label || bs[0].t.n : null, ...packBars(clusterBars(bs, T, k)) }))
-        .sort((x, y) => Math.min(...x.items.map((b) => b.a)) - Math.min(...y.items.map((b) => b.a)) || String(x.label).localeCompare(String(y.label), "sv"));
-      g.lanes = g.subs.reduce((n, x) => n + x.lanes, 0) || 1;
-    }
-    return groups;
-  }
-  /** Ett kort steg: en dag eller mindre i spannet och högst en timme. */
-  const SHORT_H = 1;
-  /**
-   * Korta steg i samma rad (leverans, eller uppgift utan leverans) samma dag blir en
-   * stapel med antalet, som fälls ut vid klick. Ett steg i utkastet eller valt slås
-   * aldrig ihop, så att det går att dra.
-   */
-  function clusterBars(bars, T, row) {
-    const keep = [], bucket = new Map();
-    for (const b of bars) {
-      const short = b.z - b.a === 1 && (b.h || 0) <= SHORT_H && !b.st.x;
-      const ck = `c:${row}|${b.a}`;
-      if (T.open?.[ck] && short) { b.unf = true; keep.push(b); continue; }
-      if (!short || T.changes[b.key] || T.sel[b.key] || b.how) { keep.push(b); continue; }
-      if (!bucket.has(ck)) bucket.set(ck, []);
-      bucket.get(ck).push(b);
-    }
-    for (const [ck, bs] of bucket) {
-      if (bs.length === 1) { keep.push(bs[0]); continue; }
-      keep.push({ cluster: true, key: ck, t: bs[0].t, bars: bs, a: bs[0].a, z: bs[0].z, s: bs[0].s, e: bs[0].e,
-        h: bs.reduce((n, b) => n + (b.h || 0), 0), w: bs[0].w, mine: bs.every((b) => b.w === bs[0].w) });
-    }
-    return keep;
-  }
-  /** Körfälten inom en rad: staplarna packade så att de inte går över varandra. */
-  function packBars(items) {
-    const lanes = [];
-    items.sort((a, b) => a.a - b.a || a.z - b.z);
-    for (const b of items) {
-      let lane = lanes.findIndex((end) => end <= b.a);
-      if (lane < 0) { lane = lanes.length; lanes.push(0); }
-      lanes[lane] = b.unf ? b.z + 5 : b.z; b.lane = lane; // en utfälld stapel har namnet till höger
-    }
-    return { items, lanes: Math.max(1, lanes.length) };
-  }
-
-  function timeBody() {
+  /* ── Tid omgjord (docs/design/v6/tid) ──
+     Ett steg per rad: namnet står i etikettkolumnen, aldrig i stapeln. Ramen är spannet,
+     fyllnaden timmarna mot dagens tid (8 h minus upptaget i kalendern), siffran till höger.
+     Hopfällt som förval: en leverans är en remsa med ◆ för löftet, en person belastningen
+     per dag med mötena randiga och taket streckat. ▸ fäller ut. Datan: plan_state
+     { agenda: true, format: "tid" } (src/plan/timeline.ts), följderna räknas med whatIf.
+     Ersätter FAS1 1.5 (körfälten, 3 px-linjen och värderutan är borta). */
+  const TZ_ROW = 30;
+  const tzOpen = (T, key) => !!(T.zopen || {})[key];
+  async function loadTid() {
     const T = timeState();
-    const tl = T.tl;
-    const sc = timeScope();
-    const scopeText = sc.delivery ? `leveransen ${rowOf(sc.delivery)?.label || ""}` : sc.party === S.data?.party?.id ? "dina uppgifter" : `${nameOf(sc.party)}s uppgifter`;
+    const from = T.from || mondayOf(S.data?.today || new Date().toISOString().slice(0, 10));
+    T.from = from; T.loading = true; T.error = null;
+    render();
+    try {
+      const d = await call("plan_state", { agenda: true, format: "tid", weeks: T.weeks, since: from });
+      if (!d?.timeline) throw Object.assign(new Error("Svaret saknade tidsaxeln."), { code: "SHAPE" });
+      T.tl = d.timeline; T.loadedFor = JSON.stringify(["tid", T.weeks, from]);
+      T.zseq = typeof d.seq === "number" ? d.seq : null; T.zconflict = null;
+      // Utkastet från förra gången, för de steg som finns i tiden.
+      if (!Object.keys(T.changes || {}).length) { const saved = tzSavedDraft().filter((c) => taskOf(T.tl, c.task)?.steps.some((x) => x.id === c.step));
+        if (saved.length) T.changes = Object.fromEntries(saved.map((c) => [`${c.task}|${c.step}`, c])); }
+    } catch (e) { T.error = e; }
+    T.loading = false;
+    render();
+  }
+  /** Spannet i dagindex i fönstret: [a, z), en dag när start och slut är samma. */
+  const tzSpan = (tl, s, e) => { const a = dayIdx(tl, s); return { a, z: Math.max(a + 1, dayIdx(tl, e) + (s === e ? 1 : 0)) }; };
+  const tzWorkday = (tl) => { const off = new Set(tl.off || []); return (iso) => { const w = new Date(`${iso}T00:00:00Z`).getUTCDay(); return w !== 0 && w !== 6 && !off.has(iso); }; };
+  /** Belastningen per person och dag i fönstret: möten, arbete (timmar ÷ spannets arbetsdagar) och tiden. */
+  function tzLoads(tl, res) {
+    const T = timeState(), isWd = tzWorkday(tl), out = {};
+    for (const [id, p] of Object.entries(tl.people || {}))
+      out[id] = Array.from({ length: tl.days }, (_, i) => ({ busy: p.busy?.[i] || 0, work: 0, cap: p.cap?.[i] ?? 8 }));
+    for (const t of tl.tasks) for (const st of t.steps) {
+      if (st.dn || st.x) continue;
+      const p = placed(res, t, st), who = T.changes[`${t.id}|${st.id}`]?.to || p.w, a = out[who];
+      if (!a || !p.h) continue;
+      const { a: i0, z: i1 } = tzSpan(tl, p.s, p.e), days = [];
+      for (let i = i0; i < i1; i++) if (isWd(isoAdd(tl.from, i))) days.push(i);
+      const n = days.length || 1;
+      for (const i of days) if (i >= 0 && i < tl.days) a[i].work += p.h / n;
+    }
+    for (const a of Object.values(out)) for (const x of a) x.over = x.work > x.cap + 1e-6;
+    return out;
+  }
+  /** Stegen som syns: inte klara, och i fönstret (eller sena före det). */
+  function tzSteps(tl, res) {
+    const T = timeState(), out = [];
+    for (const t of tl.tasks) for (const st of t.steps) {
+      if (st.dn) continue;
+      const p = placed(res, t, st), { a, z } = tzSpan(tl, p.s, p.e);
+      const late = !st.x && p.e <= tl.today && p.s < tl.today;
+      if (a >= tl.days || (z <= 0 && !late)) continue;
+      // Ordningen är planens, inte utkastets: ett steg byter aldrig rad av sig självt.
+      out.push({ t, st, ...p, a, z, late, key: `${t.id}|${st.id}`, owner: T.changes[`${t.id}|${st.id}`]?.to || p.w, o: tzSpan(tl, st.s, st.e) });
+    }
+    return out.sort((x, y) => x.o.a - y.o.a || x.o.z - y.o.z);
+  }
+  /** Leveranserna (och uppgifter utan leverans) med löfte, slutdag och dagar sen. */
+  function tzDeliveries(tl, res, base) {
+    const by = new Map();
+    for (const t of tl.tasks) {
+      const k = t.d || t.id;
+      if (!by.has(k)) { const d = t.d ? (tl.deliveries || []).find((x) => x.id === t.d) : null;
+        by.set(k, { id: k, name: d?.n || rowOf(k)?.label || t.n, due: d?.due || t.due, tasks: [] }); }
+      by.get(k).tasks.push(t.id);
+    }
+    const fin = (r, ids) => ids.map((id) => r.tasks.find((x) => x.id === id)).filter(Boolean);
+    return [...by.values()].map((g) => {
+      const now = fin(res, g.tasks), was = fin(base, g.tasks);
+      const finish = now.map((x) => x.finish).sort().at(-1) || g.due, before = was.map((x) => x.finish).sort().at(-1) || finish;
+      return { ...g, finish, before, late: Math.max(0, ...now.map((x) => x.late_by)) };
+    }).sort((x, y) => x.due.localeCompare(y.due) || x.name.localeCompare(y.name, "sv"));
+  }
+  const tzDay = (iso) => { const d = new Date(`${iso}T12:00:00Z`); return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()}`; };
+  /** Dagen före ett exklusivt slut: det sista dagen steget görs. */
+  const tzLast = (s, e) => s === e ? s : isoAdd(e, -1);
+  function timeBody() {
+    const T = timeState(), tl = T.tl;
     const bar = `<div class="tbar"><div class="seg2"><button class="${T.group === "delivery" ? "on" : ""}" data-act="time-group" data-g="delivery">Per leverans</button>`
       + `<button class="${T.group === "person" ? "on" : ""}" data-act="time-group" data-g="person">Per person</button></div>`
       + `<div class="nav"><button data-act="time-shift" data-d="-7" aria-label="En vecka tidigare">‹</button><button data-act="time-today">I dag</button><button data-act="time-shift" data-d="7" aria-label="En vecka senare">›</button></div>`
       + `<div class="wks">${WEEKS.map((w) => `<button class="${T.weeks === w ? "on" : ""}" data-act="time-weeks" data-w="${w}">${w} v</button>`).join("")}</div>`
-      + `<span class="tscope">${esc(scopeText)}${sc.delivery ? ` · <button class="link" data-act="time-mine">visa mina</button>` : ""}</span>`
-      + (T.help ? "" : `<button class="qm" data-act="time-help" aria-label="Visa förklaringen" title="Spann och timmar">?</button>`) + `</div>`;
-    const help = T.help ? `<div class="thelp"><div><b>Spannet är när steget kan göras</b>, inte hur lång tid det tar. Det börjar när steget det väntar på är klart och slutar när nästa steg behöver det.</div>`
-      + `<div><b>Timmarna är hur lång tid det beräknas ta.</b> Den mörka linjen i botten visar hur mycket av spannet de fyller, räknat på 8 h per dag.</div>`
-      + `<div class="mmeta">Dra stapeln för att flytta, kanten för spannet och timbrickan uppåt eller nedåt för timmarna. Per person: dra till en annan persons rad för att lämna över. ⇧-klick väljer flera.</div>`
-      + `<button class="quiet" data-act="time-help">Dölj</button></div>` : "";
-    if (T.error && !tl) return bar + `<div class="banner"><span style="flex:1">Tidsaxeln kunde inte läsas: ${esc(T.error.message || T.error)}</span><button data-act="time-reload">Försök igen</button></div>`;
-    if (!tl) return bar + help + `<div>${[0, 1, 2, 3].map(() => `<div class="skel" style="grid-template-columns:210px 1fr"><span></span><span></span></div>`).join("")}</div><div class="mmeta" style="padding:10px 12px">Hämtar tidsaxeln.</div>`;
-    const res = consequences();
-    const groups = timeGroups(tl, res);
-    const days = tl.days, pct = (n) => `${(n / days * 100).toFixed(3)}%`;
-    const off = new Set(tl.off || []);
-    const cols = Array.from({ length: days }, (_, i) => { const iso = isoAdd(tl.from, i), w = new Date(`${iso}T00:00:00Z`).getUTCDay();
-      return (w === 0 || w === 6 || off.has(iso)) ? `<span class="wkend" style="left:${pct(i)};width:${pct(1)}"></span>` : ""; }).join("");
-    const todayI = dayIdx(tl, tl.today);
-    const todayLine = todayI >= 0 && todayI < days ? `<span class="tnow" style="left:${pct(todayI)}"></span>` : "";
+      + `<span class="zleg"><span><i class="zl-span"></i>spann</span><span><i class="zl-fill"></i>timmar</span><span><i class="zl-busy"></i>möten</span><span>◆ lovat</span><span class="zl-now">│ i dag</span></span>`
+      + `</div>`;
+    if (T.error && !tl) return bar + `<div class="banner"><span style="flex:1">Tiden kunde inte läsas: ${esc(T.error.message || T.error)}</span><button data-act="time-reload">Försök igen</button></div>`;
+    if (!tl) return bar + `<div>${[0, 1, 2, 3].map(() => `<div class="skel" style="grid-template-columns:230px 1fr"><span></span><span></span></div>`).join("")}</div><div class="mmeta" style="padding:10px 12px">Hämtar tiden.</div>`;
+    const res = consequences(), base = T.memo.base;
+    const days = tl.days, pct = (n) => `${(n / days * 100).toFixed(3)}%`, me = S.data?.party?.id;
+    const loads = tzLoads(tl, res), steps = tzSteps(tl, res);
+    const isWd = tzWorkday(tl);
+    const bg = Array.from({ length: days }, (_, i) => isWd(isoAdd(tl.from, i)) ? "" : `<span class="wkend" style="left:${pct(i)};width:${pct(1)}"></span>`).join("");
+    const ti = dayIdx(tl, tl.today);
+    const now = ti >= 0 && ti < days ? `<span class="tnow" style="left:${pct(ti)}"></span>` : "";
+    const past = ti > 0 ? `<span class="zpast" style="width:${pct(Math.min(ti, days))}"></span>` : "";
+    const track = (inner, h) => `<div class="ztrack" style="height:${h}px">${past}${bg}${now}${inner}</div>`;
     const weeks = Array.from({ length: Math.ceil(days / 7) }, (_, k) => { const iso = isoAdd(tl.from, k * 7);
-      return `<span class="wk" style="left:${pct(k * 7)};width:${pct(7)}">v${isoWeek(iso)} · ${esc(shortIso(iso))}</span>`; }).join("");
-    const over = new Map();
-    for (const o of (res?.overloaded || [])) { if (!over.has(o.who)) over.set(o.who, []); over.get(o.who).push(o); }
-    const head = `<div class="tgrid thead"><div class="tl">${T.group === "person" ? "PERSON" : "LEVERANS"}</div><div class="tt">${weeks}</div></div>`;
-    const me = S.data?.party?.id;
-    const rows = groups.map((g) => {
-      const ov = g.person ? over.get(g.person) || [] : [];
-      const sub = g.person ? `${hh(g.bars.filter((b) => !b.st.dn).reduce((n, b) => n + (b.h || 0), 0))} h i fönstret${ov.length ? ` · över dagens tid ${ov.length} ${ov.length === 1 ? "dag" : "dagar"}` : ""}`
-        : g.due ? `lovat ${shortIso(g.due)}` : "";
-      const strip = ov.map((o) => `<span class="ovd${o.new ? " new" : ""}" style="left:${pct(dayIdx(tl, o.day))};width:${pct(1)}" title="${esc(`${nameOf(o.who)} ${hh(o.load)} h av ${hh(o.cap)} ${dayLabel(o.day)}`)}"></span>`).join("");
-      // Namnet står så långt det får plats och kortas med …, som i prototypen; hela står i rutan som hovras.
-      const dayPx = trackWidth() / days, fits = (b) => (b.z - b.a) * dayPx >= (b.cluster ? 64 : 28);
-      const barHtml = (b) => {
-        if (b.cluster) {
-          const names = b.bars.map((x) => `${x.st.n}${x.h ? ` (${hh(x.h)} h)` : ""}`);
-          const tasks = [...new Set(b.bars.map((x) => x.t.n))];
-          const title = `${b.bars.length} steg i ${tasks.length === 1 ? tasks[0] : `${tasks.length} uppgifter`} · ${shortIso(b.s)}${b.h ? ` · ${hh(b.h)} h` : ""}: ${names.join(", ")}. Klicka för att fälla ut.`;
-          return `<div class="tbarr clus${b.w === me ? " mine" : ""}" data-act="time-cluster" data-k="${esc(b.key)}" style="left:${pct(b.a)};width:${pct(b.z - b.a)};top:${b.lane * 30 + 4}px" title="${esc(title)}">`
-            + `<span class="cn">${b.bars.length}</span><span class="bn">${fits(b) ? esc(b.bars.map((x) => x.st.n).join(", ")) : ""}</span></div>`;
+      return `<span class="wk" style="left:${pct(k * 7)};width:${pct(7)}">v${isoWeek(iso)}${T.weeks <= 4 ? ` · ${esc(shortIso(iso))}` : ""}</span>`
+        + (T.weeks === 2 ? [1, 2, 3, 4].map((j) => `<span class="zdl${isoAdd(iso, j) === tl.today ? " now" : ""}" style="left:${pct(k * 7 + j)}">${esc(tzDay(isoAdd(iso, j)))}</span>`).join("") : ""); }).join("");
+    const head = `<div class="zrow zhead"><div class="zl">${T.group === "person" ? "PERSON" : "LEVERANS"}</div><div class="ztrack" style="height:30px">${weeks}</div></div>`;
+    const overIn = (who, a, z) => { const l = loads[who]; if (!l) return false; for (let i = Math.max(0, a); i < Math.min(days, z); i++) if (l[i].over) return true; return false; };
+    const capIn = (who, a, z) => { const l = loads[who]; let n = 0; for (let i = a; i < z; i++) if (isWd(isoAdd(tl.from, i))) n += i >= 0 && i < days && l ? l[i].cap : 8; return n; };
+    const dname = (b) => { const d = (tl.deliveries || []).find((x) => x.id === b.t.d); return d?.n || b.t.n; };
+    const cardKey = tzCardKey();
+    let top = 31, card = null;
+    T.zvis = [];
+    const stepRow = (b, personMode) => {
+      const st = b.st, ctx = `step|${b.t.id}|${st.id}`, sel = !!S.sel?.[ctx], draft = !!T.changes[b.key] || !!b.how;
+      if (cardKey === b.key) card = { b, top: top + TZ_ROW, f: Math.min(0.62, Math.max(0, b.a / days)) };
+      T.zvis.push(b.key);
+      top += TZ_ROW + 1;
+      const who = tl.people?.[b.owner];
+      const fill = st.x || !b.h ? 0 : Math.min(1, b.h / Math.max(0.25, capIn(b.owner, b.a, b.z)));
+      const cls = ["zbar", st.x ? "cust" : "", b.late ? "late" : "", st.lk ? "booked" : "", draft ? "draft" : "", sel ? "sel" : ""].filter(Boolean).join(" ");
+      let barHtml;
+      if (b.z <= 0) barHtml = `<span class="ztx late" style="left:1.6%">‹ slut ${esc(tzDay(tzLast(b.s, b.e)))} · ${dayIdx(tl, tl.today) - dayIdx(tl, tzLast(b.s, b.e))} d sen${b.h ? ` · ${hh(b.h)} h` : ""}</span>`;
+      else {
+        const a = Math.max(0, b.a), z = Math.min(days, b.z);
+        const dragging = T.zinfo?.key === b.key && T.zdrag?.started;
+        let label = st.x ? "väntar på kunden" : b.h && (T.weeks < 12 || sel) ? `${hh(b.h)} h` : "";
+        const was = T.changes[b.key]?.hours !== undefined && st.h != null ? st.h : null;
+        if (was !== null && was !== b.h) label = `${hh(b.h)} h (var ${hh(was)} h)`;
+        if (b.how === "pushed" && !T.changes[b.key]) label = `${label ? `${label} · ` : ""}följer med · väntar`;
+        if (dragging) label = "";
+        const ghost = draft ? (() => { const g = tzSpan(tl, st.s, st.e), x = Math.max(0, g.a), y = Math.min(days, g.z);
+          return y > x && (st.s !== b.s || st.e !== b.e) ? `<span class="zghost" style="left:${pct(x)};width:${pct(y - x)}"></span>` : ""; })() : "";
+        const info = T.zinfo?.key === b.key ? T.zinfo : null;
+        const tag = info ? `<div class="ztag" style="left:calc(${pct(z)} + 8px)">${info.text ? `<span class="t1">${esc(info.text)}</span>` : ""}${info.text2 ? `<span class="t2">${esc(info.text2)}</span>` : ""}${info.stop ? `<span class="t1">${esc(info.stop)}</span>` : ""}</div>` : "";
+        barHtml = ghost + tag + `<div class="${cls}" data-act="tz-pick" data-zpick="${esc(ctx)}"${st.x || st.lk ? "" : ` data-zbar="${esc(b.key)}" data-f="${fill.toFixed(3)}"`} style="left:${pct(a)};width:${pct(z - a)}" title="${esc(`${st.n} · ${tzDay(b.s)}–${tzDay(tzLast(b.s, b.e))}${b.h ? ` · ${hh(b.h)} h` : ""}`)}">`
+          + `<span class="zf" style="width:${(fill * 100).toFixed(1)}%"></span><span class="zh">${esc(label)}</span></div>`;
+      }
+      const ini = personMode ? "" : st.x ? "kund" : who?.sh || "";
+      const red = !st.x && overIn(b.owner, b.a, b.z);
+      return `<div class="zrow zstep${sel ? " on" : ""}" data-ctx="${esc(ctx)}"${personMode && !st.x ? ` data-person="${esc(b.owner)}"` : ""}><div class="zl" data-act="tz-pick" data-zpick="${esc(ctx)}"><span class="zsel"></span><span class="zn${b.late ? " late" : ""}">${esc(st.n)}`
+        + `${personMode ? `<span class="zdim"> · ${esc(dname(b))}</span>` : ""}</span>${ini ? `<span class="zini${red ? " red" : ""}">${esc(ini)}</span>` : ""}</div>${track(barHtml, TZ_ROW)}</div>`;
+    };
+    // Klick på raden fäller ut och in; ⌘-klick väljer alla dess steg.
+    const group = (key, name, sub, subCls, inner, h, extra = "", ctxs = []) => { top += h + 1;
+      return `<div class="zrow zgrp"${extra}><div class="zl" data-act="tz-fold" data-k="${esc(key)}" data-ctxs="${esc(ctxs.join(" "))}" role="button" aria-expanded="${tzOpen(T, key)}" title="⌘-klick väljer alla steg"><span class="zcaret">${tzOpen(T, key) ? "▾" : "▸"}</span>`
+      + `<div class="zgn"><div class="zn">${esc(name)}</div><div class="zsub${subCls ? ` ${subCls}` : ""}">${esc(sub)}</div></div></div>${track(inner, h)}</div>`; };
+    const ctxsOf = (bs) => bs.filter((b) => !b.st.x).map((b) => `step|${b.t.id}|${b.st.id}`);
+    let rows = "";
+    if (T.group === "person") {
+      const ids = [...new Set([...(me && tl.people?.[me] ? [me] : []), ...Object.keys(tl.people || {})])];
+      const sc = T.weeks >= 8 ? 1.6 : 2.6;
+      for (const id of ids) {
+        const p = tl.people[id], l = loads[id] || [];
+        let work = 0, overN = 0, cells = "";
+        for (let i = 0; i < days; i++) {
+          const x = l[i]; if (!x) continue;
+          work += x.work; if (x.over) overN++;
+          if (!x.busy && !x.work) continue;
+          cells += `<span class="zcell" style="left:${pct(i + 0.12)};width:${pct(0.76)}"><i class="zcb" style="height:${(x.busy * sc).toFixed(1)}px"></i>`
+            + `<i class="zcw${x.over ? " over" : ""}" style="height:${(x.work * sc).toFixed(1)}px"></i>${x.over && T.weeks <= 4 ? `<em>${hh(x.busy + x.work)}</em>` : ""}</span>`;
         }
-        const k = b.key, draft = !!T.changes[k] || b.how, sel = !!T.sel[k];
-        const fill = b.h ? Math.min(1, b.h / (workdaysIn(tl, b.s, b.e) * 8)) : 0;
-        const cls = ["tbarr", b.st.dn ? "done" : "", b.st.x ? "cust" : "", b.w === me ? "mine" : "", draft ? "draft" : "", sel ? "sel" : "", b.st.lk ? "locked" : "", b.unf ? "unf" : ""].filter(Boolean).join(" ");
-        const can = !b.st.dn && !b.st.lk && !b.st.x;
-        const title = `${b.st.n} · ${b.t.n} · ${b.s === b.e ? shortIso(b.s) : `${shortIso(b.s)}–${shortIso(b.e)}`}${b.h ? ` · ${hh(b.h)} h` : ""}${b.to ? ` · föreslås för ${nameOf(b.to)}` : ""}${b.st.lk && !b.st.dn ? " · bokat, flyttas inte här" : ""}`;
-        return `<div class="${cls}" data-ctx="step|${esc(b.t.id)}|${esc(b.st.id)}"${can ? ` data-bar="${esc(k)}" data-part="body"` : ""} style="left:${pct(b.a)};width:${pct(b.z - b.a)};top:${b.lane * 30 + 4}px" title="${esc(title)}">`
-          // Timbrickan står när stapeln är minst tre dagar; annars står timmarna i rutan som hovras.
-          + `<span class="bn">${b.unf ? `${esc(b.st.n)} <span class="mmeta">· ${esc(b.t.n)}</span>` : fits(b) ? esc(b.st.n) : ""}</span>${b.h && b.z - b.a >= 3 ? `<span class="hb"${can ? ` data-bar="${esc(k)}" data-part="hours"` : ""}>${hh(b.h)} h</span>` : ""}`
-          + (can ? `<span class="bedge" data-bar="${esc(k)}" data-part="edge"></span>` : "") + `<span class="fill" style="width:${(fill * 100).toFixed(1)}%"></span></div>`;
-      };
-      const lane = g.person ? ` data-lane-person="${esc(g.person)}"` : "";
-      const head1 = `<div class="tln">${esc(g.label)}${g.person === me ? " (du)" : ""}</div><div class="mmeta">${esc(sub)}</div>`;
-      // Per leverans utan underrader: en rad som förut.
-      if (!g.person) return `<div class="tgrid trow"><div class="tl">${head1}</div>`
-        + `<div class="tt tracks" style="height:${g.lanes * 30 + 10}px">${cols}${todayLine}${strip}${(g.subs[0]?.items || []).map(barHtml).join("")}</div></div>`;
-      const opened = (x) => Object.keys(T.open || {}).filter((k) => T.open[k] && k.startsWith(`c:${x.id}|`));
-      const subs = g.subs.map((x) => `<div class="tgrid trow tsub"${lane}><div class="tl"><div class="tsn" title="${esc(x.label)}">${esc(x.label)}</div>`
-        + (opened(x).length ? `<button class="link" data-act="time-fold" data-ks="${esc(opened(x).join(" "))}">fäll ihop</button>` : "") + `</div>`
-        + `<div class="tt tracks" style="height:${x.lanes * 30 + 6}px">${cols}${todayLine}${x.items.map(barHtml).join("")}</div></div>`).join("");
-      return `<div class="tgrid trow tper"${lane}><div class="tl">${head1}</div><div class="tt tracks" style="height:${subs ? 14 : 40}px">${cols}${todayLine}${strip}</div></div>${subs}`;
-    }).join("");
-    const hint = T.drag?.hint ? `<div class="dhint">${esc(T.drag.hint)}</div>` : "";
-    return bar + help + `<div class="tbox">${head}${rows || `<div class="mmeta" style="padding:16px 12px">Inget planerat i fönstret.</div>`}</div>${hint}`;
-  }
-
-  /** ◐-raden i underkant: vad utkastet gör med leveransen och belastningen. */
-  function timeFooter() {
-    const T = S.time;
-    if (S.body !== "time" || !T?.tl) return "";
-    const list = changeList();
-    if (!list.length) return "";
-    const res = consequences(), tl = T.tl, base = T.memo.base;
-    // Bara det ändringen gör: det som redan var sent eller överbelastat står i raderna, inte här.
-    const was = new Map(base.tasks.map((t) => [t.id, t]));
-    const lines = [];
-    for (const d of res.deliveries) if (d.finish !== d.was) lines.push(`${rowOf(d.id)?.label || "Leveransen"} blir klar ${dayLabel(d.finish)} (var ${dayLabel(d.was)}).`);
-    for (const t of res.tasks) if (!taskOf(tl, t.id)?.d && t.finish !== t.was) lines.push(`${taskOf(tl, t.id)?.n || t.id} blir klar ${dayLabel(t.finish)} (var ${dayLabel(t.was)}).`);
-    const late = res.tasks.filter((t) => t.late_by > (was.get(t.id)?.late_by ?? 0));
-    for (const t of late) { const b = was.get(t.id)?.late_by ?? 0;
-      lines.push(`${taskOf(tl, t.id)?.n || t.id} spricker med ${t.late_by} ${t.late_by === 1 ? "dag" : "dagar"}${b ? ` i stället för ${b}` : ""} — ett nytt löfte.`); }
-    for (const t of res.tasks) { const b = was.get(t.id)?.late_by ?? 0;
-      if (t.late_by < b) lines.push(`${taskOf(tl, t.id)?.n || t.id} ${t.late_by ? `spricker med ${t.late_by} i stället för ${b} dagar` : "håller nu"}.`); }
-    if (!late.length) lines.unshift("Leveranserna håller.");
-    const byWho = new Map();
-    for (const o of res.overloaded.filter((x) => x.new)) { if (!byWho.has(o.who)) byWho.set(o.who, []); byWho.get(o.who).push(o); }
-    for (const [who, os] of byWho) lines.push(`${nameOf(who)} blir över dagens tid ${os.map((o) => dayLabel(o.day)).join(", ")}.`);
-    const gone = (T.memo?.base?.overloaded || []).filter((o) => !res.overloaded.some((x) => x.who === o.who && x.day === o.day));
-    const goneBy = new Map(); for (const o of gone) { if (!goneBy.has(o.who)) goneBy.set(o.who, []); goneBy.get(o.who).push(o); }
-    for (const [who, os] of goneBy) lines.push(`${nameOf(who)} är inte längre över dagens tid ${os.map((o) => dayLabel(o.day)).join(", ")}.`);
-    const known = new Set(base.conflicts.map((c) => `${c.task}|${c.step}|${c.waits_on}`));
-    for (const c of res.conflicts.filter((x) => !known.has(`${x.task}|${x.step}|${x.waits_on}`))) { const t = taskOf(tl, c.task); const n = (id) => t?.steps.find((x) => x.id === id)?.n || id;
-      lines.push(`«${n(c.step)}» börjar innan «${n(c.waits_on)}» är klart.`); }
-    for (const c of list.filter((x) => x.to)) { const st = taskOf(tl, c.task)?.steps.find((x) => x.id === c.step);
-      lines.push(`«${st?.n || c.step}» flyttas till ${nameOf(c.to)} först när ${nameOf(c.to)} tagit emot. Tills dess står det hos ${nameOf(st?.w)}.`); }
-    const n = list.length;
-    return `<div class="tfoot" role="region" aria-label="Ändringar som inte är genomförda"><div class="tf1"><span class="ci">◐</span><b>${n} ${n === 1 ? "ändring" : "ändringar"}, inte ${n === 1 ? "genomförd" : "genomförda"}</b>`
-      + `<button class="quiet" data-act="time-clear">Ångra ändringarna</button><button class="go" data-act="time-commit">◐ ${esc(timeVerb(list))}</button></div>`
-      + `<div class="tf2">${lines.slice(0, 6).map((l) => `<div>${esc(l)}</div>`).join("")}${lines.length > 6 ? `<div class="mmeta">och ${lines.length - 6} till.</div>` : ""}</div></div>`;
-  }
-  /** Knappen heter det den gör (BESLUT 2). */
-  function timeVerb(list) {
-    const to = list.filter((c) => c.to), moved = list.filter((c) => c.start || c.end), hrs = list.filter((c) => c.hours !== undefined);
-    if (to.length === list.length && new Set(to.map((c) => c.to)).size === 1) return `Föreslå ${nameOf(to[0].to)}`;
-    if (moved.length === list.length) return `Flytta ${list.length} steg`;
-    if (hrs.length === list.length) return `Ändra timmarna på ${list.length} steg`;
-    return `Genomför ${list.length} ändringar`;
-  }
-  function commitTime() {
-    const list = changeList();
-    if (!list.length) return;
-    previewTime(list, timeVerb(list), () => { const T = timeState(); T.changes = {}; T.sel = {}; loadTimeline(); });
-  }
-
-  /* Dra i stapeln: räknas lokalt, en omritning per bildruta. */
-  function trackWidth() { const el = root.querySelector?.(".tracks"); const w = el?.getBoundingClientRect?.().width; return w > 0 ? w : 900; }
-  function dragStart(e) {
-    const el = e.target?.closest?.("[data-bar]");
-    if (!el || S.body !== "time" || e.button === 2) return false;
-    const T = timeState(), key = el.getAttribute("data-bar"), part = el.getAttribute("data-part") || "body";
-    const [task, step] = key.split("|");
-    const st = taskOf(T.tl, task)?.steps.find((x) => x.id === step);
-    if (!st) return false;
-    const res = consequences();
-    const keys = T.sel[key] && part === "body" ? Object.keys(T.sel) : [key];
-    const orig = Object.fromEntries(keys.map((k) => { const [a, b] = k.split("|"); const t = taskOf(T.tl, a), s = t?.steps.find((x) => x.id === b);
-      return [k, s ? placed(res, t, s) : null]; }).filter(([, v]) => v));
-    T.drag = { key, part, x: e.clientX, y: e.clientY, shift: !!e.shiftKey, moved: false, dw: trackWidth() / T.tl.days, orig, keys: Object.keys(orig), hint: "" };
-    e.preventDefault?.();
-    return true;
-  }
-  function dragMove(e) {
-    const T = S.time, d = T?.drag;
-    if (!d) return;
-    const dx = Math.round((e.clientX - d.x) / d.dw), dy = e.clientY - d.y;
-    if (!d.moved && Math.abs(e.clientX - d.x) < 3 && Math.abs(dy) < 3) return;
-    d.moved = true;
-    const [task, step] = d.key.split("|");
-    if (d.part === "hours") {
-      const o = d.orig[d.key];
-      const h = Math.max(0.25, Math.round(((o.h || 0) - dy / 6) * 4) / 4);
-      draftSet(task, step, { hours: h });
-      d.hint = `${hh(h)} h`;
-    } else if (d.part === "edge") {
-      const o = d.orig[d.key];
-      const end = isoAdd(o.e, dx) < o.s ? o.s : isoAdd(o.e, dx);
-      draftSet(task, step, { start: o.s, end });
-      d.hint = `Spannet ${shortIso(o.s)}–${shortIso(end)}`;
+        const capLine = `<span class="zcap" style="bottom:${(8 + 8 * sc).toFixed(1)}px"></span>`;
+        const sub = `${hh(work)} h arbete i fönstret${p.nc ? " · ingen kalender, bara arbetstiden" : ""}${overN ? ` · över sin tid ${overN} ${overN === 1 ? "dag" : "dagar"}` : ""}`;
+        rows += group(`p:${id}`, `${p.n}${id === me ? " (du)" : ""}`, sub, overN ? "red" : "", capLine + cells, 58, ` data-person="${esc(id)}"`,
+          ctxsOf(steps.filter((b) => !b.st.x && b.owner === id)));
+        if (tzOpen(T, `p:${id}`)) rows += steps.filter((b) => !b.st.x && b.owner === id).map((b) => stepRow(b, true)).join("");
+      }
+      const cust = steps.filter((b) => b.st.x);
+      if (cust.length) {
+        rows += group("p:x", "Kunden", `${cust.length} steg väntar på kunden`, "amber", "", 40);
+        if (tzOpen(T, "p:x")) rows += cust.map((b) => stepRow(b, true)).join("");
+      }
     } else {
-      for (const k of d.keys) { const o = d.orig[k], [a, b] = k.split("|");
-        draftSet(a, b, dx ? { start: isoAdd(o.s, dx), end: isoAdd(o.e, dx) } : { start: o.s, end: o.e }); }
-      const lane = T.group === "person" ? e.target?.closest?.("[data-lane-person]")?.getAttribute("data-lane-person") : null;
-      const owner = d.orig[d.key].w;
-      const to = lane && lane !== owner ? lane : null;
-      for (const k of d.keys) { const [a, b] = k.split("|"); draftSet(a, b, { to }); }
-      d.hint = to ? `Lämna över till ${nameOf(to)}` : dx ? `${dx > 0 ? "+" : "−"}${Math.abs(dx)} ${Math.abs(dx) === 1 ? "dag" : "dagar"}` : "";
+      for (const g of tzDeliveries(tl, res, base)) {
+        const mine = steps.filter((b) => (b.t.d || b.t.id) === g.id);
+        if (!mine.length) continue;
+        const first = Math.max(0, Math.min(...mine.map((b) => b.a))), fin = tzSpan(tl, g.finish, g.finish).a + 1, due = dayIdx(tl, g.due) + 1;
+        const strip = (a, z, cls) => { const x = Math.max(0, a), y = Math.min(days, z); return y > x ? `<span class="zstrip ${cls}" style="left:${pct(x)};width:${pct(y - x)}"></span>` : ""; };
+        let inner = strip(first, Math.min(fin, due), "ok") + (fin > due ? strip(Math.max(first, due), fin, "over") : "");
+        if (g.finish !== g.before && g.finish > g.before) inner += strip(tzSpan(tl, g.before, g.before).a + 1, fin, g.late ? "dlate" : "dmoved");
+        if (due > 0 && due <= days) inner += `<span class="zdia${g.late ? " late" : ""}" style="left:${pct(due)}" title="${esc(`lovat ${dayLabel(g.due)}`)}"></span>`;
+        else if (due <= 0 && g.late) inner += `<span class="ztx late" style="left:0.6%;top:15px">‹ ◆ ${esc(dayLabel(g.due))} · +${g.late} d</span>`;
+        if (g.late && due > 0 && fin <= days) inner += `<span class="ztx late" style="left:calc(${pct(fin)} + 8px);top:15px">+${g.late} d</span>`;
+        const sub = `lovat ${dayLabel(g.due)} · klar ${dayLabel(g.finish)}${g.finish !== g.before ? ` (var ${tzDay(g.before)})` : ""}${g.late ? ` · ${g.late} d sen` : " · håller"}`;
+        rows += group(`d:${g.id}`, g.name, sub, g.late ? "red" : g.finish !== g.before ? "amber" : "", inner, 46, "", ctxsOf(mine));
+        if (tzOpen(T, `d:${g.id}`)) rows += mine.map((b) => stepRow(b, false)).join("");
+      }
+    }
+    return bar + `<div class="zbox"><div class="zin${card ? " hascard" : ""}">${head}${rows || `<div class="mmeta" style="padding:16px 12px">Inget planerat i fönstret.</div>`}`
+      + (card ? tzCard(card, tl, res, loads) : "") + `</div></div>`;
+  }
+  /* ── Ändringsraden och Genomför (◐) i nya Tid ──
+     Utkastet står streckat; raden sammanfattar följderna och verbet följer ändringarna.
+     Genomför skickar ändringarna med vyns lokala resultat (expected); servern läser om
+     kalendern, räknar om och svarar med kvitto och skillnaden. ⌘Z ångrar först det lokala,
+     sedan det genomförda. Utkastet ligger kvar i webbläsaren och syns i Igång. */
+  const TZ_DRAFT = "v6.time.draft";
+  function tzSaveDraft() {
+    const list = changeList();
+    try { if (list.length) globalThis.localStorage?.setItem(TZ_DRAFT, JSON.stringify({ changes: list, at: Date.now() })); else globalThis.localStorage?.removeItem(TZ_DRAFT); } catch { /* lagring stängd */ }
+  }
+  function tzSavedDraft() {
+    try { const x = JSON.parse(globalThis.localStorage?.getItem(TZ_DRAFT) || "null"); return Array.isArray(x?.changes) ? x.changes : []; } catch { return []; }
+  }
+  function tzVerb(list) {
+    const T = timeState(), tl = T.tl, pe = {};
+    let mv = 0, sp = 0, hr = 0, wa = 0, ba = 0;
+    for (const c of list) {
+      const st = taskOf(tl, c.task)?.steps.find((x) => x.id === c.step);
+      if (!st) continue;
+      if (c.to) pe[c.to] = (pe[c.to] || 0) + 1;
+      if (c.start || c.end) { if (tzWd(tl, st.s, st.e) !== tzWd(tl, c.start ?? st.s, c.end ?? st.e)) sp++; else mv++; }
+      if (c.hours !== undefined) hr++;
+      if (c.after) wa++;
+      if (c.batch !== undefined) ba++;
+    }
+    const parts = [];
+    if (mv) parts.push(`flytta ${mv} steg`);
+    if (sp) parts.push(`ändra spannet på ${sp} steg`);
+    if (hr) parts.push(`ändra timmar på ${hr} steg`);
+    for (const [p, n] of Object.entries(pe)) parts.push(`lämna över ${n} steg till ${nameOf(p)}`);
+    if (wa) parts.push(`ändra vad ${wa} steg väntar på`);
+    if (ba) parts.push(`ändra vad ${ba} steg görs i samma veva med`);
+    const t = parts.length > 1 ? `${parts.slice(0, -1).join(", ")} och ${parts.at(-1)}` : parts[0] || "genomför";
+    return t[0].toUpperCase() + t.slice(1);
+  }
+  function tzFooter() {
+    const T = S.time, list = changeList();
+    if (!list.length) return "";
+    const res = consequences(), base = T.memo.base, tl = T.tl, chips = [];
+    for (const g of tzDeliveries(tl, res, base)) {
+      if (g.finish === g.before) continue;
+      const lb = Math.max(0, ...g.tasks.map((id) => base.tasks.find((x) => x.id === id)?.late_by || 0));
+      const bad = g.late > lb;
+      chips.push({ bad, text: `${g.name} klar ${tzDay(g.finish)}${g.late ? (lb ? ` · ${g.late} d sen` : ` · spricker ${g.late} d`) : " · håller"}` });
+    }
+    const by = new Map();
+    for (const o of res.overloaded.filter((x) => x.new)) by.set(o.who, [...(by.get(o.who) || []), o.day]);
+    for (const [who, days] of by) chips.push({ bad: true, text: `${nameOf(who)} över sin tid ${days.slice(0, 3).map(tzDay).join(", ")}${days.length > 3 ? ` +${days.length - 3}` : ""}` });
+    for (const c of list.filter((x) => x.to)) chips.push({ bad: false, text: `väntar på ${nameOf(c.to)}s ja efter Genomför` });
+    const late = chips.some((c) => c.bad && /spricker/.test(c.text));
+    const n = list.length;
+    const conflict = T.zconflict ? `<span class="zconf">${esc(T.zconflict)} Utkastet står kvar.</span><button class="edge" data-act="tz-recalc">Räkna om</button>` : "";
+    return `<div class="tfoot zfoot" role="region" aria-label="Ändringar som inte är genomförda">${conflict}<b class="zfc"><span class="ci">◐</span>${n} ${n === 1 ? "ändring, inte genomförd" : "ändringar, inte genomförda"}</b>`
+      + chips.slice(0, 5).map((c) => `<span class="zchip${c.bad ? " bad" : ""}">${esc(c.text)}</span>`).join("")
+      + `<span class="zfb"><button class="quiet" data-act="time-clear">Ångra ändringarna</button><button class="quiet" data-act="tz-undo">Ångra <kbd>⌘Z</kbd></button>`
+      + `<button class="go" data-act="tz-commit"${T.zbusy || T.zconflict ? " disabled" : ""}>${T.zbusy ? "Genomför …" : `◐ ${esc(tzVerb(list))}${late ? ", nytt löfte" : ""}`} <kbd>⌘↵</kbd></button></span></div>`;
+  }
+  async function tzCommit() {
+    const T = timeState(), list = changeList();
+    if (!list.length || T.zbusy || !T.tl) return;
+    if (offline()) { say("Genomför kräver att dirigenten svarar. Ändringarna står kvar här.", null, true); render(); return; }
+    const res = consequences(), base = T.memo.base;
+    const late = res.tasks.some((t) => t.late_by > (base.tasks.find((x) => x.id === t.id)?.late_by ?? 0));
+    const expected = res.steps.map(({ task, step, s, e }) => ({ task, step, s, e }));
+    const verb = tzVerb(list);
+    T.zbusy = true; render();
+    try {
+      const r = await call("execute_step", { time: { changes: list, expected, confirmed: true, ...(late ? { accept_late: true } : {}),
+        ...(typeof T.zseq === "number" ? { based_on: T.zseq } : {}) } });
+      T.changes = {}; T.zhist = []; T.zinfo = null; T.zlast = r?.receipt?.undo || null; tzSaveDraft();
+      let text = `Genomfört: ${verb[0].toLowerCase()}${verb.slice(1)}.`;
+      const diff = r?.difference || [];
+      if (diff.length) text += ` Planen räknade annorlunda för ${diff.length} steg: ${diff.slice(0, 2).map((x) => `«${x.label}» ${tzDay(x.server.s)}–${tzDay(tzLast(x.server.s, x.server.e))}`).join(", ")}${diff.length > 2 ? " …" : ""}.`;
+      if (r?.receipt?.calendar_read_at) text += ` Kalendern lästes om ${String(r.receipt.calendar_read_at).slice(11, 16)} och ändrade planen.`;
+      for (const h of r?.handovers || []) text += ` «${taskOf(T.tl, h.task)?.steps.find((x) => x.id === h.step)?.n || "Steget"}» väntar på ${nameOf(h.to)}s ja.`;
+      say(text, r?.receipt?.undo || null);
+      T.zbusy = false;
+      loadTimeline(); refreshSoon();
+    } catch (e) {
+      T.zbusy = false;
+      // Någon annan hann före: utkastet står kvar och räknas om mot det senaste läget.
+      if (e?.context?.changed_since !== undefined) { T.zconflict = e.message || "Planen har ändrats sedan du hämtade tiden."; render(); return; }
+      say(`Inget genomfördes: ${e.message || e}`, null, true); render();
+    }
+  }
+  /** ⌘Z: först det lokala utkastet, steg för steg; sedan det senast genomförda. */
+  async function tzUndo() {
+    const T = timeState();
+    if (T.zhist?.length) { const h = [...T.zhist], prev = h.pop(); T.zhist = h; T.changes = Object.fromEntries(prev.map((c) => [`${c.task}|${c.step}`, c])); T.zinfo = null; tzSaveDraft(); render(); return; }
+    const u = T.zlast;
+    if (!u) return;
+    T.zlast = null; S.toast = null;
+    try { await call(u.tool, u.args); say("Ångrat."); loadTimeline(); refreshSoon(); }
+    catch (e) { say(`Kunde inte ångra: ${e.message || e}`, null, true); render(); }
+  }
+  /**
+   * Tangenterna i nya Tid: ← → flyttar en dag (⇧ en vecka, ⌥ bara det här), [ ] slutet (⇧ början),
+   * en siffra eller H öppnar timfältet, L lämna över, ↑ ↓ väljer steg, ␣ öppnar steget, P per
+   * leverans/per person, D i dag, − + fönstret. Inte när fokus står i ett fält. ← → rullar aldrig
+   * sidan i Tid, med eller utan val.
+   */
+  function tzKey(e) {
+    if (S.body !== "time" || !S.time?.tl || S.sheets.length || S.pal || S.confirm || S.menu || typing(e.target)) return false;
+    if (e.metaKey || e.ctrlKey) return false;
+    const T = timeState(), k = e.key;
+    const sel = Object.keys(S.sel || {}).filter((c) => c.startsWith("step|")).map((c) => c.slice(5));
+    const one = sel.length === 1 ? sel[0] : null;
+    const hours = (text) => { T.zhtext = text; render(); const el = root.querySelector?.("#tz-hours"); el?.focus?.();
+      if (text) { const n = text.length; el?.setSelectionRange?.(n, n); } else el?.select?.(); };
+    if (k === "ArrowLeft" || k === "ArrowRight") { if (sel.length) { tzOp({ kind: "move", keys: sel, delta: (k === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 5 : 1), alt: !!e.altKey }); render(); } return true; }
+    if (k === "[" || k === "]" || e.code === "BracketLeft" || e.code === "BracketRight") {
+      if (one) { tzOp({ kind: e.shiftKey ? "start" : "end", keys: [one], delta: k === "[" || e.code === "BracketLeft" ? -1 : 1, alt: !!e.altKey }); render(); }
+      return true; }
+    if (/^[0-9]$/.test(k) && one) { hours(k); return true; }
+    if ((k === "h" || k === "H") && one) { hours(""); return true; }
+    if ((k === "l" || k === "L") && one) { T.zpicker = !T.zpicker; T.zadd = null; render(); return true; }
+    if (k === " " && one) { const [task, step] = one.split("|"), t = taskOf(T.tl, task), st = t?.steps.find((x) => x.id === step);
+      if (st) openStepOver(t.d || rowOfTask(task)?.key || "", task, step, st.n); return true; }
+    if (k === "ArrowDown" || k === "ArrowUp") {
+      const ids = T.zvis || [];
+      if (ids.length) { let i = ids.indexOf(one); i = i < 0 ? 0 : Math.max(0, Math.min(ids.length - 1, i + (k === "ArrowDown" ? 1 : -1)));
+        S.sel = { [`step|${ids[i]}`]: true }; T.zpicker = false; T.zadd = null; render(); }
+      return true; }
+    if (k === "p" || k === "P") { T.group = T.group === "person" ? "delivery" : "person"; S.sel = {}; render(); return true; }
+    if (k === "d" || k === "D") { T.from = null; loadTimeline(); return true; }
+    if (k === "+" || k === "-" || k === "−") { const i = WEEKS.indexOf(T.weeks) + (k === "+" ? -1 : 1); const w = WEEKS[Math.max(0, Math.min(WEEKS.length - 1, i))];
+      if (w !== T.weeks) { T.weeks = w; loadTimeline(); } return true; }
+    return false;
+  }
+  const timeFooter = () => S.body === "time" && S.time?.tl ? tzFooter() : "";
+  /** Steget vars kort visas: exakt ett valt steg som finns i tiden. */
+  function tzCardKey() {
+    const T = S.time;
+    if (S.body !== "time" || !T?.tl) return null;
+    const keys = Object.keys(S.sel || {});
+    if (keys.length !== 1) return null;
+    const [k, a, b] = keys[0].split("|");
+    return k === "step" && taskOf(T.tl, a)?.steps.some((x) => x.id === b) ? `${a}|${b}` : null;
+  }
+  /** Stegkortet ovanpå raderna (aldrig utfällning): spann, timmar, väntar på, i samma veva, lämna över. */
+  function tzCard(c, tl, res, loads) {
+    const T = timeState(), b = c.b, st = b.st, t = b.t, key = b.key;
+    const dname = (tl.deliveries || []).find((x) => x.id === t.d)?.n || t.n;
+    const who = tl.people?.[b.owner]?.n || nameOf(b.owner), was = T.changes[key]?.to ? ` (var ${nameOf(st.w)})` : "";
+    const pl = (x) => placed(res, t, x);
+    // Väntar på och i samma veva som utkastet säger, annars som planen.
+    const afterOf = (x) => T.changes[`${t.id}|${x.id}`]?.after ?? x.a ?? [];
+    const batchOf = (task, x) => { const c = T.changes[`${task.id}|${x.id}`]; return c && c.batch !== undefined ? c.batch : x.b || null; };
+    const mineAfter = afterOf(st), myBatch = batchOf(t, st);
+    const waits = mineAfter.map((id) => t.steps.find((x) => x.id === id)).filter(Boolean);
+    const waiters = t.steps.filter((x) => afterOf(x).includes(st.id) && !x.dn);
+    const same = tl.tasks.filter((x) => (x.d || x.id) === (t.d || t.id));
+    const veva = myBatch ? same.flatMap((x) => x.steps.filter((y) => !y.dn && batchOf(x, y) === myBatch && !(x.id === t.id && y.id === st.id)).map((y) => ({ t: x, st: y }))) : [];
+    const canWait = t.steps.filter((x) => x.id !== st.id && !x.dn && !mineAfter.includes(x.id) && !afterOf(x).includes(st.id));
+    const canVeva = same.flatMap((x) => x.steps.filter((y) => !y.dn && !y.x && !y.lk && !(x.id === t.id && y.id === st.id) && (!myBatch || batchOf(x, y) !== myBatch)).map((y) => ({ t: x, st: y })));
+    const span = tzSpan(tl, b.s, b.e), isWd = tzWorkday(tl);
+    let n = 0; for (let i = span.a; i < span.z; i++) if (isWd(isoAdd(tl.from, i))) n++;
+    const over = []; const l = loads[b.owner] || [];
+    for (let i = Math.max(0, span.a); i < Math.min(tl.days, span.z); i++) if (l[i]?.over) over.push(tzDay(isoAdd(tl.from, i)));
+    const free = (pid) => { const x = loads[pid] || []; let f = 0; for (let i = Math.max(0, span.a); i < Math.min(tl.days, span.z); i++) if (x[i] && isWd(isoAdd(tl.from, i))) f += Math.max(0, x[i].cap - x[i].work); return f; };
+    const can = !st.x && !st.lk;
+    const nudge = (edge, d, l) => can ? `<button data-act="tz-span" data-k="${esc(key)}" data-edge="${edge}" data-d="${d}" aria-label="${l}">${d < 0 ? "‹" : "›"}</button>` : "";
+    const hours = st.x ? `<span class="mmeta">görs hos kunden</span>` : `<span class="zhrs"><input id="tz-hours" data-k="${esc(key)}" value="${esc(T.zhtext ?? (b.h != null ? hh(b.h) : ""))}" inputmode="decimal" aria-label="Timmar"${can ? "" : " disabled"}><span>h</span></span>`
+      + (can ? [0.5, 1, 2, 3, 4, 8].map((v) => `<button class="zpre" data-act="tz-hours" data-k="${esc(key)}" data-h="${v}">${hh(v)}</button>`).join("") : "");
+    const picker = T.zpicker ? `<div class="zpick"><div class="lbl">LÄMNA TILL · LEDIGT INOM SPANNET</div>${Object.entries(tl.people || {}).filter(([id]) => id !== b.owner)
+      .map(([id, p]) => `<button data-act="tz-to" data-k="${esc(key)}" data-to="${esc(id)}"><span>${esc(p.n)}</span><span class="mono">${hh(free(id))} h</span></button>`).join("")}</div>` : "";
+    const rowKey = t.d || rowOfTask(t.id)?.key || "";
+    return `<div class="zcard" data-zcard role="dialog" aria-label="${esc(st.n)}" style="top:${c.top}px;left:calc(230px + (100% - 230px) * ${c.f.toFixed(4)})">`
+      + `<div class="zch"><span class="lbl">STEG · ${esc(dname.toUpperCase())}</span><button class="link" data-act="sel-clear" title="Esc">Esc</button></div>`
+      + `<div class="zct">${esc(st.n)}</div><div class="mmeta">${esc(st.x ? "Kunden" : who + was)}</div>`
+      + `<div class="zcg"><span class="mmeta">Spann</span><span class="zspan"><span class="znudge">${nudge("s", -1, "Börja en dag tidigare")}${esc(tzDay(b.s))}${nudge("s", 1, "Börja en dag senare")}</span>–`
+      + `<span class="znudge">${nudge("e", -1, "Sluta en dag tidigare")}${esc(tzDay(tzLast(b.s, b.e)))}${nudge("e", 1, "Sluta en dag senare")}</span><span class="mmeta">${n} ${n === 1 ? "arbetsdag" : "arbetsdagar"}</span></span>`
+      + `<span class="mmeta">Timmar</span><span class="zspan">${hours}</span>`
+      + `<span class="mmeta zat">Väntar på</span><span class="zlist">${waits.length ? waits.map((x) => `<span class="zli"><span class="zn">${esc(x.n)}</span> <span class="mmeta">klar ${esc(tzDay(tzLast(pl(x).s, pl(x).e)))}</span>`
+        + (can ? `<button class="zx" data-act="tz-waits" data-k="${esc(key)}" data-w="${esc(mineAfter.filter((y) => y !== x.id).join(" "))}" aria-label="Sluta vänta på ${esc(x.n)}">×</button>` : "") + `</span>`).join("") : `<span class="mmeta">inget · görs parallellt</span>`}`
+        + (can && canWait.length ? `<button class="link zadd" data-act="tz-add" data-what="w">+ lägg till</button>` : "")
+        + (T.zadd === "w" ? `<span class="zopts">${canWait.map((x) => `<button data-act="tz-waits" data-k="${esc(key)}" data-w="${esc([...mineAfter, x.id].join(" "))}">${esc(x.n)}</button>`).join("")}</span>` : "") + `</span>`
+      + `<span class="mmeta zat">I samma veva</span><span class="zlist">${veva.length ? veva.map((x) => `<span class="zli"><span class="zn">${esc(x.st.n)}</span>${x.t.id !== t.id ? ` <span class="mmeta">${esc(x.t.n)}</span>` : ""}</span>`).join("")
+          + (can ? `<button class="link zadd" data-act="tz-batch" data-ks="${esc(key)}" data-b="">ta ur gruppen</button>` : "") : `<span class="mmeta">inget · flyttas för sig</span>`}`
+        + (can && canVeva.length ? `<button class="link zadd" data-act="tz-add" data-what="b">+ i samma veva som …</button>` : "")
+        + (T.zadd === "b" ? `<span class="zopts">${canVeva.map((x) => { const g = myBatch || batchOf(x.t, x.st) || x.st.n.slice(0, 40);
+          return `<button data-act="tz-batch" data-ks="${esc(`${key} ${x.t.id}|${x.st.id}`)}" data-b="${esc(g)}">${esc(x.st.n)}${x.t.id !== t.id ? ` <span class="mmeta">${esc(x.t.n)}</span>` : ""}</button>`; }).join("")}</span>` : "") + `</span>`
+      + `<span class="mmeta">Efter</span><span>${waiters.length ? `${waiters.length} steg väntar på det här` : "inget väntar på det här"}</span></div>`
+      + (over.length ? `<div class="zover">${esc(who)} är över sin tid ${esc(over.join(", "))}.</div>` : "")
+      + `<div class="zcb2"><button class="edge" data-act="open-row-step" data-key="${esc(rowKey)}" data-task="${esc(t.id)}" data-step="${esc(st.id)}" data-label="${esc(st.n)}">Öppna steget <kbd>␣</kbd></button>`
+      + (st.x ? "" : `<button class="edge" data-act="tz-picker">Lämna över <kbd>L</kbd></button>`) + `</div>${picker}</div>`;
+  }
+  /**
+   * Popups i Tid stängs vid klick utanför (Daniel P 2026-10-07), utöver Esc. Klicket utanför
+   * bara stänger: det väljer inte, flyttar inte och startar inget drag. En annan stapel byter
+   * direkt till dess kort. Fångstfasen på dokumentet, före vyns egna hanterare.
+   */
+  let tzSwallow = 0;
+  function tzOutside(e) {
+    if (!tzCardKey() || e.button === 2) return;
+    const t = e.target;
+    if (t?.closest?.("[data-zcard]") || t?.closest?.(".tfoot") || t?.closest?.(".selbar")) return;
+    e.stopPropagation?.(); e.preventDefault?.();
+    tzSwallow = Date.now();
+    const hit = t?.closest?.("[data-zpick]")?.getAttribute("data-zpick");
+    if (hit && S.sel?.[hit] && !e.shiftKey) return; // det valda: drag eller klick som vanligt
+    timeState().zpicker = false; timeState().zadd = null;
+    if (hit && e.shiftKey) selToggle(hit);
+    else S.sel = hit ? { [hit]: true } : {};
+    render();
+  }
+  function tzSwallowClick(e) {
+    if (!tzSwallow) return;
+    const fresh = Date.now() - tzSwallow < 800;
+    tzSwallow = 0;
+    if (fresh) { e.stopPropagation?.(); e.preventDefault?.(); }
+  }
+  /**
+   * En ändring i utkastet med de lokala reglerna (applyOp, src/plan/time-preview.ts): det
+   * man tar i, gränserna och i samma veva; följderna räknar whatIf. Lappen vid stapeln
+   * säger värdet, vad som följer med och var det stannade. Ångra tar ett steg tillbaka.
+   */
+  function tzOp(op, o = {}) {
+    const T = timeState(), start = o.from || changeList();
+    const r = applyOp(T.tl, start, op, whatIf);
+    T.changes = Object.fromEntries(r.changes.map((c) => [`${c.task}|${c.step}`, c]));
+    T.zinfo = tzInfo(op, r, start);
+    if (!o.live) { T.zhist = [...(T.zhist || []), start].slice(-50); tzInfoFade(); tzSaveDraft(); }
+    return r;
+  }
+  let tzFade = null;
+  function tzInfoFade() { clearTimeout(tzFade); tzFade = setTimeout(() => { const T = S.time; if (T && !T.zdrag) { T.zinfo = null; render(); } }, 1600); }
+  function tzInfo(op, r, start) {
+    const T = timeState(), k = op.keys[0], [task, step] = k.split("|"), t = taskOf(T.tl, task), st = t?.steps.find((x) => x.id === step);
+    if (!st) return null;
+    const res = whatIf(T.tl, r.changes), p = placed(res, t, st), o = placed(whatIf(T.tl, start), t, st);
+    let text = "";
+    if (op.kind === "move") text = `${r.delta > 0 ? "+" : ""}${r.delta} d · ${previewDay(p.s)}`;
+    else if (op.kind === "hours") text = `${hh(p.h || 0)} h (var ${hh(o.h || 0)} h)`;
+    else if (op.kind === "end" || op.kind === "start") { let n = 0; const isWd = tzWorkday(T.tl); for (let d = p.s; d < (p.s === p.e ? isoAdd(p.s, 1) : p.e); d = isoAdd(d, 1)) if (isWd(d)) n++;
+      text = `${op.kind === "end" ? `slut ${tzDay(tzLast(p.s, p.e))}` : `början ${tzDay(p.s)}`} · ${n} ${n === 1 ? "dag" : "dagar"}`; }
+    else if (op.kind === "person") text = `Lämna till ${nameOf(op.to)}`;
+    const T2 = T.tl, task2 = taskOf(T2, task), stays = op.kind === "move" && !op.alt && !r.follow && r.delta > 0
+      ? (task2?.steps || []).filter((x) => !x.dn && (T.changes[`${task}|${x.id}`]?.after ?? x.a ?? []).includes(step)) : [];
+    if (stays.length) return { key: k, text, text2: `${stays.length === 1 ? `«${stays[0].n}» står kvar` : `${stays.length} som väntar står kvar`}, det finns marginal`, stop: r.stop || "" };
+    const text2 = r.follow ? `${r.follow} följer med${r.veva && r.veva < r.follow ? ` (${r.veva} i samma veva)` : r.veva ? " i samma veva" : ", de väntar på det här"}${op.alt ? "" : " · ⌥ bara det här"}` : "";
+    return { key: k, text, text2, stop: r.stop || "" };
+  }
+  /** Spannet i kortet: en arbetsdag i taget, med samma gränser som draget. */
+  function tzNudge(key, edge, d) { tzOp({ kind: edge === "s" ? "start" : "end", keys: [key], delta: d }); }
+  /** Arbetsdagar från a till b, med tecken. */
+  function tzWd(tl, a, b) { const isWd = tzWorkday(tl); let n = 0;
+    if (b >= a) { for (let x = a; x < b; x = isoAdd(x, 1)) if (isWd(x)) n++; } else for (let x = b; x < a; x = isoAdd(x, 1)) if (isWd(x)) n--; return n; }
+  /* Dra i stapeln (Tid omgjord): mitten flyttar, de yttersta 6 px spannet, fyllnadens kant i
+     nedre halvan timmarna (0,25 h, minst 6 px per kvart). Under 24 px bara flytt. Draget börjar
+     först när pekaren rört sig; annars är det ett klick som väljer. */
+  function tzZone(w, h, x, y, f) {
+    if (w >= 24) { if (y > h / 2 && Math.abs(x - w * f) < 6 && f < 0.97) return "hours"; if (x < 6) return "start"; if (x > w - 6) return "end"; }
+    return "move";
+  }
+  function tzDragStart(e) {
+    const el = e.target?.closest?.("[data-zbar]");
+    if (!el || S.body !== "time" || e.button === 2) return false;
+    const T = timeState(), key = el.getAttribute("data-zbar"), r = el.getBoundingClientRect?.() || { left: 0, top: 0, width: 100, height: 14 };
+    const zone = tzZone(r.width, r.height, e.clientX - r.left, e.clientY - r.top, Number(el.getAttribute("data-f")) || 0);
+    const ctx = `step|${key}`, sel = Object.keys(S.sel || {}).filter((c) => c.startsWith("step|")).map((c) => c.slice(5));
+    const keys = zone === "move" && S.sel?.[ctx] && !e.shiftKey && sel.length > 1 ? sel : [key];
+    const tw = el.closest?.(".ztrack")?.getBoundingClientRect?.().width || 900;
+    const [task, step] = key.split("|"), t = taskOf(T.tl, task), st = t?.steps.find((x) => x.id === step);
+    if (!st) return false;
+    T.zdrag = { key, keys, zone, x0: e.clientX, y0: e.clientY, from: changeList(), started: false, h0: placed(consequences(), t, st).h || 0, s0: placed(consequences(), t, st).s, dayPx: tw / T.tl.days };
+    return false; // inget omritas förrän pekaren rört sig
+  }
+  function tzDragMove(e) {
+    const T = S.time, g = T?.zdrag;
+    if (!g) return;
+    const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
+    if (!g.started) { if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return; g.started = true; timeState().zpicker = false; }
+    let op;
+    if (g.zone === "hours") { const per = Math.max(6, g.dayPx * 0.25 / 8); op = { kind: "hours", keys: [g.key], hours: g.h0 + Math.round(dx / per) * 0.25 }; }
+    else {
+      let d = tzWd(T.tl, g.s0, isoAdd(g.s0, Math.round(dx / g.dayPx)));
+      if (e.shiftKey && g.zone === "move") d = Math.round(d / 5) * 5;
+      op = { kind: g.zone, keys: g.keys, delta: d, alt: !!e.altKey };
+    }
+    let r = tzOp(op, { from: g.from, live: true });
+    if (g.zone === "move" && T.group === "person" && g.keys.length === 1) {
+      const pid = globalThis.document?.elementFromPoint?.(e.clientX, e.clientY)?.closest?.("[data-person]")?.getAttribute("data-person");
+      const [task, step] = g.key.split("|"), w = taskOf(T.tl, task)?.steps.find((x) => x.id === step)?.w;
+      if (pid && pid !== w && T.tl.people?.[pid]) { r = tzOp({ kind: "person", keys: [g.key], to: pid }, { from: r.changes, live: true }); }
     }
     schedule();
   }
-  function dragEnd() {
-    const T = S.time, d = T?.drag;
-    if (!d) return;
-    T.drag = null;
-    if (!d.moved) { // ett klick: ⇧ väljer flera, annars väljs bara den
-      if (d.shift) { const sel = { ...T.sel }; if (sel[d.key]) delete sel[d.key]; else sel[d.key] = true; T.sel = sel; }
-      else T.sel = {};
-    }
+  function tzDragEnd() {
+    const T = S.time, g = T?.zdrag;
+    if (!g) return;
+    T.zdrag = null;
+    if (!g.started) return; // ett klick: valet görs av klicket
+    T.zhist = [...(T.zhist || []), g.from].slice(-50);
+    tzSaveDraft();
+    tzSwallow = Date.now(); // klicket efter draget väljer inget
+    tzInfoFade();
     render();
   }
+  /** «2», «1,5», «30m», «2h»: kvartar, minst en kvart. */
+  const tzParseH = (v) => { let x = String(v ?? "").trim().toLowerCase().replace(",", "."); let m = false;
+    if (x.endsWith("m")) { m = true; x = x.slice(0, -1); } if (x.endsWith("h")) x = x.slice(0, -1);
+    const n = parseFloat(x); if (!Number.isFinite(n) || n <= 0) return null; return Math.max(0.25, Math.round((m ? n / 60 : n) * 4) / 4); };
+
+  /* En omritning per bildruta medan man drar. */
   let frame = 0;
   const schedule = () => { if (frame) return; const raf = globalThis.requestAnimationFrame || ((f) => setTimeout(f, 16));
     frame = raf(() => { frame = 0; render(); }); };
@@ -5802,17 +6293,27 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "cal-split") { calSplit(el.getAttribute("data-k")); }
     else if (act === "cal-merge") { calMerge(el.getAttribute("data-k"), el.getAttribute("data-n")); }
     else if (act === "time-group") { timeState().group = el.getAttribute("data-g"); }
-    else if (act === "time-fold") { const T = timeState(), o = { ...(T.open || {}) }; for (const k of (el.getAttribute("data-ks") || "").split(" ")) delete o[k]; T.open = o; }
-    else if (act === "time-cluster") { const T = timeState(), k = el.getAttribute("data-k"); T.open = { ...(T.open || {}), [k]: !T.open?.[k] }; }
     else if (act === "time-weeks") { timeState().weeks = Number(el.getAttribute("data-w")); loadTimeline(); return; }
     else if (act === "time-shift") { const T = timeState(); T.from = isoAdd(T.from || mondayOf(S.data.today), Number(el.getAttribute("data-d"))); loadTimeline(); return; }
     else if (act === "time-today") { timeState().from = null; loadTimeline(); return; }
     else if (act === "time-reload") { loadTimeline(); return; }
-    else if (act === "time-mine") { timeState().scope = null; timeState().changes = {}; loadTimeline(); return; }
-    else if (act === "time-help") { const T = timeState(); T.help = !T.help; try { globalThis.localStorage?.setItem("v6.time.help", T.help ? "shown" : "hidden"); } catch { /* lagring stängd */ } }
-    else if (act === "time-clear") { const T = timeState(); T.changes = {}; T.sel = {}; }
-    else if (act === "time-commit") { commitTime(); return; }
-    else if (act === "show-time") { const T = timeState(); T.scope = { delivery: el.getAttribute("data-key") }; T.changes = {}; T.group = "delivery"; S.sheets = []; S.body = "time"; loadTimeline(); return; }
+    else if (act === "time-clear") { const T = timeState(); T.zhist = [...(T.zhist || []), changeList()].slice(-50); T.changes = {}; T.sel = {}; T.zinfo = null; tzSaveDraft(); }
+    else if (act === "tz-commit") { tzCommit(); return; }
+    else if (act === "tz-recalc") { timeState().zconflict = null; loadTimeline(); return; }
+    else if (act === "tz-undo") { tzUndo(); return; }
+    else if (act === "tz-open-draft") { S.body = "time"; S.sheets = []; const T = timeState(); T.zNew = true; if (!T.tl) { loadTimeline(); return; } }
+    else if (act === "tz-fold") {
+      if (e.metaKey || e.ctrlKey) { const cs = (el.getAttribute("data-ctxs") || "").split(" ").filter(Boolean).slice(0, SEL_MAX); S.sel = Object.fromEntries(cs.map((c) => [c, true])); }
+      else { const T = timeState(), k = el.getAttribute("data-k"); T.zopen = { ...(T.zopen || {}), [k]: !T.zopen?.[k] }; } }
+    else if (act === "tz-pick") { timeState().zpicker = false; timeState().zadd = null; timeState().zhtext = null; S.sel = { [el.getAttribute("data-zpick")]: true }; }
+    else if (act === "tz-picker") { const T = timeState(); T.zpicker = !T.zpicker; T.zadd = null; }
+    else if (act === "tz-add") { const T = timeState(), w = el.getAttribute("data-what"); T.zadd = T.zadd === w ? null : w; T.zpicker = false; }
+    else if (act === "tz-waits") { timeState().zadd = null; tzOp({ kind: "waits", keys: [el.getAttribute("data-k")], after: (el.getAttribute("data-w") || "").split(" ").filter(Boolean) }); }
+    else if (act === "tz-batch") { timeState().zadd = null; const b = el.getAttribute("data-b"); tzOp({ kind: "batch", keys: (el.getAttribute("data-ks") || "").split(" ").filter(Boolean), batch: b || null }); }
+    else if (act === "tz-to") { tzOp({ kind: "person", keys: [el.getAttribute("data-k")], to: el.getAttribute("data-to") }); timeState().zpicker = false; }
+    else if (act === "tz-hours") { tzOp({ kind: "hours", keys: [el.getAttribute("data-k")], hours: Number(el.getAttribute("data-h")) }); }
+    else if (act === "tz-span") { tzNudge(el.getAttribute("data-k"), el.getAttribute("data-edge"), Number(el.getAttribute("data-d"))); }
+    else if (act === "show-time") { const T = timeState(); T.group = "delivery"; T.zopen = { ...(T.zopen || {}), [`d:${el.getAttribute("data-key")}`]: true }; S.sheets = []; S.body = "time"; if (!T.tl) { loadTimeline(); return; } }
     render();
   });
 
@@ -5823,9 +6324,11 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   root.addEventListener("dragover", hlDragOver);
   root.addEventListener("drop", hlDrop);
   root.addEventListener("dragend", () => { S.drag = null; for (const x of root.querySelectorAll?.(".wrap.dropok") || []) x.classList.remove("dropok"); });
-  root.addEventListener("pointerdown", (e) => { touch(); if (calDragStart(e) || dragStart(e)) render(); });
-  document.addEventListener?.("pointermove", (e) => { calDragMove(e); dragMove(e); });
-  document.addEventListener?.("pointerup", (e) => { calDragEnd(e); dragEnd(e); });
+  root.addEventListener("pointerdown", (e) => { touch(); if (tzDragStart(e) || calDragStart(e)) render(); });
+  document.addEventListener?.("pointerdown", tzOutside, true);
+  document.addEventListener?.("click", tzSwallowClick, true);
+  document.addEventListener?.("pointermove", (e) => { tzDragMove(e); calDragMove(e); });
+  document.addEventListener?.("pointerup", (e) => { tzDragEnd(e); calDragEnd(e); });
 
   /** Högerklick: samma meny på steg, rad och Igång. */
   root.addEventListener("contextmenu", (e) => {
@@ -5886,6 +6389,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if ((e.metaKey || e.ctrlKey) && (k === "k" || k === "K")) { stop(); if (S.pal) { S.pal = null; render(); } else openPalette(); return; }
     // Markera flera: ⌘A allt som syns i linsen, Esc avmarkerar (före annat Esc).
     if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (k === "a" || k === "A") && !S.pal && !typing(e.target) && (S.selVisible || []).length) { stop(); selAll(); return; }
+    if (tzKey(e)) { stop(); return; }
+    if (k === "Escape" && S.time?.zdrag?.started) { stop(); const T = S.time, g = T.zdrag; T.zdrag = null; T.zinfo = null;
+      T.changes = Object.fromEntries(g.from.map((c) => [`${c.task}|${c.step}`, c])); render(); return; }
     if (k === "Escape" && !S.pal && !S.confirm && selCount()) { stop(); selClear(); return; }
     if (S.pal) {
       const n = S.pal.res?.length || 0;
@@ -5905,6 +6411,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       return;
     }
     // Byta namn: Enter sparar, Esc avbryter (före regeln att tangenterna inte gäller i ett fält).
+    if (e.target?.id === "tz-hours" && (k === "Enter" || k === "Escape")) { stop(); timeState().zhtext = null;
+      const [a, b] = (e.target.getAttribute?.("data-k") || "").split("|"), h = k === "Enter" ? tzParseH(e.target.value) : null;
+      if (h !== null && a && b) tzOp({ kind: "hours", keys: [`${a}|${b}`], hours: h }); e.target.blur?.(); render(); return; }
     if (e.target?.id === "rename-input" && (k === "Enter" || k === "Escape")) { stop(); if (k === "Enter") renameSave(); else { S.rename = null; render(); } return; }
     if (e.target?.id === "step-label" && (k === "Enter" || k === "Escape")) { stop(); const id = top1()?.id;
       if (k === "Escape" && id) { setEdit(id, { label: undefined }); render(); } else e.target.blur?.(); return; }
@@ -5916,6 +6425,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (k === "Escape" && (tp?.kind === "order" || tp?.kind === "chat") && tp.claude?.busy) { stop(); tp.claude.ctl?.abort(); return; }
     if (typing(e.target)) return;
     if ((e.metaKey || e.ctrlKey) && (k === "z" || k === "Z") && S.body === "cal" && !S.sheets.length) { stop(); calUndo(); return; }
+    if ((e.metaKey || e.ctrlKey) && S.body === "time" && !S.sheets.length && !typing(e.target)) {
+      if (k === "Enter") { stop(); tzCommit(); return; }
+      if (k === "z" || k === "Z") { stop(); tzUndo(); return; } }
     if ((k === "g" || k === "G") && !e.metaKey && !e.ctrlKey && tp?.kind === "case") { const c = S.sheetData[sheetKey(tp)]?.case; if (c?.gmail_url) { stop(); gmailOpen(c.gmail_url); return; } }
     if (k === "Escape") {
       if (S.confirm) { stop(); S.confirm = null; render(); return; }
