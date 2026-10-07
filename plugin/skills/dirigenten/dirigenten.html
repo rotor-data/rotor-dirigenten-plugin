@@ -772,7 +772,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "af50bba", published: "2026-10-07" };
+  const SIDA = { version: "a3fac50", published: "2026-10-07" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1822,9 +1822,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     S.confirm = { loading: true, verb, text: "Förhandsvisar …" }; render();
     try {
       const r = await call("execute_step", { task, step, values });
-      const pid = deepFind(r, "preview_id");
+      if (!r?.next_call) throw new Error(summaryText(r) || "ingen förhandsvisning kom tillbaka");
       S.confirm = { verb, text: "Ingen mottagare kan öppna presentationen efteråt. Loggen behåller den.",
-        next: { tool: "execute_step", args: { task, step, values: { ...values, preview_id: pid }, confirmed: true, user_approval: `Ja (◐ ${verb} i vyn)` } },
+        next: hlNext(r, null, verb),
         onDone: () => { if (x) fetchSheet(x, true); } };
     } catch (e) { S.confirm = null; say(`Gick inte: ${e?.message || e}`, null, true); }
     render();
@@ -5457,31 +5457,46 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     }
     render();
   }
+  /** Förhandsvisa: sidan som kunden ser den, ur urval, mall och sidotexter. Ren läsning — inga mottagare, inget steg, inget ja. */
   async function presPreview() {
     const p = S.pres; if (!p?.d) return;
-    if (!presRecipients(p).length) { p.error = "Lägg till minst en mottagare."; render(); return; }
     p.error = null; p.busy = "Förhandsvisar …"; render();
+    try {
+      const r = await call("read", { op: "presentation_draft", delivery: p.delivery, template: p.template, render: { title: p.title, blocks: presBlocks(p) } });
+      p.preview = { html: r?.preview_html || "" };
+      if (!p.preview.html) throw new Error(summaryText(r) || "ingen förhandsvisning kom tillbaka");
+      p.send = null; p.phase = "preview";
+    } catch (e) { p.error = e?.message || String(e); }
+    p.busy = null; render();
+  }
+  /** Publicera: kräver mottagare; stegets förhandsvisning av utskicket (vem som får kod, vilken version), sedan ◐ ja. */
+  async function presSendPreview() {
+    const p = S.pres; if (!p?.d) return;
+    if (!presRecipients(p).length) { p.error = "Lägg till minst en mottagare."; render(); return; }
+    p.error = null; p.busy = "Förbereder publiceringen …"; render();
     try {
       const step = await presStep(p);
       const r = await call("execute_step", { task: p.task, step, values: presValues(p) });
-      p.preview = { html: deepFind(r, "preview_html") || "", id: deepFind(r, "preview_id"), what: deepFind(r, "would_change") };
-      if (!p.preview.id) throw new Error(summaryText(r) || "ingen förhandsvisning kom tillbaka");
-      p.phase = "preview";
+      const next = r?.next_call ? hlNext(r, null, "Publicera presentationen") : null;
+      if (!next || !deepFind(r, "would_change")) throw new Error(summaryText(r) || "ingen förhandsvisning av publiceringen kom tillbaka");
+      p.send = { what: deepFind(r, "would_change"), version: deepFind(r, "version"), next };
+      p.phase = "send";
     } catch (e) { p.error = e?.message || String(e); }
     p.busy = null; render();
   }
   async function presPublish() {
-    const p = S.pres; if (!p?.preview?.id) return;
+    const p = S.pres; if (!p?.send?.next) return;
     p.busy = "Publicerar …"; render();
     try {
-      const r = await call("execute_step", { task: p.task, step: p.step, values: presValues(p, { preview_id: p.preview.id }),
-        confirmed: true, user_approval: "Ja (◐ Publicera presentationen i vyn)" });
+      const r = await call(p.send.next.tool, p.send.next.args);
+      if (!deepFind(r, "done")) throw new Error(summaryText(r) || "presentationen publicerades inte");
       const url = deepFind(r, "url");
       S.pres = null;
       say(`Presentationen är publicerad${url ? ` på ${url}` : ""}. Mottagarna loggar in med en engångskod.`);
     } catch (e) { p.error = e?.message || String(e); p.busy = null; }
     render();
   }
+  /** Dra tillbaka: stegets förhandsvisning, sedan nästa anrop som servern gav (med dess preview_id) och jaet. */
   async function presWithdraw(id) {
     const p = S.pres; if (!p) return;
     p.busy = "Drar tillbaka …"; render();
@@ -5489,8 +5504,10 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const step = await presStep(p);
       const values = { action: "withdraw", party: S.data?.party?.id, presentation: id, reason: "Dragen tillbaka i vyn" };
       const r = await call("execute_step", { task: p.task, step, values });
-      const pid = deepFind(r, "preview_id");
-      await call("execute_step", { task: p.task, step, values: { ...values, preview_id: pid }, confirmed: true, user_approval: "Ja (◐ Dra tillbaka i vyn)" });
+      if (!r?.next_call) throw new Error(summaryText(r) || "ingen förhandsvisning kom tillbaka");
+      const next = hlNext(r, null, "Dra tillbaka");
+      const done = await call(next.tool, next.args);
+      if (!deepFind(done, "done")) throw new Error(summaryText(done) || "presentationen drogs inte tillbaka");
       say("Presentationen är tillbakadragen. Ingen mottagare kan öppna den längre.");
       S.pres = null;
     } catch (e) { p.error = e?.message || String(e); p.busy = null; }
@@ -5508,9 +5525,17 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       return `<div class="mv pres" role="dialog" aria-label="Förhandsvisning">${head}`
         + `<div class="mmeta">Så här ser kunden den. Bilderna visas med länkar som gäller en timme.</div>`
         + `<iframe class="pres-frame" sandbox="" title="Förhandsvisning" srcdoc="${esc(p.preview.html)}"></iframe>`
-        + `<div class="mmeta">${esc(p.preview.what?.what || "")} · till ${esc(presRecipients(p).join(", "))} · koden mejlas från din Gmail.</div>`
+        + `<label class="mh" for="pres-to">Mottagare hos kunden (e-post, kommaseparerat)</label><input id="pres-to" value="${esc(p.to)}" placeholder="namn@kunden.se">`
         + err + busy
-        + `<div class="pres-acts"><button class="link" data-act="pres-back">← Tillbaka och ändra</button><button class="primary" data-act="pres-publish">Publicera <span class="lvl">◐</span></button></div></div>`;
+        + `<div class="pres-acts"><button class="link" data-act="pres-back">← Tillbaka och ändra</button><button class="primary" data-act="pres-send">Publicera …</button></div></div>`;
+    }
+    if (p.phase === "send") {
+      const w = p.send?.what || {};
+      return `<div class="mv pres" role="dialog" aria-label="Publicera">${head}`
+        + `<div class="mmeta"><b>${esc(w.what || "")}</b>${p.send?.version ? ` · version ${esc(String(p.send.version))}` : ""}</div>`
+        + `<div class="mmeta">Får en engångskod: ${esc((w.recipients || presRecipients(p)).join(", "))}. Koden mejlas från din Gmail.</div>`
+        + err + busy
+        + `<div class="pres-acts"><button class="link" data-act="pres-back-preview">← Tillbaka</button><button class="primary" data-act="pres-publish">Ja, publicera <span class="lvl">◐</span></button></div></div>`;
     }
     const d = p.d;
     const blocks = d.blocks.filter((b) => b.type !== "cover").map((b) => {
@@ -5538,9 +5563,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<div class="pres-acts"><span class="mmeta" style="flex:1">${esc(p.claude?.note || (p.claude?.busy ? "Claude skriver förslag …" : "Bocka ur det kunden inte ska se."))}</span>`
       + `<button class="link" data-act="pres-claude"${p.claude?.busy ? " disabled" : ""}>Föreslå sidotexter med Claude</button></div>`
       + `<div class="pres-list">${blocks}</div>`
-      + `<label class="mh" for="pres-to">Mottagare hos kunden (e-post, kommaseparerat)</label><input id="pres-to" value="${esc(p.to)}" placeholder="namn@kunden.se">`
       + err + busy
-      + `<div class="pres-acts"><span style="flex:1"></span><button class="primary" data-act="pres-preview">Förhandsvisa</button></div>`
+      + `<div class="pres-acts"><span class="mmeta" style="flex:1">Mottagarna anges när du publicerar.</span><button class="primary" data-act="pres-preview">Förhandsvisa</button></div>`
       + (old ? `<div class="mh">Presentationer för kunden</div>${old}` : "")
       + `</div>`;
   }
@@ -5563,6 +5587,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "pres-claude") { presSideTexts(); return; }
     else if (act === "pres-preview") { presPreview(); return; }
     else if (act === "pres-back") { p.phase = "pick"; p.preview = null; }
+    else if (act === "pres-send") { presSendPreview(); return; }
+    else if (act === "pres-back-preview") { p.phase = "preview"; p.send = null; }
     else if (act === "pres-publish") { presPublish(); return; }
     else if (act === "pres-withdraw") { presWithdraw(el.getAttribute("data-id")); return; }
     render();
