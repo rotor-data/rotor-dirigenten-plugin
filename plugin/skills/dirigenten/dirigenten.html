@@ -772,7 +772,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "9487fc1", published: "2026-10-07" };
+  const SIDA = { version: "ef2e7e8", published: "2026-10-07" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2868,7 +2868,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     render();
   }
   async function approveDraft(id, name) {
-    try { await call("write", { op: "content_approve", id }); say(`«${name}» är godkänt.`);
+    try { await call("write", { op: "content_approve", id, user_approval: `Ja (● Godkänn «${name}» i vyn)`.slice(0, 500) }); say(`«${name}» är godkänt.`);
       for (const k of Object.keys(S.sheetData)) S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], stale: true } };
       const t = top1(); if (t) fetchSheet(t, true); }
     catch (e) { say(`Kunde inte godkänna: ${e.message || e}.`, null, true); }
