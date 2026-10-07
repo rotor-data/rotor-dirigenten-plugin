@@ -9,6 +9,8 @@ description: How the dirigenten registry, planning and delivery system fits toge
 
 **Explain what you refer to.** Never point to a recipe, method, step, task, variant or assignment by its name alone ("följ receptet för Bildval", "metoden Avgränsning och plan", "steg 3"). The user does not know what is behind the name. Say what it is in the work: who does what, when, with what, and what it gives — e.g. "Hultborn väljer tre bilder ur fotograferingen och lägger dem i utkastet; Daniel godkänner dem innan de går ut". Add the name after that only if the user will need to find it. If the user asks "vad är det?", answer with the content, not another name.
 
+**Prompts follow one standard.** Every Claude instruction you write or change — in a method, a customer's way or a project — follows `guide { topic: "promptstandard" }`: three levels — the method (general: no area, no customer), the area (the deliverable type's `instruction_addition`: all work of that kind, any customer) and the customer's way (customer specifics), with the assignment as the narrowest; where, how, when, why and who; exact tool calls with op and fields; where the result is saved and who reviews. A part you deliberately leave out needs a deviation with a concrete reason. A flagged instruction stops a project from being written in.
+
 ## The tools
 
 Seven tools, all through the user's `rotor-dirigenten` connector (there is no local server, and the old names `context`, `asset_get`, `intake_submit` … are not tools):
