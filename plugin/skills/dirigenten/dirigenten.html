@@ -681,6 +681,15 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 .mv .mvi { display: flex; width: 100%; gap: 10px; text-align: left; border: 0; background: none; padding: 7px 8px; border-radius: 6px; font-size: 13.5px; }
 .mv .mvi.on, .mv .mvi:hover { background: var(--s2, #f6f5f1); }
 .mv .mvi .mmeta { margin-left: auto; }
+.mv.pres { top: 6vh; width: min(760px, calc(100vw - 32px)); max-height: 88vh; overflow: auto; }
+.pres-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.pres textarea { width: 100%; box-sizing: border-box; padding: 7px 11px; border: 1px solid var(--l2); border-radius: 8px; font: inherit; font-size: 13.5px; margin: 0 0 8px; }
+.pres-b { border-top: 1px solid var(--l2); padding: 8px 0; }
+.pres-i { display: flex; gap: 8px; align-items: baseline; padding: 2px 0; }
+.pres-i input { width: auto; margin: 0; }
+.pres-acts { display: flex; gap: 12px; align-items: center; margin: 8px 0; }
+.pres-frame { width: 100%; height: 60vh; border: 1px solid var(--l2); border-radius: 8px; background: #f6f3f0; margin: 8px 0; }
+.pres-old { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--l2); }
 .wrap.dropok > .row { outline: 2px dashed var(--teal); outline-offset: -2px; }
 </style>
 <div id="v6" aria-live="polite"></div>
@@ -691,7 +700,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "9ee039d", published: "2026-10-07" };
+  const SIDA = { version: "54fcea4", published: "2026-10-07" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1520,6 +1529,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       nextMine && !isRunning(nextMine.task, nextMine.step)
         ? `<button class="primary" data-act="pin" data-task="${esc(nextMine.task)}" data-step="${esc(nextMine.step)}" data-label="${esc(nextMine.label)}">⊕ Lägg «${esc(nextMine.label)}» i Igång <span class="lvl">●</span></button>` : "",
       row?.kind === "delivery" ? `<button class="link" data-act="show-time" data-key="${esc(x.id)}">Visa i tid</button>` : "",
+      row?.kind === "delivery" && cust?.id ? `<button class="link" data-act="pres-open" data-key="${esc(x.id)}" data-label="${esc(row.label)}" title="Visa det som skapats för kunden, med kundens färger, bakom engångskod">Presentera …</button>` : "",
       `<button class="link" data-act="chat" data-key="${esc(x.id)}">Arbeta i chatten ↗</button>`,
       row?.tasks?.length ? `<button class="link" data-act="how-open" data-task="${esc(row.tasks[0])}" data-label="${esc(row.label)}" title="Så görs det: ansvariga, mallar, kanaler och rytm">⚙ Så görs det</button>` : "",
       row?.kind === "task" && row.tasks.length === 1 ? `<button class="link" data-act="hl-move" data-task="${esc(row.tasks[0])}">Flytta till leverans …</button>` : "",
@@ -4598,6 +4608,183 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     render();
     setTimeout(() => root.querySelector?.("#mv-q")?.focus?.(), 0);
   }
+  /* ── Presentera: en presentation för kund ur leveransen (src/present/, atomen presentation.write) ──
+     Urvalet att bocka i, mallen, sidotexter som Claude föreslår och du godkänner, mottagarna,
+     förhandsvisningen och ◐ Publicera. Leveranstexterna visas ordagrant och går inte att ändra här. */
+  const PRES_STEP = "s_presentation_write";
+  async function openPres(delivery, label) {
+    S.menu = null; S.peek = null; S.pal = null; S.mv = null;
+    S.pres = { delivery, label, loading: true, phase: "pick", off: {}, texts: {}, to: "", title: label };
+    render();
+    try {
+      const d = await call("read", { op: "presentation_draft", delivery });
+      S.pres = { ...S.pres, loading: false, d, template: d.template, title: d.blocks.find((b) => b.type === "cover")?.title || label };
+    } catch (e) { S.pres = { ...S.pres, loading: false, error: e?.message || String(e) }; }
+    render();
+  }
+  /** Blocken som de ska publiceras: ibockat material, godkända sidotexter, rubriken på omslaget. */
+  function presBlocks(p) {
+    return (p.d?.blocks || []).map((b) => {
+      const t = p.texts[b.type] || {};
+      const items = (b.items || []).filter((i) => !p.off[i.ref]).map((i) => ({ ref: i.ref, ...(i.label ? { label: i.label } : {}),
+        ...(i.mime ? { mime: i.mime } : {}), ...(i.width ? { width: i.width, height: i.height } : {}),
+        ...(t.captions?.[i.ref] ? { caption: t.captions[i.ref] } : {}) }));
+      const out = { type: b.type, ...(b.type === "cover" ? { title: p.title } : t.title ? { title: t.title } : {}), ...(t.lead ? { lead: t.lead } : {}),
+        ...(items.length ? { items } : {}), ...(b.data ? { data: b.data } : {}) };
+      return out;
+    });
+  }
+  const presRecipients = (p) => (p.to || "").split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean);
+  function presValues(p, extra = {}) {
+    return { action: "publish", party: S.data?.party?.id, template: p.template, customer: p.d.customer, delivery: p.delivery,
+      title: p.title, blocks: presBlocks(p), recipients: presRecipients(p), ...extra };
+  }
+  /** Ett värde var som helst i svaret (förslagets utdata ligger under proposal:<anrop>). */
+  function deepFind(o, k, depth = 0) {
+    if (!o || typeof o !== "object" || depth > 6) return undefined;
+    if (k in o && o[k] !== undefined) return o[k];
+    for (const v of Object.values(o)) { const f = deepFind(v, k, depth + 1); if (f !== undefined) return f; }
+    return undefined;
+  }
+  /** Steget presentation.write i leverans första del: läggs dit en gång, sedan återanvänds det. */
+  async function presStep(p) {
+    if (p.step) return p.step;
+    const task = (rowOf(p.delivery)?.tasks || [])[0];
+    if (!task) throw new Error("leveransen har ingen del att lägga publiceringen i");
+    const r = await call("write", { op: "task_lock", task, add_step: { after: null, use: PRES_STEP, new_reason: "Presentera i vyn" }, confirmed: true });
+    p.task = task; p.step = r?.step || deepFind(r, "step") || PRES_STEP;
+    return p.step;
+  }
+  async function presSideTexts() {
+    const p = S.pres; if (!p?.d) return;
+    if (!sample) { say("Claude finns inte här. Skriv rubriker och ingresser själv, eller öppna vyn i claude.ai.", null, true); return; }
+    p.claude = { busy: true }; render();
+    const blocks = presBlocks(p).filter((b) => b.items?.length).map((b) => ({ type: b.type, items: b.items.map((i) => ({ ref: i.ref, label: i.label, mime: i.mime })) }));
+    const ins = p.d.side_texts?.instruction || {};
+    const prompt = `Du skriver sidotexter till en presentation för kunden ${p.d.customer_label}: «${p.title}».\n`
+      + `Syfte: ${ins.purpose || ""}\nSå gör du:\n- ${(ins.how_to || []).join("\n- ")}\nGör inte:\n- ${(ins.must_not || []).join("\n- ")}\n`
+      + `Svara BARA med JSON: ${ins.answer_format || "{ blocks: [{ type, title, lead, captions }] }"}\nBlocken:\n${JSON.stringify(blocks)}`;
+    try {
+      const r = await sample([{ role: "user", content: prompt }], { modelTier: "default" });
+      const m = /\{[\s\S]*\}/.exec(String(r?.text || ""));
+      const j = m ? JSON.parse(m[0]) : null;
+      for (const b of j?.blocks || []) if (b?.type) p.texts[b.type] = { title: String(b.title || ""), lead: String(b.lead || ""), captions: b.captions || {} };
+      p.claude = { done: true, note: "Förslagen står i fälten. Ändra det du vill; inget publiceras utan förhandsvisning och ditt ja." };
+    } catch (e) {
+      if (e?.code === "not_granted") sample = null;
+      p.claude = { note: `Claude svarade inte (${e?.message || e}). Skriv texterna själv.` };
+    }
+    render();
+  }
+  async function presPreview() {
+    const p = S.pres; if (!p?.d) return;
+    if (!presRecipients(p).length) { p.error = "Lägg till minst en mottagare."; render(); return; }
+    p.error = null; p.busy = "Förhandsvisar …"; render();
+    try {
+      const step = await presStep(p);
+      const r = await call("execute_step", { task: p.task, step, values: presValues(p) });
+      p.preview = { html: deepFind(r, "preview_html") || "", id: deepFind(r, "preview_id"), what: deepFind(r, "would_change") };
+      if (!p.preview.id) throw new Error(summaryText(r) || "ingen förhandsvisning kom tillbaka");
+      p.phase = "preview";
+    } catch (e) { p.error = e?.message || String(e); }
+    p.busy = null; render();
+  }
+  async function presPublish() {
+    const p = S.pres; if (!p?.preview?.id) return;
+    p.busy = "Publicerar …"; render();
+    try {
+      const r = await call("execute_step", { task: p.task, step: p.step, values: presValues(p, { preview_id: p.preview.id }),
+        confirmed: true, user_approval: "Ja (◐ Publicera presentationen i vyn)" });
+      const url = deepFind(r, "url");
+      S.pres = null;
+      say(`Presentationen är publicerad${url ? ` på ${url}` : ""}. Mottagarna loggar in med en engångskod.`);
+    } catch (e) { p.error = e?.message || String(e); p.busy = null; }
+    render();
+  }
+  async function presWithdraw(id) {
+    const p = S.pres; if (!p) return;
+    p.busy = "Drar tillbaka …"; render();
+    try {
+      const step = await presStep(p);
+      const values = { action: "withdraw", party: S.data?.party?.id, presentation: id, reason: "Dragen tillbaka i vyn" };
+      const r = await call("execute_step", { task: p.task, step, values });
+      const pid = deepFind(r, "preview_id");
+      await call("execute_step", { task: p.task, step, values: { ...values, preview_id: pid }, confirmed: true, user_approval: "Ja (◐ Dra tillbaka i vyn)" });
+      say("Presentationen är tillbakadragen. Ingen mottagare kan öppna den längre.");
+      S.pres = null;
+    } catch (e) { p.error = e?.message || String(e); p.busy = null; }
+    render();
+  }
+  const presWhen = (iso) => { try { return new Date(iso).toLocaleString("sv-SE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return iso; } };
+  function presHtml() {
+    const p = S.pres; if (!p) return "";
+    const head = `<div class="pres-h"><b>Presentera «${esc(p.label)}» för kunden</b><button class="link" data-act="pres-close">Stäng</button></div>`;
+    if (p.loading) return `<div class="mv pres" role="dialog" aria-label="Presentera">${head}<div class="mmeta">Hämtar det som skapats …</div></div>`;
+    if (!p.d) return `<div class="mv pres" role="dialog" aria-label="Presentera">${head}<div class="banner">${esc(p.error || "Urvalet gick inte att läsa.")}</div></div>`;
+    const err = p.error ? `<div class="banner">${esc(p.error)}</div>` : "";
+    const busy = p.busy ? `<div class="mmeta">${esc(p.busy)}</div>` : "";
+    if (p.phase === "preview") {
+      return `<div class="mv pres" role="dialog" aria-label="Förhandsvisning">${head}`
+        + `<div class="mmeta">Så här ser kunden den. Bilderna visas med länkar som gäller en timme.</div>`
+        + `<iframe class="pres-frame" sandbox="" title="Förhandsvisning" srcdoc="${esc(p.preview.html)}"></iframe>`
+        + `<div class="mmeta">${esc(p.preview.what?.what || "")} · till ${esc(presRecipients(p).join(", "))} · koden mejlas från din Gmail.</div>`
+        + err + busy
+        + `<div class="pres-acts"><button class="link" data-act="pres-back">← Tillbaka och ändra</button><button class="primary" data-act="pres-publish">Publicera <span class="lvl">◐</span></button></div></div>`;
+    }
+    const d = p.d;
+    const blocks = d.blocks.filter((b) => b.type !== "cover").map((b) => {
+      const t = p.texts[b.type] || {};
+      const items = (b.items || []).map((i) => `<label class="pres-i"><input type="checkbox" data-act="pres-tick" data-ref="${esc(i.ref)}"${p.off[i.ref] ? "" : " checked"}> ${esc(i.label || i.ref.slice(-12))}${i.mime ? ` <span class="mmeta">${esc(/^image\//.test(i.mime) ? "bild" : "text, visas ordagrant")}</span>` : ""}</label>`).join("");
+      const texts = (b.items || []).length
+        ? `<input id="pres-t-${esc(b.type)}" placeholder="Rubrik" value="${esc(t.title || "")}"><textarea id="pres-l-${esc(b.type)}" rows="2" placeholder="Ingress">${esc(t.lead || "")}</textarea>` : "";
+      return `<div class="pres-b"><div class="mh">${esc(PRES_BLOCK[b.type] || b.type)}</div>${items || `<div class="mmeta">Inget material — utelämnas.</div>`}${texts}</div>`;
+    }).join("");
+    const old = (d.presentations || []).map((x) => `<div class="pres-old"><span><b>${esc(x.title)}</b> · version ${x.version} · ${esc(presWhen(x.at))}${x.withdrawn ? " · tillbakadragen" : ""}</span>`
+      + `<span class="mmeta">${x.views?.length ? `Sedd: ${x.views.slice(0, 3).map((v) => `${esc(v.email)} ${esc(presWhen(v.at))}`).join(", ")}` : "Inte öppnad än"}</span>`
+      + (x.withdrawn ? "" : `<button class="link" data-act="pres-withdraw" data-id="${esc(x.id)}">Dra tillbaka <span class="lvl">◐</span></button>`) + `</div>`).join("");
+    return `<div class="mv pres" role="dialog" aria-label="Presentera">${head}`
+      + `<div class="mmeta">Mall: <select id="pres-template">${(d.templates || []).map((t) => `<option value="${esc(t.id)}"${t.id === p.template ? " selected" : ""}>${esc(t.label)}</option>`).join("")}</select>`
+      + `${d.brand ? "" : " · kunden har ingen färgprofil, husets färg används"}</div>`
+      + `<label class="mh" for="pres-title">Rubrik</label><input id="pres-title" value="${esc(p.title)}">`
+      + `<div class="pres-acts"><span class="mmeta" style="flex:1">${esc(p.claude?.note || (p.claude?.busy ? "Claude skriver förslag …" : "Bocka ur det kunden inte ska se."))}</span>`
+      + `<button class="link" data-act="pres-claude"${p.claude?.busy ? " disabled" : ""}>Föreslå sidotexter med Claude</button></div>`
+      + `<div class="pres-list">${blocks}</div>`
+      + `<label class="mh" for="pres-to">Mottagare hos kunden (e-post, kommaseparerat)</label><input id="pres-to" value="${esc(p.to)}" placeholder="namn@kunden.se">`
+      + err + busy
+      + `<div class="pres-acts"><span style="flex:1"></span><button class="primary" data-act="pres-preview">Förhandsvisa</button></div>`
+      + (old ? `<div class="mh">Presentationer för kunden</div>${old}` : "")
+      + `</div>`;
+  }
+  const PRES_BLOCK = { section_intro: "Inledning", image_test: "Bildtest", copy_angles: "Budskap", lead_form: "Formulär", mail_sequence: "Mejlflöde",
+    timeline: "Tidslinje", budget: "Budget", commentary: "Kommentar", other_material: "Övrigt material",
+    metrics: "Nyckeltal", chart: "Diagram", report_text: "Rapport", proposal: "Förslag" };
+  function presAct(act, el) {
+    const p = S.pres;
+    if (act === "pres-open") { openPres(el.getAttribute("data-key"), el.getAttribute("data-label") || ""); return; }
+    if (!p) return;
+    if (act === "pres-close") S.pres = null;
+    else if (act === "pres-tick") { const r = el.getAttribute("data-ref"); p.off = { ...p.off, [r]: !el.checked }; return; }
+    else if (act === "pres-claude") { presSideTexts(); return; }
+    else if (act === "pres-preview") { presPreview(); return; }
+    else if (act === "pres-back") { p.phase = "pick"; p.preview = null; }
+    else if (act === "pres-publish") { presPublish(); return; }
+    else if (act === "pres-withdraw") { presWithdraw(el.getAttribute("data-id")); return; }
+    render();
+  }
+  function presInput(el) {
+    const p = S.pres; if (!p) return;
+    let m;
+    if (el.id === "pres-title") p.title = el.value;
+    else if (el.id === "pres-to") p.to = el.value;
+    else if ((m = /^pres-([tl])-(.+)$/.exec(el.id))) p.texts[m[2]] = { ...(p.texts[m[2]] || {}), [m[1] === "t" ? "title" : "lead"]: el.value };
+  }
+  async function presTemplate(id) {
+    const p = S.pres; if (!p) return;
+    p.loading = true; render();
+    try { p.d = await call("read", { op: "presentation_draft", delivery: p.delivery, template: id }); p.template = id; }
+    catch (e) { p.error = e?.message || String(e); }
+    p.loading = false; render();
+  }
   function mvChoices() {
     const m = S.mv; if (!m) return [];
     const q = fold(m.q).trim();
@@ -6095,7 +6282,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     } else main = stateLine() + clashHtml() + outboxHtml() + (S.body === "time" ? timeBody() : S.body === "cal" ? calendarBody() : reviewsHtml(o) + list(o));
     const mainSel = selDecorate(main), sheetsSel = selDecorate(sheetsHtml());
     S.selVisible = S.sheets.length ? sheetsSel.ctxs : mainSel.ctxs;
-    root.innerHTML = top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + selbarHtml() + confirmHtml() + toastHtml();
+    root.innerHTML = top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + presHtml() + selbarHtml() + confirmHtml() + toastHtml();
     if (S.pal) focusPalette();
     else if (focusId === "list-q") { const inp = root.querySelector?.("#list-q"); if (inp) { inp.focus?.(); const n = inp.value?.length || 0; inp.setSelectionRange?.(n, n); } }
     const t = top1(), sc = t && root.querySelector?.(".sheet .sbody");
@@ -6113,6 +6300,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const act = el.getAttribute("data-act");
     if (/^open-|^sheet-/.test(act)) markClick(act);
     if (/^(hl|mv)-/.test(act)) { hlAct(act, el); return; }
+    if (/^pres-/.test(act)) { presAct(act, el); return; }
     if (/^(mb|vp)-/.test(act)) { mbAct(act, el); return; }
     if (/^how-/.test(act)) { howAct(act, el); return; }
     if (act === "open-method") { openMethod(el.getAttribute("data-id"), el.getAttribute("data-label")); return; }
@@ -6350,6 +6538,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (e.target?.id === "hl-steps") { const t = e.target.getAttribute?.("data-task"); if (t) { const st = hlState(t), had = !!st.text.trim(); st.text = e.target.value; if (had !== !!st.text.trim() || /\n/.test(e.data || "") || e.inputType === "insertLineBreak") renderKeep(); } }
     else if (/^(mb|vp)-/.test(e.target?.id || "")) mbInput(e.target);
     else if (/^how-/.test(e.target?.id || "")) howInput(e.target);
+    else if (/^pres-/.test(e.target?.id || "")) { if (e.target.id === "pres-template") presTemplate(e.target.value); else presInput(e.target); }
     else if (e.target?.id === "wd-from" || e.target?.id === "wd-to") { const t = top1(); if (t) { t.wd = { ...(t.wd || {}), [e.target.id === "wd-from" ? "from" : "to"]: e.target.value }; renderKeep(); } }
     else if (e.target?.id === "list-q") { S.filterQ = e.target.value; S.limit = PAGE; render(); }
     else if (e.target?.id === "rename-input") { if (S.rename) S.rename.value = e.target.value; }
@@ -6401,6 +6590,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       return;
     }
     if (S.mv && mvKey(e, k, stop)) return;
+    if (S.pres && k === "Escape") { stop(); S.pres = null; render(); return; }
     if (S.menu) {
       const items = menuItems(S.menu.target), n = items.length;
       if (k === "Escape") { stop(); S.menu = null; render(); return; }
