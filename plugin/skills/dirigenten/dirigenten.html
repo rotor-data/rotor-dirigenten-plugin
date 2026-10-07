@@ -772,7 +772,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "ef2e7e8", published: "2026-10-07" };
+  const SIDA = { version: "af50bba", published: "2026-10-07" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -7168,6 +7168,12 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     saveScroll();
     syncHash();
     const focusId = typeof document.activeElement === "object" ? document.activeElement?.id : null;
+    // Presentera-rutan ritas om av allt annat i vyn (posten, Claude, toasten):
+    // läget i rutan och fältet man skriver i följer med (Daniel P 2026-10-07:
+    // «hoppar upp till start hela tiden när jag är längst ner»).
+    const presBox = root.querySelector?.(".mv.pres"), presScroll = presBox ? presBox.scrollTop : null;
+    const act0 = focusId && /^pres-/.test(focusId) ? document.activeElement : null;
+    const presSel = act0 ? [act0.selectionStart, act0.selectionEnd] : null;
     const o = S.data;
     const today = o?.today || new Date().toISOString().slice(0, 10);
     // Knapparna som inte gör något än (Fokus, Meddelanden, ⚙, Claude) står inte med: hellre ingen knapp än en död.
@@ -7197,6 +7203,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const mainSel = selDecorate(main), sheetsSel = selDecorate(sheetsHtml());
     S.selVisible = S.sheets.length ? sheetsSel.ctxs : mainSel.ctxs;
     root.innerHTML = top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + presHtml() + selbarHtml() + confirmHtml() + toastHtml();
+    if (presScroll !== null) { const box = root.querySelector?.(".mv.pres"); if (box) box.scrollTop = presScroll; }
+    if (act0) { const el = root.querySelector?.(`#${focusId}`); if (el) { el.focus?.({ preventScroll: true }); try { if (presSel[0] != null) el.setSelectionRange?.(presSel[0], presSel[1]); } catch { /* inte ett textfält */ } } }
     if (S.pal) focusPalette();
     else if (focusId === "ov-name" || (S.saving === "" && root.querySelector?.("#ov-name"))) { const inp = root.querySelector?.("#ov-name"); if (inp) { inp.focus?.(); const n = inp.value?.length || 0; inp.setSelectionRange?.(n, n); } }
     const t = top1(), sc = t && root.querySelector?.(".sheet .sbody");
