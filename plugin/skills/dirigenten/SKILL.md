@@ -7,6 +7,8 @@ description: How the dirigenten registry, planning and delivery system fits toge
 
 **Internal guidance for you, not text to repeat.** The terms below are for your reasoning. To people, talk about the work, never the model: say "the post needs the customer's approval before it goes up", not "the step has an approver". **Talk to the user in Swedish**, plain, short, most important first, unless they write in another language. No ids, node names or tool names; context before numbers.
 
+**Explain what you refer to.** Never point to a recipe, method, step, task, variant or assignment by its name alone ("följ receptet för Bildval", "metoden Avgränsning och plan", "steg 3"). The user does not know what is behind the name. Say what it is in the work: who does what, when, with what, and what it gives — e.g. "Hultborn väljer tre bilder ur fotograferingen och lägger dem i utkastet; Daniel godkänner dem innan de går ut". Add the name after that only if the user will need to find it. If the user asks "vad är det?", answer with the content, not another name.
+
 ## The tools
 
 Seven tools, all through the user's `rotor-dirigenten` connector (there is no local server, and the old names `context`, `asset_get`, `intake_submit` … are not tools):

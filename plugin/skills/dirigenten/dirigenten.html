@@ -50,11 +50,16 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .fpanel { background: #fff; border: 1px solid var(--l2); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 22px; }
 .fpanel .ft { font: 500 10.5px var(--mono); letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
 .fpanel .fo { display: flex; flex-wrap: wrap; gap: 6px; }
+.fpanel .frange, .fpanel .fby { margin-top: 8px; align-items: center; font-size: 12.5px; color: var(--muted); }
+.fpanel .frange input { border: 1px solid var(--l2); border-radius: 7px; padding: 3px 6px; font-size: 12.5px; margin-left: 4px; }
 .fopt { white-space: nowrap; border: 1px solid var(--l2); background: #fff; border-radius: 14px; padding: 3px 10px; font-size: 12.5px; min-height: 30px; }
 .showing { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; font-size: 12.5px; }
 .showing .fchip { white-space: nowrap; border: 1px solid var(--l2); background: #fff; border-radius: 14px; padding: 2px 6px 2px 10px; font-size: 12.5px; min-height: 28px; }
 .showing .fchip span { color: var(--t3); padding: 0 4px; }
 .showing input { border: 1.5px solid var(--ink); border-radius: 7px; padding: 3px 8px; font-size: 12.5px; width: 160px; }
+.vrow .save[aria-disabled="true"] { color: var(--t3); border-style: dotted; }
+.vrow #ov-name { flex: none; border: 1.5px solid var(--ink); border-radius: 7px; padding: 3px 8px; font-size: 12.5px; width: 160px; }
+.vrow .primary { flex: none; }
 .showing .where { color: var(--t3); margin-left: auto; font-size: 11.5px; }
 .owner-pick { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0 12px; font-size: 13px; }
 .lens .n { font: 11px var(--mono); opacity: .65; margin-left: 7px; }
@@ -767,7 +772,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "f95a5dc", published: "2026-10-07" };
+  const SIDA = { version: "9487fc1", published: "2026-10-07" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1034,10 +1039,32 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   const GROUPS = [["none", "Ingen"], ["cust", "Kund"], ["owner", "Ansvarig"], ["week", "Vecka"], ["type", "Typ"]];
   const PRESETS = [["Allt", {}], ["Där jag behövs", { mine: true }], ["Sent", { late: true }], ["Väntar på kunden", { status: ["customer"] }]];
   const SAVED_MAX = 5;
+  /** Tidsfiltret (Daniel P 2026-10-07): på leveransdatum, eller på datumet då radens nästa steg ska vara klart. Veckan är ISO, måndag–söndag. */
+  const WHEN_LABEL = { late: "Försenat", this_week: "Den här veckan", next_week: "Nästa vecka", this_month: "Den här månaden", next_30: "Närmaste 30 dagar", no_date: "Utan datum", range: "Egen period" };
+  const BY_LABEL = { due: "leveransdatum", next: "nästa steg" };
+  /** Stämmer raden med tidsvalet i `f`? `today` är översiktens dag (ÅÅÅÅ-MM-DD). */
+  function inWhen(r, f, today) {
+    if (!f.when) return true;
+    if (r.kind === "inbox" || !today) return false;
+    const nx = f.by === "next" ? (r.steps || []).find((x) => x[7] & 2) : null;
+    const d = f.by === "next" ? (nx ? isoPlus(today, nx[5]) : null) : r.due?.slice(0, 10) || null;
+    if (f.when === "no_date") return !d;
+    if (!d) return false;
+    if (f.when === "late") return d < today;
+    if (f.when === "range") return (!f.from || d >= f.from) && (!f.to || d <= f.to);
+    const mon = isoPlus(today, -((new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7));
+    const span = { this_week: [mon, isoPlus(mon, 6)], next_week: [isoPlus(mon, 7), isoPlus(mon, 13)],
+      this_month: [`${today.slice(0, 7)}-01`, `${today.slice(0, 7)}-31`], next_30: [today, isoPlus(today, 30)] }[f.when];
+    return !!span && d >= span[0] && d <= span[1];
+  }
   /** Valen som gäller: det personen just valt, annars det som är sparat på servern. */
   const ovChoice = () => S.ov || { filter: {}, group: "none", saved: [], ...(S.data?.overview_view || {}) };
-  const fClean = (f) => Object.fromEntries(Object.entries(f || {}).filter(([, v]) => Array.isArray(v) ? v.length : v)
-    .map(([k, v]) => [k, Array.isArray(v) ? [...v].sort() : v]).sort(([a], [b]) => a < b ? -1 : 1));
+  const fClean = (f0) => { const f = { ...(f0 || {}) };
+    // Tidsvalets följeslagare gäller bara med ett tidsval; leveransdatum är grunden och sparas inte.
+    if (!f.when || f.by === "due") delete f.by;
+    if (f.when !== "range") { delete f.from; delete f.to; }
+    return Object.fromEntries(Object.entries(f).filter(([, v]) => Array.isArray(v) ? v.length : v)
+    .map(([k, v]) => [k, Array.isArray(v) ? [...v].sort() : v]).sort(([a], [b]) => a < b ? -1 : 1)); };
   const fEq = (a, b) => JSON.stringify(fClean(a)) === JSON.stringify(fClean(b));
   const rowStatus = (r) => r.status || "todo";
   /** Ett urval: alla villkor ska stämma, och inom ett villkor räcker ett av värdena. */
@@ -1048,13 +1075,22 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (f.type?.length && !f.type.includes(r.type)) return false;
     if (f.late && !r.lens.late) return false;
     if (f.mine && !r.lens.mine) return false;
+    if (f.when && !inWhen(r, f, S.data?.today)) return false;
     return true;
   };
   const match = (r) => matchF(r, ovChoice().filter || {});
+  /** Varför «Spara vyn» inte går just nu, eller null. Gruppering räknas som ett val (Daniel P 2026-10-07: «ser inte hur man sparar vyer»). */
+  const saveBlock = (ch) => {
+    const f = ch.filter || {}, g = ch.group || "none", saved = ch.saved || [];
+    if (saved.length >= SAVED_MAX) return "fem sparade vyer är taket — ta bort en med ⇧-klick först";
+    if (saved.some((v) => fEq(f, v.filter) && (v.group || "none") === g)) return "den här vyn är redan sparad";
+    if (g === "none" && PRESETS.some(([, pf]) => fEq(f, pf))) return "välj ett filter eller en gruppering först";
+    return null;
+  };
   const mineOnly = () => { const k = Object.keys(fClean(ovChoice().filter)); return !k.length || (k.length === 1 && k[0] === "mine"); };
 
   const stepOf = (o, r, x) => ({ task: r.tasks[x[0]], id: x[1], label: o.names[x[2]] ?? "", state: x[3], s: x[4], e: x[5],
-    who: x[6] >= 0 ? o.names[x[6]] : null, critical: x[7] === 1, to: x[8] !== undefined ? o.names[x[8]] : null });
+    who: x[6] >= 0 ? o.names[x[6]] : null, critical: (x[7] & 1) === 1, to: x[8] !== undefined ? o.names[x[8]] : null });
 
   function segs(o, r, open = false) {
     if (r.kind === "inbox") return `<div class="segs inbox">${(r.inbox?.ages || []).slice(0, 30).map((a) =>
@@ -1078,6 +1114,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (n.over?.length) out.push(`<span class="over" title="${esc(n.over.join(", "))} över 8 h någon dag">▲</span>`);
     if (n.customer) out.push(`<span class="wait" title="Väntar på ${esc(r.customer?.label || "kunden")}">◷</span>`);
     if (n.handover_out) out.push(`<span class="out" title="Väntar på att någon tar emot ${n.handover_out} steg">⇢</span>`);
+    // Nytt arbete och projektutkast som väntar (docs/plan-projektstart.md, etapp 19).
+    if (r.start) out.push(`<button class="link" data-act="start-project" data-key="${esc(r.key)}" title="Gå igenom arbetet med Claude innan det läggs in">Starta projekt ↗</button>`);
     return out.join("");
   }
 
@@ -1744,9 +1782,56 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<div class="smain">${made}<h3 class="sh">Stegen</h3><div class="ssteps">${t ? hlSheetHtml(t) + planStepsHtml([t], me) : `<div class="mmeta">${sd.loading ? "Hämtar stegen …" : "Inga steg."}</div>`}</div></div>`;
   }
 
+  /* Färg och logo i presentationerna (src/present/brand.ts): kundens färg är bara accent.
+     Ändras med registry_define { change: true }: förhandsvisning och ◐ Spara. */
+  function brandHtml(x, b) {
+    if (!b) return "";
+    const e = x.brandEdit || {};
+    const accent = e.accent ?? b.brand?.accent ?? "";
+    const logo = e.logo ?? b.brand?.logo ?? "";
+    const opts = (b.logo_choices || []).map((c) => `<option value="${esc(c.ref)}"${c.ref === logo ? " selected" : ""}>${esc(c.name)}</option>`).join("");
+    return `<h3 class="sh">Färg och logo i presentationer</h3>`
+      + `<div class="crow"><span>${b.brand ? `<span style="display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;background:${esc(b.brand.accent)}"></span> ${esc(b.brand.accent)}${b.adjusted ? ` · som text mörkare (${esc(b.accent_text)}) så att den går att läsa` : ""}` : "Ingen färg vald: husets färg används."}</span></div>`
+      + `<div class="crow"><label>Färg <input id="brand-accent" value="${esc(accent)}" placeholder="#rrggbb" size="9"></label>`
+      + `<label>Logo <select id="brand-logo"><option value="">Ingen</option>${opts}</select></label>`
+      + `<button class="link" data-act="brand-save" data-id="${esc(x.id)}">Förhandsvisa <span class="lvl">◐</span></button></div>`
+      + (opts ? "" : `<div class="mmeta">Ladda upp logon till kundens filer för att kunna välja den.</div>`);
+  }
+  async function brandSave(id) {
+    const x = top1(); if (!x || x.kind !== "customer") return;
+    const sd = S.sheetData[sheetKey(x)] || {}, b = sd.overview?.overview?.brand, e = x.brandEdit || {};
+    const accent = String(e.accent ?? b?.brand?.accent ?? "").trim();
+    if (!/^#[0-9a-fA-F]{6}$/.test(accent)) { say("Färgen skrivs som #rrggbb, till exempel #1f6f5c.", null, true); return; }
+    const logo = e.logo ?? b?.brand?.logo ?? "";
+    const node = { id, brand: { accent, ...(logo ? { logo } : {}) } };
+    const verb = "Spara färg och logo";
+    S.confirm = { loading: true, verb, text: "Förhandsvisar …" }; render();
+    try {
+      const r = await call("write", { op: "registry_define", node, change: true });
+      S.confirm = { verb, text: summaryText(r) || `Färgen ${accent} och logon används i nya presentationer.`,
+        next: hlNext(r, { tool: "write", args: { op: "registry_define", node, change: true, confirmed: true } }, verb),
+        onDone: () => { x.brandEdit = null; fetchSheet(x, true); } };
+    } catch (err) { S.confirm = null; say(`Gick inte: ${err?.message || err}`, null, true); }
+    render();
+  }
+  /** Dra tillbaka från kundkortet: förhandsvisning i steget där den publicerades, sedan ◐. */
+  async function presWithdrawCard(id, task, step, label) {
+    const x = top1();
+    const values = { action: "withdraw", party: S.data?.party?.id, presentation: id, reason: "Dragen tillbaka i kundkortet" };
+    const verb = `Dra tillbaka «${label}»`;
+    S.confirm = { loading: true, verb, text: "Förhandsvisar …" }; render();
+    try {
+      const r = await call("execute_step", { task, step, values });
+      const pid = deepFind(r, "preview_id");
+      S.confirm = { verb, text: "Ingen mottagare kan öppna presentationen efteråt. Loggen behåller den.",
+        next: { tool: "execute_step", args: { task, step, values: { ...values, preview_id: pid }, confirmed: true, user_approval: `Ja (◐ ${verb} i vyn)` } },
+        onDone: () => { if (x) fetchSheet(x, true); } };
+    } catch (e) { S.confirm = null; say(`Gick inte: ${e?.message || e}`, null, true); }
+    render();
+  }
   function customerSheet(x) {
     const sd = S.sheetData[sheetKey(x)] || {}, tab = x.tab || "overview", d = sd[tab];
-    const tabs = (d?.tabs || sd.overview?.tabs || [{ id: "overview", label: "Översikt" }, { id: "files", label: "Filbanken" }, { id: "intake", label: "Så kommer det in" }, { id: "contract", label: "Avtalet" }])
+    const tabs = (d?.tabs || sd.overview?.tabs || [{ id: "overview", label: "Översikt" }, { id: "files", label: "Filbanken" }, { id: "intake", label: "Så kommer det in" }, { id: "presentations", label: "Presentationer" }, { id: "contract", label: "Avtalet" }])
       .map((t) => `<button class="tab${t.id === tab ? " on" : ""}" data-act="customer-tab" data-tab="${esc(t.id)}">${esc(t.label)}${t.locked ? " · låst" : ""}</button>`).join("");
     const rows = (S.data?.rows || []).filter((r) => r.customer?.id === x.id);
     let body = "";
@@ -1758,6 +1843,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         + `<h3 class="sh">Personer</h3>${(o.people || []).length ? o.people.map((p) => `<div class="crow"><span>${esc(p.name)}</span><span class="mmeta">${esc(p.role || "")}</span></div>`).join("") : `<div class="mmeta">Inga personer inlagda.</div>`}`
         + `<h3 class="sh">Vad vi lovat</h3>${(o.commitments || []).map((c) => `<div class="crow"><span>${esc(c.label)}</span></div>`).join("") || `<div class="mmeta">Inget projekt.</div>`}`
         + (o.support ? `<h3 class="sh">Support i ${esc(monthName(o.support.month))}</h3><div class="crow"><span>${hh(o.support.hours || 0)} h</span><span class="mmeta">${esc(o.support.regime || "")}</span></div>` : "")
+        + brandHtml(x, o.brand)
         + ((o.possible || []).length ? `<h3 class="sh">Möjligt</h3>${o.possible.map((p) => `<div class="crow"><span>${esc(p.label || "Mejl")}</span><span class="mmeta">${esc(shortIso(p.at))}</span></div>`).join("")}` : "");
     } else if (tab === "files") {
       const f = d.files || { total: 0, files: [] };
@@ -1771,6 +1857,20 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       body = (k.sources || []).length ? k.sources.map((src) => `<div class="crow${src.enabled === false ? " dim" : ""}"><span>${esc(KIND[src.kind] || "")} ${esc(src.value)}${src.owner ? ` <span class="mmeta">i ${esc(src.owner.label)}s brevlåda</span>` : ""}</span>`
           + `<span class="mmeta">${src.way ? esc(WAY[src.way] || src.way) : "Ingen väg vald"} · ${src.this_month} i ${esc(monthName(k.month))}</span></div>`).join("")
         : `<div class="mmeta">Ingen bevakad källa för kunden.</div>`;
+    } else if (tab === "presentations") {
+      // Presentationer (src/views/customer-sheet.ts): versioner, vem som tittat och när, Dra tillbaka (◐).
+      const list = d.presentations || [];
+      body = list.length ? list.map((p) => `<div class="crow"><b>${esc(p.title)}</b><span class="mmeta">${esc(shortIso(p.at))}${p.withdrawn ? " · tillbakadragen" : ""}</span></div>`
+          + `<div class="crow sub"><span>Versioner: ${p.versions.map((v) => `version ${v.version} (${esc(shortIso(v.at))})`).join(" · ")}</span></div>`
+          + `<div class="crow sub"><span>${p.views.length ? `Sedd: ${p.views.slice(0, 6).map((v) => `${esc(v.email)} ${esc(presWhen(v.at))} (v${v.version})`).join(", ")}` : "Inte öppnad än."}</span></div>`
+          + (p.responses || []).map((r) => `<div class="crow sub"><span>${r.item ? "Inlägg: " : ""}${r.answer === "approve" ? "✓ Godkänd" : "Kommentar"} av ${esc(r.email)} ${esc(presWhen(r.at))} (v${r.version})${r.text ? `: «${esc(r.text)}»` : ""}</span></div>`).join("")
+          + (p.approval_suggestion ? `<div class="crow sub"><span>Förslag: kundens godkännande är svaret som «${esc(p.approval_suggestion.label)}» väntar på (?)</span>`
+            + `<button class="link" data-act="pres-approve-step" data-task="${esc(p.approval_suggestion.task)}" data-step="${esc(p.approval_suggestion.step)}" data-label="${esc(p.approval_suggestion.label)}">Markera som klart <span class="lvl">◐</span></button></div>`
+            : (p.responses || []).some((r) => r.answer === "approve") && p.approval_suggestion === null ? `<div class="crow sub"><span class="mmeta">Inget steg i leveransen väntar på kunden.</span></div>` : "")
+          + `<div class="crow sub"><span class="mmeta">Mottagare: ${esc(p.recipients.join(", "))}</span>`
+          + (!p.withdrawn && p.withdraw_in ? `<button class="link" data-act="pres-withdraw-card" data-id="${esc(p.id)}" data-task="${esc(p.withdraw_in.task)}" data-step="${esc(p.withdraw_in.step)}" data-label="${esc(p.title)}">Dra tillbaka <span class="lvl">◐</span></button>` : "")
+          + `</div>`).join("")
+        : `<div class="mmeta">Inga presentationer än. De görs med Presentera … i en leverans.</div>`;
     } else if (tab === "contract") {
       const c = d.contract || {};
       body = c.locked && c.denied ? deniedHtml(c.denied, `${genitive(x.label)} avtal`, { act: "customer-tab", tab: "overview", label: `Öppna ${genitive(x.label)} översikt`, text: "Översikten och filbanken ser du som vanligt." })
@@ -4561,6 +4661,24 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       .then(() => { say(`${toast ? `${toast.text} ` : ""}Kopierat: ${what}. Klistra in i vanliga Claude-chatten.`, toast?.undo || null); render(); },
         (e) => { say(`Kunde inte kopiera: ${e.message || e}. Prompten: ${text}`, null, true); render(); });
   }
+  /**
+   * «Starta projekt» (etapp 19): ett mejl utan utkast får först sitt utkast
+   * (samma flytt som i Inkommet, ●), sedan kopieras prompten till chatten.
+   */
+  async function startProject(key) {
+    const row = rowOf(key), st = row?.start;
+    if (!st) return;
+    let project = st.project;
+    if (!project && st.thread) {
+      if (offline()) { say("Att göra ett projektutkast kräver att dirigenten svarar.", null, true); render(); return; }
+      try {
+        const r = await call("write", { op: "classify_accept", thread: st.thread, classification: { route: { to: "order" } } });
+        project = r?.project;
+      } catch (e) { say(`Kunde inte göra projektutkastet: ${e.message || e}. Inget ändrades.`, null, true); render(); return; }
+    }
+    if (!project) { say("Projektutkastet gick inte att hitta.", null, true); render(); return; }
+    copyToChat(`Arbeta med dirigenten: starta projektet «${row.label.replace(/^Starta projekt: /, "")}» (${project}). Läs var det står med read { op: "project_brief", project: "${project}" }, fortsätt där det slutade och gå igenom det med mig innan något läggs in. Skriv inget utan mitt ja.`, "prompten för projektet");
+  }
   function chatPrompt(key) {
     const row = rowOf(key);
     return /^d_/.test(key)
@@ -4571,7 +4689,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   /* ── Högerklick, tangenter och ⌘K (FAS1 1.4, BESLUT 12) ──
      En meny för steg, rad och Igång. Varje handling i den nås också med en tangent
      på det man pekar på, eller med ⌘K, som söker bland samma handlingar. */
-  const isoPlus = (iso, n) => new Date(Date.parse(`${iso}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
+  function isoPlus(iso, n) { return new Date(Date.parse(`${iso}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10); }
   const weekday = (iso) => new Date(`${iso}T12:00:00Z`).getUTCDay();
   /** Nästa (eller förra) arbetsdag. */
   const workdayFrom = (iso, dir) => { let d = isoPlus(iso, dir); while (weekday(d) === 0 || weekday(d) === 6) d = isoPlus(d, dir); return d; };
@@ -5284,15 +5402,19 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   /** Blocken som de ska publiceras: ibockat material, godkända sidotexter, rubriken på omslaget. */
   function presBlocks(p) {
     return (p.d?.blocks || []).map((b) => {
-      const t = p.texts[b.type] || {};
+      const key = presKey(b), t = p.texts[key] || p.texts[b.type] || {}, post = p.posts?.[key] || {};
       const items = (b.items || []).filter((i) => !p.off[i.ref]).map((i) => ({ ref: i.ref, ...(i.label ? { label: i.label } : {}),
         ...(i.mime ? { mime: i.mime } : {}), ...(i.width ? { width: i.width, height: i.height } : {}),
         ...(t.captions?.[i.ref] ? { caption: t.captions[i.ref] } : {}) }));
       const out = { type: b.type, ...(b.type === "cover" ? { title: p.title } : t.title ? { title: t.title } : {}), ...(t.lead ? { lead: t.lead } : {}),
-        ...(items.length ? { items } : {}), ...(b.data ? { data: b.data } : {}) };
+        ...(items.length ? { items } : {}),
+        ...(p.nums?.[b.type]?.trim() ? { data: { ...(b.data || {}), input_text: p.nums[b.type] } }
+          : b.data ? { data: { ...b.data, ...(b.type === "social_post" ? { channel: post.channel || "linkedin", ...(post.scheduled ? { scheduled: post.scheduled } : {}) } : {}) } } : {}) };
       return out;
     });
   }
+  /** Blockets nyckel i rutan: inlägget (data.post) för block som upprepas, annars typen. */
+  const presKey = (b) => b.data?.post ? `${b.type}-${String(b.data.post).replace(/[^a-z0-9_]/gi, "")}` : b.type;
   const presRecipients = (p) => (p.to || "").split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean);
   function presValues(p, extra = {}) {
     return { action: "publish", party: S.data?.party?.id, template: p.template, customer: p.d.customer, delivery: p.delivery,
@@ -5318,16 +5440,16 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const p = S.pres; if (!p?.d) return;
     if (!sample) { say("Claude finns inte här. Skriv rubriker och ingresser själv, eller öppna vyn i claude.ai.", null, true); return; }
     p.claude = { busy: true }; render();
-    const blocks = presBlocks(p).filter((b) => b.items?.length).map((b) => ({ type: b.type, items: b.items.map((i) => ({ ref: i.ref, label: i.label, mime: i.mime })) }));
+    const blocks = presBlocks(p).filter((b) => b.items?.length).map((b) => ({ type: b.type, key: presKey(b), items: b.items.map((i) => ({ ref: i.ref, label: i.label, mime: i.mime })) }));
     const ins = p.d.side_texts?.instruction || {};
     const prompt = `Du skriver sidotexter till en presentation för kunden ${p.d.customer_label}: «${p.title}».\n`
       + `Syfte: ${ins.purpose || ""}\nSå gör du:\n- ${(ins.how_to || []).join("\n- ")}\nGör inte:\n- ${(ins.must_not || []).join("\n- ")}\n`
-      + `Svara BARA med JSON: ${ins.answer_format || "{ blocks: [{ type, title, lead, captions }] }"}\nBlocken:\n${JSON.stringify(blocks)}`;
+      + `Svara BARA med JSON: ${ins.answer_format || "{ blocks: [{ type, title, lead, captions }] }"} Ta med blockets key oförändrad.\nBlocken:\n${JSON.stringify(blocks)}`;
     try {
       const r = await sample([{ role: "user", content: prompt }], { modelTier: "default" });
       const m = /\{[\s\S]*\}/.exec(String(r?.text || ""));
       const j = m ? JSON.parse(m[0]) : null;
-      for (const b of j?.blocks || []) if (b?.type) p.texts[b.type] = { title: String(b.title || ""), lead: String(b.lead || ""), captions: b.captions || {} };
+      for (const b of j?.blocks || []) if (b?.type) p.texts[b.key || b.type] = { title: String(b.title || ""), lead: String(b.lead || ""), captions: b.captions || {} };
       p.claude = { done: true, note: "Förslagen står i fälten. Ändra det du vill; inget publiceras utan förhandsvisning och ditt ja." };
     } catch (e) {
       if (e?.code === "not_granted") sample = null;
@@ -5392,11 +5514,19 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     }
     const d = p.d;
     const blocks = d.blocks.filter((b) => b.type !== "cover").map((b) => {
-      const t = p.texts[b.type] || {};
+      const key = presKey(b), t = p.texts[key] || {}, post = p.posts?.[key] || {};
+      // Inlägget: kanal och datum för förhandsvisningen i flödet (?) — de står inte på innehållet i dag.
+      const postFields = b.type === "social_post" && (b.items || []).length
+        ? `<div class="crow"><label>Kanal <select id="pres-c-${esc(key)}">${["linkedin", "facebook", "instagram"].map((c) => `<option value="${c}"${(post.channel || "linkedin") === c ? " selected" : ""}>${{ linkedin: "LinkedIn", facebook: "Facebook", instagram: "Instagram" }[c]}</option>`).join("")}</select></label>`
+          + `<label>Datum <input id="pres-d-${esc(key)}" type="date" value="${esc(post.scheduled || "")}"></label></div>` : "";
       const items = (b.items || []).map((i) => `<label class="pres-i"><input type="checkbox" data-act="pres-tick" data-ref="${esc(i.ref)}"${p.off[i.ref] ? "" : " checked"}> ${esc(i.label || i.ref.slice(-12))}${i.mime ? ` <span class="mmeta">${esc(/^image\//.test(i.mime) ? "bild" : "text, visas ordagrant")}</span>` : ""}</label>`).join("");
       const texts = (b.items || []).length
-        ? `<input id="pres-t-${esc(b.type)}" placeholder="Rubrik" value="${esc(t.title || "")}"><textarea id="pres-l-${esc(b.type)}" rows="2" placeholder="Ingress">${esc(t.lead || "")}</textarea>` : "";
-      return `<div class="pres-b"><div class="mh">${esc(PRES_BLOCK[b.type] || b.type)}</div>${items || `<div class="mmeta">Inget material — utelämnas.</div>`}${texts}</div>`;
+        ? `${postFields}<input id="pres-t-${esc(key)}" placeholder="Rubrik" value="${esc(t.title || "")}"><textarea id="pres-l-${esc(key)}" rows="2" placeholder="Ingress">${esc(t.lead || "")}</textarea>` : "";
+      const hint = PRES_NUM_HINT[b.type];
+      const nums = hint ? `<textarea id="pres-n-${esc(b.type)}" rows="4" placeholder="${esc(hint)}">${esc(p.nums?.[b.type] || "")}</textarea>`
+        + `<input id="pres-t-${esc(b.type)}" placeholder="Rubrik" value="${esc(t.title || "")}">`
+        + `<div class="mmeta">En rad per värde: ${esc(hint.split("\n")[0])}. Sparas som en ögonblicksbild när du publicerar.</div>` : "";
+      return `<div class="pres-b"><div class="mh">${esc(PRES_BLOCK[b.type] || b.type)}</div>${hint ? nums : (items || `<div class="mmeta">Inget material — utelämnas.</div>`) + texts}</div>`;
     }).join("");
     const old = (d.presentations || []).map((x) => `<div class="pres-old"><span><b>${esc(x.title)}</b> · version ${x.version} · ${esc(presWhen(x.at))}${x.withdrawn ? " · tillbakadragen" : ""}</span>`
       + `<span class="mmeta">${x.views?.length ? `Sedd: ${x.views.slice(0, 3).map((v) => `${esc(v.email)} ${esc(presWhen(v.at))}`).join(", ")}` : "Inte öppnad än"}</span>`
@@ -5414,8 +5544,15 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + (old ? `<div class="mh">Presentationer för kunden</div>${old}` : "")
       + `</div>`;
   }
+  /** Siffrorna som matas in i vyn: en rad per värde, fälten med semikolon (src/present/numbers.ts). */
+  const PRES_NUM_HINT = {
+    metrics: "Etikett; värde; enhet; förändring i %\nBokningar; 37; st; 12,5",
+    chart: "Etikett; värde\nSpår A; 24",
+    budget: "Rad; belopp; not\nAnnonsering; 40000",
+    timeline: "Vecka; rubrik; text\n42; Start; Annonserna går ut",
+  };
   const PRES_BLOCK = { section_intro: "Inledning", image_test: "Bildtest", copy_angles: "Budskap", lead_form: "Formulär", mail_sequence: "Mejlflöde",
-    timeline: "Tidslinje", budget: "Budget", commentary: "Kommentar", other_material: "Övrigt material",
+    social_post: "Inlägg", timeline: "Tidslinje", budget: "Budget", commentary: "Kommentar", other_material: "Övrigt material",
     metrics: "Nyckeltal", chart: "Diagram", report_text: "Rapport", proposal: "Förslag" };
   function presAct(act, el) {
     const p = S.pres;
@@ -5435,6 +5572,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     let m;
     if (el.id === "pres-title") p.title = el.value;
     else if (el.id === "pres-to") p.to = el.value;
+    else if ((m = /^pres-n-(.+)$/.exec(el.id))) p.nums = { ...(p.nums || {}), [m[1]]: el.value };
+    else if ((m = /^pres-([cd])-(.+)$/.exec(el.id))) p.posts = { ...(p.posts || {}), [m[2]]: { ...(p.posts?.[m[2]] || {}), [m[1] === "c" ? "channel" : "scheduled"]: el.value } };
     else if ((m = /^pres-([tl])-(.+)$/.exec(el.id))) p.texts[m[2]] = { ...(p.texts[m[2]] || {}), [m[1] === "t" ? "title" : "lead"]: el.value };
   }
   async function presTemplate(id) {
@@ -6795,6 +6934,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       ? `${r.inbox.new} nya, den äldsta ${r.inbox.oldest_days ? `${r.inbox.oldest_days} d gammal` : "från i dag"}. Bedöms i In i nuvarande vyn.` : "Inget nytt i posten."}</span></div>`
       + `<div class="step"><span></span><span class="meta" style="grid-column:span 3"><button class="link" data-act="open-inbox">Öppna Inkommet: mejl som inte hittade sin väg →</button></span></div></div>`;
     const me = S.data.party?.label;
+    if (r.start) return `<div class="steps"><div class="step"><span></span><span class="meta" style="grid-column:span 3">${esc(r.state_text)}.`
+      + ` Nytt arbete gås igenom innan det läggs in: vad som ska levereras, delarna, vem och när.</span></div>`
+      + `<div class="opens"><button class="link" data-act="start-project" data-key="${esc(r.key)}">Starta projekt ↗</button></div></div>`;
     if (r.cases) return casesList(o, r, me);
     if (r.no_method && r.tasks.length === 1) return `<div class="steps">${homelessHtml(r.tasks[0], r.label, hlPlan(r.tasks[0]))}`
       + `<div class="opens"><button class="link" data-act="open-delivery" data-key="${esc(r.key)}">Öppna uppgiften</button><button class="link" data-act="chat" data-key="${esc(r.key)}">Arbeta i chatten ↗</button></div></div>`;
@@ -6897,10 +7039,10 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   /** Vyerna, + Filter, Gruppera och «Visar …» (ordning, del 3). Allt räknas på raderna som finns, utan nya anrop. */
   function viewBar(o) {
     const ch = ovChoice(), f = ch.filter || {}, rows = o?.rows || [];
-    const presets = [...PRESETS.map(([l, pf]) => ({ l, f: pf })), ...(ch.saved || []).map((v, i) => ({ l: v.name, f: v.filter, saved: i }))];
+    const presets = [...PRESETS.map(([l, pf]) => ({ l, f: pf })), ...(ch.saved || []).map((v, i) => ({ l: v.name, f: v.filter, g: v.group || "none", saved: i }))];
     const vbtn = presets.map((p, i) => {
       const n = rows.filter((r) => matchF(r, p.f)).length + (p.f.mine && Object.keys(fClean(p.f)).length === 1 ? (o?.reviews?.length || 0) : 0);
-      return `<button class="lens${fEq(f, p.f) ? " on" : ""}" data-act="ov-view" data-i="${i}"${p.saved !== undefined ? ` title="Sparad vy · ⇧-klick tar bort den"` : ""}>${esc(p.l)}${p.saved !== undefined ? " ☆" : ""}<span class="n">${n}</span></button>`;
+      return `<button class="lens${fEq(f, p.f) && (p.g === undefined || p.g === (ch.group || "none")) ? " on" : ""}" data-act="ov-view" data-i="${i}"${p.saved !== undefined ? ` title="Sparad vy · ⇧-klick tar bort den"` : ""}>${esc(p.l)}${p.saved !== undefined ? " ☆" : ""}<span class="n">${n}</span></button>`;
     }).join("");
     const bodies = `<div class="bodies">${[["list", "Lista"], ["time", "Tid"], ["cal", "Kalender"]].map(([id, l]) => `<button class="${S.body === id ? "on" : ""}" data-act="body" data-body="${id}" aria-pressed="${S.body === id}">${l}</button>`).join("")}</div>`;
     // Kollegornas initialer (Daniel P 2026-10-07): genvägar till filtret Ansvarig. ⇧-klick lägger till fler.
@@ -6909,29 +7051,36 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       return `<button class="person${on ? " on" : ""}" data-act="ov-person" data-id="${esc(p.id)}" aria-pressed="${on}" title="${esc(`Ansvarig: ${p.label} · ${hh(p.hours_week)} h av ${hh(p.capacity)} den här veckan${p.over ? " · över 8 h någon dag" : ""} · ⇧-klick lägger till`)}">`
         + `<span class="ring" style="background:conic-gradient(${p.over ? "var(--red)" : "var(--teal)"} ${load * 3.6}deg, var(--l3) 0)"><span>${esc(p.ini)}</span></span>${esc(p.label)}</button>`;
     }).join("");
-    const views = `<div class="vrow">${vbtn}<span class="sep"></span><button class="addf" data-act="ov-filter" aria-expanded="${!!S.filterOpen}">+ Filter</button>${people ? `<span class="sep"></span>${people}` : ""}${bodies}</div>`;
+    // «Spara vyn» står alltid här, så att man ser att det går; när det inte går säger knappen varför (också vid tryck).
+    const block = saveBlock(ch);
+    const saveBtn = S.saving !== null
+      ? `<input id="ov-name" maxlength="40" placeholder="Namn på vyn" value="${esc(S.saving)}" autocomplete="off"><button class="primary" data-act="ov-save"><span class="lvl d">●</span> Spara vyn</button><button class="link" data-act="ov-save-cancel">Avbryt</button>`
+      : `<button class="addf save" data-act="ov-save-start"${block ? ` aria-disabled="true" title="${esc(block)}"` : ` title="Filtret och grupperingen sparas som en egen vy, för dig, på alla datorer"`}>☆ Spara vyn</button>`;
+    const views = `<div class="vrow">${vbtn}<span class="sep"></span><button class="addf" data-act="ov-filter" aria-expanded="${!!S.filterOpen}">+ Filter</button>${saveBtn}${people ? `<span class="sep"></span>${people}` : ""}${bodies}</div>`;
     const groups = S.body === "list" ? `<div class="vrow"><span class="glbl">Gruppera</span>${GROUPS.map(([k, l]) => `<button class="gopt${(ch.group || "none") === k ? " on" : ""}" data-act="ov-group" data-g="${k}">${l}</button>`).join("")}</div>` : "";
     const opt = (k, v, l, on) => `<button class="fopt${on ? " on" : ""}" data-act="ov-opt" data-k="${k}" data-v="${esc(v)}">${esc(l)}</button>`;
     const has = (k, v) => (f[k] || []).includes(v);
+    const by = f.when ? (f.by || "due") : (S.timeBy || "due");
     const custs = [...new Map(rows.filter((r) => r.customer?.id).map((r) => [r.customer.id, r.customer.label])).entries()];
     const owners = [...new Map(rows.filter((r) => r.owner).map((r) => [r.owner.id, r.owner.label])).entries()];
     const panel = S.filterOpen ? `<div class="fpanel">`
       + `<div><div class="ft">KUND</div><div class="fo">${custs.map(([id, l]) => opt("cust", id, l, has("cust", id))).join("") || `<span class="mmeta">Ingen kund i raderna.</span>`}</div></div>`
       + `<div><div class="ft">ANSVARIG FÖR LEVERANSEN</div><div class="fo">${owners.map(([id, l]) => opt("owner", id, l, has("owner", id))).join("")}${opt("mine", "1", "Där jag behövs", !!f.mine)}</div></div>`
       + `<div><div class="ft">LÄGE</div><div class="fo">${Object.entries(STATUS_LABEL).map(([k, l]) => opt("status", k, l, has("status", k))).join("")}${opt("late", "1", "Sent", !!f.late)}</div></div>`
-      + `<div><div class="ft">TYP</div><div class="fo">${Object.entries(TYPE_LABEL).map(([k, l]) => opt("type", k, l, has("type", k))).join("")}</div></div></div>` : "";
+      + `<div><div class="ft">TYP</div><div class="fo">${Object.entries(TYPE_LABEL).map(([k, l]) => opt("type", k, l, has("type", k))).join("")}</div></div>`
+      + `<div><div class="ft">TID</div><div class="fo">${Object.entries(WHEN_LABEL).map(([k, l]) => opt("when", k, l, f.when === k)).join("")}</div>`
+      + (f.when === "range" ? `<div class="fo frange"><label>från <input id="ov-from" type="date" value="${esc(f.from || "")}"></label><label>till <input id="ov-to" type="date" value="${esc(f.to || "")}"></label></div>` : "")
+      + `<div class="fo fby"><span class="mmeta">efter</span>${Object.entries(BY_LABEL).map(([k, l]) => `<button class="gopt${by === k ? " on" : ""}" data-act="ov-by" data-by="${k}" aria-pressed="${by === k}">${l}</button>`).join("")}</div>`
+      + (by === "next" ? `<div class="mmeta">nästa steg: dagen då radens nästa öppna steg ska vara klart</div>` : "") + `</div></div>` : "";
     const label = { cust: (v) => custs.find(([id]) => id === v)?.[1] || v, owner: (v) => `Ansvarig: ${owners.find(([id]) => id === v)?.[1] || v}`,
       status: (v) => STATUS_LABEL[v] || v, type: (v) => TYPE_LABEL[v] || v };
+    const whenText = !f.when ? "" : (f.when === "range" ? (f.from || f.to ? `${f.from ? shortIso(f.from) : "…"}–${f.to ? shortIso(f.to) : "…"}` : WHEN_LABEL.range) : WHEN_LABEL[f.when] || f.when)
+      + (f.by === "next" ? " · efter nästa steg" : "");
     const chips = [...["cust", "owner", "status", "type"].flatMap((k) => (f[k] || []).map((v) => [k, v, label[k](v)])),
-      ...(f.late ? [["late", "1", "Sent"]] : []), ...(f.mine ? [["mine", "1", "Där jag behövs"]] : [])];
-    const isPreset = presets.some((p) => fEq(f, p.f));
-    const saving = S.saving !== null
-      ? `<input id="ov-name" maxlength="40" placeholder="Namn på vyn" value="${esc(S.saving)}" autocomplete="off"><button class="primary" data-act="ov-save"><span class="lvl d">●</span> Spara vyn</button>` : "";
-    const canSave = !isPreset && S.saving === null && (ch.saved || []).length < SAVED_MAX;
+      ...(f.when ? [["when", f.when, whenText]] : []), ...(f.late ? [["late", "1", "Sent"]] : []), ...(f.mine ? [["mine", "1", "Där jag behövs"]] : [])];
     const showing = chips.length ? `<div class="showing"><span class="mmeta">Visar</span>`
       + chips.map(([k, v, l]) => `<button class="fchip" data-act="ov-opt" data-k="${k}" data-v="${esc(v)}" title="Ta bort">${esc(l)}<span>×</span></button>`).join("")
-      + `<button class="link" data-act="ov-clear">Rensa</button>${saving}${canSave ? `<button class="link" data-act="ov-save-start">Spara som vy</button>` : ""}`
-      + (!isPreset && (ch.saved || []).length >= SAVED_MAX ? `<span class="mmeta">fem sparade vyer är taket</span>` : "")
+      + `<button class="link" data-act="ov-clear">Rensa</button>`
       + `<span class="where">sparas för dig, på alla datorer</span></div>` : "";
     // En ansvarig vald som är en kollega: hennes dagar en tryckning bort.
     const one = (f.owner || []).length === 1 ? (o?.colleagues || []).find((c) => c.id === f.owner[0]) : null;
@@ -6957,9 +7106,10 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const ch = ovChoice(), f = { ...(ch.filter || {}) };
     if (act === "ov-view") {
       const i = Number(el.getAttribute("data-i")), saved = ch.saved || [];
-      const p = i < PRESETS.length ? PRESETS[i][1] : saved[i - PRESETS.length]?.filter;
+      const v = i < PRESETS.length ? null : saved[i - PRESETS.length], p = v ? v.filter : PRESETS[i]?.[1];
       if (!p) return;
-      setOv({ filter: JSON.parse(JSON.stringify(p)) });
+      // En sparad vy bär sin gruppering; de förinställda rör den inte.
+      setOv({ filter: JSON.parse(JSON.stringify(p)), ...(v ? { group: v.group || "none" } : {}) });
     } else if (act === "ov-filter") S.filterOpen = !S.filterOpen;
     else if (act === "ov-group") setOv({ group: el.getAttribute("data-g") });
     else if (act === "ov-person") {
@@ -6970,14 +7120,23 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "ov-opt") {
       const k = el.getAttribute("data-k"), v = el.getAttribute("data-v");
       if (k === "late" || k === "mine") f[k] = !f[k];
+      else if (k === "when") { if (f.when === v) { S.timeBy = f.by || "due"; delete f.when; } else { if (!f.when && S.timeBy === "next") f.by = "next"; f.when = v; } }
       else { const a = [...(f[k] || [])]; const j = a.indexOf(v); if (j < 0) a.push(v); else a.splice(j, 1); f[k] = a; }
       setOv({ filter: fClean(f) });
+    } else if (act === "ov-by") {
+      const v = el.getAttribute("data-by");
+      S.timeBy = v;
+      if (f.when) { f.by = v; setOv({ filter: fClean(f) }); }
     } else if (act === "ov-clear") { setOv({ filter: {} }); S.saving = null; }
-    else if (act === "ov-save-start") S.saving = "";
+    else if (act === "ov-save-start") { const why = saveBlock(ch); if (why) say(`Vyn kan inte sparas: ${why}.`); else S.saving = ""; }
+    else if (act === "ov-save-cancel") S.saving = null;
     else if (act === "ov-save") {
       const name = (S.saving || "").trim();
       if (!name) { say("Ge vyn ett namn.", null, true); render(); return; }
-      const saved = [...(ch.saved || []), { name, filter: fClean(f) }].slice(0, SAVED_MAX);
+      const why = saveBlock(ch);
+      if (why) { S.saving = null; say(`Vyn kan inte sparas: ${why}.`, null, true); render(); return; }
+      const g = ch.group || "none";
+      const saved = [...(ch.saved || []), { name, filter: fClean(f), ...(g !== "none" ? { group: g } : {}) }].slice(0, SAVED_MAX);
       S.saving = null;
       setOv({ saved });
       say(`Vyn «${name}» är sparad.`);
@@ -7101,6 +7260,16 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "wd-save") { saveWorkday(); return; }
     else if (act === "open-delivery") { const k = el.getAttribute("data-key"); openSheet("delivery", k, rowOf(k)?.label); return; }
     else if (act === "open-task") { const r = rowOfTask(el.getAttribute("data-task")); if (r) openSheet("delivery", r.key, r.label); return; }
+    else if (act === "pres-approve-step") {
+      const task = el.getAttribute("data-task"), step = el.getAttribute("data-step"), label = el.getAttribute("data-label"), x = top1();
+      const reason = "Kunden godkände presentationen på /visa";
+      S.confirm = { verb: `Markera «${label}» som klart`, text: `Kundens godkännande på /visa räknas som svaret steget väntar på. Inget skickas.`,
+        next: { tool: "execute_step", args: { task, step, mark: "done", reason, confirmed: true, user_approval: `Ja (◐ Markera «${label}» som klart i vyn)` } },
+        onDone: () => { if (x) fetchSheet(x, true); } };
+      render(); return;
+    }
+    else if (act === "pres-withdraw-card") { presWithdrawCard(el.getAttribute("data-id"), el.getAttribute("data-task"), el.getAttribute("data-step"), el.getAttribute("data-label")); return; }
+    else if (act === "brand-save") { brandSave(el.getAttribute("data-id")); return; }
     else if (act === "open-customer") { openSheet("customer", el.getAttribute("data-id"), el.getAttribute("data-label")); return; }
     else if (act === "crumb") { sheetJump(Number(el.getAttribute("data-i"))); return; }
     else if (act === "sheet-back") { sheetBack(); return; }
@@ -7110,6 +7279,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "sheet-retry") { const t = top1(); if (t) fetchSheet(t, true); }
     else if (act === "customer-tab") { const t = top1(); if (t) { t.tab = el.getAttribute("data-tab"); t.scroll = 0; if (!S.sheetData[sheetKey(t)]?.[t.tab]) fetchSheet(t, true); } }
     else if (act === "chat") { copyToChat(chatPrompt(el.getAttribute("data-key")), "prompten för leveransen"); return; }
+    else if (act === "start-project") { startProject(el.getAttribute("data-key")); return; }
     else if (act === "menu-run") { const it = menuItems(S.menu?.target)[Number(el.getAttribute("data-i"))]; S.menu = null; if (it) it.run(); render(); return; }
     else if (act === "pal-run") { runEntry(S.pal?.res?.[Number(el.getAttribute("data-i"))]); return; }
     else if (act === "pal-open") { if (!S.pal) openPalette(); return; }
@@ -7311,9 +7481,11 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (e.target?.id === "hl-steps") { const t = e.target.getAttribute?.("data-task"); if (t) { const st = hlState(t), had = !!st.text.trim(); st.text = e.target.value; if (had !== !!st.text.trim() || /\n/.test(e.data || "") || e.inputType === "insertLineBreak") renderKeep(); } }
     else if (/^(mb|vp)-/.test(e.target?.id || "")) mbInput(e.target);
     else if (/^how-/.test(e.target?.id || "")) howInput(e.target);
+    else if (e.target?.id === "brand-accent" || e.target?.id === "brand-logo") { const t = top1(); if (t) t.brandEdit = { ...(t.brandEdit || {}), [e.target.id === "brand-accent" ? "accent" : "logo"]: e.target.value }; }
     else if (/^pres-/.test(e.target?.id || "")) { if (e.target.id === "pres-template") presTemplate(e.target.value); else presInput(e.target); }
     else if (e.target?.id === "wd-from" || e.target?.id === "wd-to") { const t = top1(); if (t) { t.wd = { ...(t.wd || {}), [e.target.id === "wd-from" ? "from" : "to"]: e.target.value }; renderKeep(); } }
     else if (e.target?.id === "ov-name") S.saving = e.target.value;
+    else if (e.target?.id === "ov-from" || e.target?.id === "ov-to") { setOv({ filter: fClean({ ...(ovChoice().filter || {}), [e.target.id === "ov-from" ? "from" : "to"]: e.target.value }) }); renderKeep(); }
     else if (e.target?.id === "toast-note" && S.toast?.note) S.toast.note.text = e.target.value;
     else if (e.target?.id === "ib-q") { const t = top1(); if (t) { t.iq = e.target.value; renderKeep(); } }
     else if (e.target?.id === "mt-q") { const t = top1(); if (t) { t.mq = e.target.value; renderKeep(); } }
