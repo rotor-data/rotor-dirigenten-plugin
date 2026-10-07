@@ -1,6 +1,6 @@
 ---
 name: starta-projekt
-description: "Turn a loose request, a short brief or a large pasted body of material into a dirigenten project that is ready to run: talk it through with the user in short rounds (draft to correct, never only questions), then build deliveries, parts, methods and Claude instructions through the rotor-dirigenten connector. Use when someone wants something done that spans several steps — \"vi ska göra…\", \"kan vi ta fram…\", \"planera…\", \"här är underlaget\", a pasted order, brief, meeting notes or customer email — with or without a customer, even when the word project is never said. Not for a single quick task, a question about what is planned (use dirigenten), or time planning of an existing delivery (prompt «Planera projektet»)."
+description: "Turn a loose request, a short brief or a large pasted body of material into a dirigenten project that is ready to run: talk it through with the user in short rounds (draft to correct, never only questions), then build deliveries, parts, methods and Claude instructions through the rotor-dirigenten connector, review it part by part with the user and write it in. Also resumes a paused review (\"fortsätt genomgången\"). Use when someone wants something done that spans several steps — \"vi ska göra…\", \"kan vi ta fram…\", \"planera…\", \"här är underlaget\", a pasted order, brief, meeting notes or customer email — with or without a customer, even when the word project is never said. Not for a single quick task, a question about what is planned (use dirigenten), or time planning of an existing delivery (prompt «Planera projektet»)."
 ---
 
 <!-- Genereras ur src/plan/start-project.ts med npm run gen:skills. Ändra där, inte här. -->
@@ -12,6 +12,7 @@ Ta en beställning eller ett underlag till ett projekt som bara är att sätta i
 Prata med användaren på vanlig svenska om arbetet, aldrig om dirigentens modell. Allt i dirigenten görs genom kopplingen rotor-dirigenten.
 
 ## Läs först
+- Gäller samtalet ett projekt som redan är sparat: read { op: "project_brief", project } (utan project: projekten) först, och fortsätt där det slutade — svaret säger var genomgången står och vad som ändrats sedan en del godkändes
 - search med kundens namn och 2–3 formuleringar av beställningen: kunden, det som redan pågår hos kunden och liknande som gjorts förut
 - read { op: "context" } på det sökningen pekar på, om beställningen gäller något som redan pågår
 - guide { topic: "plan_and_move" } och guide { topic: "write_and_sharpen_prompts" } första gången i samtalet
@@ -64,6 +65,20 @@ Prata med användaren på vanlig svenska om arbetet, aldrig om dirigentens model
 2. Kör read { op: "project_brief", project }. Kontrollen räknar alla delar utom skisser vars beslut inte är fattat: utförare, full instruktion eller recept, det som går till någon utanför Rotor, varje del har en handling, varje uppdelning har ett skäl, förteckningen är täckt, luckorna är beskrivna. Räkna inte själv: åtgärda det som står i remaining och kör igen tills listan är tom, eller visa det som återstår för användaren som det står.
 3. Berätta projektet som en berättelse: vad som händer, vem, när, och vad användaren behöver säga ja till. Sist det som saknas.
 
+## 7. Genomgången före inskrivningen
+1. När projektet är klart att köra går ni igenom det tillsammans innan det skrivs in, en del i taget i den här ordningen: 1 Helheten, 2 Del för del, 3 Recepten, 4 Luckor och antaganden, 5 Belastningen, 6 Skriv in. Hämta delen med read { op: "project_brief", project, review: <1–6> }.
+2. Visa varje del kort, med det du vill ändra som beslut att svara ja eller nej på (samma form som i varven). Efter ja: write { op: "project_brief_save", project, review: [{ part, status: "approved", note }] }. Godkända delar ligger kvar när samtalet pausas.
+3. Börja varje nytt samtal om projektet med read { op: "project_brief", project } och fortsätt med delen i review.next. Gå inte igenom en godkänd del igen, utom när svaret säger att den ändrats eller öppnats igen — då står skälet där.
+4. Helheten: vad som görs, för vem, när det sista är klart och timmarna per person. Mål, mottagare och datum ändras med brief.
+5. Del för del: varje del med steg, vem som gör dem, datum och timmar. Ändra direkt: steps: [{ id, performer, start, end, hours }], { id, remove: true } eller ett nytt steg { part, label, type, … }; move: { part, start } (stegen efter följer med); merge: { parts, label }; split: { part, steps, label, reason } — en del delas bara med ett utskrivet skäl. Metoden byts med method på delen. Varje ändring förhandsvisas: visa vad den gör innan du skickar ja.
+6. Recepten: läs varje recept i svaret, inte bara de flaggade. Flaggorna (tunt, vagt, kod) är en början; bedöm resten själv — varje punkt i Så gör du har ett verb och vad, inga kommandon, filnamn eller id, och Kontrollera går att pröva. Skriv om det som behövs, visa före och efter, och spara efter ja med stegets next_calls på den smalaste nivån: project för ett steg som bara finns i projektet; för ett byggt steg customer_way när ändringen bara gäller den här kunden, annars method.
+7. Luckor och antaganden: för var och en — bekräfta, ge ansvarig och datum, eller stryk med skäl (next_calls confirm, assign, strike).
+8. Belastningen: visa krockarna per person och vecka med förslagen, och välj med användaren att flytta, lämna över eller välja bort. Korta aldrig ett steg för att det ska rymmas.
+9. En ändring kan öppna en tidigare del igen (en ny ansvarig öppnar belastningen). Gå tillbaka dit innan ni skriver in.
+10. Skriv in först när del 1–5 är godkända och användaren sagt ja till hela genomgången: write { op: "project_brief_save", project, write_in: true } ger förhandsvisningen; visa den och skicka nästa anrop efter ja. Visa svaret som det står: det som skapades, med länken, och det som inte skrevs in med skälet.
+11. Ångra hela inskrivningen, så länge inget steg har startat: write { op: "project_brief_save", project, undo_write_in: { reason } }. Därefter ändras uppdragen som andra uppdrag.
+12. Pausar användaren: säg vilken del ni är på och att det godkända ligger kvar.
+
 ## När något saknas
 - Exakt vad: det konkreta — filen, siffran, inloggningen, beslutet — inte kategorin.
 - Varför: vilket steg det stoppar och vad du gör under tiden (fortsätt på antagande där det går).
@@ -80,10 +95,11 @@ Prata med användaren på vanlig svenska om arbetet, aldrig om dirigentens model
 - förklara hur dirigenten fungerar, eller visa id, verktygsnamn, nodnamn eller orden atom, molekyl, metod, variant och grind för användaren
 - kalla projektet möjligt, en leverans eller ett läge inför användaren — säg en idé, Rotors eget eller för kunden
 - säga att något saknas utan exakt vad, hur och när
+- skriva in projektet innan genomgången är godkänd och användaren sagt ja, eller korta ett steg för att belastningen ska gå ihop
 - hitta på en atom eller ett anrop som inte finns
 
 ## Svaret
-Svenska, kort, det viktigaste först. Varven i fas 2: rad om sammanhanget, högst fem beslutspunkter, en rad antaganden, genvägen «kör direkt». Därefter projektet som berättelse, antagandena som lista, och sist det som saknas med vad, varför, hur, vem och när.
+Svenska, kort, det viktigaste först. Varven i fas 2: rad om sammanhanget, högst fem beslutspunkter, en rad antaganden, genvägen «kör direkt». Därefter projektet som berättelse, antagandena som lista, och sist det som saknas med vad, varför, hur, vem och när. I genomgången: en del per svar, med ändringarna som ja/nej-beslut och var ni är (del n av 6).
 
 ## Fråga bara när
 - det gäller pengar, kundens medverkan, något som lämnar huset eller något som inte går att ångra, och du inte kan sluta dig till svaret
