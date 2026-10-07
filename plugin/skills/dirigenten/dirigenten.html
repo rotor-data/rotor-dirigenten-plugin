@@ -16,6 +16,10 @@
   --amber: #a86a12; --amber-t: #7a4c0b; --amber-b: #e2c48f; --amber-s: #f6ecd9;
   --red: #b2412e; --red-b: #e2b0a5; --red-s: #f5e1dc; --red-s2: #fbf1ee;
   --claude: #5b48c9; --cust-seg: #d9cdb4;
+  /* Knapparna: primär (mörk), sekundär (vit med ram), länk (teal). Kontrasten prövas i test/v6-knappkontrast.test.ts. */
+  --btn-bg: var(--white); --btn-ink: var(--ink); --btn-line: var(--l1); --btn-hover: var(--s2);
+  --btn-primary-bg: var(--ink); --btn-primary-ink: #fff; --btn-link-ink: var(--teal);
+  color-scheme: light;
   --sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --head: var(--sans);
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -24,6 +28,12 @@
 body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 #v6 { padding: 20px 30px 120px; font-size: 14px; color: var(--ink); }
 #v6 button { font: inherit; color: inherit; cursor: pointer; }
+/* Knapparnas grundstil (husets sekundära knapp). :where() håller specificiteten låg,
+   så att .primary, .link, .quiet och de egna raderna går före. Utan den får knappar
+   webbläsarens grå ButtonFace med svart ram, mörkgrå i mörkt läge (test/v6-knappkontrast.test.ts). */
+:where(#v6) button { background: var(--btn-bg); color: var(--btn-ink); border: 1px solid var(--btn-line); border-radius: 7px; padding: 4px 11px; }
+:where(#v6 button:hover:not(:disabled)) { background: var(--btn-hover); }
+#v6 .primary { border: 0; background: var(--btn-primary-bg); color: var(--btn-primary-ink) !important; border-radius: 8px; padding: 8px 14px; }
 #v6 button:disabled { cursor: default; opacity: .45; }
 .top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: nowrap; white-space: nowrap; }
 .brand { font-weight: 700; font-size: 15px; letter-spacing: -.02em; }
@@ -191,7 +201,7 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .sacts { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-bottom: 26px; font-size: 13.5px; }
 .sacts .primary { border: 0; background: var(--ink); color: #fff !important; border-radius: 8px; padding: 8px 14px; font-size: 13.5px; }
 .sacts .primary .lvl { opacity: .7; margin-left: 4px; }
-#v6 .link { border: 0; background: none; padding: 0; color: var(--teal) !important; font-size: 13.5px; text-align: left; }
+#v6 .link { border: 0; background: none; padding: 0; color: var(--btn-link-ink) !important; font-size: 13.5px; text-align: left; }
 #v6 .link:hover { text-decoration: underline; }
 .sgrid { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 40px; }
 .sh { font-size: 14px; font-weight: 600; margin: 0 0 10px; }
@@ -312,6 +322,10 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .zbar.sel { border: 1.5px solid var(--ink); }
 .ztx { position: absolute; top: 7px; font: 10.5px/16px var(--mono); white-space: nowrap; color: var(--t2); }
 .ztx.late { color: var(--red); }
+.zpart { background: var(--s4); } .zpart .zl { padding-left: 22px; } .zpart .zn { font-weight: 600; font-size: 12.5px; }
+.zbar.zsum { top: 11px; height: 16px; background: var(--l2); border-color: var(--l1); }
+.zbar.zsum[data-zpart] { cursor: grab; touch-action: none; user-select: none; }
+.zbar.zsum.late { background: var(--red-s2); border-color: var(--red-b); }
 .zstrip { position: absolute; top: 19px; height: 8px; border-radius: 4px; background: var(--l1); }
 .zstrip.over { background: var(--red-b); }
 .zstrip.dlate { background: var(--red-s2); border: 1.5px dashed var(--red); box-sizing: border-box; }
@@ -453,6 +467,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 #v6 .quiet { border: 0; background: none; color: var(--muted) !important; font-size: 13px; }
 .layq { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 11px 14px; border-radius: 10px; border: 1.5px dashed var(--amber-b); background: #fdf8ee; margin: 16px 0 10px; font-size: 13.5px; }
 .layq button:not(.quiet) { border: 1px solid var(--l2); background: #fff; border-radius: 7px; padding: 5px 11px; font-size: 13px; }
+.howto { margin: 4px 0 14px; }
+.howto > summary { cursor: pointer; font-weight: 600; font-size: 13.5px; padding: 4px 0; }
 .doacts { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: 8px 0; font-size: 13.5px; }
 .doacts .primary { border: 0; background: var(--ink); color: #fff !important; border-radius: 8px; padding: 8px 14px; }
 .doacts .primary .lvl { color: #7fd1c8; }
@@ -772,7 +788,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "a3fac50", published: "2026-10-07" };
+  const SIDA = { version: "b86d8fa", published: "2026-10-07" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1021,6 +1037,31 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     seq: null, fetchedAt: null, refreshing: false, limit: 20, allCases: {} };
   const root = document.getElementById("v6");
 
+  /**
+   * Länkar ska vara länkar (Daniel P 2026-10-07): varje adress i det som visas blir klickbar,
+   * och varje länk öppnas i en egen flik. Körs på hela vyn vid varje ritning, så att inget
+   * ställe behöver minnas det. Text i länkar, textfält, kod, skript och stilar, och
+   * sidtiteln lämnas, liksom attribut.
+   */
+  const URL_IN_TEXT = /(^|[^\w"'=\/])(https?:\/\/[^\s<>"'`]*[^\s<>"'`.,;:!?)\]])/g;
+  const linkLabel = (u) => {
+    const raw = u.replace(/&amp;/g, "&");
+    if (/\/api\/v2-pdf\?/.test(raw)) return /draft-/.test(decodeURIComponent(raw)) ? "PDF · förhandsversion ↗" : "PDF ↗";
+    const x = raw.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+    return esc(x.length > 42 ? `${x.slice(0, 40)}…` : x);
+  };
+  function linkHtml(html) {
+    let skip = 0;
+    return String(html).split(/(<[^>]*>)/).map((part, i) => {
+      if (i % 2) {
+        const m = /^<(\/?)(a|textarea|code|pre|script|style|title)\b/i.exec(part);
+        if (m) skip = Math.max(0, skip + (m[1] ? -1 : 1));
+        if (/^<a\s/i.test(part) && /\shref="https?:/i.test(part) && !/\starget=/i.test(part)) return part.replace(/^<a/i, `<a target="_blank" rel="noopener"`);
+        return part;
+      }
+      return skip || !part.includes("http") ? part : part.replace(URL_IN_TEXT, (_, pre, u) => `${pre}<a href="${u}" target="_blank" rel="noopener">${linkLabel(u)}</a>`);
+    }).join("");
+  }
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const DAYS = ["sön", "mån", "tis", "ons", "tor", "fre", "lör"];
   const MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
@@ -1577,8 +1618,10 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       if (r) put({ item: r });
       // En fil i banken är samma bytes för alltid: hämtad en gång räcker för hela besöket.
       const file = /^bank:\/\//.test(x.id);
-      if (file && S.files?.[x.id]) { put({ loading: false, doc: S.files[x.id] }); return; }
-      call(o.tool, o.args).then((d) => { if (file && d && !d.download_url) S.files = { ...(S.files || {}), [x.id]: d }; put({ loading: false, doc: d || null }); })
+      // En PDF får alltid sina två länkar (öppna i webbläsaren, ladda ner): blob- och data-adresser stoppas i artefaktens sandlåda.
+      const links = (d) => { if (file && isPdf(d, r) && !d?.view_url && !S.sheetData[k]?.link) call("read", { op: "asset_get", ref: x.id, as_link: true }).then((l) => put({ link: l || null })).catch(() => {}); };
+      if (file && S.files?.[x.id]) { put({ loading: false, doc: S.files[x.id] }); links(S.files[x.id]); return; }
+      call(o.tool, o.args).then((d) => { if (file && d && !d.download_url) S.files = { ...(S.files || {}), [x.id]: d }; put({ loading: false, doc: d || null }); links(d); })
         .catch((e) => put({ loading: false, error: e }));
     } else if (x.kind === "case") {
       call("read", { op: "view_file", sheet: "case", task: x.id }).then((d) => {
@@ -2078,13 +2121,18 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         + `<div class="rules"><span class="hk">Claude får inte</span><div>${sh.must_not.length ? sh.must_not.map(esc).join("<br>") : `<span class="mmeta">Inget särskilt.</span>`}</div>`
         + `<span class="hk">Stannar och frågar när</span><div>${sh.ask_when.length ? sh.ask_when.map(esc).join("<br>") : `<span class="mmeta">Inget särskilt.</span>`}</div></div>`;
     }
+    // Med bildväljaren i steget säger panelen själv vad som ska göras; instruktionen fälls ihop under den (docs/forslag-bildval-instruktion.md).
+    const picker = !sh.done && (sh.tool?.kind === "image" || sh.tool?.kind === "image_prompt");
+    let howto = "";
     if (sh.checklist.length || e.checklist || sh.who === "human") {
+      const before = block.length;
       const list = e.checklist ?? sh.checklist.map((c) => c.text), done = new Set(sh.checklist.filter((c) => c.done).map((c) => c.text));
       block += `<div class="bh"><b>Så gör du</b><span class="mmeta">bocka av medan du gör · skriv om ett moment där det står</span></div><div class="moms">`
         + list.map((t, i) => `<div class="mom"><button class="tick${done.has(t) ? " on" : ""}" data-act="step-tick" data-i="${i}" title="Bocka av · ●" aria-pressed="${done.has(t)}">${done.has(t) ? "✓" : ""}</button>`
           + `<span class="mn">${i + 1}</span>${S.momEdit === `${x.id}|${i}` ? `<textarea id="mom-${i}" class="mtext" data-step-id="${esc(x.id)}" rows="${Math.max(2, Math.ceil(t.length / 90))}" aria-label="Moment ${i + 1}">${esc(t)}</textarea>`
             : `<div class="mtext" data-act="mom-edit" data-i="${i}" role="button" tabindex="0" title="Skriv om momentet">${mdHtml(t)}</div>`}<button class="quiet" data-act="mom-del" data-i="${i}" title="Ta bort">✕</button></div>`).join("")
         + `</div><button class="link" data-act="mom-add">+ Lägg till moment</button>`;
+      if (picker) { howto = `<details class="howto"><summary>Om bildvalet</summary>${block.slice(before)}</details>`; block = block.slice(0, before); }
     }
     if (sh.operation) block += `<div class="bh"><b>Det här körs</b><span class="mmeta">${esc(sh.operation.name)}</span></div>`
       + `<div class="ops">${sh.operation.values.map((v) => `<span class="hk">${esc(v.name)}</span><span>${esc(v.value)}<span class="mmeta"> · ${esc(LAYER_TEXT[v.layer] || v.layer)}</span></span>`).join("") || `<span class="mmeta">Inga värden.</span>`}</div>`;
@@ -2095,7 +2143,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + (lay.prompt ? ` · prompten från ${esc(LAYER_TEXT[lay.prompt])}` : "")
       + (lay.customer_diffs?.length ? ` · ${esc(lay.customer || "kunden")}s sätt: ${esc(lay.customer_diffs.join("; "))}` : "") + `.</div>`;
     return `<div class="slabel">${esc(label)}</div>${name}<p class="sline">${esc(sh.purpose || "")}</p>`
-      + `<div class="sgrid"><div class="smain">${how}${block}${layerQ}${layerLine}${doItHtml(x, sh)}${stepPartsHtml(sh)}</div>${stepMargin(x, sh, sd)}</div>`;
+      + `<div class="sgrid"><div class="smain">${how}${block}${layerQ}${layerLine}${doItHtml(x, sh)}${howto}${stepPartsHtml(sh)}</div>${stepMargin(x, sh, sd)}</div>`;
   }
 
   /**
@@ -2312,7 +2360,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (!P.results.length) return `<div class="mmeta"><b>Inga bilder${ipQ(P) ? ` för «${esc(ipQ(P))}»` : ""}.</b> Ändra sökorden, välj en annan källa, ladda upp en egen bild eller skapa en bildprompt.</div>`;
     if (P.compare) {
       const sel = P.results.filter((c) => P.picked.has(ipKey(c)));
-      return (P.preset ? `<p class="mmeta">Förvalda: de ${sel.length} första träffarna på orden ur texten. Välj en, eller gå till alla bilderna.</p>` : "")
+      return (P.preset ? `<p class="mmeta">Förvalda ur orden i texten. Välj en, eller visa alla.</p>` : "")
         + `<div class="ip-cmp">${sel.map((c) => `<div class="col"><div class="ip-frames">${(c.fit || []).map((f) => ipFrame(c, f)).join("")}</div>`
         + `<div class="t">${esc(c.title)}</div><div class="mmeta">${esc(ipSize(c))}</div>${(c.too_small || []).map((w) => `<div class="ip-warn">${esc(w)}</div>`).join("")}`
         + `<button data-ip-only="${esc(ipKey(c))}">Välj den här</button></div>`).join("")}</div>`
@@ -2593,6 +2641,46 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
 
   /* ── Resultat och läsformer (README «Resultat och rapportläsaren», BESLUT 6) ── */
+  /* Bilagor till ett mejl: ärendets filer i filbanken, valda med en bock (atoms/gmail/create_draft.atom.ts). */
+  const fmtSize = (n) => !n ? "" : n >= 1048576 ? `${(n / 1048576).toFixed(1).replace(".", ",")} MB` : `${Math.max(1, Math.round(n / 1024))} kB`;
+  const MAIL_LIMIT = 18 * 1048576; // Gmails 25 MB efter kodning; det som inte ryms blir länk.
+  function caseAttachHtml(x, sd) {
+    const files = (sd.results || []).filter((r) => /^bank:\/\//.test(r.id || ""));
+    if (!files.length) return "";
+    const on = new Set(x.attach || []);
+    let used = 0;
+    return `<div class="mmeta">BILAGOR · ärendets filer</div>` + files.map((f) => {
+      const size = f.size || f.bytes || 0, picked = on.has(f.id);
+      const link = picked && size && used + size > MAIL_LIMIT; if (picked && !link) used += size;
+      return `<label class="crow" data-act="case-attach" data-ref="${esc(f.id)}"><span><input type="checkbox"${picked ? " checked" : ""} tabindex="-1"> ${esc(f.name || f.label || "fil")}</span><span class="mmeta">${esc(fmtSize(size))}${link ? " · blir länk (över 25 MB)" : ""}</span></label>`;
+    }).join("");
+  }
+  function caseDraft() {
+    const t = top1(), c = t && S.sheetData[sheetKey(t)]?.case;
+    if (!c) return;
+    if (!(t.reply || "").trim()) { say("Skriv svaret först.", null, true); return; }
+    if (!c.from_email) { say("Ärendet har ingen avsändaradress att svara till.", null, true); return; }
+    const subject = /^(re|sv):/i.test(c.subject || "") ? c.subject : `Re: ${c.subject || ""}`;
+    const values = { to: c.from_email, subject, body: t.reply.trim(), attachments: t.attach || [], ...(c.thread ? { thread_id: c.thread } : {}) };
+    S.confirm = { verb: "Lägg utkastet", mail: true, loading: true, text: "Hämtar förhandsvisningen …" }; render();
+    call("execute_step", { call: "gmail.call.create_draft", values }).then((r) => {
+      const w = deepFind(r, "would_change") || {};
+      const list = (a) => (a || []).map((f) => `${f.filename} (${fmtSize(f.size)})`).join(", ");
+      S.confirm = { verb: "Lägg utkastet", mail: true, next: r?.next || null,
+        text: `Utkast i din Gmail till ${values.to}, «${subject}». Bifogas: ${list(w.attachments) || "inget"}.`
+          + ((w.links || []).length ? ` Blir länk sist i texten, för stort för Gmails 25 MB och giltig ett dygn: ${list(w.links)}.` : "")
+          + " Inget går ut förrän du själv trycker skicka i Gmail." };
+      render();
+    }, (e) => { S.confirm = null; say(`Utkastet gick inte: ${e.message || e}`, null, true); render(); });
+  }
+  function caseDraftGo() {
+    const n = S.confirm?.next; if (!n) return;
+    S.confirm = { ...S.confirm, loading: true }; render();
+    call(n.tool, { ...n.args, user_approval: "Ja (Lägg utkastet, i vyn)" }).then(() => {
+      S.confirm = null; const t = top1(); if (t) t.attach = [];
+      say("Utkastet ligger i din Gmail under Utkast, med bilagorna."); render();
+    }, (e) => { S.confirm = null; say(`Utkastet gick inte: ${e.message || e}`, null, true); render(); });
+  }
   function allResults() { const out = []; for (const k of Object.keys(S.sheetData)) for (const r of S.sheetData[k].results || []) out.push(r); return out; }
   function openResult(id) {
     const r = allResults().find((x) => x.id === id);
@@ -2799,10 +2887,25 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const text = doc?.text ?? doc?.markdown;
     if (typeof text === "string") return x.book || r?.format === "report" ? readerHtml(text, title) : `<div class="fdoc">${mdHtml(text)}</div>`;
     if (doc?.data_base64 && /^image\//.test(doc.mime)) return `<img class="fimg full" src="data:${doc.mime};base64,${doc.data_base64}" alt="${esc(title)}">`;
-    if (doc?.data_base64 && doc.mime === "application/pdf") return `<object class="fpdf" type="application/pdf" data="${pdfUrl(x.id, doc)}">`
-      + `${thumb ? `<img class="fimg" src="${thumb}" alt="">` : ""}<div class="mmeta">PDF:en kan inte visas här. Ladda ner den.</div></object>`;
+    if (isPdf(doc, r)) return pdfPreviewHtml(x, r, sd, doc, title, thumb);
     return `<div class="fwhat">${thumb ? `<img class="fimg" src="${thumb}" alt="">` : `<span class="fbig">${esc(ext || "FIL")}</span>`}<div><b>${esc(what)}</b>`
       + `<div class="mmeta">${doc?.download_url ? "Filen är för stor att visa här; den laddas ned via länken." : "Den här sortens fil visas inte i vyn. Ladda ner den och öppna den i programmet den hör till."}</div></div></div>`;
+  }
+  const isPdf = (doc, r) => doc?.mime === "application/pdf" || /\.pdf$/i.test(doc?.name || r?.file_name || "");
+  /** Förhandsversion: ett utkast ur Smyra eller en fil som heter så. */
+  const isDraftFile = (name) => /f(ö|o)rhandsversion|utkast|draft|preview/i.test(name || "");
+  /** PDF:ens länkar: ur svaret, ur asset_get { as_link }, annars ingen. */
+  const pdfLinks = (sd, doc) => ({ view: doc?.view_url || sd.link?.view_url || null, dl: doc?.download_url || sd.link?.download_url || null });
+  /** En PDF i arket: märkt om den är en förhandsversion, första sidan som bild, PDF:en inbäddad och två länkar. */
+  function pdfPreviewHtml(x, r, sd, doc, title, thumb) {
+    const name = r?.file_name || doc?.name || title, { view, dl } = pdfLinks(sd, doc);
+    const draft = isDraftFile(name) ? `<div class="banner"><span style="flex:1"><b>Förhandsversion.</b> Det här är ett utkast, inte den slutliga PDF:en.</span></div>` : "";
+    const src = view || (doc?.data_base64 ? pdfUrl(x.id, doc) : null);
+    const acts = `<div class="doacts">${view ? `<a class="link" href="${esc(view)}" target="_blank" rel="noopener">Öppna PDF:en ↗</a>` : ""}`
+      + `${dl ? `<a class="link" href="${esc(dl)}" target="_blank" rel="noopener" download="${esc(name)}">Ladda ner</a>` : `<span class="mmeta">Hämtar länkarna …</span>`}</div>`;
+    return draft + acts + (src ? `<object class="fpdf" type="application/pdf" data="${esc(src)}">` : "")
+      + `${thumb ? `<img class="fimg" src="${thumb}" alt="Första sidan av ${esc(title)}">` : ""}`
+      + (src ? `<div class="mmeta">PDF:en visas inte inbäddad här. Öppna den i en egen flik eller ladda ner den.</div></object>` : "");
   }
   /** PDF:en som blob-adress, en gång per fil. */
   function pdfUrl(id, doc) {
@@ -2814,7 +2917,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   async function fileDownload(x) {
     const sd = S.sheetData[sheetKey(x)] || {}, doc = sd.doc, r = allResults().find((y) => y.id === x.id) || sd.item;
     const name = r?.file_name || doc?.name || "fil";
-    let href = doc?.download_url || null;
+    let href = doc?.download_url || sd.link?.download_url || null;
     if (!href && doc?.data_base64) href = doc.mime === "application/pdf" ? pdfUrl(x.id, doc) : `data:${doc.mime};base64,${doc.data_base64}`;
     if (!href && typeof doc?.text === "string") href = URL.createObjectURL(new Blob([doc.text], { type: doc.mime || "text/plain" }));
     if (!href) { try { const d = await call("read", { op: "asset_get", ref: x.id, as_link: true }); href = d?.download_url || null; } catch (e) { say(`Kunde inte hämta filen: ${e.message || e}.`, null, true); return; } }
@@ -2840,7 +2943,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     } else if (doc?.markdown) body = `<div class="rtext ro">${mdBlocks(doc.markdown).map(blockHtml).join("")}</div>`;
     else body = `<div class="mmeta">${r?.source === "decision" ? "Beslutet står i lägesbilden." : "Inget att visa här."}</div>`;
     const ftext = isFile && typeof (doc?.text ?? doc?.markdown) === "string" ? (doc.text ?? doc.markdown) : null;
-    const acts = `<div class="sacts">${isFile ? `<button class="link" data-act="file-download">Ladda ner</button>`
+    const acts = `<div class="sacts">${isFile ? (isPdf(doc, r) ? "" : `<button class="link" data-act="file-download">Ladda ner</button>`)
       + (doc?.library ? `<a class="link" href="${esc(doc.library)}" target="_blank" rel="noopener">Öppna i kundens filer</a>` : "")
       + (ftext && r?.format !== "report" ? `<button class="link" data-act="result-book">${x.book ? "Visa som text" : "Läs som boksida"}</button>` : "")
       + (ftext ? `<button class="link" data-act="result-copy">Kopiera texten</button>` : "") : ""}${!isFile && fmt === "report" && doc?.markdown ? `<button class="link" data-act="result-edit">${x.edit ? "Visa som boksida" : "Redigera texten"}</button>` : ""}`
@@ -3520,7 +3623,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       : !sd.thread ? `<div class="mmeta">Hämtar tråden …</div>`
       : posts.map((p, i) => `<div class="mail${p.internal ? " int" : ""}">${i === first ? `<div class="orig">STARTADE ÄRENDET</div>` : ""}<div class="mh3"><b>${esc(p.from)}</b><span class="mmeta">${esc(p.at ? `${fmtDay(p.at)} ${String(p.at).slice(11, 16)}` : "")}</span></div><div class="mt">${esc(p.text || "")}</div></div>`).join(""))
       + `<div class="reply"><div class="mmeta">SVAR · utkast, inte skickat</div>${mdTabs(`reply:${x.id}`)}${S.mdPrev?.[`reply:${x.id}`] ? mdHtml(x.reply || "") : `<textarea id="case-reply" rows="5" placeholder="Skriv svaret, eller klistra in Claudes">${esc(x.reply || "")}</textarea>`}`
-      + `<div class="doacts"><button class="send" data-act="case-send"><span class="lvl r">■</span> Skicka</button><span class="mmeta">Skickas i Gmail: svaret kopieras och tråden öppnas.</span></div></div>`;
+      + caseAttachHtml(x, sd)
+      + `<div class="doacts"><button class="send" data-act="case-send"><span class="lvl r">■</span> Skicka</button>${(x.attach || []).length ? `<button class="edge" data-act="case-draft"><span class="lvl">◐</span> Lägg som utkast med bilagor</button>` : ""}<span class="mmeta">${(x.attach || []).length ? "Utkastet läggs i din Gmail med filerna; du skickar själv där." : "Skickas i Gmail: svaret kopieras och tråden öppnas."}</span></div></div>`;
     const hours = c.month ? `${hh(c.month.hours)} h i ${monthName(c.month.month)}, ${c.month.regime || "löpande · inget tak"}` : "";
     const time = `<h3 class="sh">Tiden</h3><div class="timer"><span>${esc(hours)}</span><input id="case-hours" value="${esc(x.hours || "")}" placeholder="0,5" aria-label="Timmar"> h `
       + `<button class="edge" data-act="case-time"><span class="lvl d">●</span> Logga tiden</button></div>`;
@@ -5395,7 +5499,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     render();
     try {
       const d = await call("read", { op: "presentation_draft", delivery });
-      S.pres = { ...S.pres, loading: false, d, template: d.template, title: d.blocks.find((b) => b.type === "cover")?.title || label };
+      // Det urvalet förväljer urbockat (en artefakt i claude.ai) står som urbockat.
+      const off = Object.fromEntries(d.blocks.flatMap((b) => (b.items || []).filter((i) => i.unchecked).map((i) => [i.ref, true])));
+      S.pres = { ...S.pres, loading: false, d, off, template: d.template, title: d.blocks.find((b) => b.type === "cover")?.title || label };
     } catch (e) { S.pres = { ...S.pres, loading: false, error: e?.message || String(e) }; }
     render();
   }
@@ -6122,6 +6228,39 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
               }
           }
       }
+      else if (op.kind === "range") {
+          // Ett delprojekts början eller slut: stegen packas om i proportion inom det nya spannet,
+          // i arbetsdagar och i samma ordning, minst en dag var. Början stannar vid det som
+          // stegen väntar på utanför urvalet.
+          const ks = [...set];
+          if (ks.length && d) {
+              const S = Math.min(...ks.map((k) => idx(at(k).s))), E = Math.max(...ks.map((k) => idx(at(k).end)));
+              let S2 = S, E2 = E;
+              if (op.edge === "start") {
+                  S2 = Math.min(S + d, E - 1);
+                  for (const k of ks)
+                      for (const p of at(k).after) {
+                          const pk = key(steps.get(k).t.id, p);
+                          if (set.has(pk) || !steps.has(pk) || steps.get(pk).st.dn)
+                              continue;
+                          const lim = idx(at(pk).end) - (idx(at(k).s) - S);
+                          if (S2 < lim) {
+                              S2 = lim;
+                              stop = predStop(pk);
+                          }
+                      }
+              }
+              else
+                  E2 = Math.max(S + 1, E + d);
+              const f = (E2 - S2) / Math.max(1, E - S), map = (x) => S2 + Math.round((x - S) * f);
+              const dayAt = (n) => shift(tl.from, n);
+              for (const k of ks) {
+                  const a = at(k), ns = map(idx(a.s)), ne = Math.max(ns + 1, map(idx(a.end)));
+                  put(k, a.s === a.e && ne === ns + 1 ? { start: dayAt(ns), end: dayAt(ns) } : { start: dayAt(ns), end: dayAt(ne) });
+              }
+              d = (op.edge === "start" ? S2 - S : E2 - E);
+          }
+      }
       else if (op.kind === "hours") {
           for (const k of set)
               if (!steps.get(k).st.x)
@@ -6196,7 +6335,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const res = whatIf(tl, changes);
       const before = new Set(now.steps.filter((s) => s.how === "pushed").map((s) => key(s.task, s.step)));
       const follow = res.steps.filter((s) => s.how === "pushed" && !before.has(key(s.task, s.step))).length + veva;
-      return { changes, stop, delta: op.kind === "move" ? d : 0, follow, veva };
+      return { changes, stop, delta: op.kind === "move" || op.kind === "range" ? d : 0, follow, veva };
   }
   /* ── slut på applyOp ── */
 
@@ -6244,7 +6383,11 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      { agenda: true, format: "tid" } (src/plan/timeline.ts), följderna räknas med whatIf.
      Ersätter FAS1 1.5 (körfälten, 3 px-linjen och värderutan är borta). */
   const TZ_ROW = 30;
-  const tzOpen = (T, key) => !!(T.zopen || {})[key];
+  /** Utfällt eller inte; `def` när inget valts (delprojekten: utfällda när de är högst TZ_PARTS_OPEN). */
+  const tzOpen = (T, key, def = false) => { const v = (T.zopen || {})[key]; return v === undefined ? def : !!v; };
+  const TZ_PARTS_OPEN = 3;
+  /** «Arkitektur för en webbplats (Del 5: Arkitektur)» → «Del 5: Arkitektur»: delens namn när uppgiften har ett. */
+  const tzPartName = (n) => { const m = /\(([^()]*)\)\s*$/.exec(n || ""); return m && /^Del\s/i.test(m[1]) ? m[1] : n; };
   async function loadTid() {
     const T = timeState();
     const from = T.from || mondayOf(S.data?.today || new Date().toISOString().slice(0, 10));
@@ -6378,6 +6521,25 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       return `<div class="zrow zgrp"${extra}><div class="zl" data-act="tz-fold" data-k="${esc(key)}" data-ctxs="${esc(ctxs.join(" "))}" role="button" aria-expanded="${tzOpen(T, key)}" title="⌘-klick väljer alla steg"><span class="zcaret">${tzOpen(T, key) ? "▾" : "▸"}</span>`
       + `<div class="zgn"><div class="zn">${esc(name)}</div><div class="zsub${subCls ? ` ${subCls}` : ""}">${esc(sub)}</div></div></div>${track(inner, h)}</div>`; };
     const ctxsOf = (bs) => bs.filter((b) => !b.st.x).map((b) => `step|${b.t.id}|${b.st.id}`);
+    /** Ett delprojekt (en uppgift i leveransen): start–slut, timmar och sen, och stapeln som drar alla dess steg. */
+    const partRow = (tid, bs, def) => {
+      const t = bs[0].t, k = `t:${tid}`, open = tzOpen(T, k, def);
+      const s0 = bs.map((b) => b.s).sort()[0]; let e0 = bs.map((b) => tzLast(b.s, b.e)).sort().at(-1); while (e0 > s0 && !isWd(e0)) e0 = isoAdd(e0, -1);
+      const hrs = bs.reduce((n, b) => n + (b.st.x ? 0 : b.h || 0), 0);
+      const fin = res.tasks.find((x) => x.id === tid), late = fin?.late_by || 0;
+      const a = Math.max(0, Math.min(...bs.map((b) => b.a))), z = Math.min(days, Math.max(...bs.map((b) => b.z)));
+      const draft = bs.some((b) => T.changes[b.key] || b.how), movable = bs.some((b) => !b.st.x && !b.st.lk);
+      const info = T.zinfo?.key === k ? T.zinfo : null;
+      const tag = info ? `<div class="ztag" style="left:calc(${pct(z)} + 8px)">${info.text ? `<span class="t1">${esc(info.text)}</span>` : ""}${info.text2 ? `<span class="t2">${esc(info.text2)}</span>` : ""}${info.stop ? `<span class="t1">${esc(info.stop)}</span>` : ""}</div>` : "";
+      const label = T.zdrag?.started && info ? "" : `${hrs ? `${hh(hrs)} h` : ""}${late ? `${hrs ? " · " : ""}${late} d sen` : ""}`;
+      const sumBar = z > a ? tag + `<div class="zbar zsum${late ? " late" : ""}${draft ? " draft" : ""}"${movable ? ` data-zpart="${esc(tid)}"` : ""} data-act="tz-partsel" data-ctxs="${esc(ctxsOf(bs).join(" "))}" style="left:${pct(a)};width:${pct(z - a)}" title="${esc(`${t.n} · ${tzDay(s0)}–${tzDay(e0)} · dra för att flytta, kanterna för början och slut`)}"><span class="zh">${esc(label)}</span></div>` : "";
+      const sub = `${tzDay(s0)}–${tzDay(e0)} · ${bs.length} steg${hrs ? ` · ${hh(hrs)} h` : ""}${late ? ` · ${late} d sen` : ""}`;
+      top += TZ_ROW + 9;
+      let out = `<div class="zrow zpart" data-ctx="part|${esc(tid)}"><div class="zl" data-act="tz-fold" data-k="${esc(k)}" data-ctxs="${esc(ctxsOf(bs).join(" "))}" role="button" aria-expanded="${open}" title="⌘-klick väljer alla steg"><span class="zcaret">${open ? "▾" : "▸"}</span>`
+        + `<div class="zgn"><div class="zn">${esc(tzPartName(t.n))}</div><div class="zsub${late ? " red" : ""}">${esc(sub)}</div></div></div>${track(sumBar, TZ_ROW + 8)}</div>`;
+      if (open) out += bs.map((b) => stepRow(b, false)).join("");
+      return out;
+    };
     let rows = "";
     if (T.group === "person") {
       const ids = [...new Set([...(me && tl.people?.[me] ? [me] : []), ...Object.keys(tl.people || {})])];
@@ -6416,7 +6578,13 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         if (g.late && due > 0 && fin <= days) inner += `<span class="ztx late" style="left:calc(${pct(fin)} + 8px);top:15px">+${g.late} d</span>`;
         const sub = `lovat ${dayLabel(g.due)} · klar ${dayLabel(g.finish)}${g.finish !== g.before ? ` (var ${tzDay(g.before)})` : ""}${g.late ? ` · ${g.late} d sen` : " · håller"}`;
         rows += group(`d:${g.id}`, g.name, sub, g.late ? "red" : g.finish !== g.before ? "amber" : "", inner, 46, "", ctxsOf(mine));
-        if (tzOpen(T, `d:${g.id}`)) rows += mine.map((b) => stepRow(b, false)).join("");
+        if (!tzOpen(T, `d:${g.id}`)) continue;
+        // Delprojekten: en leverans med flera uppgifter visar varje uppgift som en egen
+        // hopfällbar rad med en sammanfattande stapel ovanför sina steg (Daniel P 2026-10-07).
+        const parts = [...new Set(mine.map((b) => b.t.id))];
+        if (parts.length < 2) { rows += mine.map((b) => stepRow(b, false)).join(""); continue; }
+        const partsOpen = parts.length <= TZ_PARTS_OPEN;
+        for (const tid of parts) rows += partRow(tid, mine.filter((b) => b.t.id === tid), partsOpen);
       }
     }
     return bar + `<div class="zbox"><div class="zin${card ? " hascard" : ""}">${head}${rows || `<div class="mmeta" style="padding:16px 12px">Inget planerat i fönstret.</div>`}`
@@ -6619,13 +6787,13 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (!tzCardKey() || e.button === 2) return;
     const t = e.target;
     if (t?.closest?.("[data-zcard]") || t?.closest?.(".tfoot") || t?.closest?.(".selbar")) return;
+    // En stapel, ett stegnamn eller ett dels stapel släpps igenom: klicket väljer som vanligt och
+    // draget börjar. Att stoppa det här gjorde att ett valt steg (kortet öppet) aldrig gick att dra.
+    if (t?.closest?.("[data-zpick]") || t?.closest?.("[data-zpart]")) { timeState().zpicker = false; timeState().zadd = null; return; }
     e.stopPropagation?.(); e.preventDefault?.();
     tzSwallow = Date.now();
-    const hit = t?.closest?.("[data-zpick]")?.getAttribute("data-zpick");
-    if (hit && S.sel?.[hit] && !e.shiftKey) return; // det valda: drag eller klick som vanligt
     timeState().zpicker = false; timeState().zadd = null;
-    if (hit && e.shiftKey) selToggle(hit);
-    else S.sel = hit ? { [hit]: true } : {};
+    S.sel = {};
     render();
   }
   function tzSwallowClick(e) {
@@ -6643,12 +6811,24 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const T = timeState(), start = o.from || changeList();
     const r = applyOp(T.tl, start, op, whatIf);
     T.changes = Object.fromEntries(r.changes.map((c) => [`${c.task}|${c.step}`, c]));
-    T.zinfo = tzInfo(op, r, start);
+    T.zinfo = op.part ? tzPartInfo(op, r) : tzInfo(op, r, start);
     if (!o.live) { T.zhist = [...(T.zhist || []), start].slice(-50); tzInfoFade(); tzSaveDraft(); }
     return r;
   }
   let tzFade = null;
   function tzInfoFade() { clearTimeout(tzFade); tzFade = setTimeout(() => { const T = S.time; if (T && !T.zdrag) { T.zinfo = null; render(); } }, 1600); }
+  /** Lappen vid delprojektets stapel: hur många dagar, nya början och slut, vad som följer med och var det stannade. */
+  function tzPartInfo(op, r) {
+    const T = timeState(), t = taskOf(T.tl, op.part), res = whatIf(T.tl, r.changes);
+    const ps = (t?.steps || []).filter((x) => !x.dn).map((x) => placed(res, t, x));
+    if (!ps.length) return null;
+    const s0 = ps.map((p) => p.s).sort()[0], e0 = ps.map((p) => tzLast(p.s, p.e)).sort().at(-1);
+    const text = op.kind === "move" ? `${r.delta > 0 ? "+" : ""}${r.delta} d · ${tzDay(s0)}–${tzDay(e0)}`
+      : `${op.edge === "start" ? "början" : "slut"} ${tzDay(op.edge === "start" ? s0 : e0)} · ${tzWd(T.tl, s0, isoAdd(e0, 1))} arbetsdagar · ${ps.length} steg packas om`;
+    const other = r.follow - r.veva;
+    const text2 = other > 0 ? `${other} steg utanför delen följer med${op.kind === "move" && !op.alt ? " · ⌥ bara det här" : ""}` : "";
+    return { key: `t:${op.part}`, text, text2, stop: r.stop || "" };
+  }
   function tzInfo(op, r, start) {
     const T = timeState(), k = op.keys[0], [task, step] = k.split("|"), t = taskOf(T.tl, task), st = t?.steps.find((x) => x.id === step);
     if (!st) return null;
@@ -6677,7 +6857,22 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (w >= 24) { if (y > h / 2 && Math.abs(x - w * f) < 6 && f < 0.97) return "hours"; if (x < 6) return "start"; if (x > w - 6) return "end"; }
     return "move";
   }
+  /** Delprojektets steg som kan flyttas: öppna, inte bokade. Hela uppgiften, också det utanför fönstret. */
+  function tzPartKeys(tl, tid) { const t = taskOf(tl, tid); return (t?.steps || []).filter((x) => !x.dn && !x.lk).map((x) => `${tid}|${x.id}`); }
+  /** Dra i ett delprojekts stapel: mitten flyttar alla dess steg (som flera valda), kanterna början och slut. */
+  function tzPartDragStart(e, el) {
+    const T = timeState(), tid = el.getAttribute("data-zpart"), r = el.getBoundingClientRect?.() || { left: 0, width: 100 };
+    const x = e.clientX - r.left, zone = r.width >= 24 && x < 6 ? "start" : r.width >= 24 && x > r.width - 6 ? "end" : "move";
+    const keys = tzPartKeys(T.tl, tid), res = consequences(), t = taskOf(T.tl, tid);
+    if (!keys.length || !t) return false;
+    const s0 = keys.map((k) => placed(res, t, t.steps.find((y) => `${tid}|${y.id}` === k)).s).sort()[0];
+    const tw = el.closest?.(".ztrack")?.getBoundingClientRect?.().width || 900;
+    T.zdrag = { part: tid, key: keys[0], keys, zone, x0: e.clientX, y0: e.clientY, from: changeList(), started: false, s0, dayPx: tw / T.tl.days };
+    return false;
+  }
   function tzDragStart(e) {
+    const pe = e.target?.closest?.("[data-zpart]");
+    if (pe && S.body === "time" && e.button !== 2) return tzPartDragStart(e, pe);
     const el = e.target?.closest?.("[data-zbar]");
     if (!el || S.body !== "time" || e.button === 2) return false;
     const T = timeState(), key = el.getAttribute("data-zbar"), r = el.getBoundingClientRect?.() || { left: 0, top: 0, width: 100, height: 14 };
@@ -6696,6 +6891,12 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
     if (!g.started) { if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return; g.started = true; timeState().zpicker = false; }
     let op;
+    if (g.part) {
+      let d = tzWd(T.tl, g.s0, isoAdd(g.s0, Math.round(dx / g.dayPx)));
+      if (e.shiftKey && g.zone === "move") d = Math.round(d / 5) * 5;
+      tzOp(g.zone === "move" ? { kind: "move", keys: g.keys, delta: d, alt: !!e.altKey, part: g.part } : { kind: "range", edge: g.zone, keys: g.keys, delta: d, part: g.part }, { from: g.from, live: true });
+      schedule(); return;
+    }
     if (g.zone === "hours") { const per = Math.max(6, g.dayPx * 0.25 / 8); op = { kind: "hours", keys: [g.key], hours: g.h0 + Math.round(dx / per) * 0.25 }; }
     else {
       let d = tzWd(T.tl, g.s0, isoAdd(g.s0, Math.round(dx / g.dayPx)));
@@ -7228,7 +7429,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     } else main = stateLine() + clashHtml() + outboxHtml() + (S.body === "time" ? timeBody() : S.body === "cal" ? calendarBody() : reviewsHtml(o) + list(o));
     const mainSel = selDecorate(main), sheetsSel = selDecorate(sheetsHtml());
     S.selVisible = S.sheets.length ? sheetsSel.ctxs : mainSel.ctxs;
-    root.innerHTML = top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + presHtml() + selbarHtml() + confirmHtml() + toastHtml();
+    root.innerHTML = linkHtml(top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + presHtml() + selbarHtml() + confirmHtml() + toastHtml());
     if (presScroll !== null) { const box = root.querySelector?.(".mv.pres"); if (box) box.scrollTop = presScroll; }
     if (act0) { const el = root.querySelector?.(`#${focusId}`); if (el) { el.focus?.({ preventScroll: true }); try { if (presSel[0] != null) el.setSelectionRange?.(presSel[0], presSel[1]); } catch { /* inte ett textfält */ } } }
     if (S.pal) focusPalette();
@@ -7317,7 +7518,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "menu-run") { const it = menuItems(S.menu?.target)[Number(el.getAttribute("data-i"))]; S.menu = null; if (it) it.run(); render(); return; }
     else if (act === "pal-run") { runEntry(S.pal?.res?.[Number(el.getAttribute("data-i"))]); return; }
     else if (act === "pal-open") { if (!S.pal) openPalette(); return; }
-    else if (act === "confirm-go") { if (S.confirm?.house) { const t = top1(), c = t && S.sheetData[sheetKey(t)]?.case; S.confirm = null; if (c) { copyToChat(t.reply.trim(), "svaret"); gmailOpen(c.gmail_url); } return; }
+    else if (act === "confirm-go") { if (S.confirm?.mail) { caseDraftGo(); return; } if (S.confirm?.house) { const t = top1(), c = t && S.sheetData[sheetKey(t)]?.case; S.confirm = null; if (c) { copyToChat(t.reply.trim(), "svaret"); gmailOpen(c.gmail_url); } return; }
       if (S.confirm?.basis) { basisGo(true); return; }
       if (S.confirm?.run) hlRunConfirm(); else if (S.confirm?.cal) calCommit(); else if (S.confirm?.step) confirmStep(); else confirmTime(); return; }
     else if (act === "open-step") { openStep(el.getAttribute("data-task"), el.getAttribute("data-step"), el.getAttribute("data-label")); return; }
@@ -7380,6 +7581,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "case-close") { const task = el.getAttribute("data-task"), t = top1(); const d = t && S.sheetData[sheetKey(t)]?.looksDone
         || (S.caseDone || {})[task]; caseClose(task, d); return; }
     else if (act === "case-call") { const t = top1(); if (t) caseCall(t, Number(el.getAttribute("data-i"))); return; }
+    else if (act === "case-attach") { e.preventDefault(); const t = top1(), r = el.getAttribute("data-ref"); if (t && r) { const a = new Set(t.attach || []); if (a.has(r)) a.delete(r); else a.add(r); t.attach = [...a]; } }
+    else if (act === "case-draft") { caseDraft(); return; }
     else if (act === "case-send") { const t = top1(), c = t && S.sheetData[sheetKey(t)]?.case; if (c) { if (!(t.reply || "").trim()) { say("Skriv svaret först.", null, true); }
       else S.confirm = { verb: "Skicka i Gmail", text: `Det här lämnar huset, till ${c.customer_label || "kunden"}: «${t.reply.trim().slice(0, 160)}${t.reply.trim().length > 160 ? " …" : ""}». Svaret kopieras och tråden öppnas i Gmail, där du skickar.`, house: true, next: { tool: "gmail", args: {} } }; } }
     else if (act === "case-time") { const t = top1(), sd = t && S.sheetData[sheetKey(t)], h = Number(String(t?.hours || "").replace(",", "."));
@@ -7469,7 +7672,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "tz-open-draft") { S.body = "time"; S.sheets = []; const T = timeState(); T.zNew = true; if (!T.tl) { loadTimeline(); return; } }
     else if (act === "tz-fold") {
       if (e.metaKey || e.ctrlKey) { const cs = (el.getAttribute("data-ctxs") || "").split(" ").filter(Boolean).slice(0, SEL_MAX); S.sel = Object.fromEntries(cs.map((c) => [c, true])); }
-      else { const T = timeState(), k = el.getAttribute("data-k"); T.zopen = { ...(T.zopen || {}), [k]: !T.zopen?.[k] }; } }
+      else { const T = timeState(), k = el.getAttribute("data-k"); T.zopen = { ...(T.zopen || {}), [k]: el.getAttribute("aria-expanded") !== "true" }; } }
+    else if (act === "tz-partsel") { const cs = (el.getAttribute("data-ctxs") || "").split(" ").filter(Boolean).slice(0, SEL_MAX); timeState().zpicker = false; S.sel = Object.fromEntries(cs.map((c) => [c, true])); }
     else if (act === "tz-pick") { timeState().zpicker = false; timeState().zadd = null; timeState().zhtext = null; S.sel = { [el.getAttribute("data-zpick")]: true }; }
     else if (act === "tz-picker") { const T = timeState(); T.zpicker = !T.zpicker; T.zadd = null; }
     else if (act === "tz-add") { const T = timeState(), w = el.getAttribute("data-what"); T.zadd = T.zadd === w ? null : w; T.zpicker = false; }
