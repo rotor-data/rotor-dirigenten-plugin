@@ -104,6 +104,7 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .wait { color: var(--muted); font-size: 14px; }
 .out { color: var(--teal); font-size: 14px; }
 .steps { margin: 0 12px 14px 56px; border-left: 1.5px solid var(--l3); padding-left: 18px; }
+.parts-fold { margin-top: 4px; } .parts-fold > summary { cursor: pointer; } .parts-fold .step { padding-left: 4px; }
 .step { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto 64px; gap: 12px; align-items: center; padding: 8px; margin: 0 -8px; border-radius: 6px; border-bottom: 1px solid var(--l5); font-size: 13.5px; }
 .step:hover { background: var(--s2); }
 .sdot { width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box; border: 1.5px solid var(--t3); }
@@ -243,6 +244,18 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .msub { font-size: 12px; color: var(--muted); margin: 0 0 6px; }
 .mcat + .made, .msub + .made { margin-bottom: 14px; }
 .mgrp { margin-left: 22px; margin-bottom: 12px; }
+/* Det som hör ihop (src/plan/items.ts): en sak, med den senaste versionen av varje del. */
+.item { border: 1px solid var(--l4); border-radius: 8px; padding: 10px 12px; margin: 0 0 10px; max-width: 720px; }
+.item .ihead { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.item .ihead b { font-size: 14px; }
+.item .ipart { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 13px; padding: 3px 0; }
+.item .ipart .fmt { font: 10.5px var(--mono); color: var(--t3); min-width: 64px; }
+.item .imiss { color: var(--red); font-size: 12.5px; }
+.item details { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.item input[type=checkbox] { margin: 0 2px 0 0; }
+.chbar { border: 1px dashed var(--l4); border-radius: 8px; padding: 10px 12px; margin: 0 0 12px; max-width: 720px; font-size: 13px; }
+.chbar textarea { width: 100%; box-sizing: border-box; margin: 6px 0; }
+.chbar .prop { border: 1px dashed var(--l4); border-radius: 6px; padding: 8px; margin: 6px 0; white-space: pre-wrap; }
 .margin { font-size: 13px; line-height: 1.6; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .margin .mh { font-size: 12px; color: var(--muted); margin-top: 16px; }
 .margin .mh:first-child { margin-top: 0; }
@@ -788,7 +801,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "42bba8c", published: "2026-10-08" };
+  const SIDA = { version: "013f839", published: "2026-10-08" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1156,7 +1169,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (n.customer) out.push(`<span class="wait" title="Väntar på ${esc(r.customer?.label || "kunden")}">◷</span>`);
     if (n.handover_out) out.push(`<span class="out" title="Väntar på att någon tar emot ${n.handover_out} steg">⇢</span>`);
     // Nytt arbete och projektutkast som väntar (docs/plan-projektstart.md, etapp 19).
-    if (r.start) out.push(`<button class="link" data-act="start-project" data-key="${esc(r.key)}" title="Gå igenom arbetet med Claude innan det läggs in">Starta projekt ↗</button>`);
+    if (r.start) out.push(`<button class="link" data-act="start-project" data-key="${esc(r.key)}" title="Gå igenom arbetet med Claude innan det läggs in">${esc(/^(Planera om|Fortsätt projektet)/.test(r.headline || "") ? "Fortsätt ↗" : "Starta projekt ↗")}</button>`);
     return out.join("");
   }
 
@@ -1761,11 +1774,24 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<div class="sgrid"><div class="smain">${row?.kind === "stream" ? supportHtml(x, sd) : ""}${made}<h3 class="sh">${sd.parts ? `Delarna · ${sd.parts.length}` : "Stegen"}</h3><div class="ssteps">${steps}</div></div>${margin}</div>`;
   }
 
+  /** Stegen som arbetssteg (src/plan/work-steps.ts): delmoment i följd med samma work_step blir ett steg. */
+  function workGroups(steps) {
+    const out = [];
+    for (const s of steps || []) {
+      const last = out[out.length - 1];
+      if (last && s.work_step && last.steps[0].work_step === s.work_step) last.steps.push(s);
+      else out.push({ steps: [s] });
+    }
+    return out.map((g) => ({ ...g, label: g.steps[0].work_label || g.steps[0].label, done: g.steps.every((s) => s.done),
+      lead: g.steps.find((s) => !s.done) || g.steps[0] }));
+  }
+
   /** Stegen i en eller flera uppgifter ur plan_state { task, format: "plan" }. */
   function planStepsHtml(plans, me) {
     return plans.map((t) => {
       const head = plans.length > 1 ? `<div class="part">${esc(t.label)}<span class="mmeta"> · ${t.due ? `klar ${esc(shortIso(t.due))}` : ""}</span></div>` : "";
-      return head + t.steps.map((s) => {
+      // Ett arbetssteg med flera delmoment: en rad, och delmomenten hopfällda under (målbilden, regel 1).
+      const stepRow = (s) => {
         const state = s.done ? "done" : s.side === "customer" ? "customer" : "todo";
         const st = { task: t.task, id: s.step, label: s.label, state };
         const dot = s.done ? "done" : s.side === "customer" ? "customer" : s.who === me ? "mine" : "";
@@ -1773,6 +1799,17 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         return `<div class="step" data-ctx="step|${esc(t.task)}|${esc(s.step)}"><span class="sdot ${dot}"></span><div style="min-width:0">${rn("step", stepId(t.task, s.step), s.label, s.done ? "done" : "")}${meta ? `<span class="meta"> · ${esc(meta)}</span>` : ""}`
           + ` <button class="link how-l" data-act="open-step" data-task="${esc(t.task)}" data-step="${esc(s.step)}" data-label="${esc(s.label)}">Så görs det →</button></div>`
           + `<span class="who">${esc(s.who === me ? "du" : s.who || "")}</span><span class="pin-slot">${pinButton(st)}</span></div>`;
+      };
+      return head + workGroups(t.steps).map((g) => {
+        if (g.steps.length === 1) return stepRow(g.steps[0]);
+        const s = g.lead, first = g.steps[0], last = g.steps[g.steps.length - 1];
+        const hours = g.steps.reduce((n, x) => n + (x.hours || 0), 0);
+        const dot = g.done ? "done" : s.side === "customer" ? "customer" : s.who === me ? "mine" : "";
+        const meta = [winText([first.window[0], last.window[1]]), hours ? `${hh(hours)} h` : "", `${g.steps.filter((x) => x.done).length} av ${g.steps.length} delmoment klara`].filter(Boolean).join(" · ");
+        return `<div class="step" data-ctx="step|${esc(t.task)}|${esc(s.step)}"><span class="sdot ${dot}"></span><div style="min-width:0">${rn("step", stepId(t.task, s.step), g.label, g.done ? "done" : "")}<span class="meta"> · ${esc(meta)}</span>`
+          + ` <button class="link how-l" data-act="open-step" data-task="${esc(t.task)}" data-step="${esc(s.step)}" data-label="${esc(s.label)}">Så görs det →</button>`
+          + `<details class="parts-fold"><summary class="mmeta">${g.steps.length} delmoment</summary>${g.steps.map(stepRow).join("")}</details></div>`
+          + `<span class="who">${esc(s.who === me ? "du" : s.who || "")}</span><span class="pin-slot"></span></div>`;
       }).join("");
     }).join("");
   }
@@ -1807,11 +1844,12 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   /** Delens eget ark: ovanpå leveransen, med stegen och det som skapats i delen. */
   function partSheet(x) {
     const sd = S.sheetData[sheetKey(x)] || {}, row = rowOf(x.parent), me = S.data?.party?.label;
-    const t = sd.plans?.[0], left = t ? t.steps.filter((s) => !s.done) : [];
-    const next = left[0];
+    // Räknat i arbetssteg, som stegremsan (src/plan/work-steps.ts).
+    const t = sd.plans?.[0], works = t ? workGroups(t.steps) : [], left = works.filter((g) => !g.done);
+    const next = left[0] ? { label: left[0].label, who: left[0].lead.who } : null;
     // Innan delen är läst: raden ur leveransens ark (namn, läge och stegremsa) direkt.
     const pre = !t ? (S.sheetData[`delivery:${x.parent}`]?.parts || []).find((p) => p.task === x.id) || null : null;
-    const sentence = t ? [`${t.steps.length - left.length} av ${t.steps.length} steg klara.`,
+    const sentence = t ? [`${works.length - left.length} av ${works.length} steg klara.`,
       next ? `Nästa är «${next.label}» hos ${next.who === me ? "dig" : next.who}.` : "",
       t.due ? `Klar ${fmtDay(t.due)}.` : ""].filter(Boolean).join(" ")
       : pre ? [`${pre.done_steps} av ${pre.total_steps} steg klara.`, pre.next ? `Nästa är «${pre.next.label}».` : "", pre.due ? `Klar ${fmtDay(pre.due)}.` : ""].filter(Boolean).join(" ") : "";
@@ -2236,14 +2274,17 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<button class="link" data-act="run-chat">Arbeta i chatten ↗</button></div>`;
     else body = `<div class="doacts"><button class="primary" data-act="step-done"><span class="lvl d">●</span> Markera klart</button>`
       + `<button class="link" data-act="run-chat">Arbeta i chatten ↗</button></div>`;
-    const drafts = sh.drafts.filter((d) => !d.approved_at);
+    const drafts = sh.drafts.filter((d) => !d.approved_at && !d.item);
+    // Sakerna steget gör (stegets lämnar-kontrakt): en per instans, med godkännandet för hela saken.
+    const things = sh.items ? `<div class="mh">Sakerna steget gör${sh.items.list.length ? ` · ${sh.items.list.length}` : ""}</div>`
+      + (sh.items.list.length ? changeBarHtml() + sh.items.list.map(itemHtml).join("") : `<div class="mmeta">Inga än. Det steget sparar blir en sak${sh.items.produces.parts.length ? ` med text och ${esc(sh.items.produces.parts.join(", ").toLowerCase())}` : ""}.</div>`) : "";
     const approve = drafts.length ? `<div class="drafts">${drafts.map((d) => { const subj = draftSubject(d, sh.task, sh.step, sh.label), df = S.diffs?.[d.id];
       return `<div class="mcard draft"><span class="fmt">UTKAST</span><b>${esc(d.name)}</b>`
       + `<span class="mmeta">${esc(shortIso(d.at))}${d.declined ? ` · inte godkänt: «${esc(d.declined.feedback)}»` : ""}</span><span class="dacts"><button class="link" data-act="open-result" data-id="${esc(d.id)}">Läs</button>`
       + `<button class="link" data-act="draft-approve" data-id="${esc(d.id)}" data-name="${esc(d.name)}">● Godkänn</button>${declineBtn(subj)}</span>`
       + declineFormHtml(subj) + (df ? `<div class="mh">Ändringen mot förra versionen</div>${diffHtml(df.before, df.after)}` : "") + historyHtml(d.history) + `</div>`; }).join("")}</div>` : "";
     const ahist = sh.approval ? historyHtml(sh.approval.history) : "";
-    return `<h3 class="sh">Gör det</h3>${toolHtml(x, sh)}${body}${approve}${ahist}`;
+    return `<h3 class="sh">Gör det</h3>${toolHtml(x, sh)}${body}${things}${approve}${ahist}`;
   }
   /* ── Verktyget i steget (docs/plan-some-enkel.md) ─────────────────────────
    * Servern säger vilket verktyg steget har (sh.tool, räknat ur tillgångstypens
@@ -2978,6 +3019,139 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     render();
   }
 
+  /** Godkänn hela saken: varje text i den som inte är godkänd, i ett anrop (write { op: "content_approve", id: [ … ] }). */
+  async function approveItem(ids, name) {
+    if (!ids.length) return;
+    try { await call("write", { op: "content_approve", id: ids, confirmed: true, user_approval: `Ja (● Godkänn «${name}» i vyn)`.slice(0, 500) });
+      say(`«${name}» är godkänd.`);
+      for (const k of Object.keys(S.sheetData)) S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], stale: true } };
+      const t = top1(); if (t) fetchSheet(t, true); }
+    catch (e) { say(`Kunde inte godkänna: ${e.message || e}.`, null, true); }
+    render();
+  }
+  /* change-prompt:start — «Ändra med Claude» (Daniel P 2026-10-08). Provas för sig i test/material-items.test.ts. */
+  /*
+   * Prompten för en ändring av en eller flera markerade saker eller delar:
+   * exakt vad (anropet som läser varje del, saken och steget), ändringen
+   * ordagrant, och att bara den görs och sparas som en ny version av samma
+   * sak. `things`: [{ kind: "text" | "file", ref, name, part?, item?, item_kind?, task?, step?, step_label? }].
+   */
+  function changePrompt(things, change, who) {
+    const read = (t) => t.kind === "text" ? `read { op: "content_get", id: "${t.ref}" }` : `read { op: "asset_get", ref: "${t.ref}" }`;
+    const where = (t) => [t.part ? `${t.part}` : t.kind === "text" ? "Text" : "Fil",
+      t.item ? `i saken «${t.item}»${t.item_kind ? ` (${t.item_kind})` : ""}` : "", t.step_label ? `från steget «${t.step_label}»` : t.step ? `från steget ${t.step}` : ""].filter(Boolean).join(" ");
+    const save = (t) => t.kind === "text"
+      ? `write { op: "content_save", id: "${t.ref}", markdown: "<den ändrade texten>"${t.item ? `, item: "${t.item}"` : ""}, confirmed: true, user_approval: "<svaret ordagrant>" } — samma id ger en ny version; den förra finns kvar`
+      : `asset_register { asset_type: "<samma typ>", acquisition: "provided", filename: "<samma namn med nästa version, t.ex. v2>"${t.task ? `, for_task: "${t.task}"` : ""}${t.step ? `, for_step: "${t.step}"` : ""}${t.item ? `, item: "${t.item}"` : ""}, … } — den förra filen finns kvar`;
+    const one = things.length === 1;
+    return [`Ändra ${one ? "det här" : `de här ${things.length}`} i dirigenten${who ? ` (${who} bad om det i vyn)` : ""}.`, "",
+      `Det som ska ändras:`,
+      ...things.map((t, i) => `${i + 1}. «${t.name}» — ${where(t)}. Läs: ${read(t)}`), "",
+      `Ändringen, ordagrant:`, `«${String(change || "").trim()}»`, "",
+      `Så gör du:`,
+      `1. Läs ${one ? "det" : "varje del"} med anropet ovan${things.some((t) => t.item) ? "; read { op: \"context\", task, step } visar resten av saken" : ""}.`,
+      `2. Gör bara den ändringen. Rör inget annat: inga andra texter, filer, steg eller saker.`,
+      `3. Visa före och efter för ${one ? "delen" : "varje del"}, och vänta på ett ja.`,
+      `4. Spara efter ja som en ny version av samma sak:`,
+      ...things.map((t, i) => `   ${i + 1}. ${save(t)}.`),
+      `5. Säg kort vad som sparades.`].join("\n");
+  }
+  /* change-prompt:end */
+  /** Det som är markerat för «Ändra med Claude», per referens. */
+  const picked = () => Object.values(S.pick || {});
+  const thingAttr = (t) => esc(JSON.stringify(t));
+  const changeBtn = (things) => `<button class="link" data-act="thing-change" data-things="${thingAttr(things)}" title="Skriv vad som ska ändras; prompten kopieras till chatten">Ändra med Claude</button>`;
+  const pickBox = (t) => `<input type="checkbox" data-act="thing-pick" data-thing="${thingAttr(t)}"${S.pick?.[t.ref] ? " checked" : ""} aria-label="Markera «${esc(t.name)}»">`;
+  /** Raden med det som är markerat, och fältet «Vad ska ändras?» när det är öppet. */
+  function changeBarHtml() {
+    const c = S.change, n = picked().length;
+    if (!c && !n) return "";
+    if (!c) return `<div class="chbar">${n} markerade · <button class="link" data-act="thing-change-picked">Ändra med Claude</button> <button class="quiet" data-act="thing-unpick">Avmarkera</button></div>`;
+    const texts = c.things.filter((t) => t.kind === "text"), ok = (c.text || "").trim().length > 2;
+    return `<div class="chbar"><div class="mmeta">Ändra med Claude: ${c.things.map((t) => `«${esc(t.name)}»`).join(", ")}</div>`
+      + `<textarea id="change-text" rows="3" placeholder="Vad ska ändras? Till exempel: Kortare rubrik, och nämn priset i första meningen.">${esc(c.text || "")}</textarea>`
+      + `<div class="doacts"><button class="primary" data-act="change-copy"${ok ? "" : " disabled"}>Kopiera prompten och öppna chatten ↗</button>`
+      + (sample && texts.length === c.things.length ? `<button class="link" data-act="change-sample"${ok && !c.busy ? "" : " disabled"}>${c.busy ? "Claude skriver …" : "Låt Claude föreslå här"}</button>` : "")
+      + `<button class="quiet" data-act="change-close">Avbryt · Esc</button></div>`
+      + `<div class="mmeta">Claude gör bara den ändringen och sparar en ny version av samma sak; den förra finns kvar.</div>`
+      + (c.proposals || []).map((p) => `<div class="mmeta">FÖRSLAG · inte sparat · «${esc(p.name)}»</div><div class="prop">${esc(p.markdown)}</div>`
+        + `<div class="doacts"><button class="primary" data-act="change-save" data-id="${esc(p.ref)}"><span class="lvl d">●</span> Spara som ny version</button></div>`).join("")
+      + `</div>`;
+  }
+  /** Förslagen i vyn (förmågan sample): en ny text per markerad text, sparas först efter ● Spara. */
+  async function changeSample() {
+    const c = S.change;
+    if (!c || !sample) return;
+    c.busy = true; render();
+    try {
+      const out = [];
+      for (const t of c.things) {
+        const doc = await call("read", { op: "content_get", id: t.ref });
+        const before = String(doc?.markdown ?? doc?.content?.markdown ?? doc?.text ?? "");
+        const r = await sample([{ role: "user", content: `${changePrompt([t], c.text, "")}\n\nTexten som den står nu:\n${before}\n\nSvara bara med hela den ändrade texten i markdown, utan kommentar.` }], { modelTier: "default" });
+        out.push({ ref: t.ref, name: t.name, item: t.item || null, markdown: String(r?.text ?? r ?? "").trim() });
+      }
+      if (S.change === c) S.change = { ...c, busy: false, proposals: out };
+    } catch (e) { if (e?.code === "not_granted") sample = null; say(`Claude kunde inte föreslå: ${e.message || e}.`, null, true); if (S.change === c) S.change = { ...c, busy: false }; }
+    render();
+  }
+  async function changeSave(id) {
+    const c = S.change, p = c?.proposals?.find((x) => x.ref === id);
+    if (!p) return;
+    try {
+      await call("write", { op: "content_save", id, markdown: p.markdown, ...(p.item ? { item: p.item } : {}), confirmed: true });
+      say(`«${p.name}» är sparad som en ny version. Den förra finns kvar.`);
+      S.change = { ...c, proposals: c.proposals.filter((x) => x.ref !== id) };
+      if (!S.change.proposals.length) S.change = null;
+      for (const k of Object.keys(S.sheetData)) S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], stale: true } };
+      const t = top1(); if (t) fetchSheet(t, true);
+    } catch (e) { say(`Kunde inte spara: ${e.message || e}. Förslaget står kvar.`, null, true); }
+    render();
+  }
+  /*
+   * En sak (Daniel P 2026-10-08): text och filer med samma item. Den senaste
+   * versionen av varje del står synlig; de äldre under «Tidigare versioner»,
+   * ersatta filer under «Ersatt». `it` har servern räknat (stegets ark) eller
+   * vyn ur leveransens resultat (itemsOfResults).
+   */
+  function itemHtml(it) {
+    const thing = (p) => ({ kind: p.kind || (p.part === "Text" ? "text" : "file"), ref: p.ref, name: p.name, part: p.part, item: it.item,
+      ...(it.item_kind ? { item_kind: it.item_kind } : {}), ...(it.task ? { task: it.task } : {}), ...(p.step ? { step: p.step } : {}), ...(p.step_label ? { step_label: p.step_label } : {}) });
+    const part = (p) => `<div class="ipart">${pickBox(thing(p))}<span class="fmt">${esc((p.part || "").toUpperCase())}</span>`
+      + `<button class="link" data-act="open-result" data-id="${esc(p.ref)}">${esc(p.name)}</button>`
+      + `<span class="mmeta">${p.version > 1 ? `version ${p.version} · ` : ""}${esc(p.status_text || p.status || "")}${p.at ? ` · ${esc(shortIso(p.at))}` : ""}</span>${changeBtn([thing(p)])}</div>`;
+    const older = it.parts.filter((p) => (p.older || []).length);
+    const n = older.reduce((k, p) => k + p.older.length, 0);
+    return `<div class="item"><div class="ihead"><b>${esc(it.item)}</b>${it.item_kind ? `<span class="mmeta">${esc(it.item_kind)}</span>` : ""}`
+      + `<span class="mmeta">${esc(it.status)} · ${it.parts.length} ${it.parts.length === 1 ? "del" : "delar"}</span>`
+      + (it.unapproved?.length ? `<button class="link" data-act="item-approve" data-ids="${esc(it.unapproved.join(","))}" data-name="${esc(it.item)}">● Godkänn saken</button>` : "")
+      + changeBtn(it.parts.map(thing)).replace(">Ändra med Claude<", ">Ändra hela saken med Claude<")
+      + `</div>${it.parts.map(part).join("")}`
+      + (it.missing?.length ? `<div class="imiss">Saknar ${esc(it.missing.join(", "))}.</div>` : "")
+      + (n ? `<details><summary>Tidigare versioner (${n})</summary>${older.map((p) => p.older.map((o) => `<div>${esc(p.part)} · version ${o.n} · ${esc(shortIso(o.at))}${o.name && o.name !== p.name ? ` · ${esc(o.name)}` : ""}</div>`).join("")).join("")}</details>` : "")
+      + ((it.replaced || []).length ? `<details><summary>Ersatt (${it.replaced.length})</summary>${it.replaced.map((p) => `<div>${esc(p.part)} · <button class="link" data-act="open-result" data-id="${esc(p.ref)}">${esc(p.name)}</button></div>`).join("")}</details>` : "")
+      + `</div>`;
+  }
+  /** Leveransens resultat med samma item i samma uppgift, som saker (resultaten bär item; servern har tagit versionerna). */
+  function itemsOfResults(results) {
+    const by = new Map();
+    for (const r of results) {
+      if (!r.item) continue;
+      const k = `${r.task}|${r.item.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim()}`;
+      by.set(k, [...(by.get(k) || []), r]);
+    }
+    return [...by.values()].map((g) => {
+      const live = g.filter((r) => !r.replaced), texts = live.filter((r) => r.source === "content");
+      const unapproved = texts.filter((r) => r.status === "draft").map((r) => r.id);
+      const approved = texts.length - unapproved.length;
+      const status = !texts.length ? "inne" : !unapproved.length ? "godkänd" : !approved ? "utkast" : `${approved} av ${texts.length} texter godkända`;
+      const part = (r) => ({ ref: r.id, kind: r.source === "content" ? "text" : "file", name: r.name, part: r.source === "content" ? "Text" : r.format_text, version: r.version, status_text: r.status_text, at: r.at,
+        ...(r.step?.id ? { step: r.step.id, step_label: r.step.label } : {}),
+        older: (r.versions || []).slice(1).map((v) => ({ n: v.n, at: v.at, name: "" })) });
+      return { item: g[0].item, task: g[0].task, item_kind: g.find((r) => r.item_kind)?.item_kind || null, status, unapproved,
+        parts: [...texts, ...live.filter((r) => r.source !== "content")].map(part), replaced: g.filter((r) => r.replaced).map(part), missing: [] };
+    });
+  }
   const resultCard = (m) => `<div class="mcard${m.status === "draft" ? " draft" : ""}" title="${esc(m.name)}" data-act="open-result" data-id="${esc(m.id)}" role="button">`
     + (m.thumbnail ? (S.thumbs?.[m.id] ? `<img class="mthumb" src="${S.thumbs[m.id]}" alt="" loading="lazy">` : `<span class="mthumb"></span>`) : "")
     + `<span class="fmt">${esc((m.format_text || m.format || "").toUpperCase())}</span><b>${esc(m.name)}</b>`
@@ -2997,12 +3171,15 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
    * Kategorin räknas av servern (src/views/results.ts, materialCategory).
    */
   const BASIS_ORDER = ["Uppdrag", "Brief", "Plan", "Ramar", "Spårens uppdrag"];
-  function materialHtml(results) {
+  function materialHtml(all) {
+    // Det som hör ihop står först, som saker; resten som förut.
+    const items = itemsOfResults(all), results = all.filter((r) => !r.item);
+    const head = items.length ? `<div class="mcat">Saker · ${items.length}</div>${changeBarHtml()}${items.map(itemHtml).join("")}` : "";
     const of = (c) => results.filter((r) => (r.category || "result") === c);
     const res = of("result"), basis = of("basis"), other = of("other");
     const cards = (g) => `<div class="made">${g.map(resultCard).join("")}</div>`;
     const kinds = [...new Set(basis.map((r) => r.basis || "Grunddokument"))].sort((a, b) => (BASIS_ORDER.indexOf(a) + 99) % 99 - (BASIS_ORDER.indexOf(b) + 99) % 99);
-    return (res.length ? `<div class="mcat">Resultat · ${res.length}</div>${cards(res)}` : "")
+    return head + (res.length ? `<div class="mcat">Resultat · ${res.length}</div>${cards(res)}` : "")
       + (basis.length ? `<div class="mcat">Grunddokument · ${basis.length}</div>`
         + kinds.map((k) => { const g = basis.filter((r) => (r.basis || "Grunddokument") === k); return `<div class="msub">${esc(k)} · ${g.length}</div>${cards(g)}`; }).join("") : "")
       + (other.length ? `<div class="mcat">Övrigt · ${other.length}</div>${cards(other)}` : "");
@@ -4781,7 +4958,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       } catch (e) { say(`Kunde inte göra projektutkastet: ${e.message || e}. Inget ändrades.`, null, true); render(); return; }
     }
     if (!project) { say("Projektutkastet gick inte att hitta.", null, true); render(); return; }
-    copyToChat(`Arbeta med dirigenten: starta projektet «${row.label.replace(/^Starta projekt: /, "")}» (${project}). Läs var det står med read { op: "project_brief", project: "${project}" }, fortsätt där det slutade och gå igenom det med mig innan något läggs in. Skriv inget utan mitt ja.`, "prompten för projektet");
+    copyToChat(`Arbeta med dirigenten: starta projektet «${row.label.replace(/^(Starta projekt|Planera om|Fortsätt projektet): /, "")}» (${project}). Läs var det står med read { op: "project_brief", project: "${project}" }, fortsätt där det slutade och gå igenom det med mig innan något läggs in. Skriv inget utan mitt ja.`, "prompten för projektet");
   }
   function chatPrompt(key) {
     const row = rowOf(key);
@@ -7163,7 +7340,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const me = S.data.party?.label;
     if (r.start) return `<div class="steps"><div class="step"><span></span><span class="meta" style="grid-column:span 3">${esc(r.state_text)}.`
       + ` Nytt arbete gås igenom innan det läggs in: vad som ska levereras, delarna, vem och när.</span></div>`
-      + `<div class="opens"><button class="link" data-act="start-project" data-key="${esc(r.key)}">Starta projekt ↗</button></div></div>`;
+      + `<div class="opens"><button class="link" data-act="start-project" data-key="${esc(r.key)}">${esc(/^(Planera om|Fortsätt projektet)/.test(r.headline || r.label || "") ? "Fortsätt ↗" : "Starta projekt ↗")}</button></div></div>`;
     if (r.cases) return casesList(o, r, me);
     if (r.no_method && r.tasks.length === 1) return `<div class="steps">${homelessHtml(r.tasks[0], r.label, hlPlan(r.tasks[0]))}`
       + `<div class="opens"><button class="link" data-act="open-delivery" data-key="${esc(r.key)}">Öppna uppgiften</button><button class="link" data-act="chat" data-key="${esc(r.key)}">Arbeta i chatten ↗</button></div></div>`;
@@ -7554,6 +7731,16 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "review-change") { const id = el.getAttribute("data-id"); S.reviewChange = S.reviewChange === id ? null : id; }
     else if (act === "review-answer") { reviewAnswer(el.getAttribute("data-id"), el.getAttribute("data-answer")); return; }
     else if (act === "draft-approve") { approveDraft(el.getAttribute("data-id"), el.getAttribute("data-name") || ""); return; }
+    else if (act === "thing-pick") { const t = JSON.parse(el.getAttribute("data-thing") || "{}"); const p = { ...(S.pick || {}) };
+      if (el.checked) p[t.ref] = t; else delete p[t.ref]; S.pick = p; render(); return; }
+    else if (act === "thing-unpick") { S.pick = {}; render(); return; }
+    else if (act === "thing-change") { S.change = { things: JSON.parse(el.getAttribute("data-things") || "[]"), text: "" }; render(); return; }
+    else if (act === "thing-change-picked") { S.change = { things: picked(), text: "" }; render(); return; }
+    else if (act === "change-close") { S.change = null; render(); return; }
+    else if (act === "change-copy") { const c = S.change; if (c && (c.text || "").trim()) { copyToChat(changePrompt(c.things, c.text, S.data?.party?.label || ""), "prompten med ändringen"); S.change = null; S.pick = {}; } return; }
+    else if (act === "change-sample") { changeSample(); return; }
+    else if (act === "change-save") { changeSave(el.getAttribute("data-id")); return; }
+    else if (act === "item-approve") { approveItem((el.getAttribute("data-ids") || "").split(",").filter(Boolean), el.getAttribute("data-name") || ""); return; }
     else if (act === "result-edit") { const t = top1(); if (t) t.edit = !t.edit; }
     else if (act === "result-book") { const t = top1(); if (t) t.book = !t.book; }
     else if (act === "result-reset") { const t = top1(); if (t) { const { [t.id]: _x, ...rest } = S.resultEdit || {}; S.resultEdit = rest; } }
@@ -7732,6 +7919,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (e.target?.id === "assign-text") { const id = top1()?.id; if (id) { S.assignEdit = { ...(S.assignEdit || {}), [id]: e.target.value }; renderKeep(); } }
     else if (e.target?.id === "step-prompt" || e.target?.id === "step-label") { const id = top1()?.id; if (id) { setEdit(id, e.target.id === "step-prompt" ? { prompt: e.target.value } : { label: e.target.value }); renderKeep(); } }
     else if (/^mom-\d+$/.test(e.target?.id || "")) { const t = top1(), sh = t && sheetOf(t.id); if (sh) { const l = [...(edits(t.id).checklist ?? sh.checklist.map((c) => c.text))]; l[Number(e.target.id.slice(4))] = e.target.value; setEdit(t.id, { checklist: l }); renderKeep(); } }
+    else if (e.target?.id === "change-text" && S.change) { S.change.text = e.target.value; renderKeep(); }
     else if (e.target?.id === "decline-text" && S.decline) { S.decline = { ...S.decline, feedback: e.target.value }; renderKeep(); }
     else if (e.target?.id === "decline-q" && S.decline) { S.decline = { ...S.decline, question: e.target.value }; }
     else if (e.target?.id === "review-text") { S.reviewText = e.target.value; renderKeep(); }
@@ -7770,6 +7958,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (e.target?.id === "ov-name" && (k === "Enter" || k === "Escape")) { stop(); if (k === "Enter") ovAct("ov-save", e.target); else { S.saving = null; render(); } return; }
     if (k === "Escape" && S.time?.zdrag?.started) { stop(); const T = S.time, g = T.zdrag; T.zdrag = null; T.zinfo = null;
       T.changes = Object.fromEntries(g.from.map((c) => [`${c.task}|${c.step}`, c])); render(); return; }
+    if (k === "Escape" && S.change) { stop(); S.change = null; render(); return; }
     if (k === "Escape" && !S.pal && !S.confirm && selCount()) { stop(); selClear(); return; }
     if (S.pal) {
       const n = S.pal.res?.length || 0;
