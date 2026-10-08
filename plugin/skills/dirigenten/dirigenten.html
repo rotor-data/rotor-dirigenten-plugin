@@ -253,6 +253,20 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .item .imiss { color: var(--red); font-size: 12.5px; }
 .item details { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
 .item input[type=checkbox] { margin: 0 2px 0 0; }
+.item .ibody { margin: 6px 0 4px; font-size: 13px; }
+.item .itext { border: 1px solid var(--l3); border-radius: 6px; padding: 8px 10px; margin: 0 0 6px; background: var(--white); overflow-wrap: anywhere; }
+.item .itext > :first-child { margin-top: 0; }
+.item .iimgs { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 4px; }
+.item .iimgs figure { margin: 0; width: 120px; }
+.item .iimgs .ph { aspect-ratio: 4 / 5; background: var(--s2); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--t3); }
+.item .iimgs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.item .verdict { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--l3); }
+.item .verdict button[aria-pressed="true"] { border-color: var(--teal); background: var(--teal-l); }
+.item .verdict input { flex: 1; min-width: 180px; }
+.item .iglance { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-start; margin: 6px 0 2px; }
+.item .iimgs.small figure { width: 64px; }
+.item .iline { flex: 1; min-width: 200px; font-size: 12.5px; color: var(--t2, var(--muted)); }
+.item .ipick { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-size: 12.5px; }
 .chbar { border: 1px dashed var(--l4); border-radius: 8px; padding: 10px 12px; margin: 0 0 12px; max-width: 720px; font-size: 13px; }
 .chbar textarea { width: 100%; box-sizing: border-box; margin: 6px 0; }
 .chbar .prop { border: 1px dashed var(--l4); border-radius: 6px; padding: 8px; margin: 6px 0; white-space: pre-wrap; }
@@ -801,7 +815,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "4158e13", published: "2026-10-08" };
+  const SIDA = { version: "11c63c4", published: "2026-10-08" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2000,10 +2014,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (S.rename?.key === rnKey(kind, id)) return `<input id="rename-input" class="rn-in ${cls}" value="${esc(S.rename.value)}" aria-label="Nytt namn" autocomplete="off">`;
     return `<span class="rn ${cls}" role="button" tabindex="0" data-act="rename" data-rkind="${esc(kind)}" data-rid="${esc(id)}" data-rold="${esc(text)}" title="Byt namn · Enter sparar, Esc avbryter">${esc(text)}</span>`;
   }
-  /** En uppgifts namn är leveranstypen och tillfället; det man byter är tillfället (inom parentesen). */
-  const occasionOf = (label) => { const m = /^[^(]*\((.*)\)\s*$/.exec(label || ""); return m ? m[1] : label || ""; };
+  /** En uppgifts namn är dess egna namn (tillfället), eller typen när det saknas; det man byter är det egna namnet. */
   function renameStart(kind, id, old) {
-    const init = kind === "task" ? occasionOf(old) : old;
+    const init = old;
     S.rename = { key: rnKey(kind, id), kind, id, old, init, value: init };
     render();
     const el = root.querySelector?.("#rename-input");
@@ -2238,7 +2251,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       ? `<div>${esc(sh.responsible.label)} har steget.</div><button class="edge" data-act="take-over" data-task="${esc(tk)}" data-step="${esc(sp)}" data-label="${esc(sh.label)}" title="Steget blir ditt, utan att någon behöver svara · T"><span class="lvl d">●</span> Ta över steget</button>` : "";
     return `<aside class="margin"><div class="mh">Läget</div>${done}${take}`
       + `<div class="mh">Utkast</div>${sh.drafts.length ? sh.drafts.map((d) => `<div>${esc(d.name)} <span class="mmeta">${d.approved_at ? "godkänt" : "utkast"} · ${esc(shortIso(d.at))}</span></div>`).join("") : `<div class="mmeta">Inga.</div>`}`
-      + `<div class="mh">Filer</div>${sh.files.length ? sh.files.slice(0, 6).map((f) => `<div>${esc(f.file || f.type)}</div>`).join("") : `<div class="mmeta">Inga.</div>`}`
+      + `<div class="mh">Filer</div>${sh.files.length ? sh.files.slice(0, 6).map((f) => `<div>${esc(f.file || f.type)}${f.image ? ` ${pickBtn("step-file", { task: sh.task, step: sh.step, asset_type: f.type || null, replaces: f.file || "", version: 1, customer: sh.customer?.id || null }, "Byt bild")}` : ""}</div>`).join("") : `<div class="mmeta">Inga.</div>`}`
       + `<div class="mh">Anteckningar</div>${sh.notes.length ? sh.notes.slice(0, 6).map((n) => `<div><button class="link" data-act="open-note" data-id="${esc(n.id)}" data-name="${esc(n.name)}" title="Läs och redigera">${esc(n.name)}</button></div>`).join("") : `<div class="mmeta">Inga.</div>`}`
       + `<div class="mh">Claude får</div><button class="link" data-act="step-brief">Kopiera lägesbilden ↗</button></aside>`;
   }
@@ -2275,16 +2288,16 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else body = `<div class="doacts"><button class="primary" data-act="step-done"><span class="lvl d">●</span> Markera klart</button>`
       + `<button class="link" data-act="run-chat">Arbeta i chatten ↗</button></div>`;
     const drafts = sh.drafts.filter((d) => !d.approved_at && !d.item);
-    // Sakerna steget gör (stegets lämnar-kontrakt): en per instans, med godkännandet för hela saken.
-    const things = sh.items ? `<div class="mh">Sakerna steget gör${sh.items.list.length ? ` · ${sh.items.list.length}` : ""}</div>`
-      + (sh.items.list.length ? changeBarHtml() + sh.items.list.map(itemHtml).join("") : `<div class="mmeta">Inga än. Det steget sparar blir en sak${sh.items.produces.parts.length ? ` med text och ${esc(sh.items.produces.parts.join(", ").toLowerCase())}` : ""}.</div>`) : "";
+    // Det steget gör (stegets lämnar-kontrakt): ett kort per instans, med godkännandet för alla dess texter.
+    const things = sh.items ? `<div class="mh">Det steget gör${sh.items.list.length ? ` · ${kindCount(sh.items.list)}` : ""}</div>`
+      + (sh.items.list.length ? changeBarHtml() + sh.items.list.map((it) => itemHtml(it, { customer: sh.customer?.id || null })).join("") : `<div class="mmeta">Inget än. Det steget sparar hålls ihop${sh.items.produces.parts.length ? `: text och ${esc(sh.items.produces.parts.join(", ").toLowerCase())}` : ""}.</div>`) : "";
     const approve = drafts.length ? `<div class="drafts">${drafts.map((d) => { const subj = draftSubject(d, sh.task, sh.step, sh.label), df = S.diffs?.[d.id];
       return `<div class="mcard draft"><span class="fmt">UTKAST</span><b>${esc(d.name)}</b>`
       + `<span class="mmeta">${esc(shortIso(d.at))}${d.declined ? ` · inte godkänt: «${esc(d.declined.feedback)}»` : ""}</span><span class="dacts"><button class="link" data-act="open-result" data-id="${esc(d.id)}">Läs</button>`
       + `<button class="link" data-act="draft-approve" data-id="${esc(d.id)}" data-name="${esc(d.name)}">● Godkänn</button>${declineBtn(subj)}</span>`
       + declineFormHtml(subj) + (df ? `<div class="mh">Ändringen mot förra versionen</div>${diffHtml(df.before, df.after)}` : "") + historyHtml(d.history) + `</div>`; }).join("")}</div>` : "";
     const ahist = sh.approval ? historyHtml(sh.approval.history) : "";
-    return `<h3 class="sh">Gör det</h3>${toolHtml(x, sh)}${body}${things}${approve}${ahist}`;
+    return `<h3 class="sh">Gör det</h3>${toolHtml(x, sh)}${body}${reviewHtml(x, sh)}${things}${approve}${ahist}`;
   }
   /* ── Verktyget i steget (docs/plan-some-enkel.md) ─────────────────────────
    * Servern säger vilket verktyg steget har (sh.tool, räknat ur tillgångstypens
@@ -2300,6 +2313,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   const ipQ = (P) => P.source === "bank" ? P.bankQ : P.source === "hubspot" ? P.hsQ : P.q;
   const ipSize = (c) => c.width && c.height ? `${c.width} × ${c.height} px` : "mått okända";
   const ipFail = (P, e) => { P.error = e?.message || String(e); };
+  /** Kunden, texten orden tas ur (utkastet eller sakens text) och formatet: det väljaren söker för. */
+  const ipWhose = (P) => ({ ...(P.customer ? { customer: P.customer } : {}), ...(P.content || P.textRef ? { content: P.content || P.textRef } : {}),
+    ...(P.target?.format ? { formats: P.target.format } : {}) });
   function toolHtml(x, sh) {
     const k = sh.tool?.kind;
     if (!k) return "";
@@ -2317,10 +2333,15 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         contents: [], content: "", sources: null, formats: [], textArea: null, busy: true, more: false, page: 1 };
       ipStart(P);
     }
-    return `<div class="ip" data-ip="${esc(x.id)}">` + ipInner(P) + `</div>`;
+    return `<div class="ip" data-ip="${esc(x.id)}" data-img-place="step-tool">` + ipInner(P) + `</div>`;
   }
   async function ipStart(P) {
     try {
+      if (P.target) {
+        // Texten orden tas ur är bara ett stöd: går den inte att läsa söker väljaren utan den.
+        try { await ipSources(P); } catch (e) { if (!P.textRef || !P.customer) throw e; P.textRef = null; await ipSources(P); }
+        await ipSearch(P); ipPreset(P); P.busy = false; render(); return;
+      }
       const list = await call("read", { op: "content_list", customer: P.customer }).catch(() => ({ entries: [] }));
       const all = (list?.entries || []).filter((c) => c.status === "utkast").sort((a, b) => String(b.saved_at).localeCompare(String(a.saved_at)));
       const own = all.filter((c) => c.for_task === P.task);
@@ -2342,7 +2363,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     P.picked = new Map(top.map((c) => [ipKey(c), true])); P.preset = true; P.compare = true;
   }
   async function ipSources(P) {
-    const d = await call("read", { op: "image_picker", mode: "sources", customer: P.customer, ...(P.content ? { content: P.content } : {}) });
+    const d = await call("read", { op: "image_picker", mode: "sources", ...ipWhose(P) });
+    if (d?.customer?.id) { P.customer = d.customer.id; P.customerLabel = d.customer.label; }
     P.sources = d?.sources || [];
     P.q = d?.suggested_query_en || ""; P.formats = d?.formats || []; P.textArea = d?.text_area || null;
   }
@@ -2351,15 +2373,15 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     P.error = null; P.page = page;
     if (!src || src.key === "upload" || src.key === "adobe_stock") { P.results = null; return; }
     try {
-      const d = await call("read", { op: "image_picker", mode: "search", customer: P.customer, source: P.source, page,
-        ...(ipQ(P) ? { q: ipQ(P) } : {}), ...(P.content ? { content: P.content } : {}) });
+      const d = await call("read", { op: "image_picker", mode: "search", ...ipWhose(P), source: P.source, page,
+        ...(ipQ(P) ? { q: ipQ(P) } : {}) });
       P.results = page > 1 ? [...(P.results || []), ...(d?.candidates || [])] : d?.candidates || [];
       P.more = Boolean(d?.more);
     } catch (e) { ipFail(P, e); P.results = []; }
   }
   async function ipPrompt(P) {
     P.compare = false;
-    try { P.prompt = await call("read", { op: "image_picker", mode: "prompt", customer: P.customer, ...(P.content ? { content: P.content } : {}) }); }
+    try { P.prompt = await call("read", { op: "image_picker", mode: "prompt", ...ipWhose(P) }); }
     catch (e) { ipFail(P, e); }
   }
   function ipFrame(c, f) {
@@ -2369,8 +2391,14 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<span class="ip-lbl">${esc(String(f.format).replace("x", ":"))}</span>`
       + (ta ? `<span class="ta" style="left:${ta.x * 100}%;top:${ta.y * 100}%;width:${ta.w * 100}%;height:${ta.h * 100}%" title="Mallens textyta"></span>` : "") + `</div>`;
   }
+  /** Med ett format (en bilddel): sägs när bilden har ett annat format och beskärs dit. */
+  function ipCropNote(P, c) {
+    const f = P.target?.format, m = f && /^(\d+)x(\d+)$/.exec(f);
+    if (!m || !c.width || !c.height) return "";
+    return Math.abs(c.width / c.height - Number(m[1]) / Number(m[2])) > 0.02 ? `Bilden är inte ${m[1]}:${m[2]}; den beskärs till det formatet där den används.` : "";
+  }
   function ipCard(P, c) {
-    const on = P.picked.has(ipKey(c)), img = ipThumb(c), warn = (c.too_small || [])[0];
+    const on = P.picked.has(ipKey(c)), img = ipThumb(c), warn = (c.too_small || [])[0] || ipCropNote(P, c);
     return `<div class="ip-card" role="button" tabindex="0" aria-pressed="${on}" data-ip-pick="${esc(ipKey(c))}">`
       + `<div class="ph">${img ? `<img src="${esc(img)}" alt="${esc(c.title)}" loading="lazy">` : ""}</div>`
       + `<div class="t" title="${esc(c.title)}">${esc(c.title)}</div><div class="mmeta">${esc(ipSize(c))}</div>`
@@ -2403,7 +2431,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const sel = P.results.filter((c) => P.picked.has(ipKey(c)));
       return (P.preset ? `<p class="mmeta">Förvalda ur orden i texten. Välj en, eller visa alla.</p>` : "")
         + `<div class="ip-cmp">${sel.map((c) => `<div class="col"><div class="ip-frames">${(c.fit || []).map((f) => ipFrame(c, f)).join("")}</div>`
-        + `<div class="t">${esc(c.title)}</div><div class="mmeta">${esc(ipSize(c))}</div>${(c.too_small || []).map((w) => `<div class="ip-warn">${esc(w)}</div>`).join("")}`
+        + `<div class="t">${esc(c.title)}</div><div class="mmeta">${esc(ipSize(c))}</div>${[...(c.too_small || []), ipCropNote(P, c)].filter(Boolean).map((w) => `<div class="ip-warn">${esc(w)}</div>`).join("")}`
         + `<button data-ip-only="${esc(ipKey(c))}">Välj den här</button></div>`).join("")}</div>`
         + `<p class="mmeta">Den streckade rutan är mallens textyta. Välj en bild där motivet håller i alla format och textytan ligger över en lugn del.</p>`;
     }
@@ -2431,14 +2459,15 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   async function ipUpload(f, fields) {
     const CH = 256 * 1024, mime = f.type || "image/jpeg", yes = `Ja i vyn: ladda upp ${f.name}`.slice(0, 500);
     const b64 = (blob) => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1] || ""); r.onerror = () => no(r.error); r.readAsDataURL(blob); });
-    if (f.size <= CH) return call("asset_register", { ...fields, filename: f.name, mime, base64: await b64(f), confirmed: true, user_approval: yes });
+    const filename = fields.filename || f.name;
+    if (f.size <= CH) return call("asset_register", { ...fields, filename, mime, base64: await b64(f), confirmed: true, user_approval: yes });
     const sha = [...new Uint8Array(await crypto.subtle.digest("SHA-256", await f.arrayBuffer()))].map((b) => b.toString(16).padStart(2, "0")).join("");
     const id = `u${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`, total = Math.ceil(f.size / CH);
     let last = null;
     for (let i = 0; i < total; i++) {
       const base64 = await b64(f.slice(i * CH, Math.min(f.size, (i + 1) * CH)));
       for (let attempt = 1; ; attempt++) {
-        try { last = await call("asset_register", { ...fields, filename: f.name, mime, base64, chunk: { id, index: i, total, sha256: sha }, confirmed: true, user_approval: yes }); break; }
+        try { last = await call("asset_register", { ...fields, filename, mime, base64, chunk: { id, index: i, total, sha256: sha }, confirmed: true, user_approval: yes }); break; }
         catch (e) { if (attempt >= 3 || e?.code === "VALIDATION" || e?.code === "FORBIDDEN") throw new Error(`${f.name}: bit ${i + 1} av ${total} gick inte upp — ${e?.message || e}`); }
       }
     }
@@ -2446,7 +2475,12 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
   /** Bilden in i kundens filer med ursprung, postens fält bild pekar på den, och steget blir klart. */
   async function ipSave(P, root) {
-    const base = { asset_type: "core.asset.image", customer: P.customer, for_task: P.task, for_step: P.step, ...(P.content ? { unit: P.content } : {}) };
+    const T = P.target;
+    const base = T ? { asset_type: T.asset_type || "core.asset.image", ...(P.customer ? { customer: P.customer } : {}), ...(T.task ? { for_task: T.task } : {}),
+      ...(T.step ? { for_step: T.step } : {}), ...(T.item ? { item: T.item, ...(T.item_kind ? { item_kind: T.item_kind } : {}) } : {}), ...(P.content ? { unit: P.content } : {}) }
+      : { asset_type: "core.asset.image", customer: P.customer, for_task: P.task, for_step: P.step, ...(P.content ? { unit: P.content } : {}) };
+    // Med ett mål: nästa version av delen (samma namn utan version), eller sakens namn och formatet.
+    const fname = (chosen, mime) => T ? { filename: imageFileName(T, chosen, mime) } : {};
     P.error = null; P.busy = true; render();
     try {
       let ref = null, name = "";
@@ -2457,15 +2491,15 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         const by = root.querySelector("[data-ip-by]")?.value.trim(), gen = root.querySelector("[data-ip-gen]")?.value, prompt = root.querySelector("[data-ip-promptin]")?.value.trim();
         if (origin === "ai_generated" && (!gen || !prompt)) throw new Error("En AI-genererad bild sparas med prompten och tjänsten — fyll i båda.");
         if (f.size > 4 * 1024 * 1024) throw new Error(`${f.name} är större än 4 MB. Dirigenten tar inte emot större bilder än.`);
-        const r = await ipUpload(f, { ...base, acquisition: "provided",
+        const r = await ipUpload(f, { ...base, ...fname(f.name, f.type), acquisition: "provided",
           provenance: { source: "upload", origin, ...(by ? { photographer: by } : {}), ...(gen ? { generator: gen } : {}), ...(prompt ? { prompt } : {}) } });
         ref = r?.ref?.uri; name = f.name;
       } else {
         const c = P.results.find((x) => P.picked.has(ipKey(x)));
         if (!c) throw new Error("Markera en bild först.");
         name = c.title;
-        if (c.source === "bank") { ref = c.ref; await call("asset_register", { ...base, acquisition: "provided", from_ref: c.source_id, confirmed: true, user_approval: `Ja i vyn: välj bilden ${c.title}`.slice(0, 500) }); }
-        else { const r = await call("asset_register", { ...base, acquisition: "fetched", provenance: { source: c.source, source_id: c.source_id }, confirmed: true, user_approval: `Ja i vyn: välj bilden ${c.title}`.slice(0, 500) }); ref = r?.ref?.uri; }
+        if (c.source === "bank") { ref = c.ref; await call("asset_register", { ...base, ...fname(c.title, c.mime), acquisition: "provided", from_ref: c.source_id, confirmed: true, user_approval: `Ja i vyn: välj bilden ${c.title}`.slice(0, 500) }); }
+        else { const r = await call("asset_register", { ...base, ...fname(c.title, c.mime), acquisition: "fetched", provenance: { source: c.source, source_id: c.source_id }, confirmed: true, user_approval: `Ja i vyn: välj bilden ${c.title}`.slice(0, 500) }); ref = r?.ref?.uri; }
       }
       if (!ref) throw new Error("Bilden sparades, men servern gav ingen referens att peka på.");
       if (P.content) {
@@ -2474,6 +2508,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
           markdown: doc?.markdown ?? "", fields: { ...(doc?.fields || {}), bild: ref }, confirmed: true, user_approval: `Ja i vyn: bilden ${name} till posten`.slice(0, 500) });
       }
       delete IPS[P.id];
+      if (T) { imgPicked(T, name); return; }
       const sh = sheetOf(P.id);
       say(`Bilden ${name} är vald${P.content ? " och kopplad till posten" : ""}.`);
       if (sh && !sh.done) await markDone({ task: P.task, step: P.step, label: sh.label });
@@ -2533,7 +2568,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (V.loading) return head + `<p class="mmeta">Hämtar texten och bilderna …</p>`;
     return head + `<div class="shows">${V.items.map((it) => it.kind === "text"
       ? `<div class="show-text">${it.text ? mdHtml(it.text) : `<span class="mmeta">${esc(it.empty)}</span>`}</div>`
-      : `<div class="show-imgs">${it.images.length ? it.images.map((im) => `<figure>${im.src ? `<img src="${esc(im.src)}" alt="${esc(im.name)}">` : ""}<figcaption class="mmeta">${esc(im.name)}</figcaption></figure>`).join("") : `<span class="mmeta">${esc(it.empty)}</span>`}</div>`).join("")}</div>`;
+      : `<div class="show-imgs">${it.images.length ? it.images.map((im) => `<figure>${im.src ? `<img src="${esc(im.src)}" alt="${esc(im.name)}">` : ""}<figcaption class="mmeta">${esc(im.name)}</figcaption>`
+        + pickBtn("shows-image", { task: sh.task, step: it.step || null, asset_type: it.asset_type || null, replaces: im.name, version: 1, customer: sh.customer?.id || null }, "Byt bild") + `</figure>`).join("")
+        : `<span class="mmeta">${esc(it.empty)}</span>`}</div>`).join("")}</div>`;
   }
   async function loadShows(id, sh, V) {
     const items = [];
@@ -2548,7 +2585,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         } else {
           const refs = (o?.files || []).map((f) => f.ref).slice(0, 6);
           const g = refs.length ? await call("read", { op: "asset_get", refs, forhandsbilder: true }) : null;
-          items.push({ kind: "images", images: (g?.files || []).map((f) => ({ name: f.name || f.ref, src: f.thumbnail_base64 ? `data:${f.thumbnail_mime || "image/webp"};base64,${f.thumbnail_base64}` : "" })),
+          items.push({ kind: "images", step: s.step, asset_type: s.asset_type || null, images: (g?.files || []).map((f) => ({ ref: f.ref, name: f.name || f.ref, src: f.thumbnail_base64 ? `data:${f.thumbnail_mime || "image/webp"};base64,${f.thumbnail_base64}` : "" })),
             empty: `«${o?.label || "Bilderna"}» har inga bilder än.` });
         }
       } catch (e) { items.push({ kind: "text", text: "", empty: `Gick inte att hämta: ${e.message || e}` }); }
@@ -2990,6 +3027,10 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + (ftext ? `<button class="link" data-act="result-copy">Kopiera texten</button>` : "") : ""}${!isFile && fmt === "report" && doc?.markdown ? `<button class="link" data-act="result-edit">${x.edit ? "Visa som boksida" : "Redigera texten"}</button>` : ""}`
       + (!isFile && fmt === "text" && doc?.markdown ? `<button class="link" data-act="result-book">${x.book ? "Redigera texten" : "Läs som boksida"}</button>` : "")
       + (!isFile && doc?.markdown ? `<button class="link" data-act="result-copy">Kopiera texten</button>` : "")
+      + (isFile && r && (r.image || /^image\//.test(doc?.mime || "")) ? pickBtn("file-sheet", resultTarget(r), "Byt bild") : "")
+      + (!isFile && doc && (r?.source === "content" || (!r && doc.kind && doc.kind !== "anteckning")) ? pickBtn("draft-image", { task: r?.task || doc.for_task || null, step: r?.step?.id || null, content: x.id,
+        customer: (typeof doc.customer === "string" ? doc.customer : doc.customer?.id) || customerOfTask(r?.task || doc.for_task),
+        replaces: doc.fields?.bild ? "bilden" : null }, doc.fields?.bild ? "Byt bild" : "Välj bild") : "")
       + (r?.status === "draft" ? `<button class="link" data-act="draft-approve" data-id="${esc(x.id)}" data-name="${esc(title)}">● Godkänn</button>` : "")
       + (r?.status === "draft" && r.source === "content" ? declineBtn(resultSubject(r, title)) : "") + `</div>`
       + (r?.status === "draft" && r.source === "content" ? declineFormHtml(resultSubject(r, title)) : "")
@@ -3019,7 +3060,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     render();
   }
 
-  /** Godkänn hela saken: varje text i den som inte är godkänd, i ett anrop (write { op: "content_approve", id: [ … ] }). */
+  /** Godkänn annonsen (sorten): varje text i den som inte är godkänd, i ett anrop (write { op: "content_approve", id: [ … ] }). */
   async function approveItem(ids, name) {
     if (!ids.length) return;
     try { await call("write", { op: "content_approve", id: ids, confirmed: true, user_approval: `Ja (● Godkänn «${name}» i vyn)`.slice(0, 500) });
@@ -3114,22 +3155,34 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
    * ersatta filer under «Ersatt». `it` har servern räknat (stegets ark) eller
    * vyn ur leveransens resultat (itemsOfResults).
    */
-  function itemHtml(it) {
+  function itemHtml(it, o = {}) {
+    loadItemBodies([it]);
+    const words = kindWords(it.item_kind);
+    const text = it.parts.find((p) => (p.kind || (p.part === "Text" ? "text" : "file")) === "text")?.ref || null;
+    const stepOfIt = it.parts.find((p) => p.step)?.step || null;
+    const whose = { customer: o.customer || customerOfTask(it.task), ...(text ? { text } : {}) };
+    // En bilddel byts mot en ny version i samma sak; en som saknas väljs till saken (styrt av typens works_as, part.image).
+    const swap = (p) => p.image ? ` ${pickBtn("item-part", { task: it.task, step: p.step || stepOfIt, item: it.item, ...(it.item_kind ? { item_kind: it.item_kind } : {}),
+      part: p.part, asset_type: p.asset_type || null, replaces: p.name, version: p.version || 1, format: formatOf(p.part), ...whose }, "Byt bild")}` : "";
+    const missingImages = (it.missing_parts || []).filter((m) => m.image);
+    const choose = missingImages.length ? `<div class="ipick">${missingImages.map((m) => pickBtn("item-missing", { task: it.task, step: stepOfIt, item: it.item,
+      ...(it.item_kind ? { item_kind: it.item_kind } : {}), part: m.part, asset_type: m.asset_type || null, format: formatOf(m.part), ...whose }, `Välj bild · ${m.part}`)).join("")}</div>` : "";
     const thing = (p) => ({ kind: p.kind || (p.part === "Text" ? "text" : "file"), ref: p.ref, name: p.name, part: p.part, item: it.item,
       ...(it.item_kind ? { item_kind: it.item_kind } : {}), ...(it.task ? { task: it.task } : {}), ...(p.step ? { step: p.step } : {}), ...(p.step_label ? { step_label: p.step_label } : {}) });
     const part = (p) => `<div class="ipart">${pickBox(thing(p))}<span class="fmt">${esc((p.part || "").toUpperCase())}</span>`
       + `<button class="link" data-act="open-result" data-id="${esc(p.ref)}">${esc(p.name)}</button>`
-      + `<span class="mmeta">${p.version > 1 ? `version ${p.version} · ` : ""}${esc(p.status_text || p.status || "")}${p.at ? ` · ${esc(shortIso(p.at))}` : ""}</span>${changeBtn([thing(p)])}</div>`;
+      + `<span class="mmeta">${p.version > 1 ? `version ${p.version} · ` : ""}${esc(p.status_text || p.status || "")}${p.at ? ` · ${esc(shortIso(p.at))}` : ""}</span>${changeBtn([thing(p)])}${swap(p)}</div>`;
     const older = it.parts.filter((p) => (p.older || []).length);
     const n = older.reduce((k, p) => k + p.older.length, 0);
     return `<div class="item"><div class="ihead"><b>${esc(it.item)}</b>${it.item_kind ? `<span class="mmeta">${esc(it.item_kind)}</span>` : ""}`
       + `<span class="mmeta">${esc(it.status)} · ${it.parts.length} ${it.parts.length === 1 ? "del" : "delar"}</span>`
-      + (it.unapproved?.length ? `<button class="link" data-act="item-approve" data-ids="${esc(it.unapproved.join(","))}" data-name="${esc(it.item)}">● Godkänn saken</button>` : "")
-      + changeBtn(it.parts.map(thing)).replace(">Ändra med Claude<", ">Ändra hela saken med Claude<")
-      + `</div>${it.parts.map(part).join("")}`
-      + (it.missing?.length ? `<div class="imiss">Saknar ${esc(it.missing.join(", "))}.</div>` : "")
+      + (it.unapproved?.length ? `<button class="link" data-act="item-approve" data-ids="${esc(it.unapproved.join(","))}" data-name="${esc(it.item)}">● Godkänn${words ? ` ${esc(words.def)}` : ""}</button>` : "")
+      + (words ? changeBtn(it.parts.map(thing)).replace(">Ändra med Claude<", `>Ändra ${esc(words.def)}<`) : changeBtn(it.parts.map(thing)))
+      + `</div>${o.review ? itemBodyHtml(it) : itemGlanceHtml(it)}${it.parts.map(part).join("")}`
+      + (it.missing?.length ? `<div class="imiss">Saknar ${esc(it.missing.join(", "))}.</div>` : "") + choose
       + (n ? `<details><summary>Tidigare versioner (${n})</summary>${older.map((p) => p.older.map((o) => `<div>${esc(p.part)} · version ${o.n} · ${esc(shortIso(o.at))}${o.name && o.name !== p.name ? ` · ${esc(o.name)}` : ""}</div>`).join("")).join("")}</details>` : "")
       + ((it.replaced || []).length ? `<details><summary>Ersatt (${it.replaced.length})</summary>${it.replaced.map((p) => `<div>${esc(p.part)} · <button class="link" data-act="open-result" data-id="${esc(p.ref)}">${esc(p.name)}</button></div>`).join("")}</details>` : "")
+      + (o.review ? verdictHtml(o.review, it, o.n ?? 0) : "")
       + `</div>`;
   }
   /** Leveransens resultat med samma item i samma uppgift, som saker (resultaten bär item; servern har tagit versionerna). */
@@ -3145,12 +3198,203 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const unapproved = texts.filter((r) => r.status === "draft").map((r) => r.id);
       const approved = texts.length - unapproved.length;
       const status = !texts.length ? "inne" : !unapproved.length ? "godkänd" : !approved ? "utkast" : `${approved} av ${texts.length} texter godkända`;
-      const part = (r) => ({ ref: r.id, kind: r.source === "content" ? "text" : "file", name: r.name, part: r.source === "content" ? "Text" : r.format_text, version: r.version, status_text: r.status_text, at: r.at,
+      // Bildens format ur filnamnet («hybrid-4x5.png» → «Bild 4:5»), som i stegets ark.
+      const fmtText = (r) => { const m = r.image && /(?:^|[^0-9])(\d{1,2})x(\d{1,2})(?=[^0-9]|$)/.exec(r.file_name || r.name || ""); return m ? `${r.format_text} ${m[1]}:${m[2]}` : r.format_text; };
+      const part = (r) => ({ ref: r.id, kind: r.source === "content" ? "text" : "file", name: r.name, part: r.source === "content" ? "Text" : fmtText(r), version: r.version, status_text: r.status_text, at: r.at,
+        ...(r.image ? { image: true } : {}), ...(r.asset_type ? { asset_type: r.asset_type } : {}), ...(r.excerpt ? { excerpt: r.excerpt } : {}),
         ...(r.step?.id ? { step: r.step.id, step_label: r.step.label } : {}),
         older: (r.versions || []).slice(1).map((v) => ({ n: v.n, at: v.at, name: "" })) });
       return { item: g[0].item, task: g[0].task, item_kind: g.find((r) => r.item_kind)?.item_kind || null, status, unapproved,
         parts: [...texts, ...live.filter((r) => r.source !== "content")].map(part), replaced: g.filter((r) => r.replaced).map(part), missing: [] };
     });
+  }
+  /* kind-words:start — sortens namn i vyns knappar (docs/orden-i-vyn.md): «Godkänn annonsen», aldrig «saken». Provas i test/granska-i-steget.test.ts. */
+  /** Bestämd form och plural för sortens sista ord; okänd sort ger null, och knappen heter då bara «Godkänn» / «Ändra med Claude». */
+  const KIND_WORDS = { annons: ["annonsen", "annonser"], mejl: ["mejlet", "mejl"], "e-post": ["mejlet", "mejl"], utskick: ["utskicket", "utskick"],
+    inlägg: ["inlägget", "inlägg"], nyhetsbrev: ["nyhetsbrevet", "nyhetsbrev"], bild: ["bilden", "bilder"], affisch: ["affischen", "affischer"],
+    banner: ["bannern", "banners"], film: ["filmen", "filmer"], video: ["videon", "videor"], produktblad: ["produktbladet", "produktblad"],
+    sida: ["sidan", "sidor"], webbsida: ["webbsidan", "webbsidor"], landningssida: ["landningssidan", "landningssidor"], artikel: ["artikeln", "artiklar"],
+    blogginlägg: ["blogginlägget", "blogginlägg"], post: ["posten", "poster"], kampanj: ["kampanjen", "kampanjer"], text: ["texten", "texter"] };
+  function kindWords(kind) {
+    const k = String(kind || "").trim().toLowerCase();
+    if (!k) return null;
+    const m = /^(.*?[-\s])?([a-zåäöé]+)$/.exec(k), w = m && KIND_WORDS[m[2]];
+    return w ? { def: (m[1] || "") + w[0], plural: (m[1] || "") + w[1] } : null;
+  }
+  /* kind-words:end */
+  /** «3 annonser» med sortens namn, annars bara talet. */
+  const kindCount = (list) => { const kinds = [...new Set(list.map((it) => String(it.item_kind || "").toLowerCase()))], w = kinds.length === 1 ? kindWords(kinds[0]) : null;
+    return w ? `${list.length} ${list.length === 1 ? kinds[0] : w.plural}` : String(list.length); };
+  /** Miniatyrerna av bilddelarna (senaste versionen, formaten bredvid varandra) och en kort textrad, utan att öppna. */
+  function itemGlanceHtml(it) {
+    const texts = it.parts.filter((p) => p.kind === "text"), imgs = it.parts.filter((p) => p.kind === "file" && p.image);
+    if (!texts.length && !imgs.length) return "";
+    const line = (p) => { const b = p.excerpt || S.bodies?.[bodyKey(p)]; if (b == null) return ""; const t = String(b).split("\n").map((x) => x.replace(/^#+\s*|[*_`>]/g, "").trim()).filter(Boolean).join(" · ");
+      return t ? `<div class="iline">${esc(t.length > 140 ? `${t.slice(0, 139)}…` : t)}</div>` : ""; };
+    return `<div class="iglance">${imgs.length ? `<div class="iimgs small">${imgs.map((p) => `<figure title="${esc(p.name)}"><div class="ph">${S.thumbs?.[p.ref] ? `<img src="${S.thumbs[p.ref]}" alt="${esc(p.part)}" loading="lazy">` : esc(p.part)}</div>`
+      + `<figcaption class="mmeta">${esc(p.part)}</figcaption></figure>`).join("")}</div>` : ""}${texts.map(line).join("")}</div>`;
+  }
+  /* ── Granska i steget (Daniel P 2026-10-08: «Men det står att man ska granska - men man kan inte göra det i steget?») ──
+   * sh.review.list är sakerna steget läser (src/plan/reads.ts, readItems). Varje sak är samma kort som
+   * materialet per sak (itemHtml), med texten och bilderna synliga och en rad för omdömet: ändra, behåll
+   * eller stryk, och fritext. Omdömena sparas som EN anteckning på steget («Granskning – <steg>»), som
+   * blir stegets resultat och som nästa steg läser i lägesbilden. */
+  const VERDICTS = [["change", "ändra"], ["keep", "behåll"], ["strike", "stryk"]];
+  const REVIEW_PREFIX = "Granskning – ";
+  const bodyKey = (p) => `${p.ref}#${p.version || 1}`;
+  function reviewState(id, sh) {
+    S.review = S.review || {};
+    const R = S.review[id] ||= { verdicts: {}, note: null, loaded: false, loading: false, dirty: false, busy: false };
+    if (!R.note && sh.review?.note?.id) { R.note = sh.review.note.id; R.loaded = false; }
+    // Det som sparats står i anteckningens fält «granskning»; det man ändrat men inte sparat står kvar.
+    if (R.note && !R.loaded && !R.loading) {
+      R.loading = true;
+      call("read", { op: "content_get", id: R.note }).then((d) => {
+        try { const saved = JSON.parse(d?.fields?.granskning || "{}"); if (!R.dirty) R.verdicts = saved; } catch { /* en anteckning utan omdömen */ }
+        R.loaded = true; R.loading = false; render();
+      }).catch(() => { R.loaded = true; R.loading = false; });
+    }
+    return R;
+  }
+  /** Texten och förhandsbilderna i sakerna, lat och en gång per version. */
+  function loadItemBodies(items) {
+    S.bodies = S.bodies || {}; S.thumbs = S.thumbs || {};
+    for (const p of items.flatMap((it) => it.parts.filter((x) => x.kind === "text" && !x.excerpt && !(bodyKey(x) in S.bodies))).slice(0, 30)) {
+      const k = bodyKey(p); S.bodies[k] = null;
+      call("read", { op: "content_get", id: p.ref }).then((d) => { S.bodies[k] = String(d?.markdown ?? ""); render(); }).catch(() => { S.bodies[k] = ""; render(); });
+    }
+    const refs = items.flatMap((it) => it.parts.filter((x) => x.kind === "file" && x.image && !(x.ref in S.thumbs)).map((x) => x.ref)).slice(0, 24);
+    if (!refs.length) return;
+    for (const r of refs) S.thumbs[r] = null;
+    call("read", { op: "asset_get", refs, forhandsbilder: true }).then((d) => {
+      for (const f of d?.files || []) if (f.thumbnail_base64) S.thumbs[f.ref] = `data:${f.thumbnail_mime || "image/webp"};base64,${f.thumbnail_base64}`;
+      render();
+    }).catch(() => { /* utan förhandsbild står delens namn */ });
+  }
+  /** Sakens senaste text och bilder, synliga i kortet. */
+  function itemBodyHtml(it) {
+    const texts = it.parts.filter((p) => p.kind === "text"), imgs = it.parts.filter((p) => p.kind === "file" && p.image);
+    return `<div class="ibody">${texts.map((p) => { const b = S.bodies?.[bodyKey(p)];
+      return `<div class="itext">${b == null ? `<span class="mmeta">Hämtar texten …</span>` : b ? mdHtml(b) : `<span class="mmeta">Texten är tom.</span>`}</div>`; }).join("")}`
+      + (imgs.length ? `<div class="iimgs">${imgs.map((p) => `<figure><div class="ph">${S.thumbs?.[p.ref] ? `<img src="${S.thumbs[p.ref]}" alt="${esc(p.name)}">` : esc(p.part)}</div>`
+        + `<figcaption class="mmeta">${esc(p.part)}</figcaption></figure>`).join("")}</div>` : "") + `</div>`;
+  }
+  /** Raden för omdömet om en sak. */
+  function verdictHtml(id, it, n) {
+    const v = S.review?.[id]?.verdicts?.[it.key] || {};
+    return `<div class="verdict"><span class="mmeta">Omdöme</span>${VERDICTS.map(([k, l]) => `<button data-act="verdict" data-sheet="${esc(id)}" data-key="${esc(it.key)}" data-v="${k}" aria-pressed="${v.v === k}">${l}</button>`).join("")}`
+      + `<input id="verdict-${n}" data-verdict="${esc(it.key)}" data-sheet="${esc(id)}" value="${esc(v.text || "")}" placeholder="${v.v === "change" ? "Vad ska ändras?" : "Fritt, till exempel varför"}" aria-label="Omdömet om «${esc(it.item)}» i ord"></div>`;
+  }
+  function reviewHtml(x, sh) {
+    const list = sh.review?.list || [];
+    if (!list.length) return "";
+    const R = reviewState(x.id, sh);
+    loadItemBodies(list);
+    const n = list.filter((it) => R.verdicts[it.key]?.v).length;
+    return `<h3 class="sh">Granska · ${esc(kindCount(list))}</h3>`
+      + `<div class="mmeta">Säg för var och en om den ska ändras, behållas eller strykas. Omdömena sparas på steget, och nästa steg läser dem.${sh.review.note ? ` Senast sparat ${esc(shortIso(sh.review.note.at))}.` : ""}</div>`
+      + (sh.items?.list?.length ? "" : changeBarHtml())
+      + list.map((it, i) => itemHtml(it, { customer: sh.customer?.id || null, review: x.id, n: i })).join("")
+      + `<div class="doacts"><button class="primary" data-act="review-save" data-sheet="${esc(x.id)}"${R.dirty && !R.busy ? "" : " disabled"}><span class="lvl d">●</span> Spara granskningen</button>`
+      + `<span class="mmeta">${n} av ${list.length} har ett omdöme${R.dirty ? " · inte sparat" : ""}.</span></div>`;
+  }
+  /* review-summary:start — anteckningen som blir stegets resultat. Provas i test/granska-i-steget.test.ts. */
+  function reviewSummary(label, list, verdicts) {
+    const W = { change: "ändra", keep: "behåll", strike: "stryk" };
+    const rows = list.map((it) => ({ it, v: verdicts[it.key] || {} }));
+    const count = (k) => rows.filter((r) => r.v.v === k).length, open = rows.filter((r) => !r.v.v).length;
+    return [`# Granskning – ${label}`, "",
+      `${list.length} granskade: ${count("change")} ändra, ${count("keep")} behåll, ${count("strike")} stryk${open ? `, ${open} utan omdöme` : ""}.`, "",
+      ...rows.map(({ it, v }) => `- «${it.item}»${it.item_kind ? ` (${it.item_kind})` : ""}: ${v.v ? `**${W[v.v]}**` : "inget omdöme"}${(v.text || "").trim() ? ` — ${v.text.trim()}` : ""}`)].join("\n");
+  }
+  /* review-summary:end */
+  async function reviewSave(id) {
+    const sh = sheetOf(id), R = S.review?.[id];
+    if (!sh?.review || !R) return;
+    const [task, step] = splitStep(id), name = `${REVIEW_PREFIX}${sh.label}`.slice(0, 160);
+    const keep = Object.fromEntries(sh.review.list.filter((it) => R.verdicts[it.key]?.v || (R.verdicts[it.key]?.text || "").trim())
+      .map((it) => [it.key, { ...R.verdicts[it.key], item: it.item }]));
+    R.busy = true; render();
+    try {
+      const r = await call("write", { op: "content_save", ...(R.note ? { id: R.note } : {}), for_task: task, for_step: step, kind: "anteckning", name, title: name,
+        about: { step }, markdown: reviewSummary(sh.label, sh.review.list, R.verdicts), fields: { granskning: JSON.stringify(keep) },
+        ...(sh.customer?.id ? { customer: sh.customer.id } : {}), confirmed: true, user_approval: "Ja (● Spara granskningen i vyn)" });
+      R.note = r?.id || R.note; R.dirty = false; R.loaded = true;
+      say("Granskningen är sparad på steget. Nästa steg läser den.");
+      staleStep(id, task);
+    } catch (e) { say(`Granskningen sparades inte: ${e.message || e}. Omdömena står kvar.`, null, true); }
+    R.busy = false; render();
+  }
+
+  /* ── Bildväljaren överallt (Daniel P 2026-10-08: «bildväljaren ska väl finnas på alla ställen där den behövs och inte bara här») ──
+   * Samma väljare som i steget (ipInner), öppnad för ett mål: en bilddel i en sak (ny version av delen i samma sak,
+   * i delens format), en bilddel som saknas, en bild i det som granskas, en fil, ett utkast (fältet bild) eller
+   * presentationens urval. Styrt av tillgångstypens works_as och sakens bilddel (servern sätter image), aldrig av
+   * metod eller kund. Platserna står här och i docs/kvar.md; test/bildvaljaren-overallt.test.ts går igenom listan. */
+  /* image-places:start */
+  const IMAGE_PLACES = {
+    "step-tool": "Steg vars verktyg är bild eller bildprompt: väljaren öppen i steget",
+    "item-part": "Bilddel i det som hör ihop: «Det steget gör», «Granska» och materialets «Hör ihop»",
+    "item-missing": "Bilddel som saknas i det som hör ihop",
+    "shows-image": "Bilderna i det som godkänns, skickas eller visas i formaten",
+    "step-file": "Stegets filer i marginalen, när filen är en bild",
+    "file-sheet": "En bild öppnad i filens ark (resultatkorten i leveransens material)",
+    "draft-image": "Utkast (blogg, SoMe, produktblad, webbsida): bilden i fältet bild",
+    "pres-image": "Presentationens urval, en bild",
+  };
+  /* image-places:end */
+  const pickBtn = (place, target, label) => IMAGE_PLACES[place] && target
+    ? `<button class="link" data-act="img-pick" data-place="${place}" data-target="${esc(JSON.stringify(target))}" title="Öppnar bildväljaren">${esc(label)}</button>` : "";
+  /* image-name:start — formatet och filnamnet: nästa version av delen. Provas i test/bildvaljaren-overallt.test.ts. */
+  /** «Bild 4:5» → «4x5», formatet väljaren jämför i. */
+  const formatOf = (part) => { const m = /(\d+)\s*[:x×]\s*(\d+)/.exec(part || ""); return m ? `${m[1]}x${m[2]}` : null; };
+  const customerOfTask = (task) => (S.data?.rows || []).find((r) => r.id === task || (r.tasks || []).includes(task))?.customer?.id || null;
+  /** Ett resultat i leveransens material som mål: samma uppgift, steg, sak och typ. */
+  const resultTarget = (r) => ({ task: r.task, step: r.step?.id || null, ...(r.item ? { item: r.item, ...(r.item_kind ? { item_kind: r.item_kind } : {}) } : {}),
+    part: r.format_text || null, asset_type: r.asset_type || null, replaces: r.file_name || r.name, version: r.version || 1, format: formatOf(r.file_name || r.name),
+    customer: customerOfTask(r.task) });
+  function imageFileName(t, chosen, mime) {
+    const m = String(mime || "");
+    const ext = /png/.test(m) ? "png" : /webp/.test(m) ? "webp" : /jpe?g/.test(m) ? "jpg" : (/\.([a-z0-9]{2,5})$/i.exec(chosen || "")?.[1] || "jpg").toLowerCase();
+    const clean = (x) => String(x || "").replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ").trim();
+    if (t.replaces && t.replaces !== "bilden") {
+      const base = clean(t.replaces).replace(/\.[a-z0-9]{1,5}$/i, "");
+      const had = /[\s._-]v(\d+)$/i.exec(base);
+      const stem = base.replace(/[\s._-]v\d+$/i, "");
+      return `${stem} v${Math.max(t.version || 1, had ? Number(had[1]) : 1) + 1}.${ext}`;
+    }
+    const fmt = formatOf(t.part);
+    return `${clean(t.item || (t.part && t.part !== "Bild" ? t.part : "") || "Bild")}${fmt && !(t.item || "").includes(fmt) ? ` ${fmt}` : ""}.${ext}`;
+  }
+  /* image-name:end */
+  function imgPickHtml() {
+    const g = S.imgPick;
+    if (!g) return "";
+    const t = g.t;
+    let P = IPS.pick;
+    if (!P) {
+      P = IPS.pick = { id: "pick", task: t.task || null, step: t.step || null, customer: t.customer || null, customerLabel: "", kind: "image", target: t,
+        textRef: t.text || null, source: "bank", q: "", bankQ: "", hsQ: "", results: null, error: null, picked: new Map(), preset: false, compare: false, prompt: null,
+        contents: [], content: t.content || "", sources: null, formats: [], textArea: null, busy: true, more: false, page: 1 };
+      if (!P.customer && !P.textRef && !P.content) { P.busy = false; P.error = "Det finns ingen kund att välja bilder åt här. Öppna leveransen och välj därifrån."; }
+      else ipStart(P);
+    }
+    const what = t.replaces && t.replaces !== "bilden" ? `Byt «${t.replaces}»${t.part ? ` · ${t.part}` : ""}` : t.content ? (t.replaces ? "Byt bild i utkastet" : "Välj bild till utkastet") : `Välj ${t.part ? t.part.toLowerCase() : "bild"}`;
+    const how = t.content ? "Bilden sparas i kundens filer, och utkastets fält bild pekar på den."
+      : t.replaces ? `Den valda bilden sparas som en ny version av bilden${t.item ? ` i «${t.item}»` : ""}${t.format ? `, i formatet ${t.format.replace("x", ":")}` : ""}. Den förra finns kvar.`
+      : `Den valda bilden sparas${t.item ? ` i «${t.item}»` : ""}${t.format ? `, i formatet ${t.format.replace("x", ":")}` : ""}.`;
+    return `<div class="mv pres" role="dialog" aria-label="Bildväljaren"><div class="pres-h"><b>${esc(what)}${t.item ? ` i «${esc(t.item)}»` : ""}</b><button class="link" data-act="img-pick-close">Stäng · Esc</button></div>`
+      + `<div class="mmeta">${esc(how)}</div><div class="ip" data-ip="pick" data-img-place="${esc(g.place)}">${ipInner(P)}</div></div>`;
+  }
+  /** Efter valet: rutan stängs, och arken och presentationen läses om. */
+  function imgPicked(t, name) {
+    S.imgPick = null; delete IPS.pick;
+    say(`Bilden ${name} är vald${t.item ? ` till «${t.item}»` : ""}${t.replaces && t.replaces !== "bilden" ? " som en ny version. Den förra finns kvar" : ""}.`);
+    for (const k of Object.keys(S.sheetData)) S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], stale: true } };
+    const top = top1(); if (top) fetchSheet(top, true);
+    if (t.after === "pres" && S.pres?.d) call("read", { op: "presentation_draft", delivery: S.pres.delivery, ...(S.pres.template ? { template: S.pres.template } : {}) })
+      .then((d) => { if (S.pres) { S.pres.d = d; render(); } }).catch(() => {});
+    render();
   }
   const resultCard = (m) => `<div class="mcard${m.status === "draft" ? " draft" : ""}" title="${esc(m.name)}" data-act="open-result" data-id="${esc(m.id)}" role="button">`
     + (m.thumbnail ? (S.thumbs?.[m.id] ? `<img class="mthumb" src="${S.thumbs[m.id]}" alt="" loading="lazy">` : `<span class="mthumb"></span>`) : "")
@@ -3174,7 +3418,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   function materialHtml(all) {
     // Det som hör ihop står först, som saker; resten som förut.
     const items = itemsOfResults(all), results = all.filter((r) => !r.item);
-    const head = items.length ? `<div class="mcat">Saker · ${items.length}</div>${changeBarHtml()}${items.map(itemHtml).join("")}` : "";
+    const head = items.length ? `<div class="mcat">Hör ihop · ${esc(kindCount(items))}</div>${changeBarHtml()}${items.map((it) => itemHtml(it)).join("")}` : "";
     const of = (c) => results.filter((r) => (r.category || "result") === c);
     const res = of("result"), basis = of("basis"), other = of("other");
     const cards = (g) => `<div class="made">${g.map(resultCard).join("")}</div>`;
@@ -5827,7 +6071,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const postFields = b.type === "social_post" && (b.items || []).length
         ? `<div class="crow"><label>Kanal <select id="pres-c-${esc(key)}">${["linkedin", "facebook", "instagram"].map((c) => `<option value="${c}"${(post.channel || "linkedin") === c ? " selected" : ""}>${{ linkedin: "LinkedIn", facebook: "Facebook", instagram: "Instagram" }[c]}</option>`).join("")}</select></label>`
           + `<label>Datum <input id="pres-d-${esc(key)}" type="date" value="${esc(post.scheduled || "")}"></label></div>` : "";
-      const items = (b.items || []).map((i) => `<label class="pres-i"><input type="checkbox" data-act="pres-tick" data-ref="${esc(i.ref)}"${p.off[i.ref] ? "" : " checked"}> ${esc(i.label || i.ref.slice(-12))}${i.mime ? ` <span class="mmeta">${esc(/^image\//.test(i.mime) ? "bild" : "text, visas ordagrant")}</span>` : ""}</label>`).join("");
+      const items = (b.items || []).map((i) => `<label class="pres-i"><input type="checkbox" data-act="pres-tick" data-ref="${esc(i.ref)}"${p.off[i.ref] ? "" : " checked"}> ${esc(i.label || i.ref.slice(-12))}${i.mime ? ` <span class="mmeta">${esc(/^image\//.test(i.mime) ? "bild" : "text, visas ordagrant")}</span>` : ""}</label>`
+        + (/^image\//.test(i.mime || "") ? ((r) => r ? pickBtn("pres-image", { ...resultTarget(r), after: "pres", customer: p.d.customer || customerOfTask(r.task) }, "Byt bild") : "")(allResults().find((y) => y.id === i.ref)) : "")).join("");
       const texts = (b.items || []).length
         ? `${postFields}<input id="pres-t-${esc(key)}" placeholder="Rubrik" value="${esc(t.title || "")}"><textarea id="pres-l-${esc(key)}" rows="2" placeholder="Ingress">${esc(t.lead || "")}</textarea>` : "";
       const hint = PRES_NUM_HINT[b.type];
@@ -7606,7 +7851,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     } else main = stateLine() + clashHtml() + outboxHtml() + (S.body === "time" ? timeBody() : S.body === "cal" ? calendarBody() : reviewsHtml(o) + list(o));
     const mainSel = selDecorate(main), sheetsSel = selDecorate(sheetsHtml());
     S.selVisible = S.sheets.length ? sheetsSel.ctxs : mainSel.ctxs;
-    root.innerHTML = linkHtml(top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + presHtml() + selbarHtml() + confirmHtml() + toastHtml());
+    root.innerHTML = linkHtml(top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + presHtml() + imgPickHtml() + selbarHtml() + confirmHtml() + toastHtml());
     if (presScroll !== null) { const box = root.querySelector?.(".mv.pres"); if (box) box.scrollTop = presScroll; }
     if (act0) { const el = root.querySelector?.(`#${focusId}`); if (el) { el.focus?.({ preventScroll: true }); try { if (presSel[0] != null) el.setSelectionRange?.(presSel[0], presSel[1]); } catch { /* inte ett textfält */ } } }
     if (S.pal) focusPalette();
@@ -7740,6 +7985,11 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "change-copy") { const c = S.change; if (c && (c.text || "").trim()) { copyToChat(changePrompt(c.things, c.text, S.data?.party?.label || ""), "prompten med ändringen"); S.change = null; S.pick = {}; } return; }
     else if (act === "change-sample") { changeSample(); return; }
     else if (act === "change-save") { changeSave(el.getAttribute("data-id")); return; }
+    else if (act === "verdict") { const id = el.getAttribute("data-sheet"), k = el.getAttribute("data-key"), v = el.getAttribute("data-v"), R = S.review?.[id];
+      if (R) { const cur = R.verdicts[k] || {}; R.verdicts = { ...R.verdicts, [k]: { ...cur, v: cur.v === v ? null : v } }; R.dirty = true; } render(); return; }
+    else if (act === "review-save") { reviewSave(el.getAttribute("data-sheet")); return; }
+    else if (act === "img-pick") { delete IPS.pick; S.imgPick = { place: el.getAttribute("data-place"), t: JSON.parse(el.getAttribute("data-target") || "{}") }; render(); return; }
+    else if (act === "img-pick-close") { S.imgPick = null; delete IPS.pick; render(); return; }
     else if (act === "item-approve") { approveItem((el.getAttribute("data-ids") || "").split(",").filter(Boolean), el.getAttribute("data-name") || ""); return; }
     else if (act === "result-edit") { const t = top1(); if (t) t.edit = !t.edit; }
     else if (act === "result-book") { const t = top1(); if (t) t.book = !t.book; }
@@ -7901,6 +8151,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   root.addEventListener("mouseover", (e) => { const c = e.target.closest?.("[data-ctx]")?.getAttribute("data-ctx"); if (c) S.cur = c; onHover(e); });
   root.addEventListener?.("focusout", (e) => { if (S.momEdit && /^mom-\d+$/.test(e.target?.id || "")) { S.momEdit = null; render(); } });
   root.addEventListener("input", (e) => {
+    if (e.target?.dataset?.verdict !== undefined) { const R = S.review?.[e.target.dataset.sheet], k = e.target.dataset.verdict;
+      if (R) { R.verdicts = { ...R.verdicts, [k]: { ...(R.verdicts[k] || {}), text: e.target.value } }; R.dirty = true; renderKeep(); } return; }
     if (e.target?.id === "pal-q" && S.pal) { S.pal = { ...S.pal, q: e.target.value, i: 0 }; render(); }
     else if (e.target?.id === "mv-q" && S.mv) { S.mv = { ...S.mv, q: e.target.value, i: 0 }; render(); const inp = root.querySelector?.("#mv-q"); if (inp) { inp.focus?.(); const n = inp.value?.length || 0; inp.setSelectionRange?.(n, n); } }
     else if (e.target?.id === "hl-steps") { const t = e.target.getAttribute?.("data-task"); if (t) { const st = hlState(t), had = !!st.text.trim(); st.text = e.target.value; if (had !== !!st.text.trim() || /\n/.test(e.data || "") || e.inputType === "insertLineBreak") renderKeep(); } }
@@ -7959,6 +8211,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (k === "Escape" && S.time?.zdrag?.started) { stop(); const T = S.time, g = T.zdrag; T.zdrag = null; T.zinfo = null;
       T.changes = Object.fromEntries(g.from.map((c) => [`${c.task}|${c.step}`, c])); render(); return; }
     if (k === "Escape" && S.change) { stop(); S.change = null; render(); return; }
+    if (k === "Escape" && S.imgPick) { stop(); S.imgPick = null; delete IPS.pick; render(); return; }
     if (k === "Escape" && !S.pal && !S.confirm && selCount()) { stop(); selClear(); return; }
     if (S.pal) {
       const n = S.pal.res?.length || 0;
