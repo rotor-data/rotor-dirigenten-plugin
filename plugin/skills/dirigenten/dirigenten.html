@@ -853,7 +853,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "60fef0b", published: "2026-10-09" };
+  const SIDA = { version: "295df4f", published: "2026-10-09" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2813,7 +2813,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const pv = await call(c.tool, c.args);
       const who = r.decides === false ? `Föreslå för ${r.responsible?.label || "den ansvarige"}` : layer === "customer" ? `Spara i ${sh?.layers.customer || "kundens"}s sätt` : "Spara i metoden";
       S.confirm = { text: summaryText(pv) || `Förhandsvisning av ändringen i ${layer === "customer" ? "kundens sätt" : "metoden"}.`,
-        verb: who, next: c, step: { id, call: c, layer } };
+        verb: who, next: c, step: { id, call: hlNext(pv, c, who), layer } };
     } catch (e) { say(`Kunde inte ändra steget: ${e.message || e}. Inget sparades.`, null, true); }
     render();
   }
@@ -3765,7 +3765,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
   async function switchMethod(task, sw) {
     try { const pv = await call(sw.call.tool, sw.call.args);
-      S.confirm = { text: summaryText(pv) || `Ärendet byter till ${sw.method.label}. Klara steg ändras inte.`, verb: sw.label, next: sw.call, step: { id: null, call: sw.call, layer: "take", key: task } }; }
+      S.confirm = { text: summaryText(pv) || `Ärendet byter till ${sw.method.label}. Klara steg ändras inte.`, verb: sw.label, next: sw.call, step: { id: null, call: hlNext(pv, sw.call, sw.label), layer: "take", key: task } }; }
     catch (e) { say(`Kunde inte förhandsvisa: ${e.message || e}.`, null, true); }
     render();
   }
@@ -3775,7 +3775,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       || sd?.m?.followers?.find((f) => f.task === task)?.update;
     if (!u) return;
     try { const pv = await call(u.take.tool, u.take.args);
-      S.confirm = { text: summaryText(pv) || "Metodändringen tas in i leveransen.", verb: "Ta in", next: u.take, step: { id: null, call: u.take, layer: "take", key } }; }
+      S.confirm = { text: summaryText(pv) || "Metodändringen tas in i leveransen.", verb: "Ta in", next: u.take, step: { id: null, call: hlNext(pv, u.take, "Ta in"), layer: "take", key } }; }
     catch (e) { say(`Kunde inte förhandsvisa: ${e.message || e}.`, null, true); }
     render();
   }
@@ -5883,8 +5883,12 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     for (const k of Object.keys(S.sheetData)) if (k === `delivery:${task}` || k === `part:${task}` || k === `case:${task}` || k.startsWith("delivery:d_")) S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], stale: true } };
     const t = top1(); if (t && S.sheetData[sheetKey(t)]?.stale) fetchSheet(t, true); refreshSoon(); };
   /** Förhandsvisningens nästa anrop, med jaet som knappen ger när servern väntar ett. */
+  /** Bekräftelsen ur serverns förhandsvisning (med dess preview_id och jaet), annars anropet som det var. */
   function hlNext(r, fallback, verb) {
-    const nx = r?.next || r?.next_call || fallback, a = { ...(nx.args || {}) };
+    const got = r?.next || r?.next_call || r?.error?.next_call;
+    // Bara serverns bekräftelse av samma anrop; ett annat nästa anrop är inte jaet.
+    const same = got && got.tool === fallback.tool && (got.args || {}).op === (fallback.args || {}).op;
+    const nx = same ? got : fallback, a = { ...(nx.args || {}) };
     if (/^</.test(String(a.user_approval || ""))) a.user_approval = `Ja (◐ ${verb} i vyn)`;
     return { tool: nx.tool, args: a };
   }
