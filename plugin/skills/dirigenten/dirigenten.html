@@ -785,7 +785,30 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 .pres-i { display: flex; gap: 8px; align-items: baseline; padding: 2px 0; }
 .pres-i input { width: auto; margin: 0; }
 .pres-acts { display: flex; gap: 12px; align-items: center; margin: 8px 0; }
+.pres-frame-float { position: fixed; z-index: 87; border: 0; border-radius: 8px; background: #f6f3f0; }
 .pres-frame { width: 100%; height: 60vh; border: 1px solid var(--l2); border-radius: 8px; background: #f6f3f0; margin: 8px 0; }
+.mv.pres { width: min(960px, calc(100vw - 32px)); padding: 24px; }
+.pres-b { padding: 16px 0; }
+.pres-b .sh { margin: 0 0 8px; }
+.pres-mini { display: inline-block; width: 32px; height: 40px; border-radius: 4px; overflow: hidden; background: var(--s2); vertical-align: middle; }
+.pres-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pres-fmts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 16px; }
+.pres-fmts .pill { border: 1px solid var(--l2); border-radius: 999px; background: none; padding: 4px 12px; font-size: 13px; }
+.pres-fmts .pill.on { border-color: var(--teal); background: var(--teal); color: #fff !important; }
+.pres-fmts .link.on { font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+.pres-things { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; margin: 0 0 16px; }
+.pres-thing { display: flex; flex-direction: column; gap: 8px; min-width: 0; cursor: pointer; }
+.pres-thing.off .pres-ph { opacity: .35; }
+.pres-ph { display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden; background: var(--s2); }
+.pres-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pres-tn { display: flex; gap: 8px; align-items: baseline; font-size: 13.5px; }
+.pres-tn input { width: auto; margin: 0; }
+.pres-tn b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.pres-row { display: grid; gap: 8px; }
+.pres-ask { display: flex; gap: 8px; align-items: center; }
+.pres-ask input { flex: 1; margin: 0; }
+.pres-ask button { white-space: nowrap; }
+.pres-row input, .pres-row textarea { margin: 0; }
 .pres-old { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--l2); }
 .wrap.dropok > .row { outline: 2px dashed var(--teal); outline-offset: -2px; }
 /* Köns och arkens smala bredd (ordning, del 1). */
@@ -830,7 +853,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "f219baa", published: "2026-10-09" };
+  const SIDA = { version: "60fef0b", published: "2026-10-09" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -6025,7 +6048,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const d = await call("read", { op: "presentation_draft", delivery });
       // Det urvalet förväljer urbockat (en artefakt i claude.ai) står som urbockat.
       const off = Object.fromEntries(d.blocks.flatMap((b) => (b.items || []).filter((i) => i.unchecked).map((i) => [i.ref, true])));
-      S.pres = { ...S.pres, loading: false, d, off, template: d.template, title: d.blocks.find((b) => b.type === "cover")?.title || label };
+      S.pres = { ...S.pres, loading: false, d, off, template: d.template, formats: [...(d.formats || [])], title: d.blocks.find((b) => b.type === "cover")?.title || label };
     } catch (e) { S.pres = { ...S.pres, loading: false, error: e?.message || String(e) }; }
     render();
   }
@@ -6033,13 +6056,17 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   function presBlocks(p) {
     return (p.d?.blocks || []).map((b) => {
       const key = presKey(b), t = p.texts[key] || p.texts[b.type] || {}, post = p.posts?.[key] || {};
-      const items = (b.items || []).filter((i) => !p.off[i.ref]).map((i) => ({ ref: i.ref, ...(i.label ? { label: i.label } : {}),
+      // Sakernas block: bara de valda formaten, i vald ordning (det första visas först på sidan).
+      const fmtOk = (i) => b.type !== "items" || !i.format || !p.formats || p.formats.includes(i.format);
+      const items = (b.items || []).filter((i) => !p.off[i.ref] && fmtOk(i)).map((i) => ({ ref: i.ref, ...(i.label ? { label: i.label } : {}),
+        ...(i.item ? { item: i.item } : {}), ...(i.part ? { part: i.part } : {}), ...(i.format ? { format: i.format } : {}),
         ...(i.mime ? { mime: i.mime } : {}), ...(i.width ? { width: i.width, height: i.height } : {}),
         ...(t.captions?.[i.ref] ? { caption: t.captions[i.ref] } : {}) }));
-      const out = { type: b.type, ...(b.type === "cover" ? { title: p.title } : t.title ? { title: t.title } : {}), ...(t.lead ? { lead: t.lead } : {}),
+      const out = { type: b.type, ...(b.type === "cover" ? { title: p.title } : t.title ? { title: t.title } : b.type === "items" && presThingsTitle(b) ? { title: presThingsTitle(b) } : {}), ...(t.lead ? { lead: t.lead } : {}),
         ...(items.length ? { items } : {}),
         ...(p.nums?.[b.type]?.trim() ? { data: { ...(b.data || {}), input_text: p.nums[b.type] } }
-          : b.data ? { data: { ...b.data, ...(b.type === "social_post" ? { channel: post.channel || "linkedin", ...(post.scheduled ? { scheduled: post.scheduled } : {}) } : {}) } } : {}) };
+          : b.data ? { data: { ...b.data, ...(b.type === "social_post" ? { channel: post.channel || "linkedin", ...(post.scheduled ? { scheduled: post.scheduled } : {}) } : {}) } }
+          : b.type === "items" && p.formats?.length ? { data: { formats: p.formats } } : {}) };
       return out;
     });
   }
@@ -6087,13 +6114,50 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     }
     render();
   }
+  /** Be Claude välja (Daniel P 2026-10-09: «Framför allt kan också claude hjälpa att välja rätt bilder och texter utan att det blir krångligt»):
+   *  du säger i en mening vad som ska visas, Claude bockar i sakerna och formaten. Inget publiceras; du ser valet och rättar det. */
+  async function presChoose() {
+    const p = S.pres; if (!p?.d) return;
+    if (!sample) { say("Claude finns inte här. Bocka i det som ska med, eller öppna vyn i claude.ai.", null, true); return; }
+    const ask = (p.ask || "").trim();
+    if (!ask) { p.claude = { note: "Skriv först vad som ska visas, till exempel «de fyra startannonserna i 4:5»." }; render(); return; }
+    p.claude = { busy: true }; render();
+    const things = new Map();
+    for (const b of p.d.blocks || []) for (const i of b.items || []) {
+      const k = i.item || i.label || i.ref, t = things.get(k) || { name: k, kind: i.item ? "sak" : b.type, parts: [], struck: false, refs: [] };
+      t.parts.push(i.part || i.label || ""); t.refs.push(i.ref); if (i.unchecked) t.struck = true; things.set(k, t);
+    }
+    const list = [...things.values()].map((t) => ({ name: t.name, parts: t.parts, struck_in_review: t.struck }));
+    const prompt = `Du väljer vad som ska visas i en presentation för kunden ${p.d.customer_label}: «${p.title}».\n`
+      + `Användaren vill: «${ask}».\nDet som finns (namn, delar, om saken strukits i en granskning):\n${JSON.stringify(list)}\n`
+      + `Formaten som finns: ${JSON.stringify(p.d.formats || [])}.\n`
+      + `Välj bara bland namnen ovan, exakt som de står. Ta inte med det som strukits om användaren inte ber om det. `
+      + `Svara BARA med JSON: { "include": ["namn", …], "formats": ["4x5", …], "why": "en mening på svenska" }`;
+    try {
+      const r = await sample([{ role: "user", content: prompt }], { modelTier: "default" });
+      const m = /\{[\s\S]*\}/.exec(String(r?.text || ""));
+      const j = m ? JSON.parse(m[0]) : null;
+      const want = new Set((j?.include || []).map(String));
+      if (!want.size) throw new Error("Claude valde ingenting");
+      const off = {};
+      for (const t of things.values()) for (const r2 of t.refs) off[r2] = !want.has(t.name);
+      p.off = off;
+      const f = (j?.formats || []).map(String).filter((x) => (p.d.formats || []).includes(x));
+      if (f.length) p.formats = f;
+      p.claude = { done: true, note: `${j?.why ? `${j.why} ` : ""}${want.size} valda. Ändra med bockarna; inget publiceras utan förhandsvisning och ditt ja.` };
+    } catch (e) {
+      if (e?.code === "not_granted") sample = null;
+      p.claude = { note: `Claude kunde inte välja (${e?.message || e}). Bocka i det som ska med.` };
+    }
+    render();
+  }
   /** Förhandsvisa: sidan som kunden ser den, ur urval, mall och sidotexter. Ren läsning — inga mottagare, inget steg, inget ja. */
   async function presPreview() {
     const p = S.pres; if (!p?.d) return;
     p.error = null; p.busy = "Förhandsvisar …"; render();
     try {
       const r = await call("read", { op: "presentation_draft", delivery: p.delivery, template: p.template, render: { title: p.title, blocks: presBlocks(p) } });
-      p.preview = { html: r?.preview_html || "" };
+      p.preview = { html: r?.preview_html || "", v: Date.now() };
       if (!p.preview.html) throw new Error(summaryText(r) || "ingen förhandsvisning kom tillbaka");
       p.send = null; p.phase = "preview";
     } catch (e) { p.error = e?.message || String(e); }
@@ -6144,6 +6208,65 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     render();
   }
   const presWhen = (iso) => { try { return new Date(iso).toLocaleString("sv-SE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); } catch { return iso; } };
+  /** Förhandsbilderna i byggrutan, lat och en gång per bild (samma som «Granska»: asset_get med förhandsbilder). */
+  function presThumbs(refs) {
+    S.thumbs = S.thumbs || {};
+    const want = refs.filter((r) => /^bank:\/\//.test(r) && !(r in S.thumbs)).slice(0, 40);
+    if (!want.length) return;
+    for (const r of want) S.thumbs[r] = null;
+    call("read", { op: "asset_get", refs: want, forhandsbilder: true }).then((d) => {
+      for (const f of d?.files || []) if (f.thumbnail_base64) S.thumbs[f.ref] = `data:${f.thumbnail_mime || "image/webp"};base64,${f.thumbnail_base64}`;
+      for (const r of want) if (!S.thumbs[r]) S.thumbs[r] = "";
+      render();
+    }).catch(() => { for (const r of want) if (!S.thumbs[r]) S.thumbs[r] = ""; render(); });
+  }
+  /** Sakernas rubrik när ingen skrivits: sortens namn i plural («Meta-annonser»), när alla är av samma sort. */
+  function presThingsTitle(b) {
+    const kinds = [...new Set((b.items || []).map((i) => String(i.item_kind || "").toLowerCase()).filter(Boolean))];
+    const w = kinds.length === 1 ? kindWords(kinds[0]) : null;
+    return w ? w.plural.charAt(0).toUpperCase() + w.plural.slice(1) : "";
+  }
+  /** Sakerna i byggrutan (Daniel P 2026-10-09: «Man ser ju inte heller vad man väljer här om man inte vet vad de heter»):
+   *  ett kort per sak med miniatyr och namn, en bock för allt i den, och formaten att ta med (det första visas först). */
+  function presThingsHtml(b, p, key, t) {
+    const groups = new Map();
+    for (const i of b.items || []) { const k = i.item || i.label || i.ref; groups.set(k, [...(groups.get(k) || []), i]); }
+    const all = p.d?.formats || [], cur = p.formats || all, first = cur[0];
+    presThumbs((b.items || []).filter((i) => /^image\//.test(i.mime || "")).map((i) => i.ref));
+    const on = [...groups.values()].filter((parts) => parts.some((i) => !p.off[i.ref])).length;
+    const fmts = all.length > 1 ? `<div class="pres-fmts"><span class="mmeta">Format på sidan</span>${all.map((f) => `<button class="pill${cur.includes(f) ? " on" : ""}" data-act="pres-fmt" data-fmt="${esc(f)}" aria-pressed="${cur.includes(f)}">${esc(f.replace("x", ":"))}</button>`).join("")}`
+      + (cur.length > 1 ? `<span class="mmeta">· visas först:</span>${cur.map((f) => `<button class="link${f === first ? " on" : ""}" data-act="pres-fmt-first" data-fmt="${esc(f)}">${esc(f.replace("x", ":"))}</button>`).join(" ")}` : "")
+      + `</div>` : "";
+    const cards = [...groups.entries()].map(([name, parts]) => {
+      const img = parts.find((i) => /^image\//.test(i.mime || "") && (!i.format || i.format === first)) || parts.find((i) => /^image\//.test(i.mime || ""));
+      const checked = parts.some((i) => !p.off[i.ref]);
+      const kinds = [...new Set(parts.map((i) => i.part).filter(Boolean))].filter((x) => !/^bild\b/i.test(x) || cur.includes((/(\d+)\s*[:x]\s*(\d+)/.exec(x) || []).slice(1).join("x")));
+      return `<label class="pres-thing${checked ? "" : " off"}"><span class="pres-ph" style="aspect-ratio:${img?.format ? img.format.replace("x", " / ") : "4 / 5"}">${img && S.thumbs?.[img.ref] ? `<img src="${S.thumbs[img.ref]}" alt="">` : `<span class="mmeta">${!img ? "Ingen bild" : S.thumbs?.[img.ref] === "" ? "Ingen förhandsbild" : "Hämtar …"}</span>`}</span>`
+        + `<span class="pres-tn"><input type="checkbox" data-act="pres-thing" data-refs="${esc(JSON.stringify(parts.map((i) => i.ref)))}"${checked ? " checked" : ""}> <b>${esc(name)}</b></span>`
+        + `<span class="mmeta">${esc(kinds.join(" · "))}</span></label>`;
+    }).join("");
+    return `<div class="pres-b"><h3 class="sh">${esc(PRES_BLOCK.items)} · ${on} av ${groups.size} med</h3>${fmts}<div class="pres-things">${cards}</div>`
+      + `<div class="pres-row"><input id="pres-t-${esc(key)}" placeholder="${esc(presThingsTitle(b) || "Rubrik över sakerna, till exempel «Annonserna»")}" value="${esc(t.title || "")}"><textarea id="pres-l-${esc(key)}" rows="2" placeholder="Ingress (valfri)">${esc(t.lead || "")}</textarea></div></div>`;
+  }
+  /* Förhandsvisningen ligger utanför vyns omritning (en ram som ritas om laddar om sidan med alla bilder, och vyn
+   * ritas om var och varannan sekund): EN ram i sidan, lagd över platshållaren i rutan och flyttad när rutan rör sig. */
+  let presFrameEl = null;
+  function presFramePlace() {
+    const slot = root.querySelector?.(".pres-slot"), p = S.pres;
+    if (!slot || !p?.preview?.html) { if (presFrameEl) presFrameEl.style.display = "none"; return; }
+    if (!presFrameEl) {
+      presFrameEl = document.createElement("iframe");
+      presFrameEl.className = "pres-frame-float"; presFrameEl.setAttribute("sandbox", ""); presFrameEl.title = "Förhandsvisning";
+      document.body.appendChild(presFrameEl);
+      const again = () => presFramePlace();
+      window.addEventListener("resize", again); document.addEventListener("scroll", again, true);
+    }
+    if (presFrameEl.dataset.v !== String(p.preview.v)) { presFrameEl.srcdoc = p.preview.html; presFrameEl.dataset.v = String(p.preview.v); }
+    const r = slot.getBoundingClientRect(), box = slot.closest(".mv.pres")?.getBoundingClientRect();
+    const top = Math.max(r.top, box ? box.top : 0), bottom = Math.min(r.bottom, box ? box.bottom : innerHeight);
+    Object.assign(presFrameEl.style, { display: bottom > top ? "block" : "none", left: `${r.left}px`, width: `${r.width}px`, top: `${r.top}px`, height: `${r.height}px`,
+      clipPath: `inset(${Math.max(0, top - r.top)}px 0 ${Math.max(0, r.bottom - bottom)}px 0)` });
+  }
   function presHtml() {
     const p = S.pres; if (!p) return "";
     const head = `<div class="pres-h"><b>Presentera «${esc(p.label)}» för kunden</b><button class="link" data-act="pres-close">Stäng</button></div>`;
@@ -6153,8 +6276,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const busy = p.busy ? `<div class="mmeta">${esc(p.busy)}</div>` : "";
     if (p.phase === "preview") {
       return `<div class="mv pres" role="dialog" aria-label="Förhandsvisning">${head}`
-        + `<div class="mmeta">Så här ser kunden den. Bilderna visas med länkar som gäller en timme.</div>`
-        + `<iframe class="pres-frame" sandbox="" title="Förhandsvisning" srcdoc="${esc(p.preview.html)}"></iframe>`
+        + `<div class="mmeta">Så här ser kunden den. Stora bilder visas här i mindre storlek; kunden ser dem i full storlek.</div>`
+        + `<div class="pres-frame pres-slot"></div>`
         + `<label class="mh" for="pres-to">Mottagare hos kunden (e-post, kommaseparerat)</label><input id="pres-to" value="${esc(p.to)}" placeholder="namn@kunden.se">`
         + err + busy
         + `<div class="pres-acts"><button class="link" data-act="pres-back">← Tillbaka och ändra</button><button class="primary" data-act="pres-send">Publicera …</button></div></div>`;
@@ -6174,7 +6297,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const postFields = b.type === "social_post" && (b.items || []).length
         ? `<div class="crow"><label>Kanal <select id="pres-c-${esc(key)}">${["linkedin", "facebook", "instagram"].map((c) => `<option value="${c}"${(post.channel || "linkedin") === c ? " selected" : ""}>${{ linkedin: "LinkedIn", facebook: "Facebook", instagram: "Instagram" }[c]}</option>`).join("")}</select></label>`
           + `<label>Datum <input id="pres-d-${esc(key)}" type="date" value="${esc(post.scheduled || "")}"></label></div>` : "";
-      const items = (b.items || []).map((i) => `<label class="pres-i"><input type="checkbox" data-act="pres-tick" data-ref="${esc(i.ref)}"${p.off[i.ref] ? "" : " checked"}> ${esc(i.label || i.ref.slice(-12))}${i.mime ? ` <span class="mmeta">${esc(/^image\//.test(i.mime) ? "bild" : "text, visas ordagrant")}</span>` : ""}</label>`
+      if (b.type === "items") return presThingsHtml(b, p, key, t);
+      presThumbs((b.items || []).filter((i) => /^image\//.test(i.mime || "")).map((i) => i.ref));
+            const items = (b.items || []).map((i) => `<label class="pres-i"><input type="checkbox" data-act="pres-tick" data-ref="${esc(i.ref)}"${p.off[i.ref] ? "" : " checked"}>${/^image\//.test(i.mime || "") ? `<span class="pres-mini">${S.thumbs?.[i.ref] ? `<img src="${S.thumbs[i.ref]}" alt="">` : ""}</span>` : ""} ${esc(i.label || i.ref.slice(-12))}${i.mime ? ` <span class="mmeta">${esc(/^image\//.test(i.mime) ? "bild" : "text, visas ordagrant")}</span>` : ""}</label>`
         + (/^image\//.test(i.mime || "") ? ((r) => r ? pickBtn("pres-image", { ...resultTarget(r), after: "pres", customer: p.d.customer || customerOfTask(r.task) }, "Byt bild") : "")(allResults().find((y) => y.id === i.ref)) : "")).join("");
       const texts = (b.items || []).length
         ? `${postFields}<input id="pres-t-${esc(key)}" placeholder="Rubrik" value="${esc(t.title || "")}"><textarea id="pres-l-${esc(key)}" rows="2" placeholder="Ingress">${esc(t.lead || "")}</textarea>` : "";
@@ -6182,8 +6307,11 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const nums = hint ? `<textarea id="pres-n-${esc(b.type)}" rows="4" placeholder="${esc(hint)}">${esc(p.nums?.[b.type] || "")}</textarea>`
         + `<input id="pres-t-${esc(b.type)}" placeholder="Rubrik" value="${esc(t.title || "")}">`
         + `<div class="mmeta">En rad per värde: ${esc(hint.split("\n")[0])}. Sparas som en ögonblicksbild när du publicerar.</div>` : "";
-      return `<div class="pres-b"><div class="mh">${esc(PRES_BLOCK[b.type] || b.type)}</div>${hint ? nums : (items || `<div class="mmeta">Inget material — utelämnas.</div>`) + texts}</div>`;
+      // Ett block utan material står inte som ett eget block, bara i raden «Utelämnas» under.
+      if (!hint && !items) return "";
+      return `<div class="pres-b"><h3 class="sh">${esc(PRES_BLOCK[b.type] || b.type)}</h3>${hint ? nums : items + texts}</div>`;
     }).join("");
+    const empty = d.blocks.filter((b) => b.type !== "cover" && !PRES_NUM_HINT[b.type] && !(b.items || []).length).map((b) => PRES_BLOCK[b.type] || b.type);
     const old = (d.presentations || []).map((x) => `<div class="pres-old"><span><b>${esc(x.title)}</b> · version ${x.version} · ${esc(presWhen(x.at))}${x.withdrawn ? " · tillbakadragen" : ""}</span>`
       + `<span class="mmeta">${x.views?.length ? `Sedd: ${x.views.slice(0, 3).map((v) => `${esc(v.email)} ${esc(presWhen(v.at))}`).join(", ")}` : "Inte öppnad än"}</span>`
       + (x.withdrawn ? "" : `<button class="link" data-act="pres-withdraw" data-id="${esc(x.id)}">Dra tillbaka <span class="lvl">◐</span></button>`) + `</div>`).join("");
@@ -6191,9 +6319,14 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<div class="mmeta">Mall: <select id="pres-template">${(d.templates || []).map((t) => `<option value="${esc(t.id)}"${t.id === p.template ? " selected" : ""}>${esc(t.label)}</option>`).join("")}</select>`
       + `${d.brand ? "" : " · kunden har ingen färgprofil, husets färg används"}</div>`
       + `<label class="mh" for="pres-title">Rubrik</label><input id="pres-title" value="${esc(p.title)}">`
-      + `<div class="pres-acts"><span class="mmeta" style="flex:1">${esc(p.claude?.note || (p.claude?.busy ? "Claude skriver förslag …" : "Bocka ur det kunden inte ska se."))}</span>`
+      + `<h3 class="sh">Vad ska visas?</h3>`
+      + (d.suggestion ? `<div class="mmeta">Förvalt: ${esc(d.suggestion)}</div>` : "")
+      + `<div class="pres-ask"><input id="pres-ask" value="${esc(p.ask || "")}" placeholder="Säg det i en mening, till exempel «de fyra startannonserna i 4:5»">`
+      + `<button data-act="pres-choose"${p.claude?.busy ? " disabled" : ""}>Be Claude välja</button></div>`
+      + `<div class="pres-acts"><span class="mmeta" style="flex:1">${esc(p.claude?.note || (p.claude?.busy ? "Claude arbetar …" : "Bocka ur det kunden inte ska se."))}</span>`
       + `<button class="link" data-act="pres-claude"${p.claude?.busy ? " disabled" : ""}>Föreslå sidotexter med Claude</button></div>`
       + `<div class="pres-list">${blocks}</div>`
+      + (empty.length ? `<div class="mmeta">Utelämnas, inget material: ${esc(empty.join(", "))}.</div>` : "")
       + err + busy
       + `<div class="pres-acts"><span class="mmeta" style="flex:1">Mottagarna anges när du publicerar.</span><button class="primary" data-act="pres-preview">Förhandsvisa</button></div>`
       + (old ? `<div class="mh">Presentationer för kunden</div>${old}` : "")
@@ -6206,7 +6339,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     budget: "Rad; belopp; not\nAnnonsering; 40000",
     timeline: "Vecka; rubrik; text\n42; Start; Annonserna går ut",
   };
-  const PRES_BLOCK = { section_intro: "Inledning", image_test: "Bildtest", copy_angles: "Budskap", lead_form: "Formulär", mail_sequence: "Mejlflöde",
+  const PRES_BLOCK = { items: "Det som visas", section_intro: "Inledning", image_test: "Bildtest", copy_angles: "Budskap", lead_form: "Formulär", mail_sequence: "Mejlflöde",
     social_post: "Inlägg", timeline: "Tidslinje", budget: "Budget", commentary: "Kommentar", other_material: "Övrigt material",
     metrics: "Nyckeltal", chart: "Diagram", report_text: "Rapport", proposal: "Förslag" };
   function presAct(act, el) {
@@ -6215,7 +6348,12 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (!p) return;
     if (act === "pres-close") S.pres = null;
     else if (act === "pres-tick") { const r = el.getAttribute("data-ref"); p.off = { ...p.off, [r]: !el.checked }; return; }
+    else if (act === "pres-thing") { const refs = JSON.parse(el.getAttribute("data-refs") || "[]"); const on = el.checked; p.off = { ...p.off, ...Object.fromEntries(refs.map((r) => [r, !on])) }; }
+    else if (act === "pres-fmt") { const f = el.getAttribute("data-fmt"), all = p.d?.formats || [], cur = p.formats || all;
+      p.formats = cur.includes(f) ? (cur.length > 1 ? cur.filter((x) => x !== f) : cur) : all.filter((x) => cur.includes(x) || x === f); }
+    else if (act === "pres-fmt-first") { const f = el.getAttribute("data-fmt"); p.formats = [f, ...(p.formats || []).filter((x) => x !== f)]; }
     else if (act === "pres-claude") { presSideTexts(); return; }
+    else if (act === "pres-choose") { presChoose(); return; }
     else if (act === "pres-preview") { presPreview(); return; }
     else if (act === "pres-back") { p.phase = "pick"; p.preview = null; }
     else if (act === "pres-send") { presSendPreview(); return; }
@@ -6228,6 +6366,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const p = S.pres; if (!p) return;
     let m;
     if (el.id === "pres-title") p.title = el.value;
+    else if (el.id === "pres-ask") p.ask = el.value;
     else if (el.id === "pres-to") p.to = el.value;
     else if ((m = /^pres-n-(.+)$/.exec(el.id))) p.nums = { ...(p.nums || {}), [m[1]]: el.value };
     else if ((m = /^pres-([cd])-(.+)$/.exec(el.id))) p.posts = { ...(p.posts || {}), [m[2]]: { ...(p.posts?.[m[2]] || {}), [m[1] === "c" ? "channel" : "scheduled"]: el.value } };
@@ -7955,6 +8094,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const mainSel = selDecorate(main), sheetsSel = selDecorate(sheetsHtml());
     S.selVisible = S.sheets.length ? sheetsSel.ctxs : mainSel.ctxs;
     root.innerHTML = linkHtml(top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + presHtml() + imgPickHtml() + selbarHtml() + confirmHtml() + toastHtml());
+    presFramePlace();
     if (presScroll !== null) { const box = root.querySelector?.(".mv.pres"); if (box) box.scrollTop = presScroll; }
     if (act0) { const el = root.querySelector?.(`#${focusId}`); if (el) { el.focus?.({ preventScroll: true }); try { if (presSel[0] != null) el.setSelectionRange?.(presSel[0], presSel[1]); } catch { /* inte ett textfält */ } } }
     if (S.pal) focusPalette();
