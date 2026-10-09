@@ -220,6 +220,16 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .fexcerpt { max-width: 720px; color: var(--t2); margin-bottom: 10px; }
 .fimg { max-width: 100%; max-height: 70vh; border-radius: 8px; border: 1px solid var(--l3); display: block; margin-bottom: 16px; }
 .fimg.full { max-height: none; }
+/* Bildvisaren: en bild i hela fönstret, anpassad, med zoom och dra. */
+.fimg.full, .show-imgs img, .iimgs:not(.small) img { cursor: zoom-in; }
+.lbx { position: fixed; inset: 0; z-index: 9999; background: rgba(12,12,12,.92); overflow: hidden; touch-action: none; }
+.lbx img { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; user-select: none; -webkit-user-drag: none; cursor: grab; }
+.lbx.drag img { cursor: grabbing; }
+.lbx .lbar { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; align-items: center; background: rgba(0,0,0,.55); border-radius: 8px; padding: 4px 6px; color: #fff; font: 13px var(--sans); z-index: 1; }
+.lbx .lbar button { background: none; border: 0; color: #fff; font: inherit; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+.lbx .lbar button:hover { background: rgba(255,255,255,.15); }
+.lbx .lbar .zv { min-width: 44px; text-align: center; }
+.lbx .lcap { position: absolute; left: 12px; bottom: 12px; color: rgba(255,255,255,.8); font: 13px var(--sans); background: rgba(0,0,0,.45); border-radius: 6px; padding: 4px 8px; }
 .fpdf { width: 100%; height: 80vh; border: 1px solid var(--l3); border-radius: 8px; margin-bottom: 16px; }
 .fwhat { display: flex; gap: 16px; align-items: center; padding: 16px; border: 1px solid var(--l3); border-radius: 8px; max-width: 640px; margin-bottom: 16px; }
 .fwhat .fimg { width: 120px; margin: 0; }
@@ -468,6 +478,11 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 .pblk { border-left: 3px solid var(--l2); padding: 8px 12px; margin: 0 0 8px; border-radius: 0 8px 8px 0; background: #f8f6fe; }
 .pblk.customer { border-left-color: var(--amber-b); background: #fdf8ee; }
 .pblk.assignment { border-left-color: var(--ink); background: #f4f4f2; }
+.pblk.area { border-left-color: #7aa6c2; background: #f1f6fa; }
+.ipart .ilist { margin: 0; padding-left: 20px; }
+.ipart .ilist li, .ipart > div > div { margin: 0 0 4px; }
+.ilvl { display: inline-block; font: 600 10.5px/1.5 var(--sans); letter-spacing: .03em; text-transform: uppercase; color: var(--t3); margin-right: 6px; }
+.ilvl.area { color: #3f6f8f; } .ilvl.customer { color: #9a6a12; } .ilvl.task { color: var(--ink); }
 .pblk .pfrom { font: 600 11px/1.4 var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--t3); margin-bottom: 4px; }
 .pblk .ptxt { font: 13px/1.6 var(--mono); white-space: pre-wrap; }
 .pblk textarea { width: 100%; box-sizing: border-box; font: 13px/1.55 var(--mono); border: 1px solid var(--l2); border-radius: 6px; padding: 8px 10px; background: #fff; resize: vertical; }
@@ -815,7 +830,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "b74f2da", published: "2026-10-08" };
+  const SIDA = { version: "0bac2b2", published: "2026-10-09" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2105,8 +2120,30 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     return out + esc(p.text.slice(at, to));
   }
   const tplHtml = (t) => esc(t).replace(/\{([a-z_]+(?::[^}]+)?)\}/g, `<span class="tvar">{{$1}}</span>`);
+  /**
+   * Instruktionens sex delar, läsbara: Syfte, Läs först, Så görs det, Svarets form,
+   * Claude får inte, Stannar och frågar när. Varje rad som ett tillägg lagt till
+   * säger sin nivå: området, kunden eller uppdraget; resten är allmänt.
+   */
+  function instructionPartsHtml(sh, cust) {
+    const I = sh.instruction;
+    if (!I) return "";
+    // Det allmänna står utan märkning; raderna ett tillägg lagt till säger sin nivå.
+    const own = sh.layers.instruction === "customer";
+    const tag = (l) => l.level === "general" ? "" : `<span class="ilvl ${esc(l.level)}">${esc(l.level === "area" ? `Området ${l.label}` : l.level === "customer" ? `För ${l.label || cust}` : "I det här uppdraget")}</span>`;
+    const one = (l) => `<div>${tag(l)}${esc(l.text)}</div>`;
+    const list = (xs, n) => xs.length ? (n ? `<ol class="ilist">${xs.map((l) => `<li>${tag(l)}${esc(l.text)}</li>`).join("")}</ol>` : `<div>${xs.map((l) => `<div>${tag(l)}${esc(l.text)}</div>`).join("")}</div>`) : `<div><span class="mmeta">Inget särskilt.</span></div>`;
+    return `<div class="rules ipart">`
+      + `<span class="hk">Syfte</span>${I.purpose ? one(I.purpose) : `<div><span class="mmeta">Inte angivet.</span></div>`}`
+      + (I.read_first.length ? `<span class="hk">Läs först</span>${list(I.read_first, false)}` : "")
+      + `<span class="hk">Så görs det</span>${list(I.how_to, true)}`
+      + (I.answer_format ? `<span class="hk">Svarets form</span>${one(I.answer_format)}` : "")
+      + `<span class="hk">Claude får inte</span>${list(I.must_not, false)}`
+      + `<span class="hk">Stannar och frågar när</span>${list(I.ask_when, false)}`
+      + `</div><div class="mmeta">Utan märkning: ${own ? `${esc(cust)}s egen instruktion (gäller i stället för metodens)` : "allmänt, gäller alla kunder"}. «Området» gäller allt arbete av samma slag${sh.customer ? `, «För ${esc(cust)}» bara ${esc(cust)}` : ""}, «I det här uppdraget» bara här.</div>`;
+  }
   function promptBlocks(x, sh, P, mode, cust, e) {
-    const fromText = (l) => l === "customer" ? `Från ${cust}s sätt` : l === "assignment" ? "Bara här, i det här uppdraget" : "Från metoden · gäller alla kunder";
+    const fromText = (l, label) => l === "customer" ? `Från ${cust}s sätt` : l === "assignment" ? "Bara här, i det här uppdraget" : l === "area" ? `Från området ${label || ""} · gäller allt arbete av samma slag` : "Från metoden · gäller alla kunder";
     const hasCust = !!sh.customer && P.layer !== "assignment";
     if (mode === "edit") {
       return `<div class="pblk ${esc(P.layer)}"><div class="pfrom">${esc(fromText(P.layer))}</div>`
@@ -2117,7 +2154,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     }
     if (mode === "tpl") return `<div class="pblk ${esc(P.layer)}"><div class="pfrom">${esc(fromText(P.layer))}</div><div class="ptxt">${tplHtml(P.template)}</div></div>`
       + (P.addition ? `<div class="pblk customer"><div class="pfrom">${esc(fromText("customer"))}</div><div class="ptxt">${tplHtml(`${P.addition.head}\n${P.addition.template}`)}</div></div>` : "");
-    return (P.parts || [{ layer: P.layer, from: 0, to: P.text.length }]).map((p) => `<div class="pblk ${esc(p.layer)}"><div class="pfrom">${esc(fromText(p.layer))}</div><div class="ptxt">${promptSeg(P, p.from, p.to)}</div></div>`).join("");
+    return (P.parts || [{ layer: P.layer, from: 0, to: P.text.length }]).map((p) => `<div class="pblk ${esc(p.layer)}"><div class="pfrom">${esc(fromText(p.layer, p.label))}</div><div class="ptxt">${promptSeg(P, p.from, p.to)}</div></div>`).join("");
   }
   /**
    * «Ändrat här. Ska det gälla fler?» ● Bara här, ◐ kundens sätt, ◐ metoden.
@@ -2161,16 +2198,21 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<span class="hk">Lämnar</span><div>${sh.leaves.length ? esc(sh.leaves.join(", ")) : `<span class="mmeta">Inget som sparas.</span>`}</div>`
       + (sh.enough ? `<span class="hk">Klart när</span><div>${esc(sh.enough)}</div>` : "") + `</div>`;
     let block = assignHtml(x, sh);
-    if (sh.prompt) {
+    const claudeStep = sh.who === "claude" || sh.who === "mixed";
+    if (sh.prompt || (claudeStep && sh.instruction)) {
       const lv = e.level ?? sh.level?.value ?? "default", P = sh.prompt, cust = sh.layers.customer || sh.customer?.label || "kunden";
-      const mode = x.pedit ? "edit" : x.ptpl ? "tpl" : "now";
-      block += `<div class="bh"><b>Prompten</b><span class="mmeta">${mode === "edit" ? "skriv direkt · variablerna står som {namn} och fylls i av dirigenten" : "svart på vitt, exakt som Claude får den"}</span>`
-        + `<span class="ptabs"><button class="${mode === "now" ? "on" : ""}" data-act="prompt-mode" data-mode="now">Så får Claude den</button><button class="${mode === "tpl" ? "on" : ""}" data-act="prompt-mode" data-mode="tpl">Visa mallen</button>`
-        + `<button class="${mode === "edit" ? "on" : ""}" data-act="prompt-mode" data-mode="edit">Redigera</button></span>`
+      // Utan ordagrann prompt är delarna instruktionen; prompten är dem satta ihop, och redigeras del för del.
+      const composed = !P || !!P.composed;
+      const want = x.pmode || (composed ? "parts" : "now");
+      const mode = !P || (want === "edit" && composed) ? "parts" : want === "parts" && !sh.instruction ? "now" : want;
+      const tab = (m, t) => `<button class="${mode === m ? "on" : ""}" data-act="prompt-mode" data-mode="${m}">${t}</button>`;
+      block += `<div class="bh"><b>${composed ? "Instruktionen" : "Prompten"}</b><span class="mmeta">${mode === "edit" ? "skriv direkt · variablerna står som {namn} och fylls i av dirigenten" : mode === "parts" ? "delarna, med var de kommer ifrån" : "svart på vitt, exakt som Claude får den"}</span>`
+        + `<span class="ptabs">${sh.instruction ? tab("parts", "Delarna") : ""}${P ? tab("now", "Så får Claude den") + tab("tpl", "Visa mallen") : ""}${P && !composed ? tab("edit", "Redigera") : ""}</span>`
         + `<span class="lvls">${LEVELS.map(([v, l]) => `<button class="${lv === v ? "on" : ""}" data-act="step-level" data-level="${v}">${l}</button>`).join("")}</span></div>`
-        + promptBlocks(x, sh, P, mode, cust, e)
-        + `<div class="rules"><span class="hk">Claude får inte</span><div>${sh.must_not.length ? sh.must_not.map(esc).join("<br>") : `<span class="mmeta">Inget särskilt.</span>`}</div>`
-        + `<span class="hk">Stannar och frågar när</span><div>${sh.ask_when.length ? sh.ask_when.map(esc).join("<br>") : `<span class="mmeta">Inget särskilt.</span>`}</div></div>`;
+        + (mode === "parts" ? instructionPartsHtml(sh, cust) : promptBlocks(x, sh, P, mode, cust, e))
+        // «Får inte» och «Stannar och frågar när» syns alltid för ett Claude-steg, också utan ordagrann prompt.
+        + (mode === "parts" ? "" : `<div class="rules"><span class="hk">Claude får inte</span><div>${sh.must_not.length ? sh.must_not.map(esc).join("<br>") : `<span class="mmeta">Inget särskilt.</span>`}</div>`
+          + `<span class="hk">Stannar och frågar när</span><div>${sh.ask_when.length ? sh.ask_when.map(esc).join("<br>") : `<span class="mmeta">Inget särskilt.</span>`}</div></div>`);
     }
     // Med bildväljaren i steget säger panelen själv vad som ska göras; instruktionen fälls ihop under den (docs/forslag-bildval-instruktion.md).
     const picker = !sh.done && (sh.tool?.kind === "image" || sh.tool?.kind === "image_prompt");
@@ -2265,13 +2307,14 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const r = S.run?.[x.id] || { phase: "idle" };
     let body = "";
     if (sh.done) body = `<div class="done-line"><span class="lvl d">●</span> <b>Klart.</b> ${esc(shortIso(sh.done.at))} av ${esc(sh.done.by)}.</div>`;
-    else if (sh.prompt && r.phase === "idle") {
+    // «Kör med Claude» bara med en ordagrann prompt; de sex delarna körs i chatten med lägesbilden.
+    else if (sh.prompt && !sh.prompt.composed && r.phase === "idle") {
       const miss = sh.prompt.missing || [];
       body = (miss.length ? `<div class="missing"><b>Saknas:</b> ${esc(miss.join(", "))}. Claude säger det i utkastet om det fortsätter ändå.</div>` : "")
         + `<div class="doacts"><button class="primary" data-act="run-start"><span class="lvl d">●</span> ${miss.length ? "Kör ändå med Claude" : "Kör med Claude"}</button>`
         + `<button class="link" data-act="run-chat">Arbeta i chatten ↗</button><button class="link" data-act="step-done">Markera klart utan resultat</button></div>`
         + `<div class="mmeta">Prompten kopieras till Claude i claude.ai. Klistra in svaret här; det sparas som ett streckat utkast.</div>`;
-    } else if (sh.prompt) {
+    } else if (sh.prompt && !sh.prompt.composed) {
       const lines = runLines(sh);
       body = `<div class="prog">${lines.map((l, i) => `<div class="${i < r.i || r.phase === "draft" ? "ok" : i === r.i && r.phase === "run" ? "now" : ""}">${i < r.i || r.phase === "draft" ? "✓" : i === r.i && r.phase === "run" ? "…" : "·"} ${esc(l)}</div>`).join("")}`
         + (r.phase === "run" ? `<span class="mmeta">Esc avbryter</span>` : "") + `</div>`
@@ -2530,6 +2573,66 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (ds.ipCopy) return copyToChat(root.querySelector("[data-ip-text]")?.value || "", "texten");
     P.busy = false; render();
   }
+  /**
+   * Bildvisaren (Daniel P 2026-10-09: «klicka på själva bilden … skalas till 100% av fönstret …
+   * kunna zooma»). Ett klick på en förhandsbild öppnar den i hela fönstret, anpassad. Zoom med
+   * knapparna, scroll, + − 0 eller dubbelklick (anpassa ↔ verklig storlek); dra för att flytta; Esc stänger.
+   * Har bilden data-full-ref visas förhandsbilden direkt och byts mot hela filen när länken kommit.
+   */
+  const LB = { el: null, img: null, z: 1, fit: 1, x: 0, y: 0, w: 0, h: 0 };
+  function lbApply() {
+    const { img, z, x, y } = LB; if (!img) return;
+    img.style.transform = `translate(${x}px,${y}px) scale(${z})`;
+    const zv = LB.el.querySelector(".zv"); if (zv) zv.textContent = `${Math.round(z * 100)} %`;
+  }
+  /** Zooma till z kring punkten (cx, cy) i fönstret, så att det som är under pekaren står still. */
+  function lbZoom(z, cx = innerWidth / 2, cy = innerHeight / 2) {
+    z = Math.max(LB.fit / 4, Math.min(8, z));
+    LB.x = cx - (cx - LB.x) * (z / LB.z); LB.y = cy - (cy - LB.y) * (z / LB.z); LB.z = z; lbApply();
+  }
+  function lbFit() {
+    if (!LB.w) return;
+    LB.fit = Math.min(innerWidth / LB.w, innerHeight / LB.h); LB.z = LB.fit;
+    LB.x = (innerWidth - LB.w * LB.z) / 2; LB.y = (innerHeight - LB.h * LB.z) / 2; lbApply();
+  }
+  function lbClose() { LB.el?.remove(); LB.el = LB.img = null; }
+  function lbOpen(src, alt, fullRef) {
+    lbClose();
+    const el = document.createElement("div"); el.className = "lbx"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", alt || "Bild");
+    el.innerHTML = `<img alt="${esc(alt || "")}"><div class="lbar"><button data-lb="-" title="Mindre · −">−</button><span class="zv"></span>`
+      + `<button data-lb="+" title="Större · +">+</button><button data-lb="fit" title="Anpassa till fönstret · 0">Anpassa</button>`
+      + `<button data-lb="1" title="Verklig storlek · 1">100 %</button><button data-lb="x" title="Stäng · Esc">✕</button></div>`
+      + (alt ? `<div class="lcap">${esc(alt)}</div>` : "");
+    document.body.appendChild(el); LB.el = el; LB.img = el.querySelector("img");
+    const load = (s) => { const im = new Image(); im.onload = () => { if (LB.img !== el.querySelector("img")) return;
+      const first = !LB.w || LB.z === LB.fit; LB.img.src = s; LB.w = im.naturalWidth; LB.h = im.naturalHeight; if (first) lbFit(); else { LB.fit = Math.min(innerWidth / LB.w, innerHeight / LB.h); lbApply(); } }; im.src = s; };
+    LB.w = 0; load(src);
+    if (fullRef) call("read", { op: "asset_get", ref: fullRef, as_link: true }).then((d) => { if (d?.download_url && LB.el === el) load(d.download_url); }).catch(() => {});
+    let drag = null, moved = false;
+    el.addEventListener("pointerdown", (e) => { if (e.target.closest(".lbar")) return; drag = { x: e.clientX - LB.x, y: e.clientY - LB.y }; moved = false; el.classList.add("drag"); el.setPointerCapture(e.pointerId); });
+    el.addEventListener("pointermove", (e) => { if (!drag) return; moved = true; LB.x = e.clientX - drag.x; LB.y = e.clientY - drag.y; lbApply(); });
+    el.addEventListener("pointerup", (e) => { const wasDrag = moved; drag = null; el.classList.remove("drag");
+      if (!wasDrag && e.target === el) lbClose(); });
+    el.addEventListener("dblclick", (e) => { if (e.target !== LB.img) return; Math.abs(LB.z - LB.fit) < .01 ? lbZoom(1, e.clientX, e.clientY) : lbFit(); });
+    el.addEventListener("wheel", (e) => { e.preventDefault(); lbZoom(LB.z * Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .002)), e.clientX, e.clientY); }, { passive: false });
+    el.addEventListener("click", (e) => { const b = e.target.closest("[data-lb]"); if (!b) return; const a = b.dataset.lb;
+      if (a === "x") lbClose(); else if (a === "fit") lbFit(); else if (a === "1") lbZoom(1); else lbZoom(LB.z * (a === "+" ? 1.25 : .8)); });
+  }
+  globalThis.addEventListener?.("resize", () => { if (LB.el && Math.abs(LB.z - LB.fit) < .01) lbFit(); });
+  document.addEventListener("keydown", (e) => {
+    if (!LB.el) return;
+    const k = e.key, stop = () => { e.preventDefault(); e.stopPropagation(); };
+    if (k === "Escape") { stop(); lbClose(); }
+    else if (k === "+" || k === "=") { stop(); lbZoom(LB.z * 1.25); }
+    else if (k === "-") { stop(); lbZoom(LB.z * .8); }
+    else if (k === "0") { stop(); lbFit(); }
+    else if (k === "1") { stop(); lbZoom(1); }
+  }, true);
+  document.addEventListener("click", (e) => {
+    const im = e.target?.closest?.(".fimg.full, .show-imgs img, .iimgs:not(.small) img");
+    if (!im || LB.el) return;
+    e.preventDefault(); e.stopPropagation(); lbOpen(im.currentSrc || im.src, im.alt, im.dataset.fullRef || null);
+  }, true);
   document.addEventListener("click", (e) => {
     const el = e.target?.closest?.("[data-ip-made],[data-ip-src],[data-ip-pick],[data-ip-compare],[data-ip-only],[data-ip-prompt],[data-ip-back],[data-ip-copy],[data-ip-save],[data-ip-more]");
     const root = el?.closest?.("[data-ip]"), P = root && IPS[root.dataset.ip];
@@ -3276,7 +3379,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const texts = it.parts.filter((p) => p.kind === "text"), imgs = it.parts.filter((p) => p.kind === "file" && p.image);
     return `<div class="ibody">${texts.map((p) => { const b = S.bodies?.[bodyKey(p)];
       return `<div class="itext">${b == null ? `<span class="mmeta">Hämtar texten …</span>` : b ? mdHtml(b) : `<span class="mmeta">Texten är tom.</span>`}</div>`; }).join("")}`
-      + (imgs.length ? `<div class="iimgs">${imgs.map((p) => `<figure><div class="ph">${S.thumbs?.[p.ref] ? `<img src="${S.thumbs[p.ref]}" alt="${esc(p.name)}">` : esc(p.part)}</div>`
+      + (imgs.length ? `<div class="iimgs">${imgs.map((p) => `<figure><div class="ph">${S.thumbs?.[p.ref] ? `<img src="${S.thumbs[p.ref]}" data-full-ref="${esc(p.ref)}" alt="${esc(p.name)}">` : esc(p.part)}</div>`
         + `<figcaption class="mmeta">${esc(p.part)}</figcaption></figure>`).join("")}</div>` : "") + `</div>`;
   }
   /** Raden för omdömet om en sak. */
@@ -7947,7 +8050,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "open-result") { openResult(el.getAttribute("data-id")); return; }
     else if (act === "material") { const t = top1(); if (t) { const k = sheetKey(t); S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], material: el.getAttribute("data-key") || null } }; } }
     else if (act === "rename") { renameStart(el.getAttribute("data-rkind"), el.getAttribute("data-rid"), el.getAttribute("data-rold")); return; }
-    else if (act === "prompt-mode") { const t = top1(), m = el.getAttribute("data-mode"); if (t) { t.pedit = m === "edit"; t.ptpl = m === "tpl"; } }
+    else if (act === "prompt-mode") { const t = top1(), m = el.getAttribute("data-mode"); if (t) t.pmode = m; }
     else if (act === "md-mode") { S.mdPrev = { ...(S.mdPrev || {}), [el.getAttribute("data-md")]: !!el.getAttribute("data-prev") }; }
     else if (act === "assign-start") { const t = top1(); if (t) S.assignEdit = { ...(S.assignEdit || {}), [t.id]: "" }; }
     else if (act === "assign-save") { const t = top1(); if (t) assignSave(t.id); return; }
