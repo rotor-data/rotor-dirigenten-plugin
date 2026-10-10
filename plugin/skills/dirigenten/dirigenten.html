@@ -514,6 +514,29 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 .doacts { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin: 8px 0; font-size: 13.5px; }
 .doacts .primary { border: 0; background: var(--ink); color: #fff !important; border-radius: 8px; padding: 8px 14px; }
 .doacts .primary .lvl { color: #7fd1c8; }
+.helpbox { border: 1px solid var(--amber-b); background: var(--amber-s); border-radius: 10px; padding: 12px 14px; margin: 6px 0 16px; }
+.helpbox .help { padding: 8px 0; border-top: 1px solid var(--amber-b); font-size: 13.5px; }
+.helpbox .help:first-of-type { border-top: 0; }
+.helpbox .item { background: #fff; }
+.qbox { border: 1px solid var(--l3); border-radius: 9px; padding: 10px 12px; margin: 8px 0; background: #fff; }
+.qbox.open { border-color: var(--amber-b); }
+.qhead { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.qform { margin-top: 8px; }
+.qform input, .qmoney { font: inherit; padding: 5px 8px; border: 1px solid var(--l1); border-radius: 6px; min-width: 0; max-width: 100%; }
+.qmoney { width: 9em; }
+.qchips { display: flex; gap: 6px; flex-wrap: wrap; }
+.nextbox { border: 1px solid var(--l2); border-radius: 10px; padding: 10px 14px; margin: 0 0 18px; background: var(--s3); }
+.nextbox .primary, .nextbox .edge { font-size: 14px; }
+.revbox { border-left: 3px solid var(--amber); padding: 6px 12px; margin: 0 0 16px; font-size: 13.5px; }
+.revbox.settled { border-left-color: var(--l1); color: var(--t2); }
+details.removed { margin-top: 10px; }
+.swipe { position: fixed; top: 50%; width: 44px; height: 44px; border-radius: 50%; background: var(--s1); color: var(--t2); border: 1px solid var(--l2); display: flex; align-items: center; justify-content: center; font-size: 26px; line-height: 1; z-index: 60; pointer-events: none; opacity: 0; transition: background .1s, color .1s; }
+.swipe.l { left: 8px; } .swipe.r { right: 8px; }
+.swipe.go { background: var(--ink); color: #fff; border-color: var(--ink); }
+.pk { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; margin-right: 5px; font-size: 11px; color: var(--t3); vertical-align: -1px; }
+.pk.llm, .pk.mixed { color: var(--claude); }
+.pk.code { font-family: var(--mono); font-size: 10px; }
+.pklegend { margin: 0 0 6px; }
 .missing { padding: 9px 12px; border-radius: 8px; background: var(--red-s2); border: 1px solid var(--red-b); font-size: 13px; margin-bottom: 8px; }
 .prog { display: grid; gap: 3px; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
 .prog .ok { color: var(--teal); }
@@ -853,7 +876,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "a823725", published: "2026-10-09" };
+  const SIDA = { version: "65cf460", published: "2026-10-10" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1592,7 +1615,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   }
   function deliveryPatch(x, d) {
     const sp = d?.support;
-    return { results: d?.results || [], layers: d?.layers || null, stream: !!d?.stream, cases: d?.cases || [],
+    return { results: d?.results || [], layers: d?.layers || null, stream: !!d?.stream, cases: d?.cases || [], task: d?.task || null,
       ...(x.kind === "delivery" ? { delivery: d?.delivery || null } : {}),
       ...(d?.parts ? { parts: d.parts } : { plans: d?.plans || [] }),
       ...(d?.stream || "queue" in (d || {}) ? { queue: d?.queue || null } : {}),
@@ -1737,8 +1760,10 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (!d) return row?.state_text || "";
     const parts = [];
     if (d.position) parts.push(`${d.position.done} av ${d.position.total} steg klara.`);
-    const next = d.todo?.[0];
+    // Med flera delar: nästa delleverans; vad varje del gör står på dess rad. Med en: nästa steg.
+    const next = d.tasks?.length > 1 ? null : d.todo?.[0];
     if (next) parts.push(`Nästa är «${next.label}» hos ${next.who === S.data?.party?.label ? "dig" : next.who}.`);
+    if (d.tasks?.length > 1 && d.next_part) parts.push(`Nästa delleverans är «${d.next_part.label}»${d.next_part.date ? ` ${fmtDay(d.next_part.date)}` : ""}.`);
     const m = d.margin_days;
     const when = d.due ? `Leverans ${fmtDay(d.due)}` : "";
     if (when) parts.push(m === undefined || m === null ? `${when}.` : m > 0 ? `${when}, kan flyttas ${m} ${m === 1 ? "dag" : "dagar"} utan att leveransen spricker.`
@@ -1799,7 +1824,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         : sd.stream || sd.parts ? resultsByCase(x, sd, results) : materialHtml(results));
     // Stegen; en leverans i flera delar visar delarna, och stegen när delen öppnas.
     const plans = sd.plans;
-    const steps = sd.parts ? partsHtml(x.id, sd.parts, me) : plans ? (plans.length === 1 ? hlSheetHtml(plans[0]) : "") + planStepsHtml(plans, me)
+    // En leverans med en uppgift: uppgiftens överdel (nästa sak, frågorna) direkt i leveransen.
+    const one = !sd.parts && !sd.stream && plans?.length === 1 ? plans[0] : null;
+    const steps = sd.parts ? partsHtml(x.id, sd.parts, me, d) : plans ? (plans.length === 1 ? hlSheetHtml(plans[0]) : "") + planStepsHtml(plans, me)
       : row ? stepsList(S.data, row, true) : `<div class="mmeta">Hämtar stegen …</div>`;
     // Marginalen: Hör till, Vem, Väntar, Hör ihop.
     const people = new Map();
@@ -1823,7 +1850,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const err = sd.error ? `<div class="banner"><span style="flex:1">Allt kunde inte läsas: ${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>` : "";
     return `<div class="slabel">${esc(label)}</div><h1 class="stitle">${((t) => row?.kind === "delivery" || row?.kind === "stream" ? rn("delivery", x.id, t) : row?.tasks?.length === 1 ? rn("task", row.tasks[0], t) : esc(t))(row?.label || d?.label || x.label)}</h1><p class="sline">${esc(sentence)}</p>`
       + `<div class="sacts">${acts}</div>${err}`
-      + `<div class="sgrid"><div class="smain">${row?.kind === "stream" ? supportHtml(x, sd) : ""}${made}<h3 class="sh">${sd.parts ? `Delarna · ${sd.parts.length}` : "Stegen"}</h3><div class="ssteps">${steps}</div></div>${margin}</div>`;
+      + `<div class="sgrid"><div class="smain">${row?.kind === "stream" ? supportHtml(x, sd) : ""}${one ? taskNextHtml(one.task, one, me) + questionsHtml(one.task, sd.task?.questions) + revisionHtml(sd.task?.revision) + roundsHtml(sd.task?.rounds) : ""}${made}<h3 class="sh">${sd.parts ? `Delarna · ${sd.parts.length}` : "Stegen"}</h3><div class="ssteps">${steps}${one ? removedHtml(sd.task?.removed_steps) : ""}</div></div>${margin}</div>`;
   }
 
   /** Stegen som arbetssteg (src/plan/work-steps.ts): delmoment i följd med samma work_step blir ett steg. */
@@ -1838,9 +1865,18 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       lead: g.steps.find((s) => !s.done) || g.steps[0] }));
   }
 
+  /* step-kinds:start — vem som gör steget, som symbol (Daniel P 2026-10-09: «stegen borde ha symboler för vilken sorts metod det är (mänsklig, claude, kod...)»). Förklaras ovanför stegen. */
+  const PERSON_SVG = `<svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true"><circle cx="6" cy="3.6" r="2.3" fill="currentColor"/><path d="M1.6 11.4c.4-2.6 2.2-4.1 4.4-4.1s4 1.5 4.4 4.1z" fill="currentColor"/></svg>`;
+  const KIND_MARK = { human: [PERSON_SVG, "människa"], llm: ["✦", "Claude"], code: ["&lt;/&gt;", "kod"], mixed: [`✦${PERSON_SVG}`, "Claude och människa"] };
+  const kindMark = (k) => KIND_MARK[k] ? `<span class="pk ${k}" title="Görs av ${KIND_MARK[k][1]}" aria-label="Görs av ${KIND_MARK[k][1]}">${KIND_MARK[k][0]}</span>` : `<span class="pk"></span>`;
+  /** Gruppens sort: samma för alla delmoment, annars blandat. */
+  const groupKind = (steps) => { const ks = [...new Set(steps.map((x) => x.kind).filter(Boolean))]; return ks.length === 1 ? ks[0] : ks.length ? "mixed" : null; };
+  const kindLegend = (plans) => plans.some((t) => t.steps.some((s) => s.kind))
+    ? `<div class="pklegend mmeta">${["human", "llm", "code"].map((k) => `${kindMark(k)} ${KIND_MARK[k][1]}`).join(" · ")}</div>` : "";
+  /* step-kinds:end */
   /** Stegen i en eller flera uppgifter ur plan_state { task, format: "plan" }. */
   function planStepsHtml(plans, me) {
-    return plans.map((t) => {
+    return kindLegend(plans) + plans.map((t) => {
       const head = plans.length > 1 ? `<div class="part">${esc(t.label)}<span class="mmeta"> · ${t.due ? `klar ${esc(shortIso(t.due))}` : ""}</span></div>` : "";
       // Ett arbetssteg med flera delmoment: en rad, och delmomenten hopfällda under (målbilden, regel 1).
       const stepRow = (s) => {
@@ -1848,7 +1884,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         const st = { task: t.task, id: s.step, label: s.label, state };
         const dot = s.done ? "done" : s.side === "customer" ? "customer" : s.who === me ? "mine" : "";
         const meta = [s.side === "customer" ? "hos kunden" : "", winText(s.window), s.hours ? `${hh(s.hours)} h` : ""].filter(Boolean).join(" · ");
-        return `<div class="step" data-ctx="step|${esc(t.task)}|${esc(s.step)}"><span class="sdot ${dot}"></span><div style="min-width:0">${rn("step", stepId(t.task, s.step), s.label, s.done ? "done" : "")}${meta ? `<span class="meta"> · ${esc(meta)}</span>` : ""}`
+        return `<div class="step" data-ctx="step|${esc(t.task)}|${esc(s.step)}"><span class="sdot ${dot}"></span><div style="min-width:0">${kindMark(s.kind)}${rn("step", stepId(t.task, s.step), s.label, s.done ? "done" : "")}${meta ? `<span class="meta"> · ${esc(meta)}</span>` : ""}`
           + ` <button class="link how-l" data-act="open-step" data-task="${esc(t.task)}" data-step="${esc(s.step)}" data-label="${esc(s.label)}">Så görs det →</button></div>`
           + `<span class="who">${esc(s.who === me ? "du" : s.who || "")}</span><span class="pin-slot">${pinButton(st)}</span></div>`;
       };
@@ -1858,7 +1894,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
         const hours = g.steps.reduce((n, x) => n + (x.hours || 0), 0);
         const dot = g.done ? "done" : s.side === "customer" ? "customer" : s.who === me ? "mine" : "";
         const meta = [winText([first.window[0], last.window[1]]), hours ? `${hh(hours)} h` : "", `${g.steps.filter((x) => x.done).length} av ${g.steps.length} delmoment klara`].filter(Boolean).join(" · ");
-        return `<div class="step" data-ctx="step|${esc(t.task)}|${esc(s.step)}"><span class="sdot ${dot}"></span><div style="min-width:0">${rn("step", stepId(t.task, s.step), g.label, g.done ? "done" : "")}<span class="meta"> · ${esc(meta)}</span>`
+        return `<div class="step" data-ctx="step|${esc(t.task)}|${esc(s.step)}"><span class="sdot ${dot}"></span><div style="min-width:0">${kindMark(groupKind(g.steps))}${rn("step", stepId(t.task, s.step), g.label, g.done ? "done" : "")}<span class="meta"> · ${esc(meta)}</span>`
           + ` <button class="link how-l" data-act="open-step" data-task="${esc(t.task)}" data-step="${esc(s.step)}" data-label="${esc(s.label)}">Så görs det →</button>`
           + `<details class="parts-fold"><summary class="mmeta">${g.steps.length} delmoment</summary>${g.steps.map(stepRow).join("")}</details></div>`
           + `<span class="who">${esc(s.who === me ? "du" : s.who || "")}</span><span class="pin-slot"></span></div>`;
@@ -1870,16 +1906,20 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   const stripHtml = (strip) => strip ? `<span class="segs pstrip">${[...strip].map((c) =>
     `<span class="seg" style="flex:1;background:${c === "d" ? "var(--ink)" : c === "c" ? "var(--cust-seg)" : "var(--l4)"}"></span>`).join("")}</span>` : "";
   /** Delarna i en leverans som rader: namn, läge, stegremsa, datum och vem. Klick öppnar delens ark. */
-  function partsHtml(parent, parts, me) {
+  function partsHtml(parent, parts, me, delivery = null) {
     if (!parts.length) return `<div class="mmeta">Inga delar.</div>`;
+    // Vad varje del gör nu och vad den väntar på, ur leveransens läge (Daniel P 2026-10-09: «jättesvårt att förstå vad man ska göra var»).
+    const info = new Map((delivery?.tasks || []).map((t) => [t.id, t]));
     return parts.map((p) => {
+      const di = info.get(p.task), waits = di?.waits_on || [];
       const left = p.total_steps - p.done_steps, done = p.total_steps > 0 && left === 0;
-      const state = done ? "klar" : p.next?.side === "customer" ? "väntar på kunden" : p.done_steps ? "pågår" : "inte påbörjad";
+      const state = done ? "klar" : waits.length ? `väntar på ${waits.join(", ")}` : p.next?.side === "customer" ? "väntar på kunden" : p.done_steps ? "pågår" : "inte påbörjad";
       const who = p.next && p.next.side !== "customer" ? p.next.who : "";
-      const meta = [state, `${p.done_steps} av ${p.total_steps} steg`, p.next ? `nästa: ${p.next.label}` : "", p.due ? `klar ${shortIso(p.due)}` : ""].filter(Boolean).join(" · ");
+      const nowLabel = di?.current?.label || p.next?.label || "";
+      const meta = [state, `${p.done_steps} av ${p.total_steps} steg`, p.due ? `klar ${shortIso(p.due)}` : ""].filter(Boolean).join(" · ");
       const dot = done ? "done" : p.next?.side === "customer" ? "customer" : who === me ? "mine" : "";
       return `<div class="step part-row" data-act="open-part" data-task="${esc(p.task)}" data-parent="${esc(parent)}" data-label="${esc(p.label)}" role="button" title="Öppna delen">`
-        + `<span class="sdot ${dot}"></span><div style="min-width:0"><span>${esc(p.label)}</span><span class="meta"> · ${esc(meta)}</span>${stripHtml(p.strip)}</div>`
+        + `<span class="sdot ${dot}"></span><div style="min-width:0"><span>${esc(p.label)}</span><span class="meta"> · ${esc(meta)}</span>${nowLabel && !done ? `<div class="meta">${waits.length ? "sedan" : "nu"}: ${esc(nowLabel)}</div>` : ""}${stripHtml(p.strip)}</div>`
         + `<span class="who">${esc(who === me ? "du" : who)}</span><span class="pin-slot meta">›</span></div>`;
     }).join("");
   }
@@ -1893,6 +1933,29 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     render();
   }
 
+  /* ── Uppdragets överdel (Daniel P 2026-10-09: «Det är jättesvårt att förstå vad man ska göra var») ──
+   * Nästa sak som en tydlig knapp, vad den väntar på, frågorna vid start, en ändring efter leverans och
+   * metodens steg som valts bort med skälet. Allt ur serverns plan; vyn väljer bara första ogjorda steget. */
+  function taskNextHtml(task, t, me) {
+    const g = t ? workGroups(t.steps).find((x) => !x.done) : null;
+    if (!t) return "";
+    if (!g) return `<div class="nextbox done"><b>Alla steg är klara.</b></div>`;
+    const s = g.lead, mine = s.who === me, waits = (s.waits_on || []).map((w) => w.replace(/^väntar på /, ""));
+    return `<div class="nextbox"><span class="mmeta">Nästa sak${s.who ? ` · ${esc(mine ? "din" : s.who)}` : ""}${s.window ? ` · ${esc(winText(s.window))}` : ""}</span>`
+      + `<div class="doacts"><button class="${mine ? "primary" : "edge"}" data-act="open-step" data-task="${esc(task)}" data-step="${esc(s.step)}" data-label="${esc(g.label)}">${mine ? "Gör nu" : "Öppna"}: ${esc(g.label)} →</button></div>`
+      + (waits.length ? `<div class="mmeta">Väntar på ${esc(waits.join(", "))}. Du kan börja ändå; steget säger vad som saknas och hjälper dig göra det.</div>` : "") + `</div>`;
+  }
+  function revisionHtml(r) {
+    if (!r) return "";
+    return `<div class="revbox${r.settled ? " settled" : ""}"><b>Ändring efter leverans ${esc(String(r.number))}${r.settled ? ` · avklarad ${esc(shortIso(r.settled))}` : ` · pågår, klar ${esc(shortIso(r.due))}`}</b>`
+      + `<div>${esc(r.what)}</div>${r.reason ? `<div class="mmeta">Varför: ${esc(r.reason)}</div>` : ""}`
+      + (r.skipped?.length ? `<details><summary class="mmeta">${r.skipped.length} steg görs inte om</summary>${r.skipped.map((x) => `<div class="mmeta">«${esc(x.label)}»: ${esc(x.reason)}</div>`).join("")}</details>` : "") + `</div>`;
+  }
+  /** Materialets rundor (src/plan/material.ts): «levererad», «pågår» eller «inte levererad», med skälet. Bara när det finns mer än en runda att skilja på. */
+  const roundsHtml = (list) => (list || []).length > 1 || (list || []).some((r) => r.status === "inte levererad")
+    ? `<div class="rounds mmeta">Materialet: ${list.map((r, i) => `${esc(list.length > 1 ? `Runda ${i + 1}` : "Leveransen")} <b>${esc(r.status)}</b>${r.date ? ` ${esc(shortIso(r.date))}` : ""}${r.reason ? ` (${esc(r.reason)})` : ""}`).join(" · ")}.</div>` : "";
+  const removedHtml = (list) => list?.length ? `<details class="removed"><summary class="mmeta">${list.length} ${list.length === 1 ? "steg" : "steg"} ur metoden görs inte här</summary>`
+    + list.map((x) => `<div class="mmeta">«${esc(x.label)}»${x.reason ? `: ${esc(x.reason)}` : ""}</div>`).join("") + `</details>` : "";
   /** Delens eget ark: ovanpå leveransen, med stegen och det som skapats i delen. */
   function partSheet(x) {
     const sd = S.sheetData[sheetKey(x)] || {}, row = rowOf(x.parent), me = S.data?.party?.label;
@@ -1912,7 +1975,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     return `<div class="slabel">Del${row?.label ? ` · ${esc(row.label)}` : ""}</div><h1 class="stitle">${rn("task", x.id, t?.label || pre?.label || x.label)}</h1><p class="sline">${esc(sentence)}</p>${pre ? stripHtml(pre.strip) : ""}`
       + `<div class="sacts"><button class="link" data-act="chat" data-key="${esc(x.id)}">Arbeta i chatten ↗</button>`
       + `<button class="link" data-act="hl-move" data-task="${esc(x.id)}">Flytta till en annan leverans …</button></div>${err}`
-      + `<div class="smain">${made}<h3 class="sh">Stegen</h3><div class="ssteps">${t ? hlSheetHtml(t) + planStepsHtml([t], me) : `<div class="mmeta">${sd.loading ? "Hämtar stegen …" : "Inga steg."}</div>`}</div></div>`;
+      + `<div class="smain">${taskNextHtml(x.id, t, me)}${questionsHtml(x.id, sd.task?.questions)}${revisionHtml(sd.task?.revision)}${roundsHtml(sd.task?.rounds)}${made}<h3 class="sh">Stegen</h3><div class="ssteps">${t ? hlSheetHtml(t) + planStepsHtml([t], me) : `<div class="mmeta">${sd.loading ? "Hämtar stegen …" : "Inga steg."}</div>`}${removedHtml(sd.task?.removed_steps)}</div></div>`;
   }
 
   /* Färg och logo i presentationerna (src/present/brand.ts): kundens färg är bara accent.
@@ -2203,6 +2266,204 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<button class="quiet" data-act="step-reset">Ångra ändringen</button>${why}</div>`;
   }
 
+  /* ── Hjälp i stället för stopp (Daniel P 2026-10-09: «Och sen protesterar den för att man inte gjort något innan.
+   * Man behöver hjälp här. Tex att man får hjälp att godkänna det man inte godkänt.») ──
+   * Servern säger vad som håller emot ett steg och vad som gör det (sh.help, src/plan/step-help.ts) och uppdragets
+   * frågor vid start med svaren (questions). Vyn ritar en knapp per sak och räknar inga egna regler. */
+  /* value-words:start — värdenas namn i vyn (docs/orden-i-vyn.md). Ett nytt värde läggs till här; okända skrivs om ur nyckeln. */
+  const VALUE_WORDS = { start_time: "Start", end_time: "Slut", daily_budget: "Budget per dag", lifetime_budget: "Budget totalt",
+    budget_approved_by: "Vem hos kunden säger ja till budgeten", spend_cap: "Spärr på totalbeloppet", ads_source: "Var annonserna kommer ifrån",
+    campaign_choice: "Ny eller befintlig kampanj", campaign_id: "Kampanjen i Meta", adset_id: "Annonsgruppen i Meta" };
+  const MONEY_KEYS = new Set(["daily_budget", "lifetime_budget", "spend_cap"]);
+  const DATE_KEYS = new Set(["start_time", "end_time"]);
+  /* value-words:end */
+  const valueWord = (k) => VALUE_WORDS[k] || (String(k).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase()));
+  /** Tidszonen i Stockholm för en dag, som Meta vill ha den: «+0200» på sommaren, «+0100» på vintern. */
+  const sthlmOffset = (d) => { try { const h = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Stockholm", hour: "2-digit", hourCycle: "h23" }).format(new Date(`${d}T12:00:00Z`)));
+    return `+${String(h - 12).padStart(2, "0")}00`; } catch { return "+0100"; } };
+  /** Ett sparat värde i ord: kronor, dag, källa. `ctx.tasks` är leveransens uppgifter (id → namn). */
+  function valueText(k, v, ctx = {}) {
+    if (v == null || String(v).trim() === "") return "";
+    if (MONEY_KEYS.has(k)) { const n = Number(v); return Number.isFinite(n) ? `${(n / 100).toLocaleString("sv-SE")} kr` : String(v); }
+    if (DATE_KEYS.has(k)) return fmtDay(String(v).slice(0, 10));
+    if (k === "campaign_choice") return v === "existing" ? "befintlig kampanj" : v === "new" ? "ny kampanj" : String(v);
+    if (k === "ads_source") return String(v).split(",").map((x) => x.trim()).filter(Boolean).map((x) => x === "meta" ? "annonser som redan finns i Meta"
+      : x === "own" ? "uppdragets egna saker" : /^task:/.test(x) ? `«${ctx.tasks?.[x.slice(5)] || "en annan del av leveransen"}»` : x).join(" och ");
+    return String(v);
+  }
+  /** Formulärets värde ur det sparade, och tillbaka. */
+  const toForm = (k, v) => v == null ? "" : MONEY_KEYS.has(k) ? (Number.isFinite(Number(v)) ? String(Number(v) / 100) : String(v)) : DATE_KEYS.has(k) ? String(v).slice(0, 10) : String(v);
+  function fromForm(k, f) {
+    const t = String(f ?? "").trim();
+    if (!t) return "";
+    if (MONEY_KEYS.has(k)) { const n = Number(t.replace(/\s/g, "").replace(",", ".")); return Number.isFinite(n) ? String(Math.round(n * 100)) : t; }
+    if (DATE_KEYS.has(k) && /^\d{4}-\d{2}-\d{2}$/.test(t)) return `${t}T${k === "end_time" ? "23:59:00" : "00:00:00"}${sthlmOffset(t)}`;
+    return t;
+  }
+  const qKey = (task, about) => `${task}|${about}`;
+  /** Leveransens uppgifter som kan vara annonsernas källa: id → namn, ur leveransens ark när det är läst. */
+  function deliveryTasksOf(task) {
+    const row = rowOfTask(task), out = {};
+    for (const d of Object.values(S.sheetData)) for (const t of d.delivery?.tasks || []) if (t.id !== task && (d.delivery.tasks.some((x) => x.id === task))) out[t.id] = t.label;
+    for (const p of row ? S.sheetData[`delivery:${row.key}`]?.parts || [] : []) if (p.task !== task) out[p.task] = out[p.task] || p.label;
+    return out;
+  }
+  /** Utkastet till ett svar: formulärets värden, valet mellan «a|b» och vem som sagt det. */
+  function qDraft(task, q) {
+    S.qEdit = S.qEdit || {};
+    const k = qKey(task, q.about);
+    if (!S.qEdit[k]) {
+      const values = {}, pick = {};
+      for (const raw of q.keys) { const alts = raw.split("|"); pick[raw] = alts.find((a) => q.current?.[a] != null) || alts[0];
+        for (const a of alts) if (q.current?.[a] != null) values[a] = toForm(a, q.current[a]); }
+      for (const extra of ["spend_cap", "campaign_id", "adset_id"]) if (q.current?.[extra] != null) values[extra] = toForm(extra, q.current[extra]);
+      S.qEdit[k] = { values, pick, who: "", busy: false };
+    }
+    return S.qEdit[k];
+  }
+  /** Fälten som hör till ett värde: dag, kronor, val eller text. */
+  function qFieldHtml(k, key, val, ctx) {
+    const id = `q-${Math.abs([...`${k}|${key}`].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7))}`;
+    const label = `<label class="hk" for="${id}">${esc(valueWord(key))}</label>`;
+    if (key === "ads_source") {
+      const on = new Set(String(val || "").split(",").map((x) => x.trim()).filter(Boolean));
+      const opts = [...Object.entries(ctx.tasks || {}).map(([t, l]) => [`task:${t}`, `Annonserna i «${l}»`]), ["meta", "Annonser som redan finns i Meta"], ["own", "Uppdragets egna saker"]];
+      return `<span class="hk">${esc(valueWord(key))}</span><div class="qchips">${opts.map(([v, l]) => `<button class="fopt${on.has(v) ? " on" : ""}" data-act="ans-src" data-q="${esc(k)}" data-v="${esc(v)}" aria-pressed="${on.has(v)}">${esc(l)}</button>`).join("")}</div>`;
+    }
+    if (key === "campaign_choice") return `<span class="hk">${esc(valueWord(key))}</span><div class="qchips">${[["new", "Ny kampanj"], ["existing", "Befintlig kampanj"]]
+      .map(([v, l]) => `<button class="fopt${val === v ? " on" : ""}" data-act="ans-set" data-q="${esc(k)}" data-key="${key}" data-v="${v}" aria-pressed="${val === v}">${l}</button>`).join("")}</div>`;
+    if (DATE_KEYS.has(key)) return `${label}<input type="date" id="${id}" data-q="${esc(k)}" data-key="${key}" value="${esc(val || "")}">`;
+    if (MONEY_KEYS.has(key)) return `${label}<span><input id="${id}" inputmode="decimal" class="qmoney" data-q="${esc(k)}" data-key="${key}" value="${esc(val || "")}" placeholder="0"> kr</span>`;
+    return `${label}<input id="${id}" data-q="${esc(k)}" data-key="${key}" value="${esc(val || "")}">`;
+  }
+  /**
+   * Uppdragets frågor vid start (src/plan/step-help.ts, valueQuestions): besvarade och öppna, med svaret i ord.
+   * Svaret ges och ändras här, med samma anrop som frågan bär (● direkt med Ångra; ◐ när ett gjort steg redan använt det gamla).
+   */
+  function questionsHtml(task, qs, title = "Frågor vid start") {
+    if (!qs?.length) return "";
+    const ctx = { tasks: deliveryTasksOf(task) }, open = qs.filter((q) => !q.answered).length;
+    return `<h3 class="sh">${esc(title)}</h3><div class="mmeta">${open ? `${open} av ${qs.length} ${qs.length === 1 ? "fråga" : "frågor"} saknar svar.` : "Alla har svar."} Svaren gäller hela uppdraget och kan ändras när som helst; inget steg stoppas av en fråga utan svar.</div>`
+      + qs.map((q) => {
+        const k = qKey(task, q.about), editing = !!S.qEdit?.[k]?.open;
+        const shown = Object.entries(q.current || {}).map(([key, v]) => `${valueWord(key)}: ${valueText(key, v, ctx)}`).join(" · ");
+        const head = `<div class="qhead"><b>${esc(q.about)}</b><span class="pst ${q.answered ? "enough" : "todo"}">${q.answered ? "besvarad" : "saknar svar"}</span>`
+          + (editing ? "" : `<button class="link" data-act="ans-open" data-q="${esc(k)}">${q.answered ? "Ändra svaret" : "Svara"}</button>`) + `</div>`;
+        const body = !editing ? `<div class="mmeta">${shown ? esc(shown) : esc(q.question || "")}</div>` : (() => {
+          const D = qDraft(task, q);
+          const fields = q.keys.map((raw) => { const alts = raw.split("|"), pick = D.pick[raw];
+            return (alts.length > 1 ? `<span class="hk">Välj</span><div class="qchips">${alts.map((a) => `<button class="fopt${pick === a ? " on" : ""}" data-act="ans-alt" data-q="${esc(k)}" data-raw="${esc(raw)}" data-v="${esc(a)}">${esc(valueWord(a))}</button>`).join("")}</div>` : "")
+              + qFieldHtml(k, pick, D.values[pick], ctx); });
+          // Budgeten kan ha en spärr; en befintlig kampanj behöver vilken.
+          if (q.keys.some((r) => r.split("|").some((a) => MONEY_KEYS.has(a)))) fields.push(qFieldHtml(k, "spend_cap", D.values.spend_cap, ctx) + `<span></span><span class="mmeta">Valfritt. Beloppet är ett förslag och bekräftas igen när budgeten sätts.</span>`);
+          if (q.keys.includes("campaign_choice") && D.values.campaign_choice === "existing") fields.push(qFieldHtml(k, "campaign_id", D.values.campaign_id, ctx), qFieldHtml(k, "adset_id", D.values.adset_id, ctx));
+          return (q.question ? `<div class="mmeta">${esc(q.question)}</div>` : "") + `<div class="how qform">${fields.join("")}`
+            + `<label class="hk" for="q-who-${esc(k)}">Vem sa det?</label><input id="q-who-${esc(k)}" data-q="${esc(k)}" data-key="_who" value="${esc(D.who)}" placeholder="Till exempel kunden i mejl 9 okt"></div>`
+            + `<div class="doacts"><button class="primary" data-act="ans-save" data-task="${esc(task)}" data-about="${esc(q.about)}"${D.busy ? " disabled" : ""}><span class="lvl d">●</span> Spara svaret</button>`
+            + `<button class="quiet" data-act="ans-cancel" data-q="${esc(k)}">Avbryt</button></div>`;
+        })();
+        return `<div class="qbox${q.answered ? "" : " open"}">${head}${body}</div>`;
+      }).join("");
+  }
+  /** Frågorna som vyn har för en uppgift: uppdragets ark, annars stegets. */
+  const questionsOf = (task) => S.sheetData[`part:${task}`]?.task?.questions
+    || Object.entries(S.sheetData).find(([k, d]) => k.startsWith("delivery:") && d.task && (d.plans || [])[0]?.task === task)?.[1]?.task?.questions
+    || Object.entries(S.sheetData).flatMap(([k, d]) => k.startsWith(`step:${task}|`) ? d.sheet?.questions || [] : []);
+  /** Spara ett svar: förhandsvisning först; rör ändringen ett gjort steg säger vyn det och frågar (◐), annars direkt (●) med Ångra. */
+  async function qSave(task, about, q0 = null) {
+    const q = q0 || [...questionsOf(task), ...Object.values(S.sheetData).flatMap((d) => (d.sheet?.help || []).filter((h) => h.kind === "values").map(valuesQuestion))]
+      .find((x) => x.about === about);
+    if (!q) return;
+    const k = qKey(task, about), D = S.qEdit?.[k]; if (!D) return;
+    const values = {};
+    for (const raw of q.keys) { const alts = raw.split("|"), pick = D.pick[raw];
+      for (const a of alts) { if (a === pick) values[a] = fromForm(a, D.values[a]); else if (q.current?.[a] != null) values[a] = ""; } }
+    for (const extra of ["spend_cap", "campaign_id", "adset_id"]) if (D.values[extra] !== undefined || q.current?.[extra] != null) values[extra] = fromForm(extra, D.values[extra]);
+    const empty = q.keys.filter((raw) => !raw.split("|").some((a) => values[a]));
+    if (empty.length) { say(`Fyll i ${empty.map((r) => valueWord(D.pick[r])).join(" och ")} först.`, null, true); render(); return; }
+    const words = Object.entries(values).filter(([, v]) => v).map(([key, v]) => `${valueWord(key)}: ${valueText(key, v, { tasks: deliveryTasksOf(task) })}`).join(", ");
+    const args = { ...q.answer_with.args, text: `${about}: ${words}${D.who.trim() ? ` (enligt ${D.who.trim()})` : ""}.`,
+      material: { ...q.answer_with.args.material, values } };
+    const before = Object.fromEntries(Object.keys(values).map((key) => [key, q.current?.[key] ?? ""]));
+    const undo = { fn: async () => { await call("asset_register", { ...args, text: `${about}: tillbaka till det förra svaret.`, material: { ...args.material, values: before }, confirmed: true }); } };
+    const done = () => { delete S.qEdit[k]; rereadAfterWrite(task); };
+    D.busy = true; render();
+    try {
+      const pv = await call("asset_register", args);
+      const changes = pv?.preview?.value_changes || [];
+      D.busy = false;
+      if (!changes.length) { say("Svaret är detsamma som förut. Inget ändrades."); delete S.qEdit[k]; render(); return; }
+      const touched = changes.filter((c) => c.done_steps?.length);
+      if (touched.length) {
+        S.confirm = { verb: "Spara ändringen", next: { tool: "asset_register", args: { ...args, confirmed: true } }, onDone: done,
+          text: `${touched.map((c) => `${valueWord(c.key)} ändras från ${valueText(c.key, c.before) || "inget"} till ${valueText(c.key, c.after)}. «${c.done_steps.map((s) => s.label).join("», «")}» är redan gjort med det gamla värdet och står kvar.`).join(" ")}`
+            + " Ska ändringen synas i Meta öppnar du steget igen och kör det, med förhandsvisning och ja." };
+        render(); return;
+      }
+      await call("asset_register", { ...args, confirmed: true });
+      say(`Svaret på «${about}» är sparat.`, undo);
+      done();
+    } catch (e) { D.busy = false; say(`Svaret sparades inte: ${e.message || e}. Det du skrev står kvar.`, null, true); }
+    render();
+  }
+  /** Värden som ett kodsteg saknar, som en fråga med samma formulär. */
+  const valuesQuestion = (h) => ({ about: h.answer_with.args.material.what, keys: h.keys, current: {}, answered: false, answer_with: h.answer_with, question: null });
+
+  /** Hjälpen i stegets ark: en rad per sak som håller emot, med det som gör den. */
+  function helpHtml(x, sh) {
+    const help = sh.help || [];
+    if (!help.length || sh.done) return "";
+    const [task] = splitStep(x.id);
+    const one = (h, i) => {
+      if (h.kind === "earlier" || h.kind === "missing") {
+        const R = S.helpReason?.[`${x.id}|${i}`];
+        const names = h.steps.map((s) => `«${s.label}»`).join(", ");
+        return `<div class="help"><b>${h.kind === "earlier" ? "Steg före det här är inte klara" : "Underlaget görs i ett tidigare steg"}:</b> ${esc(names)}.`
+          + `<div class="mmeta">Gör dem först, eller markera dem klara med ett skäl om de redan är gjorda eller inte behövs.</div>`
+          + `<div class="doacts">${h.steps.map((s) => `<button class="link" data-act="open-step" data-task="${esc(task)}" data-step="${esc(s.step)}" data-label="${esc(s.label)}">Öppna «${esc(s.label)}»</button>`).join("")}`
+          + (R ? "" : `<button class="primary" data-act="help-reason" data-i="${i}">${h.steps.length > 1 ? "Markera dem klara …" : "Markera klart …"}</button>`) + `</div>`
+          + (R ? `<div class="qform"><label class="hk" for="help-why-${i}">Skäl</label><input id="help-why-${i}" data-help-why="${esc(`${x.id}|${i}`)}" value="${esc(R.text)}" placeholder="Till exempel: gjort i Meta för hand 9 okt">`
+            + `<div class="doacts"><button class="primary" data-act="help-mark" data-i="${i}"${R.text.trim() ? "" : " disabled"}><span class="lvl d">●</span> Markera ${h.steps.length > 1 ? `${h.steps.length} steg` : "steget"} klart</button><button class="quiet" data-act="help-reason-cancel" data-i="${i}">Avbryt</button></div></div>` : "")
+          + `</div>`;
+      }
+      if (h.kind === "choose") {
+        const here = !!sh.review?.list?.length;
+        return `<div class="help"><b>Ingen har valt vad som ska med.</b><div class="mmeta">Välj för var och en om den ska behållas eller strykas${here ? " i listan nedan" : ""}. Valet sparas på steget och kan göras om.</div>`
+          + `<div class="doacts">${here ? `<button class="primary" data-act="help-choose">Välj nu</button>` : `<button class="primary" data-act="help-choose-chat" data-i="${i}">Välj i chatten ↗</button>`}</div></div>`;
+      }
+      if (h.kind === "approve") {
+        const ids = h.items.flatMap((it) => it.unapproved || []);
+        const words = kindWords(h.items[0]?.item_kind);
+        const cs = h.customer_step;
+        // Samma saker som i valrutan: en lista, inte två (Daniel P 2026-10-09: «är det inte lite dubbelt att ha annonsfix på ett ställe och val av annons på ett annat»).
+        const inList = !!sh.review?.list?.length && h.items.every((it) => sh.review.list.some((r) => r.key === it.key));
+        return `<div class="help"><b>${h.items.length === 1 ? "En sak" : `${h.items.length} saker`} har ingen godkänd text.</b>`
+          + `<div class="mmeta">${cs ? `Det är kunden som säger ja. Skicka dem för godkännande i «${esc(cs.label)}».` : inList ? "Godkänn dem i listan nedan, där du också väljer vad som ska med — en i taget eller alla på en gång." : "Läs och godkänn här, en i taget eller alla på en gång."}</div>`
+          + `<div class="doacts">${cs ? `<button class="primary" data-act="open-step" data-task="${esc(task)}" data-step="${esc(cs.step)}" data-label="${esc(cs.label)}">Skicka för godkännande</button>`
+            : h.items.length > 1 ? `<button class="primary" data-act="item-approve" data-ids="${esc(ids.join(","))}" data-name="${esc(`alla ${kindCount(h.items)}`)}"><span class="lvl d">●</span> Godkänn alla ${esc(words ? kindCount(h.items) : String(h.items.length))}</button>` : ""}</div>`
+          + (inList ? "" : h.items.map((it) => itemHtml(it, { customer: sh.customer?.id || null, compact: true })).join("")) + `</div>`;
+      }
+      if (h.kind === "values") return `<div class="help"><b>Det här steget behöver värden som saknas:</b> ${esc(h.keys.map(valueWord).join(", "))}.<div class="mmeta">Fyll i dem här. De sparas för hela uppdraget och kan ändras senare.</div>`
+        + questionsHtml(task, [valuesQuestion(h)], "").replace(/^<h3 class="sh"><\/h3><div class="mmeta">[^<]*<\/div>/, "") + `</div>`;
+      return "";
+    };
+    return `<div class="helpbox"><div class="bh"><b>Det här behövs först</b><span class="mmeta">du kan göra det här, eller gå vidare ändå</span></div>${help.map(one).join("")}</div>`;
+  }
+  /** Markera tidigare steg klara med skälet (●), med Ångra per steg. */
+  async function helpMark(id, i) {
+    const sh = sheetOf(id), h = sh?.help?.[i], R = S.helpReason?.[`${id}|${i}`];
+    if (!h || !R?.text.trim()) return;
+    const [task] = splitStep(id), reason = R.text.trim();
+    try {
+      for (const s of h.steps) await call("execute_step", { task, step: s.step, mark: "done", reason, confirmed: true });
+      delete S.helpReason[`${id}|${i}`];
+      say(`${h.steps.length > 1 ? `${h.steps.length} steg` : `«${h.steps[0].label}»`} är markerat klart: ${reason}`, { fn: async () => {
+        for (const s of h.steps) await call("execute_step", { task, step: s.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." }); } });
+      staleStep(id, task);
+    } catch (e) { say(`Kunde inte markera klart: ${e.message || e}. Inget ändrades.`, null, true); }
+    render();
+  }
+
   function stepSheetHtml(x) {
     const [task, step] = splitStep(x.id), sd = S.sheetData[sheetKey(x)] || {}, sh = sd.sheet;
     // Innan steget är läst: leveransen och läget ur översiktsraden direkt.
@@ -2215,7 +2476,10 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       ? `<button class="rd" data-act="material" data-key="${esc(r.key)}" title="Visa bredvid">${esc(r.label)} <span>⇥</span></button>`
       : `<span class="rd miss" title="${esc(r.left_by ? `lämnas av «${r.left_by}»` : "")}">saknas: ${esc(r.label)}</span>`).join("") : `<span class="mmeta">Inget underlag.</span>`;
     const how = `<h3 class="sh">Så görs det</h3><div class="how">`
-      + `<span class="hk">Görs av</span><div><span class="who-k ${esc(sh.who)}">${esc(sh.who_text)}</span>${sh.responsible ? `<span class="mmeta"> · ${esc(sh.responsible.label)}</span>` : ""}</div>`
+      + `<span class="hk">Görs av</span><div><span class="who-k ${esc(sh.who)}">${esc(sh.who_text)}</span>${sh.responsible ? `<span class="mmeta"> · ${esc(sh.responsible.label)}</span>` : ""}`
+      // Byt utförare (Daniel P 2026-10-09): samma förslag som högerklickets «Byt utförare till …», med förhandsvisning (◐).
+      + (!sh.done && sh.who !== "customer" ? (x.whoPick ? `<div class="qchips">${people().filter((p) => p.id !== sh.responsible?.id).map((p) => `<button class="fopt" data-act="who-set" data-id="${esc(p.id)}" data-label="${esc(p.label)}">${esc(p.label)} ◐</button>`).join("")}<button class="quiet" data-act="who-pick">Avbryt</button></div>`
+        : ` <button class="link" data-act="who-pick">Byt utförare</button>`) : "") + `</div>`
       + `<span class="hk">Var</span><div>${sh.where.length ? esc(sh.where.join(", ")) : `<span class="mmeta">Inte angivet.</span>`}</div>`
       + `<span class="hk">Underlag</span><div class="rds">${reads}</div>`
       + `<span class="hk">Lämnar</span><div>${sh.leaves.length ? esc(sh.leaves.join(", ")) : `<span class="mmeta">Inget som sparas.</span>`}</div>`
@@ -2259,7 +2523,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + (lay.prompt ? ` · prompten från ${esc(LAYER_TEXT[lay.prompt])}` : "")
       + (lay.customer_diffs?.length ? ` · ${esc(lay.customer || "kunden")}s sätt: ${esc(lay.customer_diffs.join("; "))}` : "") + `.</div>`;
     return `<div class="slabel">${esc(label)}</div>${name}<p class="sline">${esc(sh.purpose || "")}</p>`
-      + `<div class="sgrid"><div class="smain">${how}${block}${layerQ}${layerLine}${doItHtml(x, sh)}${howto}${stepPartsHtml(sh)}</div>${stepMargin(x, sh, sd)}</div>`;
+      + `<div class="sgrid"><div class="smain">${helpHtml(x, sh)}${sh.review?.source ? reviewHtml(x, sh) : ""}${questionsHtml(task, sh.questions)}${how}${block}${layerQ}${layerLine}${doItHtml(x, sh)}${howto}${stepPartsHtml(sh)}</div>${stepMargin(x, sh, sd)}</div>`;
   }
 
   /**
@@ -2363,7 +2627,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<button class="link" data-act="draft-approve" data-id="${esc(d.id)}" data-name="${esc(d.name)}">● Godkänn</button>${declineBtn(subj)}</span>`
       + declineFormHtml(subj) + (df ? `<div class="mh">Ändringen mot förra versionen</div>${diffHtml(df.before, df.after)}` : "") + historyHtml(d.history) + `</div>`; }).join("")}</div>` : "";
     const ahist = sh.approval ? historyHtml(sh.approval.history) : "";
-    return `<h3 class="sh">Gör det</h3>${toolHtml(x, sh)}${body}${reviewHtml(x, sh)}${things}${approve}${ahist}`;
+    return `<h3 class="sh">Gör det</h3>${toolHtml(x, sh)}${body}${sh.review?.source ? "" : reviewHtml(x, sh)}${things}${approve}${ahist}`;
   }
   /* ── Verktyget i steget (docs/plan-some-enkel.md) ─────────────────────────
    * Servern säger vilket verktyg steget har (sh.tool, räknat ur tillgångstypens
@@ -3304,12 +3568,14 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       + `<span class="mmeta">${esc(it.status)} · ${it.parts.length} ${it.parts.length === 1 ? "del" : "delar"}</span>`
       + (it.unapproved?.length ? `<button class="link" data-act="item-approve" data-ids="${esc(it.unapproved.join(","))}" data-name="${esc(it.item)}">● Godkänn${words ? ` ${esc(words.def)}` : ""}</button>` : "")
       + (words ? changeBtn(it.parts.map(thing)).replace(">Ändra med Claude<", `>Ändra ${esc(words.def)}<`) : changeBtn(it.parts.map(thing)))
-      + `</div>${o.review ? itemBodyHtml(it) : itemGlanceHtml(it)}${it.parts.map(part).join("")}`
-      + (it.missing?.length ? `<div class="imiss">Saknar ${esc(it.missing.join(", "))}.</div>` : "") + choose
-      + (n ? `<details><summary>Tidigare versioner (${n})</summary>${older.map((p) => p.older.map((o) => `<div>${esc(p.part)} · version ${o.n} · ${esc(shortIso(o.at))}${o.name && o.name !== p.name ? ` · ${esc(o.name)}` : ""}</div>`).join("")).join("")}</details>` : "")
-      + ((it.replaced || []).length ? `<details><summary>Ersatt (${it.replaced.length})</summary>${it.replaced.map((p) => `<div>${esc(p.part)} · <button class="link" data-act="open-result" data-id="${esc(p.ref)}">${esc(p.name)}</button></div>`).join("")}</details>` : "")
-      + (o.review ? verdictHtml(o.review, it, o.n ?? 0) : "")
-      + `</div>`;
+      + `</div>${o.review ? itemBodyHtml(it) : itemGlanceHtml(it)}`
+      // Kort form (hjälpen i steget): namnet, ja-knappen och en blick; delarna fälls ut.
+      + (o.compact ? `<details><summary class="mmeta">Visa delarna</summary>${it.parts.map(part).join("")}</details></div>` : it.parts.map(part).join("")
+        + (it.missing?.length ? `<div class="imiss">Saknar ${esc(it.missing.join(", "))}.</div>` : "") + choose
+        + (n ? `<details><summary>Tidigare versioner (${n})</summary>${older.map((p) => p.older.map((o) => `<div>${esc(p.part)} · version ${o.n} · ${esc(shortIso(o.at))}${o.name && o.name !== p.name ? ` · ${esc(o.name)}` : ""}</div>`).join("")).join("")}</details>` : "")
+        + ((it.replaced || []).length ? `<details><summary>Ersatt (${it.replaced.length})</summary>${it.replaced.map((p) => `<div>${esc(p.part)} · <button class="link" data-act="open-result" data-id="${esc(p.ref)}">${esc(p.name)}</button></div>`).join("")}</details>` : "")
+        + (o.review ? verdictHtml(o.review, it, o.n ?? 0) : "")
+        + `</div>`);
   }
   /** Leveransens resultat med samma item i samma uppgift, som saker (resultaten bär item; servern har tagit versionerna). */
   function itemsOfResults(results) {
@@ -3417,11 +3683,14 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     const R = reviewState(x.id, sh);
     loadItemBodies(list);
     const n = list.filter((it) => R.verdicts[it.key]?.v).length;
-    return `<h3 class="sh">Granska · ${esc(kindCount(list))}</h3>`
-      + `<div class="mmeta">Säg för var och en om den ska ändras, behållas eller strykas. Omdömena sparas på steget, och nästa steg läser dem.${sh.review.note ? ` Senast sparat ${esc(shortIso(sh.review.note.at))}.` : ""}</div>`
+    // Ett steg där man väljer saker (annonsvalet): samma ruta, med källan och att valet kan göras om.
+    const pick = !!sh.review.source;
+    return `<h3 class="sh" id="review-box">${pick ? "Välj vad som ska med" : "Granska"} · ${esc(kindCount(list))}</h3>`
+      + `<div class="mmeta">${pick ? `Ur ${esc(sh.review.source)}. Säg behåll eller stryk för var och en. Bara det med godkänd text kan gå ut; godkänn här om det saknas. Valet sparas på steget och kan göras om.`
+        : "Säg för var och en om den ska ändras, behållas eller strykas. Omdömena sparas på steget, och nästa steg läser dem."}${sh.review.note ? ` Senast sparat ${esc(shortIso(sh.review.note.at))}.` : ""}</div>`
       + (sh.items?.list?.length ? "" : changeBarHtml())
       + list.map((it, i) => itemHtml(it, { customer: sh.customer?.id || null, review: x.id, n: i })).join("")
-      + `<div class="doacts"><button class="primary" data-act="review-save" data-sheet="${esc(x.id)}"${R.dirty && !R.busy ? "" : " disabled"}><span class="lvl d">●</span> Spara granskningen</button>`
+      + `<div class="doacts"><button class="primary" data-act="review-save" data-sheet="${esc(x.id)}"${R.dirty && !R.busy ? "" : " disabled"}><span class="lvl d">●</span> ${pick ? "Spara valet" : "Spara granskningen"}</button>`
       + `<span class="mmeta">${n} av ${list.length} har ett omdöme${R.dirty ? " · inte sparat" : ""}.</span></div>`;
   }
   /* review-summary:start — anteckningen som blir stegets resultat. Provas i test/granska-i-steget.test.ts. */
@@ -5429,7 +5698,7 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       const on = isRunning(s.task, s.step);
       out.push({ id: "igang", l: on ? "Ta bort från Igång" : "Lägg i Igång", key: "I", lvl: "●", run: () => setRunning(s.task, s.step, s.label, !on) });
       for (const p of people()) if (p.label !== s.who)
-        out.push({ id: `handover:${p.id}`, l: `Lämna över till ${p.label}`, lvl: "◐", run: () => inTime(s, { to: p.id }) || previewTime([{ task: s.task, step: s.step, to: p.id }], `Föreslå ${p.label}`) });
+        out.push({ id: `handover:${p.id}`, l: `Byt utförare till ${p.label}`, lvl: "◐", run: () => inTime(s, { to: p.id }) || previewTime([{ task: s.task, step: s.step, to: p.id }], `Föreslå ${p.label}`) });
       if (s.start && s.end) {
         out.push({ id: "later", l: "En dag senare", key: "→", lvl: "◐", run: () => inTime(s, { shift: 1 }) || previewTime([{ task: s.task, step: s.step, start: workdayFrom(s.start, 1), end: workdayFrom(s.end, 1) }], "Flytta 1 steg") });
         out.push({ id: "earlier", l: "En dag tidigare", key: "←", lvl: "◐", run: () => inTime(s, { shift: -1 }) || previewTime([{ task: s.task, step: s.step, start: workdayFrom(s.start, -1), end: workdayFrom(s.end, -1) }], "Flytta 1 steg") });
@@ -7709,8 +7978,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
 
   /** Hela översikten, med markören tagen före, så att inget som händer under tiden tappas. */
   async function fetchOverview(seqBefore) {
-    const seq = seqBefore ?? (await call("plan_state", { format: "seq" }))?.seq;
     const d = await call("plan_state", { agenda: true, format: "oversikt" });
+    // Löpnumret står i samma svar (ett anrop i stället för två); en äldre server utan det: fråga efteråt.
+    const seq = seqBefore ?? (typeof d?.seq === "number" ? d.seq : (await call("plan_state", { format: "seq" }))?.seq);
     if (!d?.overview) throw Object.assign(new Error("Svaret saknade översikten."), { code: "SHAPE" });
     const mine = d.overview.party?.id;
     if (S.data && S.data.party?.id && mine && S.data.party.id !== mine) { S.sheets = []; S.time = null; } // en annan person i samma webbläsare
@@ -7862,14 +8132,15 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
       if (stream) return caseRowHtml(caseNorm(c, o, marksNow()[c.task]), me, r.key);
       const who = c.who >= 0 ? o.names[c.who] : "";
       const due = c.due === undefined ? "" : c.late ? (stream ? `svaret blir ${c.late} d sent` : `spricker ${c.late} d`) : c.due < 0 ? `${stream ? "svaret" : "klart"} ${-c.due} d sent` : c.due === 0 ? `${stream ? "svar" : "klart"} i dag` : `${stream ? "svar" : "klart"} inom ${c.due} d`;
-      const meta = [CASE_STATE[c.state] || c.state, c.received === undefined ? "" : daysAgo(c.received), due, c.tight && !c.late ? "utan marginal" : ""].filter(Boolean).join(" · ");
+      // I en leverans säger raden vad uppgiften väntar på, inte när den kom in (Daniel P 2026-10-09: «jättesvårt att förstå vad man ska göra var»).
+      const meta = [c.waits?.length ? `väntar på ${c.waits.join(", ")}` : CASE_STATE[c.state] || c.state, due, c.tight && !c.late ? "utan marginal" : ""].filter(Boolean).join(" · ");
       const dot = c.state === "customer" ? "customer" : c.late || (c.due ?? 1) < 0 ? "late" : who === me ? "mine" : "";
       const open = stream ? `data-act="open-case" data-key="${esc(r.key)}" data-task="${esc(c.task)}" data-label="${esc(c.title)}" data-ctx="case|${esc(c.task)}"`
         : `data-act="open-part" data-task="${esc(c.task)}" data-parent="${esc(r.key)}" data-label="${esc(c.title)}"`;
       const ti = r.tasks.indexOf(c.task);
       const strip = stream ? "" : stripHtml(r.steps.filter((y) => y[0] === ti).map((y) => y[3] === "done" ? "d" : y[3] === "customer" ? "c" : "t").join(""));
       return `<div class="step case" ${open} draggable="true" data-drag="${esc(c.task)}" role="button"><span class="sdot ${dot}"></span><div style="min-width:0"><span>${esc(c.title)}</span>${c.no_method ? `<span class="nm" title="Ingen metod och inga steg">utan metod</span>` : ""}${c.outcome ? ` <span class="otag">${esc(c.outcome)}</span>` : ""}<span class="meta"> · ${senderHtml(c.from, c.from_email)}${esc(meta)}</span>`
-        + `${c.now >= 0 ? `<div class="meta">nu: ${esc(o.names[c.now])}</div>` : ""}${strip}</div><span class="who">${esc(who === me ? "du" : who)}</span><span class="pin-slot">${c.step && isRunning(c.task, c.step) ? `<span class="meta">igång</span>` : ""}</span></div>`;
+        + `${c.now >= 0 ? `<div class="meta">${c.waits?.length ? "sedan" : "nu"}: ${esc(o.names[c.now])}</div>` : ""}${strip}</div><span class="who">${esc(who === me ? "du" : who)}</span><span class="pin-slot">${c.step && isRunning(c.task, c.step) ? `<span class="meta">igång</span>` : ""}</span></div>`;
     }).join("");
     const n = r.case_count || r.cases.length, rest = n - r.cases.length;
     const word = stream ? (rest === 1 ? "ärende" : "ärenden") : (rest === 1 ? "uppgift" : "uppgifter");
@@ -8237,6 +8508,25 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     else if (act === "review-save") { reviewSave(el.getAttribute("data-sheet")); return; }
     else if (act === "img-pick") { delete IPS.pick; S.imgPick = { place: el.getAttribute("data-place"), t: JSON.parse(el.getAttribute("data-target") || "{}") }; render(); return; }
     else if (act === "img-pick-close") { S.imgPick = null; delete IPS.pick; render(); return; }
+    else if (act === "ans-open") { const k = el.getAttribute("data-q"), [task, ...ab] = k.split("|"), about = ab.join("|");
+      const q = questionsOf(task).find((x) => x.about === about) || Object.values(S.sheetData).flatMap((d) => (d.sheet?.help || []).filter((h) => h.kind === "values").map(valuesQuestion)).find((x) => x.about === about);
+      if (q) { qDraft(task, q).open = true; } }
+    else if (act === "ans-cancel") { const k = el.getAttribute("data-q"); if (S.qEdit) delete S.qEdit[k]; }
+    else if (act === "ans-alt") { const D = S.qEdit?.[el.getAttribute("data-q")]; if (D) D.pick = { ...D.pick, [el.getAttribute("data-raw")]: el.getAttribute("data-v") }; }
+    else if (act === "ans-set") { const D = S.qEdit?.[el.getAttribute("data-q")]; if (D) D.values = { ...D.values, [el.getAttribute("data-key")]: el.getAttribute("data-v") }; }
+    else if (act === "ans-src") { const D = S.qEdit?.[el.getAttribute("data-q")]; if (D) { const v = el.getAttribute("data-v"), on = String(D.values.ads_source || "").split(",").map((x) => x.trim()).filter(Boolean);
+      D.values = { ...D.values, ads_source: (on.includes(v) ? on.filter((x) => x !== v) : [...on, v]).join(",") }; } }
+    else if (act === "ans-save") { const task = el.getAttribute("data-task"), about = el.getAttribute("data-about");
+      qSave(task, about, questionsOf(task).find((x) => x.about === about) || Object.values(S.sheetData).flatMap((d) => (d.sheet?.help || []).filter((h) => h.kind === "values").map(valuesQuestion)).find((x) => x.about === about) || null); return; }
+    else if (act === "help-reason") { const t = top1(); if (t) S.helpReason = { ...(S.helpReason || {}), [`${t.id}|${el.getAttribute("data-i")}`]: { text: "" } }; }
+    else if (act === "help-reason-cancel") { const t = top1(); if (t && S.helpReason) delete S.helpReason[`${t.id}|${el.getAttribute("data-i")}`]; }
+    else if (act === "help-mark") { const t = top1(); if (t) helpMark(t.id, Number(el.getAttribute("data-i"))); return; }
+    else if (act === "help-choose") { root.querySelector?.("#review-box")?.scrollIntoView?.({ behavior: "smooth", block: "start" }); return; }
+    else if (act === "help-choose-chat") { const t = top1(), sh = t && sheetOf(t.id), h = sh?.help?.[Number(el.getAttribute("data-i"))];
+      if (h?.call) copyToChat(`Visa det jag kan välja bland i steget «${sh.label}», och låt mig välja vad som ska med och vad som stryks. Spara valet på steget.\n\nFör Claude: ${h.call.tool} ${JSON.stringify(h.call.args)}`, "prompten för valet"); return; }
+    else if (act === "who-pick") { const t = top1(); if (t) t.whoPick = !t.whoPick; }
+    else if (act === "who-set") { const t = top1(); if (t) { const [task, step] = splitStep(t.id), lbl = el.getAttribute("data-label"); t.whoPick = false;
+      previewTime([{ task, step, to: el.getAttribute("data-id") }], `Föreslå ${lbl}`); } return; }
     else if (act === "item-approve") { approveItem((el.getAttribute("data-ids") || "").split(",").filter(Boolean), el.getAttribute("data-name") || ""); return; }
     else if (act === "result-edit") { const t = top1(); if (t) t.edit = !t.edit; }
     else if (act === "result-book") { const t = top1(); if (t) t.book = !t.book; }
@@ -8384,6 +8674,61 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   document.addEventListener?.("pointerup", (e) => { tzDragEnd(e); calDragEnd(e); });
 
   /** Högerklick: samma meny på steg, rad och Igång. */
+  /* ── Svep för att backa (Daniel P 2026-10-09: «kan vi fixa så att man kan använda touchpad för att backa också») ──
+   * I en artefakt fångar inte webbläsaren sin egen bakåtgest. Två fingrar åt höger på styrplattan backar ett ark,
+   * åt vänster går fram igen; pilen i kanten visar hur långt man dragit, som i Safari och Chrome. Inget händer
+   * med zoom (⌃/⌘) eller inne i något som själv rullar i sidled (Tid, kalendern, tabeller, bildvisaren). */
+  const SWIPE_AT = 140;
+  const SWIPE = { dx: 0, timer: null, fwd: [], arrow: null };
+  /** Rullar elementet, eller något det ligger i, själv i sidled? */
+  function scrollsSideways(el) {
+    for (let n = el; n && n !== root && n.nodeType === 1; n = n.parentElement) {
+      if (n.matches?.("[data-noswipe], table, .lb")) return true;
+      const ox = typeof getComputedStyle === "function" ? getComputedStyle(n).overflowX : "";
+      if (/(auto|scroll)/.test(ox) && n.scrollWidth > n.clientWidth + 1) return true;
+    }
+    return false;
+  }
+  /** Ett ark tillbaka; det som lämnades kan svepas fram igen. */
+  function swipeBack() {
+    if (!S.sheets.length) return false;
+    SWIPE.fwd.push({ from: sheetsHash(S.sheets.slice(0, -1)), sheets: S.sheets.slice() });
+    sheetBack(); return true;
+  }
+  function swipeForward() {
+    const f = SWIPE.fwd.at(-1);
+    if (!f || f.from !== sheetsHash(S.sheets)) { SWIPE.fwd = []; return false; }
+    SWIPE.fwd.pop(); S.sheets = f.sheets; freshen(); const t = top1(); if (t) fetchSheet(t); render(); return true;
+  }
+  /** Pilen i kanten: vänster för bakåt, höger för framåt, fylld när släppet backar. */
+  function swipeArrow(dx) {
+    if (typeof document !== "object" || !document.body?.appendChild) return;
+    let a = SWIPE.arrow;
+    if (!a) { a = SWIPE.arrow = document.createElement("div"); a.className = "swipe"; a.setAttribute("aria-hidden", "true"); document.body.appendChild(a); }
+    const p = Math.min(1, Math.abs(dx) / SWIPE_AT), back = dx > 0;
+    a.textContent = back ? "‹" : "›";
+    a.className = `swipe ${back ? "l" : "r"}${p >= 1 ? " go" : ""}`;
+    a.style.opacity = dx ? String(.25 + .75 * p) : "0";
+    a.style.transform = `translate(${back ? -48 + 64 * p : 48 - 64 * p}px, -50%)`;
+  }
+  root.addEventListener("wheel", (e) => {
+    if (e.ctrlKey || e.metaKey) return;
+    const ax = Math.abs(e.deltaX), ay = Math.abs(e.deltaY);
+    if (ax < 2 || ax < ay * 2) { if (ay > 6 && SWIPE.dx) { SWIPE.dx = 0; swipeArrow(0); } return; }
+    if (scrollsSideways(e.target)) return;
+    // Två fingrar åt höger ger negativ deltaX: bakåt. Bara åt det håll det finns något att gå till.
+    const dx = SWIPE.dx - e.deltaX;
+    const can = dx > 0 ? S.sheets.length > 0 : SWIPE.fwd.at(-1)?.from === sheetsHash(S.sheets);
+    if (!can) return;
+    e.preventDefault?.();
+    SWIPE.dx = dx; swipeArrow(dx);
+    clearTimeout(SWIPE.timer);
+    SWIPE.timer = setTimeout(() => {
+      const d = SWIPE.dx; SWIPE.dx = 0; swipeArrow(0);
+      if (d >= SWIPE_AT) swipeBack(); else if (d <= -SWIPE_AT) swipeForward();
+    }, 160);
+  }, { passive: false });
+
   root.addEventListener("contextmenu", (e) => {
     const ctx = e.target.closest?.("[data-ctx]");
     const t = ctx && targetOf(ctx.getAttribute("data-ctx"));
@@ -8398,6 +8743,9 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
   root.addEventListener("mouseover", (e) => { const c = e.target.closest?.("[data-ctx]")?.getAttribute("data-ctx"); if (c) S.cur = c; onHover(e); });
   root.addEventListener?.("focusout", (e) => { if (S.momEdit && /^mom-\d+$/.test(e.target?.id || "")) { S.momEdit = null; render(); } });
   root.addEventListener("input", (e) => {
+    if (e.target?.dataset?.q !== undefined) { const D = S.qEdit?.[e.target.dataset.q], k = e.target.dataset.key;
+      if (D) { if (k === "_who") D.who = e.target.value; else D.values = { ...D.values, [k]: e.target.value }; } return; }
+    if (e.target?.dataset?.helpWhy !== undefined) { const R = S.helpReason?.[e.target.dataset.helpWhy]; if (R) { const had = !!R.text.trim(); R.text = e.target.value; if (had !== !!R.text.trim()) renderKeep(); } return; }
     if (e.target?.dataset?.verdict !== undefined) { const R = S.review?.[e.target.dataset.sheet], k = e.target.dataset.verdict;
       if (R) { R.verdicts = { ...R.verdicts, [k]: { ...(R.verdicts[k] || {}), text: e.target.value } }; R.dirty = true; renderKeep(); } return; }
     if (e.target?.id === "pal-q" && S.pal) { S.pal = { ...S.pal, q: e.target.value, i: 0 }; render(); }
@@ -8506,6 +8854,8 @@ h1 .rn-in { font-size: 32px; font-weight: 600; }
     if (k === " " && S.peek) { stop(); S.peek = null; render(); return; }
     if (k === "Enter" && S.peek) { stop(); const p = S.peek; S.peek = null; if (p.kind === "case") openCaseOver(p.row?.kind === "stream" ? p.row.key : null, p.task, p.label); else if (p.row) openSheet("delivery", p.row.key, p.row.label); else render(); return; }
     if (k === "Backspace" && !e.metaKey && !e.ctrlKey && S.sheets.length) { stop(); sheetBack(); return; }
+    // ⌘[ och ⌘] som i webbläsaren: ett ark tillbaka, och fram igen efter ett svep eller ⌘[.
+    if ((e.metaKey || e.ctrlKey) && (k === "[" || k === "]") && !typing(e.target)) { if (k === "[" ? swipeBack() : swipeForward()) stop(); return; }
     if ((k === "ContextMenu" || (k === "F10" && e.shiftKey)) && S.cur) { const t = targetOf(S.cur); if (t) { stop(); S.menu = { target: t, x: 200, y: 160, i: 0 }; render(); } return; }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const key = k === " " ? "␣" : k === "Enter" ? "↵" : k === "ArrowRight" ? "→" : k === "ArrowLeft" ? "←" : k.length === 1 ? k.toUpperCase() : null;
