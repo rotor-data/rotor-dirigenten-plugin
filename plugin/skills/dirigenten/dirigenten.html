@@ -173,6 +173,7 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .toast.err button { color: #fff !important; text-decoration: underline; }
 /* Arken (1.3): från vänster 56 + 44·(djup−1) px; arken under syns som 44 px remsor. */
 .sheets { position: fixed; inset: 0; z-index: 60; }
+body.over-map .sheets { z-index: 61; }
 .scrim { position: absolute; inset: 0; background: rgba(28,28,26,.06); }
 .strip { position: absolute; top: 0; bottom: 0; width: 44px; border: 0; border-left: 1.5px solid var(--l1); background: var(--s4); padding: 0; cursor: pointer; }
 .strip:hover { background: var(--s2); }
@@ -1000,8 +1001,13 @@ details.removed { margin-top: 10px; }
     const tb = K.dir === "tb" || narrow();
     const shown = narrow() ? [K.map.bands[Math.min(K.mband, K.map.bands.length - 1)]].filter(Boolean) : K.map.bands;
     let c = 16;
+    // Passens knappar får en egen rad ovanför noderna (Daniel P 2026-10-13: «clauderutor hamnar ovanpå vanliga rutor»):
+    // raderna förskjuts i stället för att täckas. Uppifrån och ned delar banden huvudaxeln, så där räknas det största antalet.
+    const PL = 24, nPass = (b, open) => open ? passGroups(b).length : 0;
+    const topX = tb ? Math.max(0, ...shown.map((b) => nPass(b, narrow() || K.open[b.id] !== false))) * PL : 0;
     for (const b of shown) {
       const open = narrow() || K.open[b.id] !== false;
+      const extra = tb ? 0 : nPass(b, open) * PL;
       const rows = [];
       const sorted = [...b.ids].sort((a, x) => g.rank[a] - g.rank[x]);
       for (const m of sorted) {
@@ -1016,17 +1022,17 @@ details.removed { margin-top: 10px; }
         pos[m] = { band: b.id, row, col: g.rank[m] };
       }
       const n = Math.max(1, rows.length);
-      const size = tb ? (open ? BP * 2 + n * (NW + RG) - RG : 150) : (open ? BP * 2 + n * (NH + RG) - RG + 22 : MINI_H);
-      bands.push({ ...b, c0: c, c1: c + size, open });
+      const size = tb ? (open ? BP * 2 + n * (NW + RG) - RG : 150) : (open ? BP * 2 + n * (NH + RG) - RG + 22 + extra : MINI_H);
+      bands.push({ ...b, c0: c, c1: c + size, open, lane: tb ? TH + 12 : c + BP + 22 });
       for (const m of b.ids) {
         const p = pos[m];
         if (tb) {
-          p.y = TH + 16 + p.col * (NH + CG);
+          p.y = TH + 16 + topX + p.col * (NH + CG);
           p.x = open ? c + BP + p.row * (NW + RG) : c + 59;
           if (!open) p.y += (NH - 19) / 2;
         } else {
           p.x = LW + 16 + p.col * (NW + CG);
-          p.y = open ? c + BP + 22 + p.row * (NH + RG) : c + 20;
+          p.y = open ? c + BP + 22 + extra + p.row * (NH + RG) : c + 20;
           if (!open) p.x += (NW - 32) / 2;
         }
         p.w = open ? NW : 32; p.h = open ? NH : 19;
@@ -1034,7 +1040,7 @@ details.removed { margin-top: 10px; }
       c += size + BG;
     }
     const cols = Math.max(0, ...Object.values(pos).map((p) => p.col)) + 1;
-    const main = tb ? TH + 16 + cols * (NH + CG) : LW + 32 + cols * (NW + CG);
+    const main = tb ? TH + 16 + topX + cols * (NH + CG) : LW + 32 + cols * (NW + CG);
     for (const b of bands) Object.assign(b, tb ? { x: b.c0, y: 8, w: b.c1 - b.c0, h: main - 8 } : { x: 8, y: b.c0, w: main - 16, h: b.c1 - b.c0 });
     // Målet ligger utanför banden: till höger, eller under när kartan går uppifrån och ned.
     return { g, pos, bands, tb, main, W: tb ? Math.max(c, GOAL + 16) : main + GOAL, H: tb ? main + GOAL : Math.max(c, GOAL + 16) };
@@ -1069,10 +1075,11 @@ details.removed { margin-top: 10px; }
   }
 
   /** Pass: delmål i samma band vars görbara moment görs av samma utförare (README, Pass). */
-  function passes(L) {
+  function passes(L) { return L.bands.filter((b) => b.open).flatMap((b) => passGroups(b).map((p, i) => ({ ...p, lane: b.lane + i * 24 }))); }
+  /** Passen i ett band: delmål som går att göra med samma nästa moment, två eller fler. */
+  function passGroups(b) {
     const out = [];
-    for (const b of L.bands) {
-      if (!b.open) continue;
+    {
       const groups = {};
       for (const m of b.ids) {
         if (stateOf(m) !== "doable") continue;
@@ -1124,9 +1131,12 @@ details.removed { margin-top: 10px; }
     }
     for (const p of passes(L)) {
       const ns = p.ms.map((m) => L.pos[m]);
-      const x0 = Math.min(...ns.map((n) => n.x)) - 6, y0 = Math.min(...ns.map((n) => n.y)) - 8, x1 = Math.max(...ns.map((n) => n.x + n.w)) + 6, y1 = Math.max(...ns.map((n) => n.y + n.h)) + 6;
-      parts.push(`<g class="k-pass" data-pass="${esc(p.nodes.join(","))}" data-text="${esc(p.text)}"><rect x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" rx="12" fill="none" stroke="#2a3f66" stroke-opacity=".45" stroke-dasharray="5 4"/>`
-        + `<rect x="${x0 + 10}" y="${y0 - 9}" width="${Math.min(x1 - x0 - 20, 7 * p.text.length + 16)}" height="18" rx="9" fill="#2a3f66"/><text x="${x0 + 18}" y="${y0 + 4}" font-size="11" fill="#fff">${esc(p.text)}</text></g>`);
+      // Ramen ligger bakom noderna (de ritas efter) och i mellanrummet runt dem; knappen står i passens egen rad ovanför.
+      const x0 = Math.min(...ns.map((n) => n.x)) - 5, y0 = Math.min(...ns.map((n) => n.y)) - 5, x1 = Math.max(...ns.map((n) => n.x + n.w)) + 5, y1 = Math.max(...ns.map((n) => n.y + n.h)) + 5;
+      const pw = 7 * p.text.length + 16, px = tb ? x0 : x0 + 10;
+      parts.push(`<g class="k-pass" data-pass="${esc(p.nodes.join(","))}" data-text="${esc(p.text)}"><rect x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" rx="10" fill="none" stroke="#2a3f66" stroke-opacity=".35" stroke-dasharray="5 4"/>`
+        + `<line x1="${px + 12}" y1="${p.lane + 18}" x2="${px + 12}" y2="${y0}" stroke="#2a3f66" stroke-opacity=".35" stroke-dasharray="3 3"/>`
+        + `<rect x="${px}" y="${p.lane}" width="${pw}" height="18" rx="9" fill="#2a3f66"/><text x="${px + 8}" y="${p.lane + 13}" font-size="11" fill="#fff">${esc(p.text)}</text></g>`);
     }
     for (const m of L.g.ids) {
       const p = L.pos[m]; if (!p) continue;
@@ -1204,6 +1214,8 @@ details.removed { margin-top: 10px; }
       if (card) h.push(`<details style="margin:6px 0"><summary class="k-sub">Instruktionen</summary><div class="k-sub" style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(card.lines.join("\n"))}</div></details>`);
       else if (M.labels[`${nx}:check`]) h.push(`<div>Klart när: ${esc(M.labels[`${nx}:check`])}</div>`);
       if (nm.effect && nm.effect !== "internal") h.push(`<div class="k-warn">Momentet lämnar huset eller skriver i kundens system: förhandsvisas före ja.</div>`);
+      const base = M.material.filter((x) => readsOf(ms).some((r) => r.ms === x.milestone));
+      if (base.length) h.push(`<details style="margin:6px 0"><summary class="k-sub">Underlaget (${base.length})</summary><ul>${base.map((x) => `<li>${matLink(x, `${title(x.milestone)}: ${x.kind === "asset" ? "fil" : "text"}${x.version ? ` v${x.version}` : ""}`)}</li>`).join("")}</ul></details>`);
       if (tool) h.push(`<div class="k-reg">Görs med ${esc(HOW[tool.how])}${tool.call ? ` «${esc(tool.call)}»` : tool.capability ? ` «${esc(tool.capability)}»` : tool.how === "tool" ? ` «${esc(tool.tool)}»` : ""}</div>`);
       h.push(`</div>`);
     }
@@ -1225,7 +1237,7 @@ details.removed { margin-top: 10px; }
         + (x.step && (x.by === "claude") ? `<button class="link" data-k="instr" data-node="${esc(n)}" data-step="${esc(x.step)}">Instruktionen …</button>` : "") + `</div></li>`;
     }).join("")}</ol><button class="link" data-k="add-moment" data-ms="${esc(ms)}">+ Lägg till moment</button>`);
     const mat = M.material.filter((x) => x.milestone === ms);
-    h.push(`<h3>Resultat</h3>${mat.length ? `<ul>${mat.map((x) => `<li>${x.kind === "asset" ? "Fil" : "Text"}${x.type ? ` · ${esc(x.type)}` : ""}${x.version ? ` · version ${esc(x.version)}` : ""}${x.approved ? " · godkänd" : ""} <span class="k-reg">${esc(x.at.slice(0, 10))}</span></li>`).join("")}</ul>` : `<div class="k-sub">Inget än.</div>`}`);
+    h.push(`<h3>Resultat</h3>${mat.length ? `<ul>${mat.map((x) => `<li>${matLink(x, `${x.kind === "asset" ? "Fil" : "Text"}${x.type ? ` · ${x.type}` : ""}${x.version ? ` · version ${x.version}` : ""}${x.approved ? " · godkänd" : ""}`)} <span class="k-reg">${esc(x.at.slice(0, 10))}</span></li>`).join("")}</ul>` : `<div class="k-sub">Inget än.</div>`}`);
     const used = Object.keys(M.model.milestones).filter((o) => readsOf(o).some((r) => r.ms === ms));
     if (used.length) h.push(`<h3>Används till</h3><ul>${used.map((o) => `<li><button class="link" data-k="sel" data-ms="${esc(o)}">${esc(title(o))}</button></li>`).join("")}</ul>`);
     h.push(`<h3>Delen</h3><button class="link" data-k="move" data-ms="${esc(ms)}">Flytta till del …</button> <button class="link" data-k="rename-ms" data-ms="${esc(ms)}">Byt namn …</button> <button class="link" data-k="add-ms" data-ms="${esc(ms)}">Lägg till delmål efter …</button> <button class="link" data-k="remove-ms" data-ms="${esc(ms)}">Ta bort …</button>`);
@@ -1233,11 +1245,13 @@ details.removed { margin-top: 10px; }
     return h.join("");
   }
 
+  /** Ett material som länk: läsrutan och bildvisaren är vyns egna (v6), öppnade som ett lager ovanpå kartan. Kartan själv visar inget material. */
+  const matLink = (x, text) => K.onOpen && x.ref ? `<button class="link" data-k="open-mat" data-ref="${esc(x.ref)}" data-kind="${esc(x.kind || "")}" data-label="${esc(text)}">${esc(text)}</button>` : esc(text);
   function storeWindow() {
     const s = K.map.store;
     return `<b>Förrådet</b><div class="k-sub">Det som fanns redan och kan användas.</div>`
-      + (s.length ? `<ul>${s.map((x) => `<li>${x.satisfies ? `Delmålet «${esc(title(x.satisfies))}»` : `${esc(x.label || x.type || x.kind)}`} <span class="k-reg">${esc(x.origin === "previous_workflow" ? "från det tidigare arbetsflödet" : x.origin === "planned" ? "utpekat i planeringen" : "hos kunden eller i huset")}</span></li>`).join("")}</ul>` : `<p class="k-sub">Tomt.</p>`)
-      + `<h3>Material i uppdraget</h3>${K.map.material.length ? `<ul>${K.map.material.map((x) => `<li>${esc(title(x.milestone))}: ${x.kind === "asset" ? "fil" : "text"}${x.version ? ` v${esc(x.version)}` : ""}${x.approved ? " ✓" : ""}</li>`).join("")}</ul>` : `<p class="k-sub">Inget än.</p>`}`
+      + (s.length ? `<ul>${s.map((x) => `<li>${x.satisfies ? `Delmålet «${esc(title(x.satisfies))}»` : x.ref ? matLink(x, x.label || x.type || x.kind) : `${esc(x.label || x.type || x.kind)}`} <span class="k-reg">${esc(x.origin === "previous_workflow" ? "från det tidigare arbetsflödet" : x.origin === "planned" ? "utpekat i planeringen" : "hos kunden eller i huset")}</span></li>`).join("")}</ul>` : `<p class="k-sub">Tomt.</p>`)
+      + `<h3>Material i uppdraget</h3>${K.map.material.length ? `<ul>${K.map.material.map((x) => `<li>${matLink(x, `${title(x.milestone)}: ${x.kind === "asset" ? "fil" : "text"}${x.version ? ` v${x.version}` : ""}${x.approved ? " ✓" : ""}`)}</li>`).join("")}</ul>` : `<p class="k-sub">Inget än.</p>`}`
       + (K.map.times?.conflicts?.length ? `<h3>Krockar i tiden</h3><ul>${K.map.times.conflicts.map((c) => `<li class="k-warn">${esc(c.text)}</li>`).join("")}</ul>` : "");
   }
 
@@ -1359,7 +1373,9 @@ details.removed { margin-top: 10px; }
       case "store": K.store = !K.store; return render();
       case "more": K.more = !K.more; return render();
       case "list": { const f = K.onList; root().hidden = true; K.map = null; K.sel = null; return f?.(); }
-      case "work": { const f = K.onWork, t = K.task; root().hidden = true; K.map = null; K.sel = null; return f?.(t, el.getAttribute("data-step"), el.getAttribute("data-label")); }
+      // Arbetsytan och läsrutan läggs ovanpå kartan; kartan står kvar under och syns igen när de stängs.
+      case "work": return K.onWork?.(K.task, el.getAttribute("data-step"), el.getAttribute("data-label"));
+      case "open-mat": return K.onOpen?.(el.getAttribute("data-ref"), el.getAttribute("data-label"), el.getAttribute("data-kind"));
       case "dir": K.dir = K.dir === "tb" ? "lr" : "tb"; return render();
       case "mband": K.mband = Math.max(0, Math.min(K.map.bands.length - 1, K.mband + Number(el.getAttribute("data-d")))); root().querySelector(".k-scroll").scrollTo(0, 0); return render();
       case "sel": K.sel = el.getAttribute("data-ms") || null; K.dialog = null; return render();
@@ -1405,8 +1421,8 @@ details.removed { margin-top: 10px; }
 
   function open(task, call, opts) {
     K.task = task; K.call = call; K.map = null; K.mband = 0; K.sel = opts?.sel || null; K.dialog = null; K.toast = null; K.open = {};
-    if (opts?.tasks) { K.tasks = opts.tasks; K.onList = opts.onList || null; K.onWork = opts.onWork || null; }
-    else if (!opts?.keep) { K.tasks = null; K.onList = null; K.onWork = null; }
+    if (opts?.tasks) { K.tasks = opts.tasks; K.onList = opts.onList || null; K.onWork = opts.onWork || null; K.onOpen = opts.onOpen || null; }
+    else if (!opts?.keep) { K.tasks = null; K.onList = null; K.onWork = null; K.onOpen = null; }
     const el = root();
     if (!el.dataset.wired) { el.dataset.wired = "1"; el.addEventListener("click", onClick); el.addEventListener("dblclick", onDbl);
       el.addEventListener("change", (e) => { if (e.target.classList?.contains("k-task")) open(e.target.value, K.call, { keep: true }); });
@@ -1444,7 +1460,7 @@ details.removed { margin-top: 10px; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "6812cc4b", published: "2026-10-13" };
+  const SIDA = { version: "e09d23ad", published: "2026-10-13" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1996,8 +2012,14 @@ details.removed { margin-top: 10px; }
     globalThis.RotorKarta.open(task || tasks[0].task, call, {
       ...(ms ? { sel: ms } : {}), tasks,
       onList: () => openSheet("delivery", row.key, row.label, true),
-      onWork: (t, step, l) => openStep(t, step, l),
+      onWork: (t, step, l) => overMap(() => openStep(t, step, l)),
+      onOpen: (ref, l, kind) => overMap(() => openSheet("result", kind === "asset" && !/^bank:\/\//.test(ref) ? `asset:${ref}` : ref, l)),
     });
+  }
+  /** Läsrutan, bildvisaren och arbetsytan som ett lager ovanpå kartan; när lagret stängs syns kartan igen. */
+  function overMap(f) {
+    if (S.mapBase == null) S.mapBase = S.sheets.length;
+    document.body.classList.add("over-map"); f();
   }
   const goalMaps0 = (t) => S.goalMaps?.[t]?.map?.model?.goal?.label || null;
   function openSheet(kind, id, label, asList) {
@@ -2354,12 +2376,12 @@ details.removed { margin-top: 10px; }
       S.sheetData[k].pending = p;
       return p;
     } else if (x.kind === "result") {
-      const r = allResults().find((y) => y.id === x.id), o = r?.open || { tool: "read", args: { op: "content_get", id: x.id } };
+      const r = allResults().find((y) => y.id === x.id), o = r?.open || (/^asset:/.test(x.id) ? { tool: "read", args: { op: "asset_get", ref: fileRef(x.id) } } : { tool: "read", args: { op: "content_get", id: x.id } });
       if (r) put({ item: r });
       // En fil i banken är samma bytes för alltid: hämtad en gång räcker för hela besöket.
-      const file = /^bank:\/\//.test(x.id);
+      const file = isFileId(x.id);
       // En PDF får alltid sina två länkar (öppna i webbläsaren, ladda ner): blob- och data-adresser stoppas i artefaktens sandlåda.
-      const links = (d) => { if (file && isPdf(d, r) && !d?.view_url && !S.sheetData[k]?.link) call("read", { op: "asset_get", ref: x.id, as_link: true }).then((l) => put({ link: l || null })).catch(() => {}); };
+      const links = (d) => { if (file && isPdf(d, r) && !d?.view_url && !S.sheetData[k]?.link) call("read", { op: "asset_get", ref: fileRef(x.id), as_link: true }).then((l) => put({ link: l || null })).catch(() => {}); };
       if (file && S.files?.[x.id]) { put({ loading: false, doc: S.files[x.id] }); links(S.files[x.id]); return; }
       call(o.tool, o.args).then((d) => { if (file && d && !d.download_url) S.files = { ...(S.files || {}), [x.id]: d }; put({ loading: false, doc: d || null }); links(d); })
         .catch((e) => put({ loading: false, error: e }));
@@ -4050,6 +4072,9 @@ details.removed { margin-top: 10px; }
     return `<div class="fwhat">${thumb ? `<img class="fimg" src="${thumb}" alt="">` : `<span class="fbig">${esc(ext || "FIL")}</span>`}<div><b>${esc(what)}</b>`
       + `<div class="mmeta">${doc?.download_url ? "Filen är för stor att visa här; den laddas ned via länken." : "Den här sortens fil visas inte i vyn. Ladda ner den och öppna den i programmet den hör till."}</div></div></div>`;
   }
+  /** En fil ur kartans material (asset:<ref>) eller ur filbanken (bank://…); asset_get tar ref utan prefixet. */
+  const isFileId = (id) => /^(bank:\/\/|asset:)/.test(id);
+  const fileRef = (id) => String(id).replace(/^asset:/, "");
   const isPdf = (doc, r) => doc?.mime === "application/pdf" || /\.pdf$/i.test(doc?.name || r?.file_name || "");
   /** Förhandsversion: ett utkast ur Smyra eller en fil som heter så. */
   const isDraftFile = (name) => /f(ö|o)rhandsversion|utkast|draft|preview/i.test(name || "");
@@ -4079,7 +4104,7 @@ details.removed { margin-top: 10px; }
     let href = doc?.download_url || sd.link?.download_url || null;
     if (!href && doc?.data_base64) href = doc.mime === "application/pdf" ? pdfUrl(x.id, doc) : `data:${doc.mime};base64,${doc.data_base64}`;
     if (!href && typeof doc?.text === "string") href = URL.createObjectURL(new Blob([doc.text], { type: doc.mime || "text/plain" }));
-    if (!href) { try { const d = await call("read", { op: "asset_get", ref: x.id, as_link: true }); href = d?.download_url || null; } catch (e) { say(`Kunde inte hämta filen: ${e.message || e}.`, null, true); return; } }
+    if (!href) { try { const d = await call("read", { op: "asset_get", ref: fileRef(x.id), as_link: true }); href = d?.download_url || null; } catch (e) { say(`Kunde inte hämta filen: ${e.message || e}.`, null, true); return; } }
     if (!href) { say("Filen går inte att ladda ner härifrån.", null, true); return; }
     const a = document.createElement("a"); a.href = href; a.download = name; a.target = "_blank"; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove();
   }
@@ -4088,7 +4113,7 @@ details.removed { margin-top: 10px; }
     const fmt = r?.format || (doc ? "text" : null);
     const label = `${FMT_TEXT[fmt] || "Resultat"}${r?.status_text ? ` · ${r.status_text}` : ""}${r?.version ? ` · v${r.version}` : ""}${r?.step?.label ? ` · från «${r.step.label}»` : ""}`;
     const title = r?.name || doc?.name || x.label;
-    const isFile = r?.source === "file" || /^bank:\/\//.test(x.id);
+    const isFile = r?.source === "file" || isFileId(x.id);
     let body;
     if (isFile) body = fileBodyHtml(x, r, sd, doc, title);
     else if (sd.loading && !doc) body = `<div class="mmeta">Hämtar …</div>`;
@@ -9050,6 +9075,7 @@ details.removed { margin-top: 10px; }
     if (el) { el.focus?.(); try { el.setSelectionRange?.(s0, s1); } catch { /* inte ett textfält */ } }
   }
   function render() {
+    if (S.mapBase != null && S.sheets.length <= S.mapBase) { S.mapBase = null; document.body.classList.remove("over-map"); }
     saveScroll();
     syncHash();
     const focusId = typeof document.activeElement === "object" ? document.activeElement?.id : null;
