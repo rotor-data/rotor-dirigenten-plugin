@@ -1196,14 +1196,16 @@ details.removed { margin-top: 10px; }
     if (st === "inventory") h.push(`<div class="k-gap">Fanns redan: ${esc((M.store.find((x) => x.satisfies === ms) || {}).origin === "planned" ? "utpekat när uppdraget planerades" : "finns hos kunden eller i huset")}.</div>`);
     if (nx && nm && st !== "done") {
       h.push(`<h3>Nästa moment</h3><div class="k-card"><b>${esc(nm.title || M.labels[nx] || nm.label)}</b><div class="k-sub">${WHO[nm.by] || nm.by}${timeOf(nx) ? ` · ${timeOf(nx)}` : ""}</div>`);
+      h.push(`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${buttonFor(nx)}`
+        + (nm.step && K.onWork ? `<button data-k="work" data-step="${esc(nm.step)}" data-label="${esc(nm.title || M.labels[nx] || nm.label || "")}" title="Underlaget, instruktionen och det som gjorts">Öppna arbetsytan</button>` : "")
+        + (M.moments[nx] === "locked" || st === "locked" ? `<button data-k="override" data-node="${esc(nx)}">Gör ändå …</button>` : "")
+        + `</div>`);
       const card = M.cards?.[nx];
-      if (card) h.push(`<div class="k-sub" style="white-space:pre-wrap;margin:6px 0">${esc(card.lines.join("\n"))}</div>`);
+      if (card) h.push(`<details style="margin:6px 0"><summary class="k-sub">Instruktionen</summary><div class="k-sub" style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(card.lines.join("\n"))}</div></details>`);
       else if (M.labels[`${nx}:check`]) h.push(`<div>Klart när: ${esc(M.labels[`${nx}:check`])}</div>`);
       if (nm.effect && nm.effect !== "internal") h.push(`<div class="k-warn">Momentet lämnar huset eller skriver i kundens system: förhandsvisas före ja.</div>`);
       if (tool) h.push(`<div class="k-reg">Görs med ${esc(HOW[tool.how])}${tool.call ? ` «${esc(tool.call)}»` : tool.capability ? ` «${esc(tool.capability)}»` : tool.how === "tool" ? ` «${esc(tool.tool)}»` : ""}</div>`);
-      h.push(`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${buttonFor(nx)}`
-        + (M.moments[nx] === "locked" || st === "locked" ? `<button data-k="override" data-node="${esc(nx)}">Gör ändå …</button>` : "")
-        + `</div></div>`);
+      h.push(`</div>`);
     }
     if (m.kind === "decision" || s.growth_options?.length) {
       const dec = moments.find(([, x]) => x.kind === "decide");
@@ -1251,11 +1253,23 @@ details.removed { margin-top: 10px; }
     const prev = root().querySelector(".k-scroll"), keep = prev ? [prev.scrollLeft, prev.scrollTop] : null;
     L = layout();
     const g = K.map.model.goal;
-    el.innerHTML = `<div class="k-top"><span class="k-title">${esc(g.label)}</span><span class="k-sub">${Object.keys(K.map.model.milestones).length} delmål · ${esc(K.map.task)}</span><span class="k-sp"></span>`
-      + (narrow() ? `<button data-k="mband" data-d="-1"${K.mband <= 0 ? " disabled" : ""}>‹</button><span class="k-sub">Del ${K.mband + 1} av ${K.map.bands.length}: ${esc(K.map.bands[K.mband]?.name || "")}</span><button data-k="mband" data-d="1"${K.mband >= K.map.bands.length - 1 ? " disabled" : ""}>›</button>`
-        : `<button data-k="dir">${K.dir === "tb" ? "Från vänster" : "Uppifrån och ned"}</button>`)
-      + `<button data-k="zoom" data-z="-1">−</button><span class="k-sub">${Math.round(K.zoom * 100)} %</span><button data-k="zoom" data-z="1">+</button><button data-k="fit">Visa allt</button>`
-      + `<button data-k="store">${K.store ? "Dölj förrådet" : "Förrådet"}</button><button data-k="grow">Låt uppdraget växa …</button><button data-k="reload">Hämta igen</button><button data-k="close">Stäng</button></div>`
+    // Det enkla först (Daniel P 2026-10-13): uppdraget, det som går att göra och det som väntar på dig, listan och stäng.
+    const ids = Object.keys(K.map.model.milestones), doable = ids.filter((m) => stateOf(m) === "doable"), mine = ids.filter((m) => stateOf(m) === "yes");
+    const tasks = K.tasks || [];
+    el.innerHTML = `<div class="k-top">`
+      + (tasks.length > 1 ? `<select class="k-task" data-k="task" style="width:auto;max-width:260px;margin:0">${tasks.map((t) => `<option value="${esc(t.task)}"${t.task === K.task ? " selected" : ""}>${esc(t.task === K.task ? g.label : t.label)}</option>`).join("")}</select>`
+        : `<span class="k-title">${esc(g.label)}</span>`)
+      + (doable.length ? `<button data-k="sel" data-ms="${esc(doable[0])}" title="Visa det första som går att göra">${doable.length} går att göra</button>` : "")
+      + (mine.length ? `<button class="yes" data-k="sel" data-ms="${esc(mine[0])}" title="Visa det första som väntar på ditt ja">${mine.length} väntar på dig</button>` : "")
+      + (!doable.length && !mine.length ? `<span class="k-sub">${K.map.state?.goal_reached ? "Målet är nått." : "Inget går att göra just nu."}</span>` : "")
+      + `<span class="k-sp"></span>`
+      + (narrow() ? `<button data-k="mband" data-d="-1"${K.mband <= 0 ? " disabled" : ""}>‹</button><span class="k-sub">Del ${K.mband + 1} av ${K.map.bands.length}: ${esc(K.map.bands[K.mband]?.name || "")}</span><button data-k="mband" data-d="1"${K.mband >= K.map.bands.length - 1 ? " disabled" : ""}>›</button>` : "")
+      + (K.more ? (narrow() ? "" : `<button data-k="dir">${K.dir === "tb" ? "Från vänster" : "Uppifrån och ned"}</button>`)
+        + `<button data-k="zoom" data-z="-1">−</button><span class="k-sub">${Math.round(K.zoom * 100)} %</span><button data-k="zoom" data-z="1">+</button><button data-k="fit">Visa allt</button>`
+        + `<button data-k="store">${K.store ? "Dölj förrådet" : "Förrådet"}</button><button data-k="grow">Låt uppdraget växa …</button><button data-k="reload">Hämta igen</button>` : "")
+      + `<button data-k="more" title="Zoom, riktning, förrådet">${K.more ? "Mindre" : "Mer …"}</button>`
+      + (K.onList ? `<button data-k="list" title="Allt i leveransen som en lista">Listan</button>` : "")
+      + `<button data-k="close">Stäng</button></div>`
       + `<div class="k-body"><div class="k-scroll" onscroll="RotorKarta.stick()">${svg(L)}${K.toast ? `<div class="k-toast">${esc(K.toast.text)}${K.toast.undoCall ? `<button data-k="undo-call">Ångra</button>` : K.toast.undo ? `<button data-k="undo" data-node="${esc(K.toast.undo)}">Ångra</button>` : ""}<button data-k="toast-x">×</button></div>` : ""}</div>`
       + (K.sel ? `<div class="k-panel">${panel()}</div>` : "") + (K.store ? `<div class="k-store">${storeWindow()}</div>` : "")
       + `</div>` + (K.dialog && !K.sel ? `<div class="k-dialog" style="position:absolute;right:16px;top:60px;width:380px">${K.dialog}</div>` : "");
@@ -1343,6 +1357,9 @@ details.removed { margin-top: 10px; }
       case "zoom": K.zoom = Math.min(1.3, Math.max(.4, Math.round((K.zoom + .1 * Number(el.getAttribute("data-z"))) * 10) / 10)); return render();
       case "fit": { const sc = root().querySelector(".k-scroll"); K.zoom = Math.min(1.3, Math.max(.4, Math.floor(Math.min(sc.clientWidth / L.W, sc.clientHeight / L.H) * 10) / 10)); return render(); }
       case "store": K.store = !K.store; return render();
+      case "more": K.more = !K.more; return render();
+      case "list": { const f = K.onList; root().hidden = true; K.map = null; K.sel = null; return f?.(); }
+      case "work": { const f = K.onWork, t = K.task; root().hidden = true; K.map = null; K.sel = null; return f?.(t, el.getAttribute("data-step"), el.getAttribute("data-label")); }
       case "dir": K.dir = K.dir === "tb" ? "lr" : "tb"; return render();
       case "mband": K.mband = Math.max(0, Math.min(K.map.bands.length - 1, K.mband + Number(el.getAttribute("data-d")))); root().querySelector(".k-scroll").scrollTo(0, 0); return render();
       case "sel": K.sel = el.getAttribute("data-ms") || null; K.dialog = null; return render();
@@ -1387,9 +1404,12 @@ details.removed { margin-top: 10px; }
   }
 
   function open(task, call, opts) {
-    K.task = task; K.call = call; K.map = null; K.sel = opts?.sel || null; K.dialog = null; K.toast = null; K.open = {};
+    K.task = task; K.call = call; K.map = null; K.mband = 0; K.sel = opts?.sel || null; K.dialog = null; K.toast = null; K.open = {};
+    if (opts?.tasks) { K.tasks = opts.tasks; K.onList = opts.onList || null; K.onWork = opts.onWork || null; }
+    else if (!opts?.keep) { K.tasks = null; K.onList = null; K.onWork = null; }
     const el = root();
     if (!el.dataset.wired) { el.dataset.wired = "1"; el.addEventListener("click", onClick); el.addEventListener("dblclick", onDbl);
+      el.addEventListener("change", (e) => { if (e.target.classList?.contains("k-task")) open(e.target.value, K.call, { keep: true }); });
       el.addEventListener("contextmenu", (e) => { const n = e.target.closest(".k-node,.k-bandhead"); if (!n) return; e.preventDefault();
         if (n.classList.contains("k-bandhead")) form("rename-band", n); else { K.sel = n.getAttribute("data-ms"); render(); } }); }
     return load();
@@ -1424,7 +1444,7 @@ details.removed { margin-top: 10px; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "cba41057", published: "2026-10-13" };
+  const SIDA = { version: "6812cc4b", published: "2026-10-13" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1699,6 +1719,12 @@ details.removed { margin-top: 10px; }
     }).join("");
   }
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  /** Lägestexten utan ordet «steg» (Daniel P 2026-10-13): räkningen i moment, «nästa» utan «steg». */
+  const plain = (t) => String(t ?? "")
+    .replace(/(\d+) av (\d+) steg \((\d+) av (\d+) delmoment\)/g, "$3 av $4 moment")
+    .replace(/(\d+) av (\d+) steg/g, "$1 av $2 moment")
+    .replace(/([Nn])ästa steg:/g, "$1ästa:").replace(/([Nn])ästa steg/g, "$1ästa")
+    .replace(/\bsteg\b/g, "moment").replace(/\bSteg\b/g, "Moment");
   const DAYS = ["sön", "mån", "tis", "ons", "tor", "fre", "lör"];
   const MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
   const dayLabel = (iso) => { const d = new Date(`${iso}T12:00:00Z`); return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`; };
@@ -1946,7 +1972,9 @@ details.removed { margin-top: 10px; }
       if (mo.step === step || id === step) return { ms, node: `${ms}/${id}`, label: mo.title || m.labels?.[`${ms}/${id}`] || mo.label, ms_label: m.titles?.[ms] || m.labels?.[ms] || ms };
     return null;
   }
-  const openMap = (task, ms) => globalThis.RotorKarta?.open(task, call, ms ? { sel: ms } : undefined);
+  const openMap = (task, ms) => { const row = (S.data?.rows || []).find((r) => goalTasks(r).includes(task));
+    if (row && globalThis.RotorKarta) return openRowMap(row, task, ms);
+    return globalThis.RotorKarta?.open(task, call, ms ? { sel: ms } : undefined); };
   /** Banden och fronten för en uppgift med målmodell, i stället för steg. */
   function goalTaskHtml(task, label) {
     const m = goalMap(task);
@@ -1955,19 +1983,29 @@ details.removed { margin-top: 10px; }
     const st = (ms) => m.state?.milestones?.[ms] || {};
     const bands = m.bands.map((b) => { const done = b.ids.filter((ms) => st(ms).state === "done" || st(ms).satisfied_by_inventory).length;
       return `<span class="mmeta">${esc(b.name)} ${done}/${b.ids.length}</span>`; }).join(" · ");
-    const front = goalFront(task);
+    // Listan över fronten står i kartan; här bara räkningen, med lägessymbolerna (Daniel P 2026-10-13: «ta bort det som är dubbelt»).
+    const front = goalFront(task), yes = front.filter((f) => f.yes).length, go = front.length - yes;
     return head + `<div style="margin:2px 0 6px">${bands}</div>`
-      + (front.length ? front.slice(0, 8).map((f) => `<div class="step go" data-act="open-map" data-task="${esc(task)}" data-ms="${esc(f.ms)}" role="button" title="Öppna delmålet i kartan"><span class="sdot ${f.yes ? "mine" : ""}"></span>`
-        + `<div style="min-width:0"><span>${esc(f.label)}</span><span class="meta"> · ${f.yes ? "ditt ja" : "går att göra"} · delmålet «${esc(f.ms_label)}»${f.band ? `, ${esc(f.band)}` : ""}</span></div><span class="who"></span>`
-        + `<span class="pin-slot">${f.step ? pinButton({ task, id: f.step, label: f.label, state: "todo" }) : ""}</span></div>`).join("")
-        + (front.length > 8 ? `<div class="mmeta">${front.length - 8} moment till går att göra</div>` : "")
+      + (front.length ? `<div class="step go" data-act="open-map" data-task="${esc(task)}" data-ms="${esc((front.find((f) => f.yes) || front[0]).ms)}" role="button" title="Öppna kartan där det börjar">`
+        + `<span class="sdot ${yes ? "mine" : ""}"></span><div style="min-width:0"><span>${[go ? `${go} går att göra` : "", yes ? `${yes} väntar på dig` : ""].filter(Boolean).join(" · ")}</span></div><span class="who"></span><span class="pin-slot"></span></div>`
         : `<div class="mmeta">${m.state?.goal_reached ? "Målet är nått." : "Inget går att göra just nu: det väntar på något."}</div>`);
   }
-  function openSheet(kind, id, label) {
+  /** Kartan för en rad: alla uppgifter med delmål, ett klick till listan och ett till arbetsytan. */
+  function openRowMap(row, task, ms) {
+    const tasks = goalTasks(row).map((t) => ({ task: t, label: goalMaps0(t) || t }));
+    globalThis.RotorKarta.open(task || tasks[0].task, call, {
+      ...(ms ? { sel: ms } : {}), tasks,
+      onList: () => openSheet("delivery", row.key, row.label, true),
+      onWork: (t, step, l) => openStep(t, step, l),
+    });
+  }
+  const goalMaps0 = (t) => S.goalMaps?.[t]?.map?.model?.goal?.label || null;
+  function openSheet(kind, id, label, asList) {
     if (!id) return;
-    // En uppgift med målmodell har kartan som sin sida (Daniel P 2026-10-13): den ersätter stegarket.
-    const goalRow = kind === "delivery" ? (S.data?.rows || []).find((r) => r.key === id && r.goal?.length && (r.kind === "task" || (r.tasks.length === 1 && r.goal.length === 1))) : null;
-    if (goalRow && globalThis.RotorKarta) { globalThis.RotorKarta.open(goalRow.goal[0], call); return; }
+    // En leverans öppnar kartan (Daniel P 2026-10-13: «När man öppnar en leverans vill man se kartan»).
+    // Kartan är navigationen; listan nås från kartan. Utan delmål finns ingen karta, och sidan står kvar.
+    const goalRow = kind === "delivery" && !asList ? (S.data?.rows || []).find((r) => r.key === id && r.goal?.length) : null;
+    if (goalRow && globalThis.RotorKarta) { openRowMap(goalRow); return; }
     const t = top1();
     if (t && t.kind === kind && t.id === id) return;
     S.menu = null;
@@ -2460,7 +2498,7 @@ details.removed { margin-top: 10px; }
       return `<div class="${row?.needs?.over?.includes(n) ? "late" : ""}">${esc(n === me ? `${n} (du)` : n)}${sd.parts ? "" : ` · ${hh(h)} h kvar`}${c?.capacity ? `, ${hh(c.hours_week)} h av ${hh(c.capacity)} i veckan` : ""}${c?.calendar_via ? ` · ${esc(c.calendar_via)}` : ""}</div>`; }).join("");
     const waits = [];
     for (const t of plans || []) for (const s of t.steps) if (!s.done && s.side === "customer") waits.push(`${esc(cust?.label || "Kunden")} · ${esc(s.label)}${s.window ? ` ${esc(winText(s.window))}` : ""}`);
-    if (row?.needs?.handover_out) waits.push(`${row.needs.handover_out} steg väntar på att någon tar emot`);
+    if (row?.needs?.handover_out) waits.push(`${row.needs.handover_out} moment väntar på att någon tar emot`);
     const related = (S.data?.rows || []).filter((r) => r.key !== x.id && r.kind !== "inbox" && cust?.id && r.customer?.id === cust.id).slice(0, 5);
     const margin = `<aside class="margin">`
       + `<div class="mh">Hör till</div>${cust?.id ? `<button class="link" data-act="open-customer" data-id="${esc(cust.id)}" data-label="${esc(cust.label)}">${esc(cust.label)}</button>` : `<div class="mmeta">Ingen kund</div>`}`
@@ -2473,9 +2511,9 @@ details.removed { margin-top: 10px; }
       + `<div class="mh">Hör ihop</div>${related.length ? related.map((r) => `<button class="link" data-act="open-delivery" data-key="${esc(r.key)}">${esc(r.label)}</button>`).join("") : `<div class="mmeta">Inget annat hos ${esc(cust?.label || "kunden")}.</div>`}`
       + `</aside>`;
     const err = sd.error ? `<div class="banner"><span style="flex:1">Allt kunde inte läsas: ${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>` : "";
-    return `<div class="slabel">${esc(label)}</div><h1 class="stitle">${((t) => row?.kind === "delivery" || row?.kind === "stream" ? rn("delivery", x.id, t) : row?.tasks?.length === 1 ? rn("task", row.tasks[0], t) : esc(t))(row?.label || d?.label || x.label)}</h1><p class="sline">${esc(sentence)}</p>`
+    return `<div class="slabel">${esc(label)}</div><h1 class="stitle">${((t) => row?.kind === "delivery" || row?.kind === "stream" ? rn("delivery", x.id, t) : row?.tasks?.length === 1 ? rn("task", row.tasks[0], t) : esc(t))(row?.label || d?.label || x.label)}</h1><p class="sline">${esc(plain(sentence))}</p>`
       + `<div class="sacts">${acts}</div>${err}`
-      + `<div class="sgrid"><div class="smain">${row?.kind === "stream" ? supportHtml(x, sd) : ""}${one ? taskNextHtml(one.task, one, me) + questionsHtml(one.task, sd.task?.questions) + revisionHtml(sd.task?.revision) + roundsHtml(sd.task?.rounds) : ""}${made}<h3 class="sh">${sd.parts ? `Delarna · ${sd.parts.length}` : gt.length && !listPlans?.length ? "Delmålen" : gt.length ? "Delmålen och stegen" : "Stegen"}</h3><div class="ssteps">${steps}${one ? removedHtml(sd.task?.removed_steps) : ""}</div></div>${margin}</div>`;
+      + `<div class="sgrid"><div class="smain">${row?.kind === "stream" ? supportHtml(x, sd) : ""}${one ? taskNextHtml(one.task, one, me) + questionsHtml(one.task, sd.task?.questions) + revisionHtml(sd.task?.revision) + roundsHtml(sd.task?.rounds) : ""}${made}<h3 class="sh">${sd.parts ? `Delarna · ${sd.parts.length}` : gt.length && !listPlans?.length ? "Delmålen" : gt.length ? "Delmålen och momenten" : "Momenten"}</h3><div class="ssteps">${steps}${one ? removedHtml(sd.task?.removed_steps) : ""}</div></div>${margin}</div>`;
   }
 
   /** Stegen som arbetssteg (src/plan/work-steps.ts): delmoment i följd med samma work_step blir ett steg. */
@@ -2601,7 +2639,7 @@ details.removed { margin-top: 10px; }
     return `<div class="slabel">Del${row?.label ? ` · ${esc(row.label)}` : ""}</div><h1 class="stitle">${rn("task", x.id, t?.label || pre?.label || x.label)}</h1><p class="sline">${esc(sentence)}</p>${pre ? stripHtml(pre.strip) : ""}`
       + `<div class="sacts"><button class="link" data-act="chat" data-key="${esc(x.id)}">Arbeta i chatten ↗</button>`
       + `<button class="link" data-act="hl-move" data-task="${esc(x.id)}">Flytta till en annan leverans …</button></div>${err}`
-      + `<div class="smain">${taskNextHtml(x.id, t, me)}${questionsHtml(x.id, sd.task?.questions)}${revisionHtml(sd.task?.revision)}${roundsHtml(sd.task?.rounds)}${made}<h3 class="sh">Stegen</h3><div class="ssteps">${t ? hlSheetHtml(t) + planStepsHtml([t], me) : `<div class="mmeta">${sd.loading ? "Hämtar stegen …" : "Inga steg."}</div>`}${removedHtml(sd.task?.removed_steps)}</div></div>`;
+      + `<div class="smain">${taskNextHtml(x.id, t, me)}${questionsHtml(x.id, sd.task?.questions)}${revisionHtml(sd.task?.revision)}${roundsHtml(sd.task?.rounds)}${made}<h3 class="sh">Momenten</h3><div class="ssteps">${t ? hlSheetHtml(t) + planStepsHtml([t], me) : `<div class="mmeta">${sd.loading ? "Hämtar stegen …" : "Inga steg."}</div>`}${removedHtml(sd.task?.removed_steps)}</div></div>`;
   }
 
   /* Färg och logo i presentationerna (src/present/brand.ts): kundens färg är bara accent.
@@ -2686,7 +2724,7 @@ details.removed { margin-top: 10px; }
     if (!d) body = `<div class="mmeta">${sd.error ? `Kunde inte läsas: ${esc(sd.error.message || sd.error)}` : "Hämtar …"}</div>`;
     else if (tab === "overview") {
       const o = d.overview || {};
-      body = `<h3 class="sh">Leveranser i översikten</h3>${rows.length ? rows.map((r) => `<div class="crow"><button class="link" data-act="open-delivery" data-key="${esc(r.key)}">${esc(r.label)}</button><span class="mmeta">${esc(r.state_text)}</span></div>`).join("") : `<div class="mmeta">Inga just nu.</div>`}`
+      body = `<h3 class="sh">Leveranser i översikten</h3>${rows.length ? rows.map((r) => `<div class="crow"><button class="link" data-act="open-delivery" data-key="${esc(r.key)}">${esc(r.label)}</button><span class="mmeta">${esc(plain(r.state_text))}</span></div>`).join("") : `<div class="mmeta">Inga just nu.</div>`}`
         + ((o.ways || []).length ? `<h3 class="sh">Så görs det</h3>${o.ways.map((w) => `<div class="crow"><button class="link" data-act="how-open" data-method="${esc(w.method)}" data-customer="${esc(x.id)}" data-label="${esc(w.label)}">⚙ ${esc(w.label)}</button><span class="mmeta">${w.own ? `${esc(genitive(sd.label || x.label))} sätt` : "som metoden"}</span></div>`).join("")}` : "")
         + quickHtml(x, o.quick)
         + `<h3 class="sh">Personer</h3>${(o.people || []).length ? o.people.map((p) => `<div class="crow"><span>${esc(p.name)}</span><span class="mmeta">${esc(p.role || "")}</span></div>`).join("") : `<div class="mmeta">Inga personer inlagda.</div>`}`
@@ -3120,7 +3158,7 @@ details.removed { margin-top: 10px; }
   function stepSheetHtml(x) {
     const [task, step] = splitStep(x.id), sd = S.sheetData[sheetKey(x)] || {}, sh = sd.sheet;
     // Innan steget är läst: leveransen och läget ur översiktsraden direkt.
-    if (!sh) { const r0 = rowOfTask(task); return `<div class="slabel">Steg${r0 ? ` · ${esc(r0.label)}` : ""}</div><h1 class="stitle">${esc(x.label)}</h1>${r0?.state_text ? `<p class="sline">${esc(r0.state_text)}</p>` : ""}`
+    if (!sh) { const r0 = rowOfTask(task); return `<div class="slabel">Moment${r0 ? ` · ${esc(r0.label)}` : ""}</div><h1 class="stitle">${esc(x.label)}</h1>${r0?.state_text ? `<p class="sline">${esc(plain(r0.state_text))}</p>` : ""}`
       + (sd.error ? `<div class="banner"><span style="flex:1">Steget kunde inte läsas: ${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>` : `<p class="sline mmeta">Hämtar steget …</p>`); }
     const e = edits(x.id), row = rowOfTask(task);
     const label = `Steg${row ? ` · ${row.label}` : ""}${sh.customer?.label ? ` · ${sh.customer.label}` : ""}`;
@@ -5084,7 +5122,7 @@ details.removed { margin-top: 10px; }
       + `<button class="${line.update.preselected === "take" ? "go" : "quiet"}" data-act="upd-take" data-task="${esc(line.update.task)}">Ta in</button>`
       + `<button class="${line.update.preselected === "leave" ? "go" : "quiet"}" data-act="upd-leave" data-task="${esc(line.update.task)}">Låt vara</button></div>` : "";
     const how = line ? `<div class="layers">${esc(line.text)}.${line.outcome ? ` ${line.outcome.chosen ? `Utfall: <b>${esc(line.outcome.chosen.label)}</b>.` : `${esc(line.outcome.text)}.`}` : ""}</div>${upd}` : "";
-    const task = `<h3 class="sh">Uppgiften</h3>${how}<div class="ssteps">${steps || `<div class="mmeta">${sd.plan === null ? "Stegen kunde inte läsas." : "Hämtar stegen …"}</div>`}</div>`;
+    const task = `<h3 class="sh">Uppgiften</h3>${how}<div class="ssteps">${steps || `<div class="mmeta">${sd.plan === null ? "Momenten kunde inte läsas." : "Hämtar momenten …"}</div>`}</div>`;
     const posts = sd.thread?.posts || [];
     const looks = sd.looksDone ? looksDoneHtml(x.id, sd.looksDone) : "";
     const first = posts.findIndex((p) => !p.internal);
@@ -8767,14 +8805,14 @@ details.removed { margin-top: 10px; }
       ? `${r.inbox.new} nya, den äldsta ${r.inbox.oldest_days ? `${r.inbox.oldest_days} d gammal` : "från i dag"}. Bedöms i In i nuvarande vyn.` : "Inget nytt i posten."}</span></div>`
       + `<div class="step"><span></span><span class="meta" style="grid-column:span 3"><button class="link" data-act="open-inbox">Öppna Inkommet: mejl som inte hittade sin väg →</button></span></div></div>`;
     const me = S.data.party?.label;
-    if (r.start) return `<div class="steps"><div class="step"><span></span><span class="meta" style="grid-column:span 3">${esc(r.state_text)}.`
+    if (r.start) return `<div class="steps"><div class="step"><span></span><span class="meta" style="grid-column:span 3">${esc(plain(r.state_text))}.`
       + ` Nytt arbete gås igenom innan det läggs in: vad som ska levereras, delarna, vem och när.</span></div>`
       + `<div class="opens"><button class="link" data-act="start-project" data-key="${esc(r.key)}">${esc(/^(Planera om|Fortsätt projektet)/.test(r.headline || r.label || "") ? "Fortsätt ↗" : "Starta projekt ↗")}</button></div></div>`;
     if (r.cases) return casesList(o, r, me);
     if (r.no_method && r.tasks.length === 1) return `<div class="steps">${homelessHtml(r.tasks[0], r.label, hlPlan(r.tasks[0]))}`
       + `<div class="opens"><button class="link" data-act="open-delivery" data-key="${esc(r.key)}">Öppna uppgiften</button><button class="link" data-act="chat" data-key="${esc(r.key)}">Arbeta i chatten ↗</button></div></div>`;
     // Målmodell: inga stegrader, utan delmålen och fronten i kartan (Daniel P 2026-10-13).
-    if (r.kind === "task" && r.goal?.length) return `<div class="steps"><div class="step"><span></span><span class="meta" style="grid-column:span 3">${esc(r.state_text)}. Uppdraget har delmål: kartan visar det som går att göra nu, det som väntar på dig och banden.</span></div>`
+    if (r.kind === "task" && r.goal?.length) return `<div class="steps"><div class="step"><span></span><span class="meta" style="grid-column:span 3">${esc(plain(r.state_text))}.</span></div>`
       + `<div class="opens"><button class="link" data-act="open-delivery" data-key="${esc(r.key)}">Öppna kartan</button><button class="link" data-act="chat" data-key="${esc(r.key)}">Arbeta i chatten ↗</button></div></div>`;
     // En leverans med uppgifter med målmodell: banden och fronten per uppgift; listmetodernas steg står kvar.
     const gt = goalTasks(r), goalHtml = gt.map((t) => goalTaskHtml(t, gt.length > 1 || r.tasks.length > 1 ? null : r.label)).join("");
@@ -8847,7 +8885,7 @@ details.removed { margin-top: 10px; }
       return `<div class="wrap" data-row="${esc(r.key)}"><div class="row" data-act="toggle" data-key="${esc(r.key)}"${r.kind === "inbox" ? "" : ` data-ctx="row|${esc(r.key)}"`}${drag} role="button" aria-expanded="${open}">`
         + `<span class="icon" title="${esc(TNAME[r.type] || "")}">${ICON[r.type] || "○"}</span>`
         + `<div style="min-width:0"><div class="name">${esc(r.label)}</div><div class="sub">${esc(sub)}</div></div>`
-        + `<div style="min-width:0">${segs(o, r, open && !r.cases)}<div class="state${r.late_days ? " late" : ""}">${esc(r.no_method ? `utan metod och utan steg${r.due ? ` · datum ${shortIso(r.due)}` : ""} — öppna för att ge den en` : r.state_text)}</div></div>`
+        + `<div style="min-width:0">${segs(o, r, open && !r.cases)}<div class="state${r.late_days ? " late" : ""}">${esc(r.no_method ? `utan metod${r.due ? ` · datum ${shortIso(r.due)}` : ""} — öppna för att ge den en` : plain(r.state_text))}</div></div>`
         + `<div class="needs">${needs(r)}</div></div>${open ? stepsList(o, r) : ""}</div>`;
     };
     const grpHead = (label, n, note = "") => `<div class="grp">${esc(label)} · ${n}${note ? `<span>${esc(note)}</span>` : ""}</div>`;
