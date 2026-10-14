@@ -35,6 +35,14 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 :where(#v6 button:hover:not(:disabled)) { background: var(--btn-hover); }
 #v6 .primary { border: 0; background: var(--btn-primary-bg); color: var(--btn-primary-ink) !important; border-radius: 8px; padding: 8px 14px; }
 #v6 button:disabled { cursor: default; opacity: .45; }
+/* Tre lägen och «pågår» för allt klickbart (Daniel P 2026-10-13), i alla vyer: kartan, Idag, korten och förrådet.
+   Fokus syns med tangentbord; tryckt ger en liten rörelse; .is-busy spärrar mot dubbelklick och visar en snurra. */
+:where(#v6) button:focus-visible, :where(#v6) [role="button"]:focus-visible, :where(#v6) [tabindex]:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+:where(#v6 button:active:not(:disabled)) { transform: translateY(1px); filter: brightness(.92); }
+.is-busy { pointer-events: none; position: relative; color: transparent !important; }
+.is-busy::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -7px 0 0 -7px; border: 2px solid var(--teal); border-right-color: transparent; border-radius: 50%; animation: v6-spin .7s linear infinite; }
+@keyframes v6-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .is-busy::after { animation: none; } }
 .top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: nowrap; white-space: nowrap; }
 .brand { font-weight: 700; font-size: 15px; letter-spacing: -.02em; }
 .title { font-family: var(--head); font-size: 22px; font-weight: 600; margin-left: 8px; letter-spacing: -.015em; }
@@ -165,6 +173,10 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 [data-selon] { background: var(--l5); }
 .selbar { position: fixed; z-index: 88; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; width: min(760px, calc(100vw - 32px)); box-sizing: border-box; padding: 10px 14px; border-radius: 10px; background: #fff; border: 1.5px solid var(--ink); box-shadow: 0 14px 38px rgba(28,28,26,.16); font-size: 13.5px; }
 .selbar b { margin-right: 4px; }
+.batchd { z-index: 89; bottom: 18px; flex-wrap: wrap; align-items: flex-start; max-height: 60vh; overflow: auto; }
+.batchd .bgrp { margin-top: 6px; }
+.batchd .brow { display: block; padding: 2px 0 2px 18px; }
+.idag-all { font-size: 11.5px; margin-left: 6px; opacity: .7; }
 .selbar button { border: 1px solid var(--l4); background: #fff; border-radius: 7px; padding: 5px 10px; }
 .selbar .quiet { border: 0; color: var(--muted) !important; margin-left: auto; }
 .selbar .none { color: var(--muted); }
@@ -298,6 +310,20 @@ body.over-map .sheets { z-index: 61; }
 .menu { position: fixed; z-index: 80; min-width: 260px; max-width: 380px; background: #fff; border-radius: 10px; padding: 4px; box-shadow: 0 14px 38px rgba(28,28,26,.2), 0 0 0 1px var(--l3); font-size: 13px; }
 .menu .mi { display: flex; width: 100%; gap: 12px; align-items: center; border: 0; background: none; padding: 7px 10px; border-radius: 6px; text-align: left; }
 .menu .mi.on, .menu .mi:hover { background: var(--s2); }
+/* Menyns symbol ur kartans tabell (data-g), samma tecken som i kartan och «Idag». */
+.menu .mi[data-g]::before { content: attr(data-g); width: 1.2em; text-align: center; color: var(--t2); flex: none; }
+/* «Idag» som utsnitt av kartorna (Del E). */
+.idag { margin: 4px 0 14px; padding: 10px 12px; border: 1px solid var(--l3); border-radius: 10px; background: #fff; }
+.idag-h { display: flex; gap: 6px; align-items: baseline; margin-bottom: 6px; }
+.idag-pass { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.idag-pass .chip { cursor: pointer; font: inherit; }
+.idag-row .idag-s { width: 16px; text-align: center; }
+.idag-acts { display: flex; gap: 4px; }
+.idag-g summary { cursor: pointer; padding: 4px 0; font-size: 13px; }
+.idag-g .idag-g { margin-left: 14px; }
+.idag-by select { font: inherit; padding: 1px 4px; border: 1px solid var(--l2); border-radius: 6px; background: #fff; }
+.idag-acts button { min-width: 28px; padding: 2px 6px; }
+.idag .late { color: var(--red, #b2412e); }
 .menu .ml { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu .mk { display: flex; gap: 8px; align-items: center; color: var(--t3); }
 .menu kbd, .pal kbd { font: 11px var(--mono); color: var(--t3); }
@@ -834,6 +860,13 @@ details.removed { margin-top: 10px; }
 .pres-ask input { flex: 1; margin: 0; }
 .pres-ask button { white-space: nowrap; }
 .pres-row input, .pres-row textarea { margin: 0; }
+.pres-tx { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; margin: 4px 0; }
+.pres-vers { width: 100%; }
+.pres-ver { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 4px 0; border-top: 1px solid var(--l2); }
+.pres-ver .mmeta { grid-column: 1 / -1; }
+.pres-vt { white-space: pre-wrap; overflow-wrap: anywhere; }
+.pres-thing textarea { margin: 4px 0 0; font-size: 12px; }
+.pres-note { margin: 4px 0; }
 .pres-old { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding: 6px 0; border-top: 1px solid var(--l2); }
 .wrap.dropok > .row { outline: 2px dashed var(--teal); outline-offset: -2px; }
 /* Köns och arkens smala bredd (ordning, del 1). */
@@ -872,9 +905,14 @@ details.removed { margin-top: 10px; }
 </style>
 <div id="v6" aria-live="polite"></div>
 <!-- karta:start — Uppdragskartan (Daniel P 2026-10-13). Byggd ur prototypen i karta-ny (README, BEROENDEN).
-     Läser plan_state { task, format: "map" } och skriver bara genom serverns handlingar:
+     Läser plan_state { task, format: "map" } (skelettet; sparat i vyn och visat direkt, sedan uppdaterat med version),
+     och plan_state { task, format: "map", node } när ett delmål öppnas (kortet, materialet, verktyget; cachat, nästa förhämtat).
+     Skriver bara genom serverns handlingar:
      execute_step { task, node } (förhandsvisning före ja), «gör ändå» med skäl, ångra (mark: "undone"),
-     execute_step { task, nodes } för ett pass, write { op: "task_lock", goal } för tillväxt, delar och struktur (goal.structure), write { op: "step_edit" } för instruktionen.
+     execute_step { task, nodes } för ett pass, «hoppa över» (values.skip) och «markera som gjort» (values.already_done), write { op: "task_lock", goal } för tillväxt, delar och struktur (goal.structure), write { op: "step_edit" } för instruktionen.
+     Kartan per leverans (Del H2): plan_state { delivery, format: "map" } med uppdragen som regioner (id «<uppdrag>~<delmål>»);
+     handlingarna går till rätt uppdrag (tn). «Materialet» är den samlade materialvyn (node "@material"), grupperad som «Idag».
+     Högerklick (nod, kant, band, rubriken) och shift-klick (flera) ger handlingstabellen (read { op: "batch_actions" }) via write { op: "batch_apply" }.
      Står som egen fil (views/karta.html) och läggs in i v6 av `npm run bundle` mellan markeringarna. -->
 <style>
 #karta { position: fixed; inset: 0; z-index: 60; background: #f6f3ee; color: var(--ink, #1c1c1a); font-family: var(--sans, -apple-system, sans-serif); font-size: 13px; display: flex; flex-direction: column; }
@@ -884,6 +922,26 @@ details.removed { margin-top: 10px; }
 #karta button.yes { background: #de9a33; border-color: #de9a33; color: #fff; }
 #karta button.link { border: 0; background: none; color: var(--teal, #1f7672); padding: 2px 4px; }
 #karta button:disabled { opacity: .45; cursor: default; }
+#karta button:not(:disabled):hover { filter: brightness(.96); border-color: var(--t3, #8a8880); }
+#karta button.link:not(:disabled):hover { text-decoration: underline; filter: none; }
+#karta button:focus-visible, #karta [data-k]:focus-visible { outline: 2px solid var(--teal, #1f7672); outline-offset: 2px; }
+#karta button:not(:disabled):active { transform: translateY(1px); filter: brightness(.9); }
+#karta svg [data-k]:hover, #karta .k-node:hover path:last-of-type { filter: brightness(.95); }
+#karta svg [data-k]:active { opacity: .6; }
+/* Pågår (vyns grundstil har samma klass): spärrad mot dubbelklick, en snurra i stället för symbolen. */
+#karta .is-busy { pointer-events: none; position: relative; color: transparent !important; }
+#karta .is-busy::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -7px 0 0 -7px; border: 2px solid var(--teal, #1f7672); border-right-color: transparent; border-radius: 50%; animation: k-spin .7s linear infinite; }
+#karta svg .is-busy { animation: k-pulse 1s ease-in-out infinite; }
+#karta .k-node.is-pending { animation: k-pulse 1s ease-in-out infinite; }
+@keyframes k-spin { to { transform: rotate(360deg); } }
+@keyframes k-pulse { 50% { opacity: .45; } }
+#karta .k-thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+#karta .k-thumb { width: 92px; height: 78px; display: flex; flex-direction: column; justify-content: flex-end; text-align: left; padding: 6px; border-radius: 8px; border: 1px solid var(--l3, #e4e2da); background: #fbf9f5 center / cover no-repeat; overflow: hidden; font-size: 11px; line-height: 1.25; position: relative; }
+#karta .k-thumb .k-ic { position: absolute; top: 6px; left: 8px; font-size: 18px; color: var(--t3, #8a8880); }
+#karta .k-thumb span { background: rgba(251,249,245,.92); border-radius: 4px; padding: 1px 3px; overflow-wrap: anywhere; }
+#karta .k-thumb.img .k-ic { display: none; }
+#karta .k-wait { color: var(--t3, #8a8880); font-style: italic; }
+@media (prefers-reduced-motion: reduce) { #karta .is-busy::after, #karta .k-node.is-pending, #karta svg .is-busy { animation: none; } }
 #karta .k-top { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid rgba(29,31,36,.08); background: #fbf9f5; flex-wrap: wrap; }
 #karta .k-title { font-weight: 650; font-size: 15px; min-width: 0; overflow-wrap: anywhere; }
 #karta .k-sub { color: var(--muted, #66655f); }
@@ -904,7 +962,7 @@ details.removed { margin-top: 10px; }
 #karta li { margin: 4px 0; }
 #karta .k-pill { display: inline-block; border-radius: 10px; padding: 1px 8px; font-size: 11px; background: #f1eee7; color: #5b523c; margin-left: 4px; }
 #karta .k-toast { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); background: #1c1c1a; color: #fff; border-radius: 10px; padding: 10px 14px; max-width: 560px; box-shadow: 0 6px 24px rgba(0,0,0,.18); animation: k-up .22s ease; white-space: pre-wrap; }
-#karta .k-toast button { margin-left: 8px; }
+#karta .k-toast button { margin-left: 8px; background: transparent; color: #fff; border-color: rgba(255,255,255,.4); }
 @keyframes k-up { from { transform: translate(-50%, 10px); opacity: 0; } }
 #karta .k-dialog { margin-top: 10px; border: 1px solid var(--l2, #d8d6ce); border-radius: 9px; padding: 10px; background: #fbf9f5; white-space: pre-wrap; }
 #karta textarea, #karta select, #karta input { font: inherit; width: 100%; box-sizing: border-box; border: 1px solid var(--l1, #c9c7be); border-radius: 7px; padding: 6px 8px; margin: 4px 0; background: #fff; }
@@ -916,6 +974,14 @@ details.removed { margin-top: 10px; }
 #karta .k-bandhead { cursor: pointer; }
 #karta .k-arrow { transition: transform .22s; transform-box: fill-box; transform-origin: center; }
 #karta .k-pass { cursor: pointer; }
+/* ⊕ på kanten och ⊖ på noden: dolda tills pekaren är där, eller kanten/noden tryckts på (telefon); fokus visar dem också. */
+#karta .k-plus, #karta .k-minus { opacity: 0; transition: opacity .15s; cursor: pointer; }
+#karta .k-edgewrap:hover .k-plus, #karta .k-edgewrap.on .k-plus, #karta .k-plus:focus, #karta .k-node:hover .k-minus, #karta .k-node:focus-within .k-minus, #karta .k-minus:focus { opacity: 1; }
+#karta .k-plus:hover circle, #karta .k-minus:hover circle { fill: #eef6f5; }
+#karta .k-plus:active, #karta .k-minus:active { opacity: .6; }
+#karta .k-sym { display: inline-block; min-width: 1em; text-align: center; }
+#karta .k-choice { display: flex; gap: 6px; margin: 6px 0; }
+#karta .k-choice button.on { background: #2a3f66; border-color: #2a3f66; color: #fff; }
 @media (max-width: 700px) {
   #karta .k-body { position: relative; }
   #karta .k-panel, #karta .k-store { position: absolute; inset: 0; width: auto; border-left: 0; z-index: 2; }
@@ -925,11 +991,53 @@ details.removed { margin-top: 10px; }
   #karta .k-dialog[style] { left: 8px; right: 8px !important; width: auto !important; }
 }
 #karta .k-panel .k-close { float: right; }
+#karta .k-mat { width: 460px; }
+#karta .k-mat .k-thumb { width: 132px; height: 96px; }
+#karta .k-mat .k-grp { margin: 10px 0 4px; font-weight: 600; }
+#karta .k-mat .k-grp2 { margin: 6px 0 2px 10px; color: var(--t2, #55544e); font-size: 12px; }
+#karta .k-menu { position: fixed; z-index: 70; background: #fff; border: 1px solid var(--l2, #d8d6ce); border-radius: 9px; box-shadow: 0 6px 24px rgba(0,0,0,.14); padding: 4px; min-width: 240px; max-height: 70vh; overflow: auto; }
+#karta .k-menu button { display: block; width: 100%; text-align: left; border: 0; border-radius: 6px; padding: 6px 10px; background: none; }
+#karta .k-menu button:hover { background: #f1eee7; }
+#karta .k-menu .k-mh { padding: 6px 10px 2px; color: var(--t3, #8a8880); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+#karta .k-node.is-multi path:last-of-type { stroke: #1f7672; stroke-width: 3; }
+#karta .k-multibar { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: #1c1c1a; color: #fff; border-radius: 10px; padding: 6px 10px; z-index: 3; }
+#karta .k-multibar button { margin-left: 6px; background: transparent; color: #fff; border-color: rgba(255,255,255,.4); }
 #karta .k-empty { padding: 40px; color: var(--muted, #66655f); }
 </style>
 <div id="karta" hidden></div>
 <script data-part="karta">
 (() => {
+  /* symbols:start — Symbolerna, en enda källa (Daniel P 2026-10-13, plan Del B). Läses av kartan, kortet,
+     «Idag» och högerklicksmenyn i v6 (window.RotorSymbols), och prövas mot de lägen servern skickar
+     (test/karta-symboler.test.ts). Varje symbol har sin förklaring (title och aria-label), med orden ur
+     docs/orden-i-vyn.md. Handlingarna är samma överallt: det som går på ett ställe går på alla. */
+  const SYMBOLS = {
+    state: {
+      done: { g: "✓", t: "Klart" }, inventory: { g: "✓", t: "Fanns redan" }, doable: { g: "▶", t: "Går att göra nu" },
+      locked: { g: "🔒", t: "Låst: väntar på något före" }, waiting: { g: "⧗", t: "Väntar på kunden" }, yes: { g: "✋", t: "Väntar på ditt ja" },
+      decide: { g: "◇", t: "Ett beslut" }, unknown: { g: "?", t: "Okänt än" }, not_needed: { g: "⊘", t: "Hoppas över: behövs inte här" },
+      burning: { g: "🔥", t: "Brinner: minst marginal mot ett fast datum, eller en krock" },
+    },
+    who: { human: { g: "◉", t: "Du (en människa)" }, claude: { g: "✦", t: "Claude" }, code: { g: "</>", t: "Koden" }, customer: { g: "⌂", t: "Kunden" } },
+    effect: { leaves_house: { g: "✉", t: "Skickas ut ur huset" }, customer_system: { g: "⇄", t: "Ändrar i kundens system" },
+      money_or_contract: { g: "¤", t: "Pengar eller avtal" }, rights_or_consent: { g: "§", t: "Rättigheter eller samtycke" }, publishes: { g: "📣", t: "Publiceras" } },
+    /* `batch`: handlingen går på flera markerade (servern har tabellen, src/mcp/batch-actions.ts; test/batch-handlingar.test.ts). */
+    action: {
+      done: { g: "✓", t: "Markera som gjort", batch: true }, skip: { g: "⊘", t: "Hoppa över: behövs inte här", batch: true }, unskip: { g: "↺", t: "Ta tillbaka", batch: true },
+      add: { g: "⊕", t: "Lägg till ett steg här: ur biblioteket eller ett eget", batch: false }, remove: { g: "⊖", t: "Ta bort, med förhandsvisning", batch: false },
+      open_map: { g: "↗", t: "Öppna kartan på delmålet", batch: false }, time: { g: "◷", t: "Flytta i tid eller lås en tid", batch: true },
+      hand: { g: "⇆", t: "Lägg över på någon annan, eller ta över", batch: true }, undo: { g: "↺", t: "Ångra", batch: false },
+      yes: { g: "✋", t: "Ditt ja", batch: true }, wait: { g: "⧗", t: "Väntar på kunden", batch: true },
+      move: { g: "⇥", t: "Flytta till en annan leverans eller period", batch: true }, close: { g: "⊠", t: "Stäng uppdraget", batch: true },
+      switch: { g: "⟳", t: "Byt metod eller kundens sätt, med materialkontroll", batch: true }, attach: { g: "📎", t: "Koppla material", batch: true },
+      assign: { g: "⊕", t: "Ingen ansvarig än: sätt en ansvarig", batch: false },
+      present: { g: "▣", t: "Visa för kunden som: presentationssida, PDF eller annat", batch: true },
+    },
+  };
+  /** En symbol med sin förklaring. */
+  const sym = (kind, key) => { const x = SYMBOLS[kind]?.[key]; return x ? `<span class="k-sym" title="${x.t}" aria-label="${x.t}">${x.g}</span>` : ""; };
+  window.RotorSymbols = { ...SYMBOLS, html: sym };
+  /* symbols:end */
   /* Läget per delmål: formen säger vad noden gör, färgen läget (README, Grundprinciper 1). */
   const PAL = {
     doable: { f: "#2a3f66", s: "#2a3f66", t: "#fff" }, yes: { f: "#de9a33", s: "#de9a33", t: "#fff" },
@@ -946,7 +1054,17 @@ details.removed { margin-top: 10px; }
   const NW = 192, NH = 56, CG = 50, RG = 12, LW = 200, BP = 14, BG = 22, MINI_H = 46;
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  const K = { task: null, call: null, map: null, open: {}, sel: null, zoom: 1, dir: "lr", mband: 0, dialog: null, toast: null, store: false, error: null, loading: false, last: null };
+  const K = { task: null, call: null, map: null, open: {}, sel: null, zoom: 1, dir: "lr", mband: 0, dialog: null, toast: null, store: false, error: null, loading: false, last: null,
+    /** Delmålen som hämtats (kortet, materialet, verktyget), per skelettets version; förrådet under "@store". */
+    detail: {}, pending: {}, busy: null, stale: false,
+    /** Leveransens id när kartan visar hela leveransen (Del H2); null för ett uppdrag. */
+    delivery: null, mat: false, matBy: ["task", "sort"], multi: {}, menu: null, table: null };
+  /** Uppdraget och noden för ett id i kartan: «<uppdrag>~<nod>» i leveransens karta, annars kartans uppdrag. */
+  const SEP = "~";
+  const tn = (n) => { const s = String(n ?? ""), i = s.indexOf(SEP); return i > 0 ? { task: s.slice(0, i), node: s.slice(i + 1) } : { task: K.task, node: s }; };
+  const strip = (n) => tn(n).node;
+  /** Anropets omfång: leveransen eller uppdraget. */
+  const scope = () => K.delivery ? { delivery: K.delivery } : { task: K.task };
   const root = () => document.getElementById("karta");
 
   /** Formen ur registrets prefix (README, Formerna). */
@@ -956,6 +1074,8 @@ details.removed { margin-top: 10px; }
     if (/^(set_up_|changed_|published_|activated_|sent_)/.test(ms)) return "effect";
     return "work";
   }
+  /** Förvalet när något hoppas över (samma som serverns, SKIP_DEFAULT_REASON). */
+  const SKIP_REASON = "behövs inte i det här uppdraget";
   const KIND_TEXT = { work: "Arbete", gate: "Kontroll", decide: "Beslut", effect: "Ändring utanför huset" };
 
   function stateOf(ms) {
@@ -969,7 +1089,7 @@ details.removed { margin-top: 10px; }
     if (s.waiting_moments.length) return "waiting";
     return "locked";
   }
-  const title = (n) => K.map.titles[n] || K.map.labels[n] || n;
+  const title = (n) => K.map.titles?.[n] || n;
   const readsOf = (ms) => (K.map.model.milestones[ms]?.reads || []).map((r) => ({ ms: r.milestone, hard: !!r.hard })).filter((r) => K.map.model.milestones[r.ms]);
 
   /** Rang (längsta vägen från en rot) och transitiv reduktion (README, Grundprinciper 3). */
@@ -1104,10 +1224,11 @@ details.removed { margin-top: 10px; }
     const parts = [], heads = [];
     for (const b of L.bands) {
       parts.push(`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="12" fill="${b.open ? "#fbf9f5" : "#f3efe8"}" stroke="rgba(29,31,36,.07)"/>`);
-      const nDo = b.ids.filter((m) => st[m] === "doable" || st[m] === "yes").length, nDone = b.ids.filter((m) => st[m] === "done" || st[m] === "inventory").length;
+      const nDo = b.ids.filter((m) => st[m] === "doable" || st[m] === "yes").length, nDone = b.ids.filter((m) => st[m] === "done" || st[m] === "inventory" || st[m] === "not_needed").length;
       const hx = b.x + 14, hy = b.y + 18;
-      heads.push(`<g class="k-bandhead" data-band="${esc(b.id)}"><rect x="${b.x + 1}" y="${b.y + 1}" width="${L.tb ? b.w - 2 : LW - 10}" height="${L.tb ? TH - 4 : Math.min(b.h - 2, 52)}" rx="11" fill="${b.open ? "#fbf9f5" : "#f3efe8"}"/><text x="${hx}" y="${hy + 8}" font-size="13" font-weight="650" fill="#1c1c1a"><tspan class="k-arrow" style="transform:rotate(${b.open ? 90 : 0}deg)">▸</tspan> ${esc(b.name)}</text>`
-        + `<text x="${hx}" y="${hy + 24}" font-size="11" fill="#8a8880">${nDone}/${b.ids.length} klara${nDo ? ` · ${nDo} att göra` : ""}</text></g>`);
+      heads.push(`<g class="k-bandhead" data-band="${esc(b.id)}"><rect x="${b.x + 1}" y="${b.y + 1}" width="${L.tb ? b.w - 2 : LW - 10}" height="${L.tb ? TH - 4 : Math.min(b.h - 2, 64)}" rx="11" fill="${b.open ? "#fbf9f5" : "#f3efe8"}"/><text x="${hx}" y="${hy + 8}" font-size="13" font-weight="650" fill="#1c1c1a"><tspan class="k-arrow" style="transform:rotate(${b.open ? 90 : 0}deg)">▸</tspan> ${esc(b.name)}</text>`
+        + `<text x="${hx}" y="${hy + 24}" font-size="11" fill="#8a8880">${nDone}/${b.ids.length} klara${nDo ? ` · ${nDo} att göra` : ""}</text>`
+        + (nDone < b.ids.length ? `<text data-k="done-form" data-nodes="${esc(b.ids.join(","))}" data-name="${esc(b.name)}" x="${hx + (L.tb ? 120 : 0)}" y="${hy + (L.tb ? 24 : 40)}" font-size="11" fill="#1f7672" style="cursor:pointer;font-size:15px"><title>Markera delen som gjord</title>✓</text>` : "") + `</g>`);
     }
     // Linjerna (README, Layout): ut i mellanrummet efter källan, längs kanalen mellan banden och in i
     // mellanrummet före målet; förskjutna ±4 px när flera delar mellanrum eller kanal. Huvudaxeln är rangen.
@@ -1126,8 +1247,14 @@ details.removed { margin-top: 10px; }
         const gS = sm + CG / 2 + lane(`s${Math.round(sm)}`);
         pts = [pt(sm, sc), pt(gS, sc), pt(gS, ch), pt(gT, ch), pt(gT, tc), pt(M0(b), tc)];
       }
-      const c = edgeColor(st[e.from], st[e.to]);
-      parts.push(`<path class="k-edge" d="${ortho(pts)}" fill="none" stroke="${c.c}" stroke-opacity="${c.o}" stroke-width="1.5"${e.hard ? "" : ' stroke-dasharray="5 5"'}/>`);
+      const c = edgeColor(st[e.from], st[e.to]), d = ortho(pts);
+      // ⊕ i en cirkel mitt på kanten (Del B): syns när pekaren är över kanten, eller när kanten tryckts på (telefon).
+      const mi = Math.floor((pts.length - 1) / 2), [mx, my] = [(pts[mi][0] + pts[mi + 1][0]) / 2, (pts[mi][1] + pts[mi + 1][1]) / 2];
+      const on = K.edge === `${e.from}>${e.to}`;
+      parts.push(`<g class="k-edgewrap${on ? " on" : ""}" data-edge="${esc(e.from)}>${esc(e.to)}"><path d="${d}" fill="none" stroke="transparent" stroke-width="12"/>`
+        + `<path class="k-edge" d="${d}" fill="none" stroke="${c.c}" stroke-opacity="${c.o}" stroke-width="1.5"${e.hard ? "" : ' stroke-dasharray="5 5"'}/>`
+        + `<g class="k-plus" data-k="add-edge" data-from="${esc(e.from)}" data-to="${esc(e.to)}" role="button" tabindex="0" aria-label="${SYMBOLS.action.add.t}"><title>${SYMBOLS.action.add.t}</title>`
+        + `<circle cx="${mx}" cy="${my}" r="9" fill="#fff" stroke="#1f7672" stroke-width="1.5"/><text x="${mx}" y="${my + 4.5}" text-anchor="middle" font-size="13" fill="#1f7672">${SYMBOLS.action.add.g}</text></g></g>`);
     }
     for (const p of passes(L)) {
       const ns = p.ms.map((m) => L.pos[m]);
@@ -1144,19 +1271,23 @@ details.removed { margin-top: 10px; }
       const many = !!K.map.model.milestones[m].expanded_from || !!K.map.model.milestones[m].for_each;
       const sel = K.sel === m;
       const d = shapePath(kind, p.w, p.h, p.x, p.y);
-      let g = `<g class="k-node" data-ms="${esc(m)}">`;
+      let g = `<g class="k-node${K.pending[m] ? " is-pending" : ""}${K.multi[m] ? " is-multi" : ""}" data-ms="${esc(m)}" tabindex="0" role="button" aria-label="${esc(title(m))}: ${STATE_TEXT[s]}">`;
       if (many) g += `<path d="${shapePath(kind, p.w, p.h, p.x + 4, p.y + 4)}" fill="${c.f}" stroke="${c.s}" opacity=".6"/>`;
       if ((s === "doable" || s === "yes") && p.w > 40) g += `<path class="k-breathe" d="${d}" fill="none" stroke="${c.s}" stroke-width="6"/>`;
       g += `<path d="${d}" fill="${c.f}" stroke="${sel ? "#1c1c1a" : c.s}" stroke-width="${sel ? 2.5 : s === "locked" ? 1.5 : 1}"${c.dash ? ` stroke-dasharray="${c.dash}"` : ""}/>`;
       if (p.w > 40) {
         const words = title(m); const line1 = words.length > 28 ? words.slice(0, 27).replace(/\s\S*$/, "") : words;
         const line2 = words.length > 28 ? words.slice(line1.length).trim().slice(0, 28) : "";
-        const mark = s === "done" || s === "inventory" ? "✓ " : s === "waiting" ? "⧗ " : s === "unknown" ? "? " : "";
+        const mark = ["done", "inventory", "waiting", "unknown", "not_needed", "yes", "locked"].includes(s) ? `${SYMBOLS.state[s].g} ` : "";
         const style = s === "unknown" ? ' font-style="italic"' : s === "not_needed" ? ' text-decoration="line-through"' : "";
         g += `<text x="${p.x + p.w / 2}" y="${p.y + (line2 ? 24 : 32)}" text-anchor="middle" font-size="12" font-weight="550" fill="${c.t}"${style}>${esc(mark + line1)}</text>`;
         if (line2) g += `<text x="${p.x + p.w / 2}" y="${p.y + 40}" text-anchor="middle" font-size="12" font-weight="550" fill="${c.t}"${style}>${esc(line2)}</text>`;
       }
-      parts.push(g + `<title>${esc(title(m))} — ${STATE_TEXT[s]}</title></g>`);
+      // ⊖ i en cirkel i nodens hörn (Del B): ta bort med förhandsvisning av det som blir löst; materialet går till förrådet.
+      if (p.w > 40 && s !== "done" && s !== "inventory")
+        g += `<g class="k-minus" data-k="remove-ms" data-ms="${esc(m)}" role="button" tabindex="0" aria-label="${SYMBOLS.action.remove.t}"><title>${SYMBOLS.action.remove.t}</title>`
+          + `<circle cx="${p.x + p.w - 2}" cy="${p.y + 2}" r="8" fill="#fff" stroke="#b2412e" stroke-width="1.2"/><text x="${p.x + p.w - 2}" y="${p.y + 6}" text-anchor="middle" font-size="12" fill="#b2412e">${SYMBOLS.action.remove.g}</text></g>`;
+      parts.push(g + `<title>${esc(title(m))} — ${STATE_TEXT[s]}${K.map.skipped?.[m] ? `: ${esc(K.map.skipped[m].reason || "")}` : ""}</title></g>`);
     }
     // Delarnas namn ligger överst och följer med när kartan scrollas längs huvudaxeln (README, Layout).
     parts.push(`<g class="k-heads">${heads.join("")}</g>`);
@@ -1179,7 +1310,7 @@ details.removed { margin-top: 10px; }
     const st = K.map.moments[node], m = momentOf(node);
     if (!m) return "";
     // Den enda vägen till ett ja per moment (src/plan/approval.ts), samma i kopplingen, kartan och dagens vy.
-    const ap = K.map.approval?.[node];
+    const ap = momentDetail(node)?.approval;
     if (ap?.path === "customer_yes" && st === "waiting") return `<button class="primary" data-k="customer-yes" data-node="${esc(node)}">${esc(ap.button)}</button>`;
     if (st === "waiting") return `<button disabled>Väntar på kunden</button>`;
     if (st === "needs_yes" || ap?.path === "own_yes") return `<button class="yes" data-k="run" data-node="${esc(node)}">Förhandsvisa</button>`;
@@ -1187,72 +1318,239 @@ details.removed { margin-top: 10px; }
     const t = ap?.path === "review" ? ap.button : m.by === "claude" ? "Låt Claude göra det" : m.by === "code" ? "Kör" : "Markera som gjort";
     return `<button class="primary" data-k="run" data-node="${esc(node)}">${t}</button>`;
   }
+  /** Det hämtade om ett moment (kortet, ja-vägen, verktyget, tiden), när delmålet hämtats. */
+  const momentDetail = (node) => K.detail[node.slice(0, node.indexOf("/"))]?.moments?.[node] || null;
+  /* Ansvarig per moment (plan H5): ◉ namnet med varifrån, ⇆ för att lägga över eller ta över; ⊕ när ingen är ansvarig än. */
+  const whoHtml = (n) => {
+    const w = K.map.who?.[n];
+    if (w === undefined) return "";
+    const A = SYMBOLS.action;
+    return w ? `<span class="k-who" title="Ansvarig: ${esc(w.l)} · ${esc(w.f)}">${SYMBOLS.who.human.g} ${esc(w.l)}</span> <button class="link" data-k="hand-form" data-node="${esc(n)}" title="${A.hand.t}" aria-label="${A.hand.t}">${A.hand.g}</button>`
+      : `<button class="link" data-k="hand-form" data-node="${esc(n)}" title="${A.assign.t}" aria-label="${A.assign.t}">${A.assign.g} ingen ansvarig än</button>`;
+  };
   const momentOf = (node) => { const i = node.indexOf("/"); return K.map.model.milestones[node.slice(0, i)]?.moments[node.slice(i + 1)]; };
-  const timeOf = (node) => { const t = K.map.times?.nodes?.[node]; return t ? `planerat ${t.planned}${t.latest ? `, senast ${t.latest}` : ""}${t.locked ? " (låst)" : ""}` : ""; };
+  const timeOf = (node) => { const t = momentDetail(node)?.time; return t ? `planerat ${t.planned}${t.until ? `–${t.until}` : ""}${t.latest ? `, senast ${t.latest}` : ""}${t.locked ? " (låst)" : ""}`
+    + (t.over ? ` · ${SYMBOLS.state.burning.g} ryms inte` : t.buffer === false ? ` · ${SYMBOLS.state.burning.g} bufferten äts` : "") : ""; };
 
+  /** Hur kunden får materialet (del H3b): formatet för momentet, valbart; förvalet är husets presentationssida. */
+  const PRESENT_FROM = { moment: "valt här", milestone: "valt för delmålet", customer: "kundens sätt", house: "husets förval" };
+  function presentHtml(n) {
+    const P = K.map.present?.[n], L = K.map.present_labels || {}; if (!P) return "";
+    return `<div class="k-reg">${SYMBOLS.action.present.g} Visas för kunden som <select data-k="present-set" data-node="${esc(n)}" aria-label="${SYMBOLS.action.present.t}">`
+      + Object.entries(L).map(([v, l]) => `<option value="${esc(v)}"${v === P.format ? " selected" : ""}>${esc(l)}</option>`).join("")
+      + `</select> <span class="k-sub">(${esc(PRESENT_FROM[P.from] || P.from)})</span></div>`;
+  }
+  /** Momenten där kunden får material, i de markerade delmålen eller momenten (handlingen «Visa för kunden som»). */
+  function presentItems(ids) {
+    const P = K.map.present || {}, all = Object.keys(P);
+    const nodes = [...new Set(ids.flatMap((id) => String(id).includes("/") ? (P[id] ? [id] : []) : all.filter((n) => n.startsWith(`${id}/`))))];
+    return nodes.map((n) => ({ task: tn(n).task, node: strip(n), label: title(n) }));
+  }
   function panel() {
     const ms = K.sel; if (!ms) return "";
     const M = K.map, m = M.model.milestones[ms], s = M.state.milestones[ms] || {}, st = stateOf(ms), kind = kindOf(ms, m);
     const band = M.bands.find((b) => b.ids.includes(ms));
     const moments = Object.entries(m.moments || {});
-    const nx = nextMoment(ms), nm = nx ? momentOf(nx) : null, tool = nx ? M.tools[nx] : null;
+    const D = K.detail[ms] || null, wait = `<div class="k-wait">Hämtar …</div>`;
+    const nx = nextMoment(ms), nm = nx ? momentOf(nx) : null, tool = nx ? momentDetail(nx)?.tool : null;
     const h = [];
     h.push(`<button class="k-close" data-k="sel" data-ms="">Stäng</button><div class="k-kind">${KIND_TEXT[kind]} · ${esc(band?.name || "")}</div>`);
     h.push(`<h2 title="Dubbelklicka för att byta namn" data-k="rename" data-ms="${esc(ms)}">${esc(title(ms))}</h2>`);
     h.push(`<div><span class="k-pill" style="background:${PAL[st].f};color:${PAL[st].t};border:1px solid ${PAL[st].s}">${STATE_TEXT[st]}</span> <span class="k-sub">${esc(moments.map(([, x]) => (x.title || x.label || "").toLowerCase()).join(" → "))}</span></div>`);
-    h.push(`<h3>I registret</h3><div class="k-reg">${esc(M.labels[ms] || m.label)} · <code>${esc(ms)}</code></div>`);
+    h.push(`<h3>I registret</h3><div class="k-reg">${esc(D?.label || title(ms))} · <code>${esc(ms)}</code></div>`);
     if (st === "unknown") h.push(`<div class="k-gap">Okänt än: det avgörs av ${esc((s.until || []).map((u) => u.moment).join(", ") || "ett beslut eller en lista som inte finns ännu")}.</div>`);
-    if (st === "not_needed") h.push(`<div class="k-gap">Behövs inte med de beslut som tagits.</div>`);
-    if (st === "inventory") h.push(`<div class="k-gap">Fanns redan: ${esc((M.store.find((x) => x.satisfies === ms) || {}).origin === "planned" ? "utpekat när uppdraget planerades" : "finns hos kunden eller i huset")}.</div>`);
+    if (st === "not_needed") h.push(M.skipped?.[ms] ? `<div class="k-gap">Hoppas över: ${esc(M.skipped[ms].reason || "")} <button class="link" data-k="unskip" data-node="${esc(ms)}" title="Ta tillbaka" aria-label="Ta tillbaka">↺</button></div>`
+      : `<div class="k-gap">Behövs inte med de beslut som tagits.</div>`);
+    if (!["done", "not_needed", "inventory"].includes(st)) h.push(`<div style="margin:6px 0;display:flex;gap:6px;flex-wrap:wrap"><button data-k="skip" data-node="${esc(ms)}" title="${SYMBOLS.action.skip.t}" aria-label="${SYMBOLS.action.skip.t}">${SYMBOLS.action.skip.g}</button><button data-k="skip-form" data-node="${esc(ms)}" title="Hoppa över, med skäl" aria-label="Hoppa över, med skäl">⊘…</button><button data-k="done-form" data-nodes="${esc(ms)}" data-name="${esc(title(ms))}" title="${SYMBOLS.action.done.t} (utanför dirigenten)" aria-label="${SYMBOLS.action.done.t}">${SYMBOLS.action.done.g}</button><button data-k="remove-ms" data-ms="${esc(ms)}" title="${SYMBOLS.action.remove.t}" aria-label="${SYMBOLS.action.remove.t}">${SYMBOLS.action.remove.g}</button></div>`);
+    if (st === "inventory") h.push(`<div class="k-gap">Fanns redan: ${esc(((K.detail["@store"]?.store || []).find((x) => x.satisfies === ms) || {}).origin === "planned" ? "utpekat när uppdraget planerades" : "finns hos kunden eller i huset")}.</div>`);
     if (nx && nm && st !== "done") {
-      h.push(`<h3>Nästa moment</h3><div class="k-card"><b>${esc(nm.title || M.labels[nx] || nm.label)}</b><div class="k-sub">${WHO[nm.by] || nm.by}${timeOf(nx) ? ` · ${timeOf(nx)}` : ""}</div>`);
+      h.push(`<h3>Nästa moment</h3><div class="k-card"><b>${esc(title(nx))}</b><div class="k-sub">${WHO[nm.by] || nm.by}${timeOf(nx) ? ` · ${timeOf(nx)}` : ""}</div>${whoHtml(nx) ? `<div class="k-sub">Ansvarig: ${whoHtml(nx)}</div>` : ""}`);
       h.push(`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${buttonFor(nx)}`
-        + (nm.step && K.onWork ? `<button data-k="work" data-step="${esc(nm.step)}" data-label="${esc(nm.title || M.labels[nx] || nm.label || "")}" title="Underlaget, instruktionen och det som gjorts">Öppna arbetsytan</button>` : "")
+        + (tool?.how === "tool" && tool.component && K.onOpen ? `<button data-k="open-tool" data-node="${esc(nx)}" title="Öppnas som ett lager ovanpå kartan">Öppna ${esc((tool.label || tool.tool).toLowerCase())}</button>` : "")
+        + (nm.step && K.onWork ? `<button data-k="work" data-node="${esc(nx)}" data-step="${esc(nm.step)}" data-label="${esc(title(nx))}" title="Underlaget, instruktionen och det som gjorts">Öppna arbetsytan</button>` : "")
         + (M.moments[nx] === "locked" || st === "locked" ? `<button data-k="override" data-node="${esc(nx)}">Gör ändå …</button>` : "")
         + `</div>`);
-      const card = M.cards?.[nx];
-      if (card) h.push(`<details style="margin:6px 0"><summary class="k-sub">Instruktionen</summary><div class="k-sub" style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(card.lines.join("\n"))}</div></details>`);
-      else if (M.labels[`${nx}:check`]) h.push(`<div>Klart när: ${esc(M.labels[`${nx}:check`])}</div>`);
+      const md = momentDetail(nx);
+      if (!D) h.push(wait);
+      else if (md?.card) h.push(`<details style="margin:6px 0"><summary class="k-sub">Instruktionen</summary><div class="k-sub" style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(md.card.join("\n"))}</div></details>`);
+      else if (md?.check) h.push(`<div>Klart när: ${esc(md.check)}</div>`);
       if (nm.effect && nm.effect !== "internal") h.push(`<div class="k-warn">Momentet lämnar huset eller skriver i kundens system: förhandsvisas före ja.</div>`);
-      const base = M.material.filter((x) => readsOf(ms).some((r) => r.ms === x.milestone));
-      if (base.length) h.push(`<details style="margin:6px 0"><summary class="k-sub">Underlaget (${base.length})</summary><ul>${base.map((x) => `<li>${matLink(x, `${title(x.milestone)}: ${x.kind === "asset" ? "fil" : "text"}${x.version ? ` v${x.version}` : ""}`)}</li>`).join("")}</ul></details>`);
-      if (tool) h.push(`<div class="k-reg">Görs med ${esc(HOW[tool.how])}${tool.call ? ` «${esc(tool.call)}»` : tool.capability ? ` «${esc(tool.capability)}»` : tool.how === "tool" ? ` «${esc(tool.tool)}»` : ""}</div>`);
+      const base = (D?.material || []).filter((x) => x.milestone !== ms);
+      if (base.length) h.push(`<details style="margin:6px 0" open><summary class="k-sub">Underlaget (${base.length})</summary>${thumbs(base, (x) => title(x.milestone))}</details>`);
+      if (M.present?.[nx]) h.push(presentHtml(nx));
+      if (tool) h.push(`<div class="k-reg">Görs med ${esc(HOW[tool.how])}${tool.call ? ` «${esc(tool.call)}»` : tool.capability ? ` «${esc(tool.capability)}»` : tool.how === "tool" ? ` «${esc(tool.label || tool.tool)}»` : ""}</div>`);
       h.push(`</div>`);
     }
     if (m.kind === "decision" || s.growth_options?.length) {
       const dec = moments.find(([, x]) => x.kind === "decide");
       h.push(`<h3>Beslut</h3>`);
       for (const o of m.outcomes || []) {
-        const adds = o.adds ? Object.keys(o.adds.milestones || {}).length : 0;
+        const adds = o.adds || 0;
         h.push(`<div class="k-card"><b>${esc(o.label || o.id)}</b>${adds ? `<div class="k-sub">Lägger till ${adds} delmål</div>` : ""}`
           + (dec && st !== "done" ? `<div style="margin-top:6px"><button class="yes" data-k="choose" data-node="${esc(`${ms}/${dec[0]}`)}" data-out="${esc(o.id)}">Välj</button></div>` : "") + `</div>`);
       }
     }
     if (s.unlocked_by?.length) h.push(`<h3>Väntar på</h3><ul>${s.unlocked_by.map((u) => `<li><button class="link" data-k="sel" data-ms="${esc(u.milestone || u.node || "")}">${esc(title(u.milestone || u.node || u.input || ""))}</button></li>`).join("")}</ul>`);
     h.push(`<h3>Så görs det</h3><ol>${moments.map(([id, x]) => {
-      const n = `${ms}/${id}`, t = M.tools[n], done = M.moments[n] === "done";
-      return `<li>${done ? "✓ " : ""}<b>${esc(x.title || M.labels[n] || x.label)}</b> <span class="k-sub">· ${WHO[x.by] || x.by}${x.leaves ? ` · lämnar ${esc(x.leaves)}` : ""}${t ? ` · ${esc(HOW[t.how])}${t.call ? ` «${esc(t.call)}»` : ""}` : ""}</span>`
+      const n = `${ms}/${id}`, t = momentDetail(n)?.tool, done = M.moments[n] === "done", skip = M.skipped?.[n], off = M.moments[n] === "not_needed";
+      const name = esc(title(n));
+      return `<li>${done ? "✓ " : ""}<b>${off ? `<s>${name}</s>` : name}</b>${skip ? ` <span class="k-sub">hoppas över: ${esc(skip.reason || "")}</span>` : ""} <span class="k-sub">· ${WHO[x.by] || x.by}${x.leaves ? ` · lämnar ${esc(x.leaves)}` : ""}${t ? ` · ${esc(HOW[t.how])}${t.call ? ` «${esc(t.call)}»` : ""}` : ""}</span>`
+        + `${whoHtml(n) && !done && !off ? `<div class="k-sub">Ansvarig: ${whoHtml(n)}</div>` : ""}`
         + `${timeOf(n) ? `<div class="k-reg">${timeOf(n)}</div>` : ""}`
-        + `<div>${done ? `<button class="link" data-k="undo" data-node="${esc(n)}">Ångra</button>` : ""}`
+        + `<div>${done ? `<button class="link" data-k="undo" data-node="${esc(n)}">Ångra</button>` : skip ? `<button class="link" data-k="unskip" data-node="${esc(n)}" title="Ta tillbaka" aria-label="Ta tillbaka">↺</button>`
+          : !off ? `<button class="link" data-k="skip" data-node="${esc(n)}" title="Hoppa över" aria-label="Hoppa över">⊘</button>` : ""}`
         + (x.step && (x.by === "claude") ? `<button class="link" data-k="instr" data-node="${esc(n)}" data-step="${esc(x.step)}">Instruktionen …</button>` : "") + `</div></li>`;
     }).join("")}</ol><button class="link" data-k="add-moment" data-ms="${esc(ms)}">+ Lägg till moment</button>`);
-    const mat = M.material.filter((x) => x.milestone === ms);
-    h.push(`<h3>Resultat</h3>${mat.length ? `<ul>${mat.map((x) => `<li>${matLink(x, `${x.kind === "asset" ? "Fil" : "Text"}${x.type ? ` · ${x.type}` : ""}${x.version ? ` · version ${x.version}` : ""}${x.approved ? " · godkänd" : ""}`)} <span class="k-reg">${esc(x.at.slice(0, 10))}</span></li>`).join("")}</ul>` : `<div class="k-sub">Inget än.</div>`}`);
+    const mat = (D?.material || []).filter((x) => x.milestone === ms);
+    h.push(`<h3>Resultat</h3>${!D ? wait : mat.length ? thumbs(mat, (x) => `${x.label ? `${x.label} · ` : ""}${typeText(x)}${x.version && String(x.version).length < 12 ? ` v${x.version}` : ""}${x.approved ? " ✓" : ""}`) : `<div class="k-sub">Inget än.</div>`}`);
     const used = Object.keys(M.model.milestones).filter((o) => readsOf(o).some((r) => r.ms === ms));
     if (used.length) h.push(`<h3>Används till</h3><ul>${used.map((o) => `<li><button class="link" data-k="sel" data-ms="${esc(o)}">${esc(title(o))}</button></li>`).join("")}</ul>`);
+    h.push(`<h3>Tiden</h3><button class="link" data-k="show-time" data-ms="${esc(ms)}">⏱ Visa i Tid</button> <button class="link" data-k="lock-form" data-ms="${esc(ms)}">${SYMBOLS.action.time.g} Lås tid …</button>`);
     h.push(`<h3>Delen</h3><button class="link" data-k="move" data-ms="${esc(ms)}">Flytta till del …</button> <button class="link" data-k="rename-ms" data-ms="${esc(ms)}">Byt namn …</button> <button class="link" data-k="add-ms" data-ms="${esc(ms)}">Lägg till delmål efter …</button> <button class="link" data-k="remove-ms" data-ms="${esc(ms)}">Ta bort …</button>`);
     if (K.dialog) h.push(`<div class="k-dialog">${K.dialog}</div>`);
     return h.join("");
   }
 
+  /** Verktyget för ett moment som ett lager ovanpå kartan (K.onOpen med `tool:<komponent>`): samma läsruta, bildvisning och förhandsvisning som materialet öppnas i. */
+  function openTool(node) {
+    const ms = node.slice(0, node.indexOf("/")), t = momentDetail(node)?.tool, nm = momentOf(node);
+    if (!t?.component || !K.onOpen) return;
+    const mat = K.detail[ms]?.material || [], own = mat.filter((x) => x.milestone === ms), base = mat.filter((x) => x.milestone !== ms);
+    const x = (own.length ? own : base).filter((y) => y.ref).at(-1) || null;
+    return K.onOpen(x?.ref || "", x ? title(x.milestone) : title(node), `tool:${t.component}`,
+      { ...tn(node), step: nm?.step || null, mode: t.mode, tool: t.tool, kind: x?.kind || null, type: x?.type || nm?.leaves || null });
+  }
   /** Ett material som länk: läsrutan och bildvisaren är vyns egna (v6), öppnade som ett lager ovanpå kartan. Kartan själv visar inget material. */
-  const matLink = (x, text) => K.onOpen && x.ref ? `<button class="link" data-k="open-mat" data-ref="${esc(x.ref)}" data-kind="${esc(x.kind || "")}" data-label="${esc(text)}">${esc(text)}</button>` : esc(text);
+  const matLink = (x, text) => K.onOpen && x.ref ? `<button class="link" data-k="open-mat" data-ref="${esc(x.ref)}" data-kind="${esc(x.kind || "")}" data-type="${esc(x.type || "")}" data-label="${esc(text)}">${esc(text)}</button>` : esc(text);
+  /** Materialet som miniatyrer: text och fil, en bild som bild när adressen går att visa. Klick öppnar läsrutan eller bildvisaren som lager (K.onOpen). */
+  /** Materialets sort i ord: registrets typ utan förled, och «text» eller «fil» när typen bara säger material. */
+  const typeText = (x) => { const t = String(x.type || "").replace(/^core\.asset\./, "").replace(/_/g, " ");
+    return !t || t === "material" ? (x.kind === "asset" ? "Fil" : "Text") : t[0].toUpperCase() + t.slice(1); };
+  const IMG = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i;
+  function thumbs(list, label) {
+    return `<div class="k-thumbs">${list.map((x) => {
+      const img = x.kind === "asset" && /^https?:/.test(x.ref || "") && IMG.test(x.ref) ? x.ref : null, full = label(x);
+      // Miniatyren rymmer en kort text; hela står i title och i läsrutan.
+      const text = full.length > 64 ? `${full.slice(0, 62)}…` : full;
+      const tip = `${full}${x.at ? ` · ${String(x.at).slice(0, 10)}` : ""}`;
+      return K.onOpen && x.ref
+        ? `<button class="k-thumb${img ? " img" : ""}" data-k="open-mat" data-node="${esc(x.node || (x.task ? `${x.task}${SEP}` : ""))}" data-ref="${esc(x.ref)}" data-kind="${esc(x.kind || "")}" data-type="${esc(x.type || "")}" data-label="${esc(text)}" title="Öppna: ${esc(tip)}" aria-label="Öppna ${esc(text)}"${img ? ` style="background-image:url('${esc(img)}')"` : ""}><i class="k-ic" aria-hidden="true">${x.kind === "asset" ? "▣" : "¶"}</i><span>${esc(text)}</span></button>`
+        : `<div class="k-thumb" title="${esc(tip)}"><i class="k-ic" aria-hidden="true">${x.kind === "asset" ? "▣" : "¶"}</i><span>${esc(text)}</span></div>`;
+    }).join("")}</div>`;
+  }
+  /** Förrådet: eget fönster, hämtat först när det öppnas (plan_state { node: "@store" }). */
   function storeWindow() {
-    const s = K.map.store;
+    const S = K.detail["@store"];
+    if (!S) return `<b>Förrådet</b><div class="k-wait">Hämtar …</div>`;
+    const s = S.store;
     return `<b>Förrådet</b><div class="k-sub">Det som fanns redan och kan användas.</div>`
       + (s.length ? `<ul>${s.map((x) => `<li>${x.satisfies ? `Delmålet «${esc(title(x.satisfies))}»` : x.ref ? matLink(x, x.label || x.type || x.kind) : `${esc(x.label || x.type || x.kind)}`} <span class="k-reg">${esc(x.origin === "previous_workflow" ? "från det tidigare arbetsflödet" : x.origin === "planned" ? "utpekat i planeringen" : "hos kunden eller i huset")}</span></li>`).join("")}</ul>` : `<p class="k-sub">Tomt.</p>`)
-      + `<h3>Material i uppdraget</h3>${K.map.material.length ? `<ul>${K.map.material.map((x) => `<li>${matLink(x, `${title(x.milestone)}: ${x.kind === "asset" ? "fil" : "text"}${x.version ? ` v${x.version}` : ""}${x.approved ? " ✓" : ""}`)}</li>`).join("")}</ul>` : `<p class="k-sub">Inget än.</p>`}`
-      + (K.map.times?.conflicts?.length ? `<h3>Krockar i tiden</h3><ul>${K.map.times.conflicts.map((c) => `<li class="k-warn">${esc(c.text)}</li>`).join("")}</ul>` : "");
+      + (() => { const gone = S.material.filter((x) => !K.map.model.milestones[x.milestone]);
+        return gone.length ? `<h3>Från borttagna delmål</h3><div class="k-sub">Ligger i förrådet och kan användas igen.</div>${thumbs(gone, (x) => `${typeText(x)}${x.version ? ` v${x.version}` : ""}`)}` : ""; })()
+      + `<h3>Material i uppdraget</h3>${S.material.length ? thumbs(S.material, (x) => `${title(x.milestone)}${x.version ? ` v${x.version}` : ""}${x.approved ? " ✓" : ""}`) : `<p class="k-sub">Inget än.</p>`}`
+      + (K.map.conflicts?.length ? `<h3>Krockar i tiden</h3><ul>${K.map.conflicts.map((c) => `<li class="k-warn">${esc(c.text)}</li>`).join("")}</ul>` : "");
+  }
+
+  /**
+   * Den samlade materialvyn (Del H2): allt material i leveransen (eller uppdraget), grupperat med den
+   * generella grupperingen (src/views/grouping.ts, samma som «Idag»): spår, sort, status, delmål. Varje post har
+   * miniatyr, version och momentet den hör till; klick öppnar läsrutan eller bildvisaren som lager (K.onOpen).
+   */
+  const MAT_FIELDS = { task: "Spår", sort: "Sort", status: "Status", milestone: "Delmål" };
+  function groupLocal(rows, by) {
+    const g = globalThis.RotorGroupRows; if (g) return g(rows, by);
+    const [k, ...rest] = by; if (!k) return [];
+    const m = new Map(); for (const r of rows) { const v = r.g[k] || "Övrigt"; if (!m.has(v)) m.set(v, []); m.get(v).push(r); }
+    return [...m].sort((a, b) => a[0].localeCompare(b[0], "sv")).map(([v, xs]) => rest.length ? { key: `${k}:${v}`, label: v, n: xs.length, groups: groupLocal(xs, rest) } : { key: `${k}:${v}`, label: v, n: xs.length, rows: xs });
+  }
+  function matWindow() {
+    const D = K.detail["@material"];
+    const pick = (i) => `<select data-k="mat-by" data-i="${i}" style="width:auto;margin:0 4px 0 0">${i ? `<option value="">—</option>` : ""}${Object.entries(MAT_FIELDS).map(([k, l]) => `<option value="${k}"${K.matBy[i] === k ? " selected" : ""}>${l}</option>`).join("")}</select>`;
+    const head = `<button class="k-close" data-k="mat" style="float:right">Stäng</button><b>Materialet</b><div class="k-sub">Grupperat efter ${pick(0)}${pick(1)}</div>`;
+    if (!D) return head + `<div class="k-wait">Hämtar …</div>`;
+    if (!D.rows) return head + `<div class="k-sub">Materialvyn finns för en leverans. Öppna hela leveransen i listan ovan.</div>`;
+    if (!D.rows.length) return head + `<p class="k-sub">Inget material än.</p>`;
+    const where = (x) => x.node ? title(x.node) : "förrådet";
+    const lab = (x) => `${x.label}${x.version ? ` · v${x.version}` : ""}${x.approved ? " ✓" : ""} · ${where(x)}`;
+    const rowsHtml = (xs) => `<div data-k-matrows>${thumbs(xs.map((x) => ({ ...x, ctx: x.node })), lab)}</div>`;
+    const grp = (gs, lvl) => gs.map((g) => `<details${g.open || gs.length === 1 || lvl === 0 ? " open" : ""}><summary class="${lvl ? "k-grp2" : "k-grp"}">${esc(g.label)} <span class="k-sub">${g.n}</span></summary>${g.groups ? grp(g.groups, lvl + 1) : rowsHtml(g.rows)}</details>`).join("");
+    return head + grp(groupLocal(D.rows, K.matBy.filter(Boolean)), 0);
+  }
+
+  /* ── Högerklick och flera markerade: handlingstabellen (src/mcp/batch-actions.ts) ── */
+  function table() {
+    if (K.table || K.tableLoading) return K.table || [];
+    K.tableLoading = true;
+    K.call("read", { op: "batch_actions" }).then((d) => { K.table = d?.actions || []; if (K.menu) render(); }, () => { K.table = []; });
+    return [];
+  }
+  /** Posterna för ett delmål eller ett moment: moment (nästa), steget och uppdraget, så att varje handling får sin form. */
+  function itemOf(id) {
+    const { task, node } = tn(id), n = node.includes("/") ? id : nextMoment(id) || null, mo = n ? momentOf(n) : null;
+    return { task, ...(n ? { node: strip(n) } : { node }), ...(mo?.step ? { step: mo.step } : {}), label: title(n || id) };
+  }
+  const shapeFor = (a, x) => a.kinds.includes("node") && x.node ? { task: x.task, node: x.node, label: x.label }
+    : a.kinds.includes("step") && x.step ? { task: x.task, step: x.step, label: x.label } : a.kinds.includes("task") ? { task: x.task, label: x.label } : null;
+  function openMenu(e, ids, what) {
+    e.preventDefault();
+    const vw = innerWidth || 1200, vh = innerHeight || 800;
+    K.menu = { x: Math.min(e.clientX, vw - 280), y: Math.min(e.clientY, vh - 420), ids, what };
+    table(); render();
+  }
+  function menuHtml() {
+    const M = K.menu, ids = M.ids, xs = ids.map(itemOf), t = table();
+    const one = ids.length === 1 ? ids[0] : null;
+    const head = `<div class="k-mh">${esc(M.what === "delivery" ? "Leveransen" : one ? title(one) : `${ids.length} markerade`)}</div>`;
+    const local = [];
+    if (one && M.what === "node") {
+      local.push(`<button data-k="m-sel" data-ms="${esc(one)}">${SYMBOLS.action.open_map.g} Öppna delmålet</button>`);
+      local.push(`<button data-k="m-mat" data-ms="${esc(one)}">📎 Öppna material</button>`);
+      local.push(`<button data-k="show-time" data-ms="${esc(one)}">⏱ Visa i Tid</button>`);
+      local.push(`<button data-k="lock-form" data-ms="${esc(one)}">${SYMBOLS.action.time.g} Lås tid …</button>`);
+      local.push(`<button data-k="add-ms" data-ms="${esc(one)}">${SYMBOLS.action.add.g} Lägg till delmål efter …</button>`);
+      local.push(`<button data-k="remove-ms" data-ms="${esc(one)}">${SYMBOLS.action.remove.g} Ta bort …</button>`);
+    }
+    if (M.what === "edge") local.push(`<button data-k="add-edge" data-from="${esc(M.edge[0])}" data-to="${esc(M.edge[1])}">${SYMBOLS.action.add.g} Lägg till ett steg här …</button>`);
+    if (M.what === "band") local.push(`<button data-k="m-rename-band" data-band="${esc(M.band)}">Byt namn på delen …</button>`, `<button data-k="done-form" data-nodes="${esc(ids.join(","))}" data-name="${esc(M.bandName || "")}">${SYMBOLS.action.done.g} Markera delen som gjord …</button>`);
+    if (M.what === "delivery") local.push(`<button data-k="mat">📎 Materialet</button>`, `<button data-k="show-time" data-ms="">⏱ Visa i Tid</button>`);
+    const acts = t.filter((a) => a.batch).flatMap((a) => {
+      const ok = a.id === "present_as" ? presentItems(ids) : xs.map((x) => shapeFor(a, x)).filter(Boolean);
+      const uniq = [...new Map(ok.map((y) => [`${y.task}|${y.node || y.step || ""}`, y])).values()];
+      if (!uniq.length) return [];
+      const g = SYMBOLS.action[a.symbol]?.g || "";
+      return [`<button data-k="m-act" data-a="${esc(a.id)}" title="${esc(a.severity)}">${g} ${esc(a.label)}${uniq.length < xs.length ? ` <span class="k-sub">· gäller ${uniq.length} av ${xs.length}</span>` : ""}</button>`];
+    });
+    return `<div class="k-menu" role="menu" style="left:${M.x}px;top:${M.y}px">${head}${local.join("")}${t.length ? `<div class="k-mh">Handlingar</div>${acts.join("") || `<div class="k-sub" style="padding:6px 10px">Ingen handling gäller.</div>`}` : `<div class="k-wait" style="padding:6px 10px">Hämtar handlingarna …</div>`}</div>`;
+  }
+  /** En handling ur tabellen på posterna: parametrar först när den har några, sedan serverns förhandsvisning och ja. */
+  function menuAct(id) {
+    const a = (K.table || []).find((x) => x.id === id), M = K.menu; if (!a || !M) return;
+    const items = a.id === "present_as" ? presentItems(M.ids)
+      : [...new Map(M.ids.map(itemOf).map((x) => shapeFor(a, x)).filter(Boolean).map((y) => [`${y.task}|${y.node || y.step || ""}`, y])).values()];
+    K.menu = null; K.multi = {};
+    K.batch = { a, items };
+    const need = a.params || [];
+    if (!need.length) return batchGo({});
+    const type = (p) => p.type === "number" ? "number" : p.type === "day" ? "date" : "text";
+    K.dialog = `<b>${esc(a.label)} · ${items.length} ${items.length === 1 ? "post" : "poster"}</b>
+${need.map((p) => `${esc(p.label)}${p.required ? "" : " (valfritt)"}` + (p.type === "choice"
+  ? `<select id="k-bp-${esc(p.name)}">${(p.options || []).map((o) => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join("")}</select>`
+  : `<input id="k-bp-${esc(p.name)}" type="${type(p)}">`)).join("")}<button class="primary" data-k="batch-go">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
+    render();
+  }
+  function batchGo(params) {
+    const B = K.batch; if (!B) return;
+    for (const p of B.a.params || []) { const v = val(`k-bp-${p.name}`); if (v) params[p.name] = p.type === "number" ? Number(v) : v; }
+    return act("write", { op: "batch_apply", action: B.a.id, items: B.items, params }, `${B.a.label} · ${B.items.length}`);
+  }
+  /** Lås tid på ett delmål: en dag (punkt) eller ett spann, genom handlingstabellens «Lås tid». */
+  function lockForm(ms) {
+    const today = new Date().toISOString().slice(0, 10);
+    K.batch = { a: { id: "lock_time", label: "Lås tid", params: [] }, items: [{ task: tn(ms).task, node: strip(ms), label: title(ms) }] };
+    K.dialog = `<b>${SYMBOLS.action.time.g} Lås tid för «${esc(title(ms))}»</b>
+En dag, eller ett spann (till är valfritt).
+Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="date"><input id="k-note" placeholder="Skäl (valfritt)"><button class="primary" data-k="lock-go">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
+    render();
   }
 
   let L = null;
@@ -1271,8 +1569,11 @@ details.removed { margin-top: 10px; }
     const ids = Object.keys(K.map.model.milestones), doable = ids.filter((m) => stateOf(m) === "doable"), mine = ids.filter((m) => stateOf(m) === "yes");
     const tasks = K.tasks || [];
     el.innerHTML = `<div class="k-top">`
-      + (tasks.length > 1 ? `<select class="k-task" data-k="task" style="width:auto;max-width:260px;margin:0">${tasks.map((t) => `<option value="${esc(t.task)}"${t.task === K.task ? " selected" : ""}>${esc(t.task === K.task ? g.label : t.label)}</option>`).join("")}</select>`
-        : `<span class="k-title">${esc(g.label)}</span>`)
+      + (tasks.length > 1 ? `<select class="k-task" data-k="task" style="width:auto;max-width:260px;margin:0">`
+          // Hela leveransen först (Del H2); ett uppdrag är inzoomningen.
+          + (K.deliveryId ? `<option value="@delivery"${K.delivery ? " selected" : ""}>${esc(K.delivery ? g.label : K.deliveryLabel || "Hela leveransen")}</option>` : "")
+          + `${tasks.map((t) => `<option value="${esc(t.task)}"${!K.delivery && t.task === K.task ? " selected" : ""}>${esc(!K.delivery && t.task === K.task ? g.label : t.label)}</option>`).join("")}</select>`
+        : `<span class="k-title" data-k="title-ctx">${esc(g.label)}</span>`)
       + (doable.length ? `<button data-k="sel" data-ms="${esc(doable[0])}" title="Visa det första som går att göra">${doable.length} går att göra</button>` : "")
       + (mine.length ? `<button class="yes" data-k="sel" data-ms="${esc(mine[0])}" title="Visa det första som väntar på ditt ja">${mine.length} väntar på dig</button>` : "")
       + (!doable.length && !mine.length ? `<span class="k-sub">${K.map.state?.goal_reached ? "Målet är nått." : "Inget går att göra just nu."}</span>` : "")
@@ -1282,14 +1583,24 @@ details.removed { margin-top: 10px; }
         + `<button data-k="zoom" data-z="-1">−</button><span class="k-sub">${Math.round(K.zoom * 100)} %</span><button data-k="zoom" data-z="1">+</button><button data-k="fit">Visa allt</button>`
         + `<button data-k="store">${K.store ? "Dölj förrådet" : "Förrådet"}</button><button data-k="grow">Låt uppdraget växa …</button><button data-k="reload">Hämta igen</button>` : "")
       + `<button data-k="more" title="Zoom, riktning, förrådet">${K.more ? "Mindre" : "Mer …"}</button>`
+      + `<button data-k="mat" title="Allt material i ${K.delivery ? "leveransen" : "uppdraget"}, grupperat">${K.mat ? "Dölj materialet" : "Materialet"}${K.map.counts?.material ? ` (${K.map.counts.material})` : ""}</button>`
       + (K.onList ? `<button data-k="list" title="Allt i leveransen som en lista">Listan</button>` : "")
       + `<button data-k="close">Stäng</button></div>`
       + `<div class="k-body"><div class="k-scroll" onscroll="RotorKarta.stick()">${svg(L)}${K.toast ? `<div class="k-toast">${esc(K.toast.text)}${K.toast.undoCall ? `<button data-k="undo-call">Ångra</button>` : K.toast.undo ? `<button data-k="undo" data-node="${esc(K.toast.undo)}">Ångra</button>` : ""}<button data-k="toast-x">×</button></div>` : ""}</div>`
       + (K.sel ? `<div class="k-panel">${panel()}</div>` : "") + (K.store ? `<div class="k-store">${storeWindow()}</div>` : "")
-      + `</div>` + (K.dialog && !K.sel ? `<div class="k-dialog" style="position:absolute;right:16px;top:60px;width:380px">${K.dialog}</div>` : "");
+      + (K.mat ? `<div class="k-store k-mat">${matWindow()}</div>` : "")
+      + (Object.keys(K.multi).length ? `<div class="k-multibar">${Object.keys(K.multi).length} markerade <button data-k="multi-menu">Handlingar …</button><button data-k="multi-clear">Avmarkera</button></div>` : "")
+      + `</div>` + (K.menu ? menuHtml() : "") + (K.dialog && !K.sel ? `<div class="k-dialog" style="position:absolute;right:16px;top:60px;width:380px">${K.dialog}</div>` : "");
     const sc = el.querySelector(".k-scroll");
     if (sc && keep) { sc.scrollLeft = keep[0]; sc.scrollTop = keep[1]; }
+    markBusy(el);
     stickHeads();
+  }
+  /** Knappen som väntar på svar: spärrad och med snurra, också efter en omritning. */
+  function markBusy(el) {
+    const b = K.busy; if (!b?.k) return;
+    for (const x of el.querySelectorAll(`[data-k="${b.k}"]`))
+      if ((x.getAttribute("data-node") || x.getAttribute("data-nodes") || "") === (b.node || "")) { x.classList.add("is-busy"); x.setAttribute("aria-busy", "true"); if ("disabled" in x) x.disabled = true; }
   }
 
   /** Delarnas namn följer med vid scroll längs huvudaxeln. */
@@ -1298,45 +1609,149 @@ details.removed { margin-top: 10px; }
     if (!g || !L) return;
     g.setAttribute("transform", L.tb ? `translate(0 ${sc.scrollTop / K.zoom})` : `translate(${sc.scrollLeft / K.zoom} 0)`);
   }
+  /* ── Billig data (Daniel P 2026-10-13): sparat skelett först, sedan bara det som ändrats ── */
+  /* Nyckel per användare (och sida): ingen ser en annans sparade karta (RotorWho i v6). */
+  const KEY = (t) => `rotor-karta:${globalThis.RotorWho?.() || "?"}:${t}`;
+  function saved(t) { try { const m = JSON.parse(localStorage.getItem(KEY(t)) || "null"); return m?.version && m.model ? m : null; } catch { return null; } }
+  function save() { try { localStorage.setItem(KEY(K.delivery || K.task), JSON.stringify(K.map)); } catch { /* utan lagring: kartan hämtas som vanligt */ } }
+  /** Servern utelämnar tomma listor; vyn räknar med dem. */
+  function norm(map) {
+    for (const s of Object.values(map.state?.milestones || {})) for (const k of ["needs_yes", "doable_moments", "waiting_moments"]) s[k] ||= [];
+    map.skipped ||= {}; map.moments ||= {}; map.conflicts ||= [];
+    return map;
+  }
+  /** Det som ändrats (src/mcp/goal-map.ts, mapDelta) ovanpå det sparade skelettet. */
+  function applyDelta(map, d) {
+    const m = JSON.parse(JSON.stringify(map));
+    for (const [k, v] of Object.entries(d.set || {})) { const p = k.split("\u0000"); let o = m;
+      for (const x of p.slice(0, -1)) o = o[x] && typeof o[x] === "object" ? o[x] : (o[x] = {}); o[p.at(-1)] = v; }
+    for (const k of d.removed || []) { const p = k.split("\u0000"); let o = m;
+      for (const x of p.slice(0, -1)) o = o?.[x]; if (o) delete o[p.at(-1)]; }
+    return m;
+  }
+  function initOpen() {
+    for (const b of K.map.bands) if (K.open[b.id] === undefined) K.open[b.id] = b.ids.some((m) => ["doable", "yes"].includes(stateOf(m))) || K.map.bands.length === 1;
+    if (K.mband === 0) K.mband = Math.max(0, K.map.bands.findIndex((b) => b.ids.some((m) => ["doable", "yes"].includes(stateOf(m)))));
+  }
+  function setMap(map) {
+    const changed = K.map?.version !== map.version;
+    K.map = norm(map); K.pending = {};
+    // Ny version: de hämtade delmålen kan ha ändrats; de hämtas igen när de öppnas.
+    if (changed) K.detail = {};
+    initOpen(); save();
+  }
   async function load() {
-    K.loading = true; K.error = null; render();
+    K.loading = true; K.error = null;
+    const first = !K.map;
+    if (first) { const s = saved(K.delivery || K.task); if (s) { K.map = norm(s); K.stale = true; initOpen(); } }
+    render();
     try {
-      const d = await K.call("plan_state", { task: K.task, format: "map" });
-      K.map = d?.map || null;
-      if (!K.map) K.error = "Kartan kom tillbaka tom.";
-      else {
-        for (const b of K.map.bands) if (K.open[b.id] === undefined) K.open[b.id] = b.ids.some((m) => ["doable", "yes"].includes(stateOf(m))) || K.map.bands.length === 1;
-        if (K.mband === 0) K.mband = Math.max(0, K.map.bands.findIndex((b) => b.ids.some((m) => ["doable", "yes"].includes(stateOf(m)))));
-      }
-    } catch (e) { K.error = e?.message || String(e); }
-    K.loading = false; render();
-    if (K.map && L) { const first = Object.entries(L.pos).filter(([m]) => ["doable", "yes"].includes(stateOf(m))).map(([, p]) => p.x).sort((a, b) => a - b)[0];
-      const sc = root()?.querySelector(".k-scroll"); if (sc && first > 400 && !L.tb) sc.scrollLeft = (first - LW - 40) * K.zoom; stickHeads(); }
+      const d = await K.call("plan_state", { ...scope(), format: "map", ...(K.map?.version ? { version: K.map.version } : {}) });
+      if (d?.unchanged) K.pending = {};
+      else if (d?.delta && K.map) setMap(applyDelta(K.map, d.delta));
+      else if (d?.map) setMap(d.map);
+      else if (!K.map) K.error = "Kartan kom tillbaka tom.";
+    } catch (e) {
+      // En leverans som inte går att läsa som karta (äldre server, ingen målmodell): uppdragets karta i stället.
+      if (K.delivery && !K.map) { K.delivery = null; K.loading = false; return load(); }
+      if (!K.map || K.stale) { K.map = K.stale ? K.map : null; K.error = e?.message || String(e); }
+      if (K.map) K.toast = { text: `Kunde inte uppdatera kartan: ${e?.message || e}` };
+    }
+    K.loading = false; K.stale = false; render();
+    if (first && K.map && L) { const fx = Object.entries(L.pos).filter(([m]) => ["doable", "yes"].includes(stateOf(m))).map(([, p]) => p.x).sort((a, b) => a - b)[0];
+      const sc = root()?.querySelector(".k-scroll"); if (sc && fx > 400 && !L.tb) sc.scrollLeft = (fx - LW - 40) * K.zoom; stickHeads(); }
+    if (K.map) { if (K.sel) detail(K.sel); if (K.store) detail("@store"); if (K.mat) detail("@material"); prefetch(); }
   }
 
-  /** En skrivning: först utan confirmed (förhandsvisning), sedan ett ja. */
-  async function act(tool, input, label, undoNode) {
-    K.dialog = `Frågar dirigenten …`; render();
+  /** Ett delmål (eller "@store") hämtas när det öppnas, en gång per version. */
+  const inflight = {};
+  function detail(ms) {
+    if (!ms || !K.map || K.detail[ms] || inflight[ms]) return inflight[ms] || null;
+    const task = K.task, v = K.map.version;
+    // Biblioteket hör till uppdraget kanten ligger i (i leveransens karta).
+    const node = K.delivery && ms === "@library" && K.addEdge ? `${tn(K.addEdge.from).task}${SEP}@library` : ms;
+    return (inflight[ms] = K.call("plan_state", { ...scope(), format: "map", node, ...(ms === "@material" ? { group_by: K.matBy.join(",") } : {}) }).then((d) => {
+      if (task !== K.task || v !== K.map?.version || !d?.node) return;
+      K.detail[ms] = d.node;
+      if (ms === "@library" && K.addEdge) return form("add-edge", null);
+      if (K.sel === ms || (ms === "@store" && K.store) || (ms === "@material" && K.mat)) render();
+    }).catch(() => { /* panelen visar «Hämtar …»; nästa öppning försöker igen */ }).finally(() => { delete inflight[ms]; }));
+  }
+  /** Nästa troliga: det som går att göra och det som väntar på ett ja, några i taget, när vyn är ledig. */
+  function prefetch() {
+    const want = Object.keys(K.map.model.milestones).filter((m) => ["yes", "doable"].includes(stateOf(m)) && !K.detail[m]).slice(0, 4);
+    const idle = window.requestIdleCallback || ((f) => setTimeout(f, 200));
+    const next = () => { const m = want.shift(); if (!m) return; Promise.resolve(detail(m)).finally(() => idle(next)); };
+    idle(next);
+  }
+  const select = (ms) => { K.sel = ms || null; K.dialog = null; render(); if (K.sel) detail(K.sel); };
+
+  /* ── Optimistiska handlingar: läget ändras direkt, servern svarar med det som ändrats ── */
+  const msOfNode = (n) => n.includes("/") ? n.slice(0, n.indexOf("/")) : n;
+  const OPTIMISTIC = {
+    skip: (m, nodes, reason) => { for (const n of nodes) { m.skipped[n] = { reason }; if (n.includes("/")) m.moments[n] = "not_needed"; else if (m.state.milestones[n]) m.state.milestones[n].state = "not_needed"; } },
+    unskip: (m, nodes) => { for (const n of nodes) delete m.skipped[n]; },
+    done: (m, nodes) => { for (const n of nodes) {
+      if (n.includes("/")) m.moments[n] = "done";
+      else { if (m.state.milestones[n]) m.state.milestones[n].state = "done"; for (const id of Object.keys(m.model.milestones[n]?.moments || {})) m.moments[`${n}/${id}`] = "done"; }
+    } },
+    yes: (m, nodes) => { for (const n of nodes) { m.moments[n] = "done"; const ms = msOfNode(n), all = Object.keys(m.model.milestones[ms]?.moments || {});
+      if (all.every((id) => m.moments[`${ms}/${id}`] === "done") && m.state.milestones[ms]) m.state.milestones[ms].state = "done"; } },
+  };
+
+  /**
+   * En skrivning: först utan confirmed (förhandsvisning), sedan ett ja. `opt.optimistic`
+   * ändrar kartan direkt; ger servern en förhandsvisning eller ett fel rullas det tillbaka.
+   * Knappen (opt.k, opt.node) är spärrad med snurra tills svaret kommer.
+   */
+  async function act(tool, input, label, undoNode, opt = {}) {
+    if (K.busy) return;
+    const snap = K.map, nodes = opt.nodes || [];
+    K.busy = { k: opt.k || null, node: opt.node || null };
+    if (opt.optimistic && OPTIMISTIC[opt.optimistic]) {
+      K.map = JSON.parse(JSON.stringify(K.map)); OPTIMISTIC[opt.optimistic](K.map, nodes, opt.reason);
+      for (const n of nodes) K.pending[msOfNode(n)] = 1;
+      K.dialog = null;
+    } else K.dialog = `<span class="k-wait">Frågar dirigenten …</span>`;
+    render();
+    const rollback = () => { if (opt.optimistic) { K.map = snap; K.pending = {}; } };
     try {
       const d = await K.call(tool, input);
       const text = d?._text || d?.message || JSON.stringify(d).slice(0, 400);
       const preview = d && !input.confirmed && (d.preview || d.confirm || d.written === false || d.needs_confirmation || /förhandsvis|bekräfta|confirmed/i.test(text));
+      K.busy = null;
       if (preview) {
+        rollback();
         // Kvittot följer med jaet (preview_id); utan det avvisades jaet och fick ges igen.
-        K.last = { tool, input: { ...input, ...(d.next?.args || {}), confirmed: true, ...(d.preview_id ? { preview_id: d.preview_id } : {}) }, label, undoNode };
+        K.last = { tool, input: { ...input, ...(d.next?.args || {}), confirmed: true, ...(d.preview_id ? { preview_id: d.preview_id } : {}) }, label, undoNode,
+          opt: tool === "execute_step" && input.node && !input.values && !input.mark ? { optimistic: "yes", nodes: [undoNode || input.node], k: "confirm" } : { k: "confirm" } };
         const isOverride = !!input.values?.override;
-        K.dialog = `<b>Förhandsvisning: ${esc(label)}</b>\n${esc(text)}\n<div style="margin-top:8px"><button class="yes" data-k="confirm">${isOverride ? "Gör ändå (inget ja)" : "Ja, gör det"}</button> <button data-k="cancel">Avbryt</button></div>`;
+        const house = input.op === "batch_apply" ? (d.batch?.groups?.["■"] || []) : [];
+        K.dialog = `<b>Förhandsvisning: ${esc(label)}</b>\n${esc(text)}\n`
+          + (house.length ? `<div>${house.map((r) => `<label class="k-sub"><input type="checkbox" data-house="${esc(r)}" style="width:auto"> ■ ${esc((d.batch.items.find((x) => x.ref === r) || {}).label || r)}</label>`).join("<br>")}</div>` : "")
+          + `<div style="margin-top:8px"><button class="yes" data-k="confirm">${isOverride ? "Gör ändå (inget ja)" : "Ja, gör det"}</button> <button data-k="cancel">Avbryt</button></div>`;
         render(); return;
       }
-      K.dialog = null; K.toast = { text: text.slice(0, 600), undo: undoNode || null, undoCall: d?.undo || null };
+      K.dialog = null; K.toast = { text: `✓ ${text.slice(0, 600)}`, undo: undoNode || null, undoCall: d?.undo || null };
       await load();
-    } catch (e) { K.dialog = `<span class="k-warn">${esc(e?.message || String(e))}</span>\n<button data-k="cancel">Stäng</button>`; render(); }
+    } catch (e) {
+      K.busy = null; rollback();
+      if (opt.optimistic) { K.dialog = null; K.toast = { text: `Gick inte: ${e?.message || e}\nÄndringen är återställd i kartan.` }; render(); }
+      else { K.dialog = `<span class="k-warn">${esc(e?.message || String(e))}</span>\n<button data-k="cancel">Stäng</button>`; render(); }
+    }
   }
 
   function form(kind, el) {
-    const node = el.getAttribute("data-node"), ms = el.getAttribute("data-ms");
+    const node = el?.getAttribute("data-node") ?? null, ms = el?.getAttribute("data-ms") ?? null;
     if (kind === "override") K.dialog = `<b>Gör ändå</b>\nSkäl:<select id="k-reason">${OVERRIDE.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select><input id="k-note" placeholder="Varför det görs ändå (krävs)"><button class="primary" data-k="override-go" data-node="${esc(node)}">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
-    if (kind === "undo") K.dialog = `<b>Ångra «${esc(K.map.labels[node] || node)}»</b>\nSkäl:<input id="k-note" placeholder="Varför öppnas momentet igen?"><button class="primary" data-k="undo-go" data-node="${esc(node)}">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
+    if (kind === "undo") K.dialog = `<b>Ångra «${esc(title(node))}»</b>\nSkäl:<input id="k-note" placeholder="Varför öppnas momentet igen?"><button class="primary" data-k="undo-go" data-node="${esc(node)}">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
+    if (kind === "skip-form") K.dialog = `<b>Hoppa över «${esc(title(node))}»</b>\nSkäl (valfritt):<input id="k-skip" value="${esc(SKIP_REASON)}"><button class="primary" data-k="skip-go" data-node="${esc(node)}">Hoppa över</button> <button data-k="cancel">Avbryt</button>`;
+    if (kind === "done-form") { const nodes = el.getAttribute("data-nodes"), today = new Date().toISOString().slice(0, 10);
+      K.dialog = `<b>Markera som gjort: «${esc(el.getAttribute("data-name") || "")}»</b>\nGjort utanför dirigenten. Belägget är valfritt; förvalet är vem och när.`
+        + `<select id="k-ev"><option value="done_by">Gjort av</option><option value="text">En text</option><option value="link">En länk</option><option value="file">En fil (referens)</option></select>`
+        + `<input id="k-by" value="${esc(K.map.me || "")}" placeholder="Vem"><input id="k-at" value="${today}"><input id="k-evv" placeholder="Länken, texten eller filens referens">`
+        + `<div><label class="k-sub"><input type="checkbox" id="k-before" style="width:auto"> Också allt det bygger på</label></div>`
+        + `<button class="primary" data-k="done-go" data-nodes="${esc(nodes)}">Markera som gjort</button> <button data-k="cancel">Avbryt</button>`; }
     if (kind === "grow") K.dialog = `<b>Låt uppdraget växa</b>\nResultatet som ska läggas till (&lt;tillstånd&gt;:&lt;objekt&gt;, t.ex. published:landing_page):<input id="k-res"><input id="k-note" placeholder="Skäl"><button class="primary" data-k="grow-go">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
     if (kind === "move") K.dialog = `<b>Flytta till del</b>\n<select id="k-band">${K.map.bands.map((b) => `<option>${esc(b.name)}</option>`).join("")}</select><input id="k-newband" placeholder="… eller en ny del"><button class="primary" data-k="move-go" data-ms="${esc(ms)}">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
     if (kind === "rename-band") K.dialog = `<b>Byt namn på delen</b>\n<input id="k-name" value="${esc(K.map.bands.find((b) => b.id === el.getAttribute("data-band"))?.name || "")}"><button class="primary" data-k="rename-band-go" data-band="${esc(el.getAttribute("data-band"))}">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
@@ -1344,68 +1759,139 @@ details.removed { margin-top: 10px; }
     if (kind === "add-ms") K.dialog = `<b>Lägg till delmål efter «${esc(title(ms))}»</b>\nVad ska vara gjort?<input id="k-name"><button class="primary" data-k="structure-go" data-what="add_milestone" data-ms="${esc(ms)}">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
     if (kind === "add-moment") { const mo = Object.entries(K.map.model.milestones[ms].moments);
       K.dialog = `<b>Lägg till moment i «${esc(title(ms))}»</b>\nEfter:<select id="k-after">${mo.map(([id, x]) => `<option value="${esc(`${ms}/${id}`)}"${id === mo.at(-1)[0] ? " selected" : ""}>${esc(x.title || x.label)}</option>`).join("")}</select>Vad görs?<input id="k-name"><button class="primary" data-k="structure-go" data-what="add_moment" data-ms="${esc(ms)}">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`; }
-    if (kind === "remove-ms") K.dialog = `<b>Ta bort «${esc(title(ms))}»</b>\nDet som byggde på delmålet kopplas till det delmålet byggde på. Gjort arbete och material står kvar.<input id="k-note" placeholder="Skäl"><button class="primary" data-k="structure-go" data-what="remove_milestone" data-ms="${esc(ms)}">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
+    if (kind === "remove-ms") {
+      // Förhandsvisningen i vyn: det som byggde på delmålet och blir löst (kopplas till det delmålet byggde på), och materialet som går till förrådet.
+      const users = Object.keys(K.map.model.milestones).filter((o) => readsOf(o).some((r) => r.ms === ms)), preds = readsOf(ms).map((r) => r.ms);
+      const loose = users.length ? `\nBlir löst: ${users.map((u) => `«${esc(title(u))}»`).join(", ")}; ${users.length === 1 ? "det" : "de"} bygger sedan på ${preds.length ? preds.map((p) => `«${esc(title(p))}»`).join(", ") : "det som fanns före"}.` : "\nInget annat bygger på delmålet.";
+      K.dialog = `<b>${SYMBOLS.action.remove.g} Ta bort «${esc(title(ms))}»</b>${loose}\nGjort arbete pensioneras och materialet går till förrådet; inget raderas.<input id="k-note" placeholder="Skäl"><button class="primary" data-k="structure-go" data-what="remove_milestone" data-ms="${esc(ms)}">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
+    }
+    if (kind === "add-edge") {
+      const a = K.addEdge, lib = K.detail["@library"]?.library;
+      K.dialog = `<b>${SYMBOLS.action.add.g} Lägg till ett steg mellan «${esc(title(a.from))}» och «${esc(title(a.to))}»</b>`
+        + `<div class="k-choice"><button data-k="add-how" data-how="library" class="${a.how === "library" ? "on" : ""}">Ur biblioteket</button><button data-k="add-how" data-how="own" class="${a.how === "own" ? "on" : ""}">Eget steg</button></div>`
+        + (a.how === "library" ? (lib ? `<select id="k-lib">${lib.map((x) => `<option value="${esc(x.ref)}">${esc(x.label)}${x.by ? ` · ${esc(WHO[x.by] || x.by)}` : ""}</option>`).join("")}</select>` : `<div class="k-wait">Hämtar biblioteket …</div>`) + `<input id="k-name" placeholder="Eget namn (valfritt)">`
+          : `Vad görs?<input id="k-name" placeholder="t.ex. Sökorden väljs">`)
+        + `<div class="k-sub">Blir ett nytt delmål i uppdraget; «${esc(title(a.to))}» bygger på det.</div><button class="primary" data-k="add-edge-go">Förhandsvisa</button> <button data-k="cancel">Avbryt</button>`;
+    }
+    if (kind === "hand-form") {
+      // Lägg över (mottagaren tar emot) eller ta över själv (direkt): bindningen gäller bara det här momentet.
+      const w = K.map.who?.[node], step = momentOf(node)?.step || node;
+      K.dialog = `<b>${SYMBOLS.action.hand.g} Ansvarig för «${esc(title(node))}»</b>\n${w ? `Nu: ${esc(w.l)} (${esc(w.f)}).` : "Ingen ansvarig än."}`
+        + `<select id="k-to">${(K.map.people || []).filter((p) => p.id !== w?.id).map((p) => `<option value="${esc(p.id)}">${esc(p.label)}</option>`).join("")}</select>`
+        + `<button class="primary" data-k="hand-give" data-node="${esc(node)}" data-step="${esc(step)}">Lägg över</button> <button data-k="hand-take" data-node="${esc(node)}" data-step="${esc(step)}">Ta över själv</button> <button data-k="cancel">Avbryt</button>`;
+    }
     if (kind === "instr") {
       const n = Object.values(K.map.model.milestones).flatMap((m) => Object.values(m.moments)).filter((x) => x.step === el.getAttribute("data-step")).length;
-      K.dialog = `<b>Instruktionen för «${esc(K.map.labels[node] || node)}»</b>\nPåverkar ${n} moment i det här uppdraget; i kundens sätt eller metoden fler (förhandsvisningen säger hur många).`
+      K.dialog = `<b>Instruktionen för «${esc(title(node))}»</b>\nPåverkar ${n} moment i det här uppdraget; i kundens sätt eller metoden fler (förhandsvisningen säger hur många).`
         + `<select id="k-layer"><option value="here">Bara här</option><option value="customer">Kundens sätt</option><option value="method">Metoden</option></select>`
         + `<select id="k-level">${LEVELS.map(([v, t]) => `<option value="${v}">${t}</option>`).join("")}</select>`
         + `<textarea id="k-prompt" rows="6" placeholder="Skriv själv: instruktionen till Claude"></textarea>`
-        + `<button class="primary" data-k="instr-go" data-step="${esc(el.getAttribute("data-step"))}">Skriv själv — förhandsvisa</button> <button data-k="instr-claude" data-node="${esc(node)}">Ändra med Claude</button> <button data-k="cancel">Avbryt</button>`;
+        + `<button class="primary" data-k="instr-go" data-node="${esc(node)}" data-step="${esc(el.getAttribute("data-step"))}">Skriv själv — förhandsvisa</button> <button data-k="instr-claude" data-node="${esc(node)}">Ändra med Claude</button> <button data-k="cancel">Avbryt</button>`;
     }
     render();
   }
   const val = (id) => root().querySelector(`#${id}`)?.value?.trim() || "";
 
   function onClick(e) {
-    const el = e.target.closest("[data-k],[data-ms].k-node,[data-band].k-bandhead,[data-pass]");
+    const el = e.target.closest("[data-k],[data-ms].k-node,[data-band].k-bandhead,[data-pass],[data-edge]");
     if (!el || !root().contains(el)) return;
     const k = el.getAttribute("data-k");
-    if (el.classList.contains("k-node")) { K.sel = el.getAttribute("data-ms"); K.dialog = null; return render(); }
+    if (K.menu && !el.closest(".k-menu")) { K.menu = null; render(); }
+    if (el.classList.contains("k-node")) {
+      // Shift-klick markerar flera; handlingarna för dem står i listen och i högerklicksmenyn.
+      if (e.shiftKey) { const m = el.getAttribute("data-ms"); if (K.multi[m]) delete K.multi[m]; else K.multi[m] = 1; return render(); }
+      return select(el.getAttribute("data-ms"));
+    }
     if (el.classList.contains("k-bandhead")) { const b = el.getAttribute("data-band"); K.open[b] = K.open[b] === false; return render(); }
-    if (el.hasAttribute("data-pass")) return act("execute_step", { task: K.task, nodes: el.getAttribute("data-pass").split(",") }, `Passet: ${el.getAttribute("data-text")}`);
+    if (el.hasAttribute("data-edge") && !k) { const x = el.getAttribute("data-edge"); K.edge = K.edge === x ? null : x; return render(); }
+    if (el.hasAttribute("data-pass")) return act("execute_step", { task: tn(el.getAttribute("data-pass").split(",")[0]).task, nodes: el.getAttribute("data-pass").split(",").map(strip) }, `Passet: ${el.getAttribute("data-text")}`);
     const node = el.getAttribute("data-node");
     switch (k) {
-      case "close": root().hidden = true; K.map = null; K.sel = null; K.dialog = null; if (!document.getElementById("v6")) history.replaceState(null, "", "#"); return;
+      case "close": root().hidden = true; K.map = null; K.detail = {}; K.sel = null; K.dialog = null; if (!document.getElementById("v6")) history.replaceState(null, "", "#"); return;
       case "reload": return load();
+      case "mat": K.mat = !K.mat; K.menu = null; render(); return K.mat ? detail("@material") : null;
+      case "m-sel": K.menu = null; return select(el.getAttribute("data-ms"));
+      case "m-mat": { const ms = el.getAttribute("data-ms"); K.menu = null; K.mat = true; K.matBy = ["milestone", "sort"]; delete K.detail["@material"]; render(); return detail("@material"); }
+      case "m-act": return menuAct(el.getAttribute("data-a"));
+      case "m-rename-band": K.menu = null; return form("rename-band", el);
+      case "multi-menu": { const r = el.getBoundingClientRect(); return openMenu({ preventDefault() {}, clientX: r.left, clientY: r.bottom + 4 }, Object.keys(K.multi), "node"); }
+      case "multi-clear": K.multi = {}; return render();
+      case "batch-go": return batchGo({});
+      case "lock-form": K.menu = null; return lockForm(el.getAttribute("data-ms"));
+      case "lock-go": { const from = val("k-from"), to = val("k-to") || from; if (!from) return null;
+        return act("write", { op: "batch_apply", action: "lock_time", items: K.batch.items, params: { from, to, ...(val("k-note") ? { reason: val("k-note") } : {}) } }, `Lås tid ${from}${to !== from ? `–${to}` : ""}`); }
+      case "show-time": { const ms = el.getAttribute("data-ms"); K.menu = null; const f = K.onTime; if (!f) { K.toast = { text: "Tid finns i vyn (v6), inte i den fristående kartan." }; return render(); }
+        const t = ms ? tn(ms).task : K.delivery ? K.map.regions?.[0]?.task : K.task; root().hidden = true; K.map = null; K.sel = null; return f(t, ms ? strip(ms) : null); }
       case "zoom": K.zoom = Math.min(1.3, Math.max(.4, Math.round((K.zoom + .1 * Number(el.getAttribute("data-z"))) * 10) / 10)); return render();
       case "fit": { const sc = root().querySelector(".k-scroll"); K.zoom = Math.min(1.3, Math.max(.4, Math.floor(Math.min(sc.clientWidth / L.W, sc.clientHeight / L.H) * 10) / 10)); return render(); }
-      case "store": K.store = !K.store; return render();
+      case "store": K.store = !K.store; render(); return K.store ? detail("@store") : null;
       case "more": K.more = !K.more; return render();
       case "list": { const f = K.onList; root().hidden = true; K.map = null; K.sel = null; return f?.(); }
       // Arbetsytan och läsrutan läggs ovanpå kartan; kartan står kvar under och syns igen när de stängs.
-      case "work": return K.onWork?.(K.task, el.getAttribute("data-step"), el.getAttribute("data-label"));
-      case "open-mat": return K.onOpen?.(el.getAttribute("data-ref"), el.getAttribute("data-label"), el.getAttribute("data-kind"));
+      case "work": return K.onWork?.(tn(el.getAttribute("data-node") || "").task || K.task, el.getAttribute("data-step"), el.getAttribute("data-label"));
+      case "open-mat": return K.onOpen?.(el.getAttribute("data-ref"), el.getAttribute("data-label"), el.getAttribute("data-kind"), { task: tn(el.getAttribute("data-node") || "").task || K.task, type: el.getAttribute("data-type") || null });
+      // Verktyget (registrets view_tool) som lager: momentets senaste material, annars det det läser; vyn väljer förhandsvisningen.
+      case "open-tool": return openTool(el.getAttribute("data-node"));
       case "dir": K.dir = K.dir === "tb" ? "lr" : "tb"; return render();
       case "mband": K.mband = Math.max(0, Math.min(K.map.bands.length - 1, K.mband + Number(el.getAttribute("data-d")))); root().querySelector(".k-scroll").scrollTo(0, 0); return render();
-      case "sel": K.sel = el.getAttribute("data-ms") || null; K.dialog = null; return render();
+      case "sel": return select(el.getAttribute("data-ms"));
       case "toast-x": K.toast = null; return render();
       case "undo-call": { const u = K.toast?.undoCall; K.toast = null; return u ? act(u.tool, u.args, "Ångra ändringen") : null; }
       case "cancel": K.dialog = null; K.last = null; return render();
-      case "run": return act("execute_step", { task: K.task, node }, K.map.labels[node] || node, node);
-      case "choose": return act("execute_step", { task: K.task, node, values: { choose: el.getAttribute("data-out") } }, `Välj «${el.getAttribute("data-out")}»`, node);
-      case "confirm": { const l = K.last; K.last = null; return l ? act(l.tool, l.input, l.label, l.undoNode) : null; }
-      case "override": case "undo": case "grow": case "move": case "instr": case "rename-ms": case "add-ms": case "add-moment": case "remove-ms": return form(k, el);
+      case "run": return act("execute_step", { ...tn(node) }, title(node), node, { k, node });
+      case "choose": return act("execute_step", { ...tn(node), values: { choose: el.getAttribute("data-out") } }, `Välj «${el.getAttribute("data-out")}»`, node);
+      case "confirm": { const l = K.last; K.last = null;
+        // ■ i en batch görs bara ikryssade (servern: house).
+        if (l?.input?.op === "batch_apply") l.input.house = [...root().querySelectorAll("[data-house]:checked")].map((x) => x.getAttribute("data-house")); return l ? act(l.tool, l.input, l.label, l.undoNode, l.opt) : null; }
+      // Valet syns som en egen ruta över kartan (panelen stängs), inte längst ned i panelen.
+      case "add-edge": K.addEdge = { from: el.getAttribute("data-from"), to: el.getAttribute("data-to"), how: "own" }; K.edge = null; K.sel = null; detail("@library"); return form("add-edge", el);
+      case "add-how": if (K.addEdge) K.addEdge.how = el.getAttribute("data-how"); return form("add-edge", el);
+      case "add-edge-go": {
+        const a = K.addEdge; if (!a) return null;
+        const moment = a.how === "library" ? val("k-lib") : "", label = val("k-name");
+        if (!moment && !label) { K.dialog = `<span class="k-warn">Skriv vad som görs, eller välj ett moment ur biblioteket.</span>\n<button data-k="cancel">Stäng</button>`; return render(); }
+        K.addEdge = null;
+        return act("write", { op: "task_lock", task: tn(a.from).task, goal: { structure: { add_milestone: { after: strip(a.from), before: strip(a.to), label, ...(moment ? { moment } : {}) } } },
+          reason: "ett steg lagt till på kanten i kartan" }, "Lägg till ett steg");
+      }
+      case "hand-give": { const to = val("k-to"); if (!to) return null;
+        return act("execute_step", { task: tn(node).task, step: el.getAttribute("data-step"), handover_to: to }, `Lägg över «${title(node)}»`); }
+      case "hand-take": return act("execute_step", { task: tn(node).task, step: el.getAttribute("data-step"), take_over: true }, `Ta över «${title(node)}»`);
+      case "hand-form": case "skip-form": case "done-form": case "override": case "undo": case "grow": case "move": case "instr": case "rename-ms": case "add-ms": case "add-moment": case "remove-ms": return form(k, el);
       case "structure-go": {
         const what = el.getAttribute("data-what"), ms = el.getAttribute("data-ms"), name = val("k-name");
-        const structure = what === "rename" ? { rename: { [ms]: name } } : what === "add_milestone" ? { add_milestone: { after: ms, label: name } }
-          : what === "add_moment" ? { add_moment: { after: val("k-after"), label: name } } : { remove_milestone: ms };
+        const sm = strip(ms);
+        const structure = what === "rename" ? { rename: { [sm]: name } } : what === "add_milestone" ? { add_milestone: { after: sm, label: name } }
+          : what === "add_moment" ? { add_moment: { after: strip(val("k-after")), label: name } } : { remove_milestone: sm };
         const label = { rename: "Byt namn", add_milestone: "Lägg till delmål", add_moment: "Lägg till moment", remove_milestone: "Ta bort delmålet" }[what];
-        return act("write", { op: "task_lock", task: K.task, goal: { structure }, reason: val("k-note") || `${label.toLowerCase()} i kartan` }, label);
+        return act("write", { op: "task_lock", task: tn(ms).task, goal: { structure }, reason: val("k-note") || `${label.toLowerCase()} i kartan` }, label);
       }
-      case "customer-yes": K.dialog = `<b>Kundens ja på «${esc(K.map.labels[node] || node)}»</b>\nVem hos kunden svarade:<input id="k-who">När:<input id="k-at" value="${new Date().toISOString().slice(0, 10)}"><button class="primary" data-k="customer-yes-go" data-node="${esc(node)}">Registrera</button> <button data-k="cancel">Avbryt</button>`; return render();
+      case "customer-yes": K.dialog = `<b>Kundens ja på «${esc(title(node))}»</b>\nVem hos kunden svarade:<input id="k-who">När:<input id="k-at" value="${new Date().toISOString().slice(0, 10)}"><button class="primary" data-k="customer-yes-go" data-node="${esc(node)}">Registrera</button> <button data-k="cancel">Avbryt</button>`; return render();
       case "customer-yes-go": if (!val("k-who")) return null;
-        return act("execute_step", { task: K.task, node, values: { customer_answer: { from: val("k-who"), at: val("k-at") } } }, `Kundens ja: ${val("k-who")}`, node);
+        return act("execute_step", { ...tn(node), values: { customer_answer: { from: val("k-who"), at: val("k-at") } } }, `Kundens ja: ${val("k-who")}`, node);
       case "override-go": if (!val("k-note")) { K.dialog = `<span class="k-warn">«Gör ändå» kräver ett skäl i ord.</span>\n<button data-k="cancel">Stäng</button>`; return render(); }
-        return act("execute_step", { task: K.task, node, values: { override: { reason: val("k-reason"), ...(val("k-note") ? { note: val("k-note") } : {}) } } }, "Gör ändå", node);
-      case "undo-go": return act("execute_step", { task: K.task, node, mark: "undone", reason: val("k-note") || "ångrat i kartan" }, "Ångra");
-      case "grow-go": return act("write", { op: "task_lock", task: K.task, goal: { results: [val("k-res")] }, reason: val("k-note") || "uppdraget växer, ur kartan" }, "Låt uppdraget växa");
-      case "move-go": { const to = val("k-newband") || val("k-band"); return act("write", { op: "task_lock", task: K.task, goal: { bands: { move: { [el.getAttribute("data-ms")]: to } } }, reason: "flyttat i kartan" }, `Flytta till «${to}»`); }
-      case "rename-band-go": return act("write", { op: "task_lock", task: K.task, goal: { bands: { rename: { [el.getAttribute("data-band")]: val("k-name") } } }, reason: "namn ändrat i kartan" }, "Byt namn på delen");
-      case "instr-go": { const level = val("k-level"); return act("write", { op: "step_edit", task: K.task, step: el.getAttribute("data-step"), layer: val("k-layer") || "here",
+        return act("execute_step", { ...tn(node), values: { override: { reason: val("k-reason"), ...(val("k-note") ? { note: val("k-note") } : {}) } } }, "Gör ändå", node);
+      case "skip": return act("execute_step", { ...tn(node), values: { skip: { reason: SKIP_REASON } } }, "Hoppa över", null, { optimistic: "skip", nodes: [node], reason: SKIP_REASON, k, node });
+      case "skip-go": { const reason = val("k-skip") || SKIP_REASON;
+        return act("execute_step", { ...tn(node), values: { skip: { reason } } }, "Hoppa över", null, { optimistic: "skip", nodes: [node], reason, k, node }); }
+      case "unskip": return act("execute_step", { ...tn(node), values: { skip: false } }, "Ta tillbaka", null, { optimistic: "unskip", nodes: [node], k, node });
+      case "done-go": {
+        const raw = el.getAttribute("data-nodes").split(","), nodes = raw.map(strip), kind = val("k-ev"), v = val("k-evv");
+        const by = val("k-by") || K.map.me || "", at = val("k-at") || new Date().toISOString().slice(0, 10);
+        const evidence = kind === "link" && v ? { kind, url: v } : kind === "text" && v ? { kind, text: v } : kind === "file" && v ? { kind, ref: v }
+          : { kind: "done_by", by, at, ...(v ? { text: v } : {}) };
+        const before = !!root().querySelector("#k-before")?.checked;
+        return act("execute_step", { task: tn(raw[0]).task, node: nodes[0], values: { already_done: { nodes, evidence, ...(before ? { with_before: true } : {}) } } }, "Markera som gjort", null,
+          { optimistic: "done", nodes: raw, k, node: el.getAttribute("data-nodes") });
+      }
+      case "undo-go": return act("execute_step", { ...tn(node), mark: "undone", reason: val("k-note") || "ångrat i kartan" }, "Ångra");
+      case "grow-go": return act("write", { op: "task_lock", task: K.sel ? tn(K.sel).task : K.delivery ? K.map.regions?.[0]?.task : K.task, goal: { results: [val("k-res")] }, reason: val("k-note") || "uppdraget växer, ur kartan" }, "Låt uppdraget växa");
+      case "move-go": { const to = val("k-newband") || val("k-band"), mm = el.getAttribute("data-ms"); return act("write", { op: "task_lock", task: tn(mm).task, goal: { bands: { move: { [strip(mm)]: to.replace(/^.* · /, "") } } }, reason: "flyttat i kartan" }, `Flytta till «${to}»`); }
+      case "rename-band-go": return act("write", { op: "task_lock", task: tn(el.getAttribute("data-band")).task, goal: { bands: { rename: { [strip(el.getAttribute("data-band"))]: val("k-name").replace(/^.* · /, "") } } }, reason: "namn ändrat i kartan" }, "Byt namn på delen");
+      case "instr-go": { const level = val("k-level"); return act("write", { op: "step_edit", task: tn(el.getAttribute("data-node") || "").task || K.task, step: el.getAttribute("data-step"), layer: val("k-layer") || "here",
         ...(val("k-prompt") ? { prompt: val("k-prompt") } : {}), ...(level ? { level } : {}) }, "Instruktionen"); }
       case "instr-claude": {
-        const text = `Arbeta med dirigenten: ändra instruktionen för momentet ${node} i uppgiften ${K.task} (lager: ${val("k-layer") || "here"}${val("k-level") ? `, nivå ${val("k-level")}` : ""}). Läs den med read { op: "context", task: "${K.task}", node: "${node}" }, föreslå ändringen och skriv den med write { op: "step_edit" } efter mitt ja.${val("k-prompt") ? `\n\nDet jag vill ändra: ${val("k-prompt")}` : ""}`;
+        const text = `Arbeta med dirigenten: ändra instruktionen för momentet ${strip(node)} i uppgiften ${tn(node).task} (lager: ${val("k-layer") || "here"}${val("k-level") ? `, nivå ${val("k-level")}` : ""}). Läs den med read { op: "context", task: "${tn(node).task}", node: "${strip(node)}" }, föreslå ändringen och skriv den med write { op: "step_edit" } efter mitt ja.${val("k-prompt") ? `\n\nDet jag vill ändra: ${val("k-prompt")}` : ""}`;
         try { navigator.clipboard?.writeText(text); } catch { /* utan urklipp */ }
         K.dialog = `<b>Ändra med Claude</b>\nPrompten är kopierad. Klistra in den i chatten.\n<textarea rows="5" readonly>${esc(text)}</textarea><button data-k="cancel">Stäng</button>`; return render();
       }
@@ -1420,14 +1906,32 @@ details.removed { margin-top: 10px; }
   }
 
   function open(task, call, opts) {
-    K.task = task; K.call = call; K.map = null; K.mband = 0; K.sel = opts?.sel || null; K.dialog = null; K.toast = null; K.open = {};
-    if (opts?.tasks) { K.tasks = opts.tasks; K.onList = opts.onList || null; K.onWork = opts.onWork || null; K.onOpen = opts.onOpen || null; }
-    else if (!opts?.keep) { K.tasks = null; K.onList = null; K.onWork = null; K.onOpen = null; }
+    if (opts?.delivery !== undefined) K.delivery = opts.delivery || null; else if (!opts?.keep) K.delivery = null;
+    if (opts?.deliveryId) { K.deliveryId = opts.deliveryId; K.deliveryLabel = opts.deliveryLabel || null; } else if (!opts?.keep) K.deliveryId = null;
+    K.mat = false; K.multi = {}; K.menu = null;
+    K.task = task; K.call = call; K.map = null; K.mband = 0; K.sel = opts?.sel || null; K.dialog = null; K.toast = null; K.open = {}; K.detail = {}; K.pending = {}; K.busy = null;
+    if (opts?.tasks) { K.tasks = opts.tasks; K.onList = opts.onList || null; K.onWork = opts.onWork || null; K.onOpen = opts.onOpen || null; K.onTime = opts.onTime || null; }
+    else if (!opts?.keep) { K.tasks = null; K.onList = null; K.onWork = null; K.onOpen = null; K.onTime = null; }
     const el = root();
     if (!el.dataset.wired) { el.dataset.wired = "1"; el.addEventListener("click", onClick); el.addEventListener("dblclick", onDbl);
-      el.addEventListener("change", (e) => { if (e.target.classList?.contains("k-task")) open(e.target.value, K.call, { keep: true }); });
-      el.addEventListener("contextmenu", (e) => { const n = e.target.closest(".k-node,.k-bandhead"); if (!n) return; e.preventDefault();
-        if (n.classList.contains("k-bandhead")) form("rename-band", n); else { K.sel = n.getAttribute("data-ms"); render(); } }); }
+      el.addEventListener("keydown", (e) => { const n = e.target.closest?.(".k-node"); if (n && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); select(n.getAttribute("data-ms")); } });
+      el.addEventListener("change", (e) => {
+        if (e.target.getAttribute?.("data-k") === "present-set") { const n = e.target.getAttribute("data-node");
+          return act("execute_step", { ...tn(n), values: { present_as: e.target.value } }, `Visa för kunden som ${e.target.selectedOptions?.[0]?.text || e.target.value}`); }
+        if (e.target.getAttribute?.("data-k") === "mat-by") { K.matBy[Number(e.target.getAttribute("data-i"))] = e.target.value; K.matBy = K.matBy.filter(Boolean); if (!K.matBy.length) K.matBy = ["task"]; delete K.detail["@material"]; render(); detail("@material"); return; }
+        if (e.target.classList?.contains("k-task")) { const v = e.target.value;
+          open(v === "@delivery" ? K.tasks[0].task : v, K.call, { keep: true, delivery: v === "@delivery" ? K.deliveryId : null }); } });
+      // Högerklick (Daniel P 2026-10-14): nod, kant, band och rubriken ger handlingstabellen; flera markerade gäller alla.
+      el.addEventListener("contextmenu", (e) => {
+        const n = e.target.closest(".k-node,.k-bandhead,[data-edge],.k-thumb,[data-k=title-ctx],.k-task"); if (!n || !K.map) return;
+        if (n.classList.contains("k-node")) { const m = n.getAttribute("data-ms"); return openMenu(e, K.multi[m] ? Object.keys(K.multi) : [m], "node"); }
+        if (n.classList.contains("k-bandhead")) { const b = K.map.bands.find((x) => x.id === n.getAttribute("data-band")); if (!b) return;
+          openMenu(e, b.ids, "band"); K.menu.band = b.id; K.menu.bandName = b.name; return render(); }
+        if (n.hasAttribute("data-edge")) { const [a, b] = n.getAttribute("data-edge").split(">"); openMenu(e, [b], "edge"); K.menu.edge = [a, b]; return render(); }
+        if (n.classList.contains("k-thumb")) { const ref = n.getAttribute("data-ref"), row = (K.detail["@material"]?.rows || []).find((x) => x.ref === ref);
+          return row?.node ? openMenu(e, [row.node], "node") : null; }
+        return openMenu(e, Object.keys(K.map.model.milestones), "delivery");
+      }); }
     return load();
   }
   window.RotorKarta = { open, stick: stickHeads };
@@ -1435,7 +1939,8 @@ details.removed { margin-top: 10px; }
   // Fristående (scripts/vy-lokalt.mjs --fil karta): uppgiften ur adressen, #/karta/<uppgift>.
   if (!document.getElementById("v6")) {
     const start = async () => {
-      const m = /#\/karta\/([^/?#]+)/.exec(location.hash);
+      const dl = /#\/leverans\/([^/?#]+)/.exec(location.hash);
+      const m = dl || /#\/karta\/([^/?#]+)/.exec(location.hash);
       if (!m) { const el = root(); el.hidden = false; el.innerHTML = `<div class="k-empty">Öppna kartan med adressen #/karta/&lt;uppgiftens id&gt;.</div>`; return; }
       const mcp = await window.claude.use("mcp");
       const call = async (tool, input) => {
@@ -1445,6 +1950,7 @@ details.removed { margin-top: 10px; }
         if (d && typeof d === "object" && Array.isArray(p?.content)) Object.defineProperty(d, "_text", { value: p.content.map((c) => c?.text || "").join("\n"), enumerable: false });
         return d;
       };
+      if (dl) { const id = decodeURIComponent(dl[1]); return open(id, call, { delivery: id, deliveryId: id }); }
       open(decodeURIComponent(m[1]), call);
     };
     window.addEventListener("hashchange", start);
@@ -1460,7 +1966,7 @@ details.removed { margin-top: 10px; }
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "e09d23ad", published: "2026-10-13" };
+  const SIDA = { version: "b3a623c7", published: "2026-10-14" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -1834,7 +2340,7 @@ details.removed { margin-top: 10px; }
     if (n.customer) out.push(`<span class="wait" title="Väntar på ${esc(r.customer?.label || "kunden")}">◷</span>`);
     if (n.handover_out) out.push(`<span class="out" title="Väntar på att någon tar emot ${n.handover_out} steg">⇢</span>`);
     // Nytt arbete och projektutkast som väntar (docs/plan-projektstart.md, etapp 19).
-    if (r.start) out.push(`<button class="link" data-act="start-project" data-key="${esc(r.key)}" title="Gå igenom arbetet med Claude innan det läggs in">${esc(/^(Planera om|Fortsätt projektet)/.test(r.headline || "") ? "Fortsätt ↗" : "Starta projekt ↗")}</button>`);
+    if (r.start) out.push(`<button class="link" data-act="start-project" data-key="${esc(r.key)}" title="Gå igenom arbetet med Claude innan det läggs in">${esc(r.start.text || (/^(Planera om|Fortsätt projektet)/.test(r.headline || "") ? "Fortsätt ↗" : "Starta projekt ↗"))}</button>`);
     return out.join("");
   }
 
@@ -1967,7 +2473,7 @@ details.removed { margin-top: 10px; }
   function goalFront(task) {
     const m = goalMap(task);
     if (!m) return [];
-    const title = (n) => m.titles?.[n] || m.labels?.[n] || n;
+    const title = (n) => m.titles?.[n] || n;
     const bandOf = (ms) => m.bands.find((b) => b.ids.includes(ms))?.name || "";
     const out = [];
     for (const [ms, st] of Object.entries(m.state?.milestones || {})) {
@@ -1975,7 +2481,7 @@ details.removed { margin-top: 10px; }
       for (const id of [...new Set([...(st.needs_yes || []), ...(st.doable_moments || [])])]) {
         const node = `${ms}/${id}`, mo = m.model.milestones[ms]?.moments?.[id];
         if (!mo) continue;
-        out.push({ task, ms, node, step: mo.step || null, label: mo.title || title(node), ms_label: title(ms), band: bandOf(ms), yes: (st.needs_yes || []).includes(id) });
+        out.push({ task, ms, node, step: mo.step || null, label: title(node), ms_label: title(ms), band: bandOf(ms), yes: (st.needs_yes || []).includes(id) });
       }
     }
     return out;
@@ -1985,7 +2491,7 @@ details.removed { margin-top: 10px; }
     const m = isGoalTask(task) ? goalMap(task) : null;
     if (!m) return null;
     for (const [ms, x] of Object.entries(m.model.milestones)) for (const [id, mo] of Object.entries(x.moments || {}))
-      if (mo.step === step || id === step) return { ms, node: `${ms}/${id}`, label: mo.title || m.labels?.[`${ms}/${id}`] || mo.label, ms_label: m.titles?.[ms] || m.labels?.[ms] || ms };
+      if (mo.step === step || id === step) return { ms, node: `${ms}/${id}`, label: m.titles?.[`${ms}/${id}`] || id, ms_label: m.titles?.[ms] || ms };
     return null;
   }
   const openMap = (task, ms) => { const row = (S.data?.rows || []).find((r) => goalTasks(r).includes(task));
@@ -2009,12 +2515,56 @@ details.removed { margin-top: 10px; }
   /** Kartan för en rad: alla uppgifter med delmål, ett klick till listan och ett till arbetsytan. */
   function openRowMap(row, task, ms) {
     const tasks = goalTasks(row).map((t) => ({ task: t, label: goalMaps0(t) || t }));
+    // Kartan per leverans (Del H2): en leverans öppnas som en karta med uppdragen som regioner; ett uppdrag är inzoomningen.
+    const whole = !task && tasks.length > 1 && /^d_/.test(String(row.key || ""));
     globalThis.RotorKarta.open(task || tasks[0].task, call, {
       ...(ms ? { sel: ms } : {}), tasks,
+      ...(/^d_/.test(String(row.key || "")) ? { deliveryId: row.key, deliveryLabel: row.label, delivery: whole ? row.key : null } : {}),
+      // «⏱ Visa i Tid» (Daniel P 2026-10-14): Tid med leveransen utfälld.
+      onTime: () => { const T = timeState(); T.group = "delivery"; T.zopen = { ...(T.zopen || {}), [`d:${row.key}`]: true }; S.sheets = []; S.body = "time";
+        document.body.classList.remove("over-map"); if (!T.tl) loadTimeline(); else render(); },
       onList: () => openSheet("delivery", row.key, row.label, true),
       onWork: (t, step, l) => overMap(() => openStep(t, step, l)),
-      onOpen: (ref, l, kind) => overMap(() => openSheet("result", kind === "asset" && !/^bank:\/\//.test(ref) ? `asset:${ref}` : ref, l)),
+      onOpen: (ref, l, kind, ctx) => overMap(() => openMaterial(row, ref, l, kind, ctx || {})),
     });
+  }
+  /*
+   * Ett material eller ett moments verktyg från kartan (K.onOpen), i vyns egna lager — inget nytt:
+   * bild och fil i filens ark (bildvisningen), text och rapport i läsrutan, och det som ska ut till
+   * någon (mejl, annons per format, inlägg, sida) i presentatörens förhandsvisning av just det materialet.
+   * Verktyget avgör (`tool:<komponent>` ur registrets view_tool); utan verktyg avgör materialets typ.
+   */
+  /** Typer (registrets eller innehållets, utan förled) som visas som det som skickas: mejl, annons, inlägg, sida, presentation. */
+  const SHOWN_AS_SENT = /(^|_)(mail|mejl|email|utskick|ad|ads|annons|campaigns?|kampanj|social|post|inlagg|inlägg|page|sida|landningssida|presentation)(_|$)/;
+  const sentType = (t) => SHOWN_AS_SENT.test(String(t || "").replace(/^[a-z]+\.asset\./, "").toLowerCase());
+  function openMaterial(row, ref, l, kind, ctx) {
+    const comp = /^tool:/.test(kind || "") ? kind.slice(5) : null, asset = (ctx.kind || kind) === "asset";
+    const sheetRef = asset && ref && !/^bank:\/\//.test(ref) ? `asset:${ref}` : ref;
+    if (comp === "image-picker") { delete IPS.pick; S.imgPick = { place: "step-tool", t: { task: ctx.task || null, step: ctx.step || null, customer: customerOfTask(ctx.task) } }; return render(); }
+    if (comp === "presenter") return openPres(row.key, row.label || l);
+    if (ref && (comp === "preview" || sentType(ctx.type))) return previewOne(row, ref, sheetRef, l);
+    if (ref) return openSheet("result", sheetRef, l);
+    say(`Inget material att visa i «${l}» än.`); render();
+  }
+  /**
+   * Presentatörens förhandsvisning av ett enda material: omslaget och blocken som visar det. En annons
+   * visas hel (texten och bilden i varje format), ett mejl som mejlet. Materialet känns igen på filens
+   * hash (bank://…/<hash>) eller, för en text, på namnet. Hittas det inte i urvalet: läsrutan.
+   */
+  async function previewOne(row, ref, sheetRef, l) {
+    const name = /^ct_/.test(ref) ? await call("read", { op: "content_get", id: ref }).then((d) => d?.name || d?.title || null).catch(() => null) : null;
+    await openPres(row.key, l);
+    const p = S.pres;
+    const hit = (i) => i.ref === ref || String(i.ref || "").endsWith(`/${ref}`) || (name && (i.item === name || i.label === name));
+    const blocks = (p?.d?.blocks || []).flatMap((b) => {
+      const found = (b.items || []).find(hit);
+      if (!found) return [];
+      const items = found.item ? b.items.filter((i) => i.item === found.item) : [found];
+      return [{ ...b, items }];
+    });
+    if (!blocks.length) { S.pres = null; return openSheet("result", sheetRef, l); }
+    p.d = { ...p.d, blocks: [...p.d.blocks.filter((b) => b.type === "cover"), ...blocks] }; p.single = true;
+    p.title = name || blocks[0].items[0]?.item || blocks[0].items[0]?.label || l; return presPreview();
   }
   /** Läsrutan, bildvisaren och arbetsytan som ett lager ovanpå kartan; när lagret stängs syns kartan igen. */
   function overMap(f) {
@@ -2079,7 +2629,7 @@ details.removed { margin-top: 10px; }
      aldrig historiken (den är claude.ai:s): adressen skrivs över på plats.
      En kopierad länk går alltid till /vy, eftersom den fungerar för alla i huset. */
   const LINK_KIND = { delivery: "leverans", part: "del", step: "steg", case: "arende", customer: "kund", result: "resultat", method: "metod",
-    person: "person", library: "bibliotek", messages: "meddelanden", thread: "trad", settings: "installningar", focus: "fokus", inbox: "inkommet" };
+    person: "person", library: "bibliotek", messages: "meddelanden", thread: "trad", settings: "installningar", focus: "fokus", inbox: "inkommet", map: "karta" };
   const KIND_LINK = Object.fromEntries(Object.entries(LINK_KIND).map(([k, v]) => [v, k]));
   const VY_URL = "https://rotor-dirigenten.netlify.app/vy";
   const slugOf = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48).replace(/-+$/, "");
@@ -2193,8 +2743,11 @@ details.removed { margin-top: 10px; }
   function rememberStack(h) { try { globalThis.localStorage?.setItem(STACK, JSON.stringify({ at: Date.now(), hash: h })); } catch { /* utan lagring: bara adressen */ } }
   /* Arkens innehåll också, när sidan göms: laddar claude.ai om artefakten när fönstret kommer
      tillbaka visas arken direkt ur kopian (inaktuella) och läses om i bakgrunden. */
-  const SHEETS_MEM = "v6.sheetdata", SHEETS_MAX = 1_500_000;
+  const SHEETS_MAX = 1_500_000;
+  /** Per användare, som översikten: ingen ser en annans ark. */
+  const sheetsMem = () => `v6.sheetdata:${globalThis.RotorWho?.() || "?"}`;
   function rememberSheets() {
+    if (!globalThis.RotorWho?.()) return;
     try {
       // De öppna arken först, sedan de förhämtade (leverans, del, steg), så länge de ryms.
       const data = {}, keys = [...S.sheets.map(sheetKey), ...Object.keys(S.sheetData).filter((k) => /^(delivery|part|step):/.test(k))];
@@ -2203,11 +2756,12 @@ details.removed { margin-top: 10px; }
         const { loading: _l, error: _e, pending: _p, ...rest } = d, n = JSON.stringify(rest).length;
         if (size + n > SHEETS_MAX - 2000) continue; size += n; data[k] = rest; }
       const text = JSON.stringify({ at: Date.now(), build: BUILD, data });
-      if (text.length > SHEETS_MAX) globalThis.localStorage?.removeItem(SHEETS_MEM); else globalThis.localStorage?.setItem(SHEETS_MEM, text);
+      if (text.length > SHEETS_MAX) globalThis.localStorage?.removeItem(sheetsMem()); else globalThis.localStorage?.setItem(sheetsMem(), text);
     } catch { /* full eller stängd: arken läses om */ }
   }
   function recallSheets() {
-    try { const m = JSON.parse(globalThis.localStorage?.getItem(SHEETS_MEM) || "null");
+    if (!globalThis.RotorWho?.()) return;
+    try { const m = JSON.parse(globalThis.localStorage?.getItem(sheetsMem()) || "null");
       if (!m || m.build !== BUILD || Date.now() - m.at > STACK_MS) return;
       // Alla sparade ark, också de förhämtade: de visas direkt och läses om när de öppnas.
       for (const [k, d] of Object.entries(m.data || {})) if (d && !S.sheetData[k]) S.sheetData = { ...S.sheetData, [k]: { ...d, stale: true } };
@@ -3650,6 +4204,9 @@ details.removed { margin-top: 10px; }
     const root = e.target?.closest?.("[data-ip]"), P = root && IPS[root.dataset.ip];
     if (P && e.target.matches("[data-ip-edit]")) P.promptText = e.target.value;
   });
+  // «Idag»: grupperingens två nivåer.
+  document.addEventListener("change", (e) => { const t = e.target; if (t?.getAttribute?.("data-act") === "idag-by") setIdagBy(Number(t.getAttribute("data-i")), t.value);
+    else if (t?.getAttribute?.("data-act") === "by-set") setBy(t.getAttribute("data-scope"), Number(t.getAttribute("data-i")), t.value); });
   document.addEventListener("change", (e) => {
     const root = e.target?.closest?.("[data-ip]"), P = root && IPS[root.dataset.ip];
     if (!P || !e.target.matches("[data-ip-content]")) return;
@@ -3865,6 +4422,10 @@ details.removed { margin-top: 10px; }
   function allResults() { const out = []; for (const k of Object.keys(S.sheetData)) for (const r of S.sheetData[k].results || []) out.push(r); return out; }
   function openResult(id) {
     const r = allResults().find((x) => x.id === id);
+    // Det som ska ut (mejl, sida, annons, inlägg) i samma förhandsvisning som från kartan; annat i läsrutan eller bildvisningen.
+    const row = r?.task ? (S.data?.rows || []).find((x) => x.id === r.task || (x.tasks || []).includes(r.task)) : null;
+    const sent = r && (r.format === "mail" || r.format === "web" || sentType(r.asset_type) || sentType(r.kind));
+    if (row?.key && sent) return previewOne(row, id.replace(/^asset:/, ""), id, r.name || "Resultatet");
     openSheet("result", id, r?.name || "Resultatet");
   }
   const FMT_TEXT = { text: "Text", report: "Rapport", image: "Bild", pdf: "PDF", table: "Tabell", mail: "Mejl", web: "Webb", decision: "Beslut" };
@@ -4706,6 +5267,146 @@ details.removed { margin-top: 10px; }
 
   /* Granskningar i «Där jag behövs»: second opinion som du blivit ombedd om, och svaren på dem du bett om. */
   const REVIEW_TEXT = { ok: "Ser bra ut", change: "Ändra så här", unsure: "Jag vet inte" };
+  /* ── «Idag» som utsnitt av kartorna (Del E, Daniel P 2026-10-13) ──
+     Dagens beläggning och pass överst, krockarna, och momenten i tre lager: brinner, ditt ja, går att göra nu.
+     Varje rad: lägessymbolen, rubriken i verbform, vad den hör till, ✓ och ⊘ direkt, ett klick öppnar kartan på delmålet.
+     Högerklick ger samma meny som stegen (Igång, byt utförare, flytta i tid, ta över). Igång, filtren och grupperingen står kvar. */
+  /* grouping:start — samma algoritm som src/views/grouping.ts, utan typerna (provet jämför dem). */
+  function groupRows(rows, by) {
+    const OTHER = "Övrigt", MAX = 8, T = { "I dag": 0, "Veckan": 1, "Senare": 2 };
+    const fieldsOf = () => [...new Set(rows.flatMap((r) => Object.keys(r.g)))];
+    const valuesOf = (k) => { const m = new Map(); for (const r of rows) { const v = r.g[k]; if (v) m.set(v, (m.get(v) ?? 0) + 1); } return m; };
+    // Auto: det fält som ger 3–8 grupper med jämnast storlek (minst spridning); annars närmast tre till åtta.
+    const auto = (skip) => {
+      let best = null, score = Infinity;
+      for (const k of fieldsOf()) {
+        if (skip.includes(k)) continue;
+        const m = valuesOf(k), n = m.size;
+        if (n < 2) continue;
+        const sizes = [...m.values()], mean = rows.length / n, spread = Math.sqrt(sizes.reduce((s, x) => s + (x - mean) ** 2, 0) / n) / mean;
+        const s = (n >= 3 && n <= MAX ? 0 : 10 + Math.abs(n < 3 ? 3 - n : n - MAX)) + spread + (rows.length - sizes.reduce((a, b) => a + b, 0)) / rows.length;
+        if (s < score || (s === score && best !== null && k < best)) { score = s; best = k; }
+      }
+      return best;
+    };
+    const [k0, ...rest] = by;
+    if (!k0 || !rows.length) return [];
+    const k = k0 === "auto" ? auto(rest) : k0;
+    if (!k) return rest.length ? groupRows(rows, rest) : [{ key: "all", label: OTHER, n: rows.length, open: rows.length <= 3, rows: [...rows] }];
+    const counts = valuesOf(k);
+    // Fler än åtta grupper: de minsta går till «Övrigt» (tiden har alltid sina tre).
+    const keep = new Set([...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "sv")).slice(0, k === "time" ? Infinity : MAX).map(([v]) => v));
+    const order = [], m = new Map();
+    for (const r of rows) { const raw = r.g[k], v = raw && keep.has(raw) ? raw : OTHER; if (!m.has(v)) { m.set(v, []); order.push(v); } m.get(v).push(r); }
+    order.sort((a, b) => a === OTHER ? 1 : b === OTHER ? -1 : k === "time" ? (T[a] ?? 9) - (T[b] ?? 9) : a.localeCompare(b, "sv"));
+    return order.map((v) => { const xs = m.get(v);
+      return rest.length ? { key: `${k}:${v}`, label: v, n: xs.length, open: xs.length <= 3, groups: groupRows(xs, rest) }
+        : { key: `${k}:${v}`, label: v, n: xs.length, open: xs.length <= 3, rows: xs }; });
+  }
+  /* grouping:end */
+  globalThis.RotorGroupRows = groupRows;
+  /** Fälten att gruppera på: de som raderna bär, med namnen servern skickar (`idag.fields`); «Auto» väljer själv. */
+  const groupFields = () => { const f = S.data?.idag?.fields || {}, have = new Set((S.data?.idag?.rows || []).flatMap((r) => Object.keys(r.g || {})));
+    return [["auto", f.auto || "Auto"], ...[...have].map((k) => [k, f[k] || k])]; };
+  /** Valet sparas per användare i webbläsaren; utan lagring gäller förvalet. */
+  function idagBy() {
+    if (S.idagBy) return S.idagBy;
+    try { const v = JSON.parse(localStorage.getItem("v6.idag.by") || "null"); if (Array.isArray(v) && v.length && v.every((x) => typeof x === "string")) return (S.idagBy = v.slice(0, 2)); } catch { /* förvalet */ }
+    return (S.idagBy = ["project", "task"]);
+  }
+  function setIdagBy(i, v) {
+    const by = [...idagBy()]; if (v) by[i] = v; else by.splice(i, 1);
+    S.idagBy = [...new Set(by.filter(Boolean))].slice(0, 2);
+    try { localStorage.setItem("v6.idag.by", JSON.stringify(S.idagBy)); } catch { /* utan lagring */ }
+    render();
+  }
+  /* Samma gruppering i översiktens lista och i Tid (kvar.md, punkt 3 i kartan): raderna bär `g` från servern
+     (src/views/grouping.ts groupValues), och valet sparas per användare i webbläsaren som «Idag»s. Utan val gäller
+     listans egna grupperingar och Tid utan grupper, så att inget ändras för den som inte väljer. */
+  const FIELD_NAMES = { kind: "Slag", customer: "Kund", project: "Leverans", task: "Uppdrag", type: "Leveranstyp", family: "Sort", period: "Period", person: "Person", time: "Tid", auto: "Auto" };
+  function byOf(scope) {
+    S.by = S.by || {};
+    if (S.by[scope]) return S.by[scope];
+    try { const v = JSON.parse(globalThis.localStorage?.getItem(`v6.${scope}.by`) || "null"); if (Array.isArray(v) && v.every((x) => typeof x === "string")) return (S.by[scope] = v.slice(0, 2)); } catch { /* inget val */ }
+    return (S.by[scope] = []);
+  }
+  function setBy(scope, i, v) {
+    const by = [...byOf(scope)]; if (v) by[i] = v; else by.splice(i);
+    S.by[scope] = [...new Set(by.filter(Boolean))].slice(0, 2);
+    try { globalThis.localStorage?.setItem(`v6.${scope}.by`, JSON.stringify(S.by[scope])); } catch { /* utan lagring */ }
+    render();
+  }
+  /** Sorten ur leveranstypens namn och tiden ur datumet: samma regler som src/views/grouping.ts (familyOf, timeGroup). */
+  const familyOfLabel = (l) => (String(l).trim().split(/[\s\-–:,]+/)[0] || "").replace(/^./, (c) => c.toUpperCase());
+  function timeGroupOf(day, today) {
+    if (day <= today) return "I dag";
+    const d = new Date(`${today}T00:00:00Z`), end = new Date(d.getTime() + ((7 - d.getUTCDay()) % 7) * 86400000).toISOString().slice(0, 10);
+    return day <= end ? "Veckan" : "Senare";
+  }
+  /** En rad i listan med grupperingens fält: kund, leverans, slag, ansvarig och tid ur raden, perioden ur `gi` (index i names). */
+  function rowG(o, r) {
+    const g = {}, put = (k, v) => { if (v) g[k] = v; };
+    put("customer", r.customer?.label); put("project", r.kind === "delivery" || r.kind === "stream" ? r.label : "");
+    put("kind", TYPE_LABEL[r.type]);
+    for (const [k, i] of Object.entries(r.gi || {})) put(k, o.names?.[i]);
+    if (g.type) put("family", familyOfLabel(g.type));
+    put("person", r.owner?.label); if (r.due) put("time", timeGroupOf(r.due.slice(0, 10), o.today));
+    return g;
+  }
+  /** Väljaren: två nivåer, fälten som raderna bär; nivå ett kan vara «—» (ingen fältgruppering). */
+  function byPick(scope, rows) {
+    const by = byOf(scope), names = { ...FIELD_NAMES, ...(S.data?.idag?.fields || {}) };
+    const have = [...new Set(rows.flatMap((r) => Object.keys(r.g || {})))];
+    const fields = [["auto", names.auto], ...have.map((k) => [k, names[k] || k])];
+    const sel = (i) => `<select data-act="by-set" data-scope="${scope}" data-i="${i}" aria-label="Gruppera på fält, nivå ${i + 1}"><option value="">—</option>${fields.map(([k, l]) => `<option value="${k}"${by[i] === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>`;
+    return `<span class="idag-by mmeta">Gruppera ${sel(0)}${by[0] ? ` → ${sel(1)}` : ""}</span>`;
+  }
+  const IDAG_LAYERS = [["burning", "Brinner"], ["your_yes", "Ditt ja"], ["doable", "Går att göra nu"]];
+  const idagRowOf = (task, step) => (S.data?.idag?.rows || []).find((x) => x.task === task && x.step === step) || null;
+  const symHtml = (kind, key) => globalThis.RotorSymbols?.html?.(kind, key) || "";
+  /* Ansvarig per moment (plan H5): ◉ namnet, med varifrån som förklaring; ⊕ när ingen är ansvarig än tar momentet (högerklick lägger över). */
+  function idagWho(x) {
+    if (x.who === undefined) return "";
+    const R = globalThis.RotorSymbols || {}, A = R.action || {};
+    if (x.who) return `<span class="meta" title="Ansvarig: ${esc(x.who.l)} · ${esc(x.who.f)}"> · ${R.who?.human?.g || "◉"} ${esc(x.who.l)}</span>`;
+    return ` <button class="link" data-act="take-over" data-task="${esc(x.task)}" data-step="${esc(x.step || "")}" data-label="${esc(x.h)}" title="${esc(A.assign?.t || "Ingen ansvarig än: sätt en ansvarig")} · tar momentet, högerklick lägger över">${A.assign?.g || "⊕"}</button>`;
+  }
+  function idagHtml(o) {
+    const d = o?.idag;
+    if (!d) return "";
+    const sess = d.sessions || [], rows = d.rows || [];
+    if (!sess.length && !rows.length && !d.load) return "";
+    const A = globalThis.RotorSymbols?.action || {};
+    // En pausad planering (Ditt ja): fortsätt projektstarten, inget ✓ eller ⊘.
+    const startRow = (x) => `<div class="step idag-row"><span class="idag-s">${symHtml("state", "yes")}</span><div style="min-width:0"><span>${esc(x.h)}</span><span class="meta">${x.r ? ` · ${esc(x.r)}` : ""}</span></div>`
+      + `<span class="idag-acts"><button class="link" data-act="start-project" data-key="${esc(x.k || x.task)}" title="Gå igenom arbetet med Claude innan det läggs in">${/^(Planera om|Fortsätt projektet)/.test(x.h || "") ? "Fortsätt ↗" : "Starta projekt ↗"}</button></span></div>`;
+    const row = (x) => x.start ? startRow(x) : `<div class="step go idag-row" data-ctx="step|${esc(x.task)}|${esc(x.step || "")}" data-act="open-map" data-task="${esc(x.task)}" data-ms="${esc(x.ms || "")}" role="button" title="Öppna kartan på delmålet">`
+      + `<span class="idag-s">${symHtml("state", x.layer === "burning" ? "burning" : x.state)}</span><div style="min-width:0"><span>${esc(x.h)}</span><span class="meta">${x.r ? ` · ${esc(x.r)}` : ""}</span>${idagWho(x)}</div>`
+      + `<span class="idag-acts"><button class="quiet" data-act="idag-done" data-task="${esc(x.task)}" data-step="${esc(x.step || "")}" data-label="${esc(x.h)}" title="${esc(A.done?.t || "Markera som gjort")}" aria-label="${esc(A.done?.t || "Markera som gjort")}">${A.done?.g || "✓"}</button>`
+      + `<button class="quiet" data-act="idag-skip" data-task="${esc(x.task)}" data-node="${esc(x.node)}" data-label="${esc(x.h)}" title="${esc(A.skip?.t || "Hoppa över")}" aria-label="${esc(A.skip?.t || "Hoppa över")}">${A.skip?.g || "⊘"}</button></span></div>`;
+    // Ingen jättelista: grupperna i två nivåer (förval projekt → uppdrag), hopfällda över tre rader; valet sparas per användare.
+    const by = idagBy();
+    const ctxsOf = (g) => g.groups ? g.groups.flatMap(ctxsOf) : g.rows.map((x) => `step|${x.task}|${x.step || ""}`);
+    const grp = (g) => `<details class="idag-g"${g.open ? " open" : ""}><summary><b>${esc(g.label)}</b> <span class="mmeta">${g.n}</span> <button class="link idag-all" data-act="sel-group" data-ctxs="${esc(ctxsOf(g).join(" "))}" title="Markera alla i gruppen">markera alla</button></summary>${g.groups ? g.groups.map(grp).join("") : g.rows.map(row).join("")}</details>`;
+    const layers = IDAG_LAYERS.map(([k, name]) => { const xs = rows.filter((x) => x.layer === k); return xs.length
+      ? `<div class="part">${symHtml("state", k === "burning" ? "burning" : k === "your_yes" ? "yes" : "doable")} ${name} <span class="mmeta">${xs.length}</span></div>${groupRows(xs, by).map(grp).join("")}` : ""; }).join("");
+    const sel = (i) => `<select data-act="idag-by" data-i="${i}" aria-label="Gruppera, nivå ${i + 1}">${i ? `<option value="">—</option>` : ""}${groupFields().map(([k, l]) => `<option value="${k}"${by[i] === k ? " selected" : ""}>${l}</option>`).join("")}</select>`;
+    const pick = `<span class="idag-by mmeta">Gruppera ${sel(0)} → ${sel(1)}</span>`;
+    return `<section class="idag" aria-label="Idag"><div class="idag-h"><b>Idag</b>${d.load ? ` <span class="mmeta${d.load.over ? " late" : ""}" title="Dagens beläggning efter utjämningen över alla uppdrag">· ${esc(d.load.text)}</span>` : ""}<span style="flex:1"></span>${pick}</div>`
+      + (sess.length ? `<div class="idag-pass">${sess.map((p) => `<button class="chip" data-act="open-map" data-task="${esc(p.task)}" data-ms="${esc(p.milestone)}" title="Dagens pass · öppnar kartan på delmålet">${A.time?.g || "◷"} ${esc(p.title)} · ${String(p.hours).replace(".", ",")} h</button>`).join("")}</div>` : "")
+      + (d.conflicts?.length ? d.conflicts.map((c) => `<div class="mmeta late">${symHtml("state", "burning")} ${esc(c.text)}${c.suggest?.length ? ` ${esc(c.suggest.join("; "))}.` : ""}</div>`).join("") : "")
+      + layers + `</section>`;
+  }
+  /** ⊘ på ett moment ur «Idag» eller menyn: direkt, med ångra (samma väg som kartan). */
+  async function skipMoment(task, node, label) {
+    const reason = "behövs inte i det här uppdraget";
+    try {
+      await call("execute_step", { task, node, values: { skip: { reason } } });
+      say(`«${label}» hoppas över.`, { fn: async () => { await call("execute_step", { task, node, values: { skip: false } }); rereadAfterWrite(task); } });
+      rereadAfterWrite(task);
+    } catch (e) { say(`Kunde inte hoppa över «${label}»: ${e.message || e}. Inget ändrades.`, null, true); }
+    render();
+  }
   function reviewsHtml(o) {
     const rs = o?.reviews || [];
     if (!rs.length || !mineOnly()) return "";
@@ -6302,7 +7003,9 @@ details.removed { margin-top: 10px; }
    * (samma flytt som i Inkommet, ●), sedan kopieras prompten till chatten.
    */
   async function startProject(key) {
-    const row = rowOf(key), st = row?.start;
+    // Raden i översikten, eller projektstarten i «Idag» (Ditt ja) när den inte har någon egen rad.
+    const ir = (S.data?.idag?.rows || []).find((x) => x.start && (x.k || x.task) === key);
+    const row = rowOf(key) || (ir ? { label: ir.h, start: ir.start } : null), st = row?.start || ir?.start;
     if (!st) return;
     let project = st.project;
     if (!project && st.thread) {
@@ -6420,6 +7123,12 @@ details.removed { margin-top: 10px; }
         out.push({ id: "earlier", l: "En dag tidigare", key: "←", lvl: "◐", run: () => inTime(s, { shift: -1 }) || previewTime([{ task: s.task, step: s.step, start: workdayFrom(s.start, -1), end: workdayFrom(s.end, -1) }], "Flytta 1 steg") });
       }
       out.push({ id: "done", l: "Markera klart", key: "E", lvl: "●", run: () => markDone(s) });
+      // Ett moment i en karta (Del E): hoppa över och öppna kartan på delmålet, samma handlingar som i kartan.
+      const gm = idagRowOf(s.task, s.step);
+      if (gm) {
+        out.push({ id: "skip", l: "Hoppa över", lvl: "●", run: () => skipMoment(s.task, gm.node, s.label) });
+        out.push({ id: "open-map", l: "Öppna kartan", run: () => openMap(s.task, gm.ms) });
+      }
     }
     // Ta över (v6): direkt, utan mottagarens ja; den som hade det får ett meddelande.
     const me = S.data?.party?.label;
@@ -6433,6 +7142,10 @@ details.removed { margin-top: 10px; }
     if (targetSheets(t).length) out.push({ id: "link", l: "Kopiera länk", key: "⇧⌘C", run: () => copyLink(targetSheets(t)) });
     out.push({ id: "chat", l: "Arbeta i chatten ↗", run: () => copyToChat(t.kind === "case" ? casePrompt(t.task, t.label) : s ? stepPrompt(s) : chatPrompt(rowKey), "prompten") });
     out.push({ id: "claude", l: sample ? "Be Claude om förslag" : "Be Claude om förslag ↗", run: () => suggestInView(t) });
+    // Resten av handlingstabellen för det enskilda: samma handlingar här som för flera markerade.
+    if (s && t.kind === "step") { const x = { task: s.task, step: s.step, node: idagRowOf(s.task, s.step)?.node, label: s.label };
+      for (const a of batchTable()) { if (!a.batch || ["done", "skip", "take_over", "handover", "shift"].includes(a.id)) continue;
+        const y = batchShape(a, x); if (y) out.push({ id: `batch:${a.id}`, l: `${a.label} …`, lvl: a.severity, run: () => batchOpen(a, [y]) }); } }
     return out;
   }
   /** I Tid blir flytta och lämna över ett streckat utkast, som Genomför sedan skickar. */
@@ -6547,12 +7260,16 @@ details.removed { margin-top: 10px; }
   /** ⇧-klick på en rad eller ett klick på rutan. Sant: klicket är hanterat. */
   function selClick(e) {
     const box = e.target.closest?.('[data-act="sel"]');
-    if (box && box.getAttribute("data-act") === "sel") { selToggle(box.getAttribute("data-sel")); render(); return true; }
+    if (box && box.getAttribute("data-act") === "sel") { S.selLast = box.getAttribute("data-sel"); selToggle(S.selLast); render(); return true; }
     if (!e.shiftKey) return false;
     const row = e.target.closest?.("[data-selctx],[data-ctx]");
     const ctx = row?.getAttribute("data-selctx") || row?.getAttribute("data-ctx");
     if (!ctx || !/^(step|case|inbox|msg|mth)\|/.test(ctx)) return false;
-    e.preventDefault?.(); selToggle(ctx); render(); return true;
+    // ⇧ efter en markerad rad: allt däremellan i den ordning raderna syns (batch, Daniel P 2026-10-13).
+    const vis = S.selVisible || [], a = vis.indexOf(S.selLast), b = vis.indexOf(ctx);
+    if (a >= 0 && b >= 0 && a !== b && S.sel?.[S.selLast]) { for (const c of vis.slice(Math.min(a, b), Math.max(a, b) + 1)) selToggle(c, true); }
+    else selToggle(ctx);
+    S.selLast = ctx; e.preventDefault?.(); render(); return true;
   }
   /** Det markerade, med det som behövs för åtgärderna. Det som inte längre syns faller bort. */
   function selItems() {
@@ -6607,7 +7324,7 @@ details.removed { margin-top: 10px; }
       }
     }
     if (all((x) => x.kind === "inbox" && x.to)) out.push({ id: "accept", l: "Godta Claudes bedömning", lvl: "●", run: () => selAccept(items) });
-    return out;
+    return [...out, ...batchActs(out)];
   }
   /** ◐ Slå ihop (svar 4): de andra läggs under det första som kom in, också utan samma tråd. */
   function mergePreview(items) {
@@ -6658,9 +7375,100 @@ details.removed { margin-top: 10px; }
     } catch (e) { flip(!on); say(`Kunde inte ${on ? "arkivera" : "ta tillbaka"}: ${e.message || e}`, null, true); }
     render();
   }
+  /* ── Batch över handlingstabellen (Daniel P 2026-10-13, plan del G) ──
+     Tabellen kommer från servern (read { op: "batch_actions" }, src/mcp/batch-actions.ts): varje handling
+     med batch, allvar och vilka poster den gäller. Här finns ingen kod per handling: en ny handling i
+     tabellen syns i listen, med «gäller 7 av 9» när den inte gäller alla markerade. Förhandsvisningen är
+     serverns, grupperad efter allvar; ● och ◐ godkänns med ett ja, ■ kryssas i var för sig. */
+  function batchTable() {
+    if (S.batchTable || S.batchTableLoading || offline()) return S.batchTable || [];
+    S.batchTableLoading = true;
+    call("read", { op: "batch_actions" }).then((d) => { S.batchTable = d?.actions || []; render(); }, () => { S.batchTable = []; });
+    return [];
+  }
+  /** Det markerade som poster: steg, moment (ur «Idag») eller hela uppgiften, med namnet. */
+  function batchItems() {
+    const out = [];
+    for (const ctx of Object.keys(S.sel || {})) {
+      const [k, task, step] = ctx.split("|");
+      if (k !== "step" && k !== "case") continue;
+      const t = targetOf(ctx), g = step ? idagRowOf(task, step) : null;
+      out.push({ task, step: step || t?.step?.step || undefined, node: g?.node || undefined, label: g?.h || t?.label || task });
+    }
+    return out;
+  }
+  /** Postens form för en handling: momentet, steget eller uppgiften, det handlingen gäller. */
+  const batchShape = (a, x) => a.kinds.includes("node") && x.node ? { task: x.task, node: x.node, label: x.label }
+    : a.kinds.includes("step") && x.step ? { task: x.task, step: x.step, label: x.label }
+    : a.kinds.includes("task") ? { task: x.task, label: x.label } : null;
+  const BATCH_SAME = { done: "done", handover: "handover:", shift: "move:" };
+  function batchActs(have) {
+    const xs = batchItems();
+    if (!xs.length) return [];
+    return batchTable().filter((a) => a.batch && !have.some((h) => BATCH_SAME[a.id] && String(h.id).startsWith(BATCH_SAME[a.id]))).flatMap((a) => {
+      const ok = [...new Map(xs.map((x) => batchShape(a, x)).filter(Boolean).map((y) => [`${y.task}|${y.node || y.step || ""}`, y])).values()];
+      if (!ok.length) return [];
+      // «Gäller 7 av 9»: markerade som handlingen inte gäller (flera steg i samma uppdrag räknas som träffar).
+      const hits = xs.filter((x) => batchShape(a, x)).length, g = globalThis.RotorSymbols?.action?.[a.symbol]?.g;
+      return [{ id: `batch:${a.id}`, l: `${g ? `${g} ` : ""}${a.label}${hits < xs.length ? ` · gäller ${hits} av ${xs.length}` : ""}`, lvl: a.severity, run: () => batchOpen(a, ok) }];
+    });
+  }
+  async function batchOpen(a, items) {
+    const need = (a.params || []).filter((p) => p.required);
+    S.batch = { a, items, params: {}, step: need.length ? "params" : "loading", house: {} };
+    render();
+    if (!need.length) await batchPreview();
+  }
+  async function batchPreview() {
+    const B = S.batch; if (!B) return;
+    for (const p of B.a.params || []) { const v = root.querySelector?.(`#bp-${p.name}`)?.value; if (v !== undefined) B.params[p.name] = p.type === "number" ? Number(v) : v; }
+    B.step = "loading"; render();
+    try {
+      const r = await call("write", { op: "batch_apply", action: B.a.id, items: B.items, params: B.params });
+      B.pv = r; B.step = "preview";
+    } catch (e) { S.batch = null; say(`Kunde inte förhandsvisa: ${e.message || e}. Inget ändrades.`, null, true); }
+    render();
+  }
+  async function batchGo() {
+    const B = S.batch; if (!B?.pv) return;
+    const next = B.pv.next || B.pv.next_call;
+    const args = { ...(next?.args || {}), house: Object.keys(B.house).filter((k) => B.house[k]) };
+    if (/^</.test(String(args.user_approval || ""))) args.user_approval = `Ja (batch i vyn: ${B.a.label})`;
+    S.batch = null; S.sel = {}; render();
+    try {
+      const r = await call("write", args);
+      const res = r?.batch?.results || [], bad = res.filter((x) => !x.ok);
+      say(`${B.a.label}: ${r?.batch?.done ?? 0} av ${res.length} gjorda.${bad.length ? ` Inte gjorda: ${bad.map((x) => `«${x.label}» (${x.text})`).join("; ")}.` : ""}`,
+        r?.undo ? { fn: async () => { const u = await call(r.undo.tool, r.undo.args); const n2 = u?.next || u?.next_call; if (n2) await call(n2.tool, n2.args); refreshSoon(); } } : null, !r?.batch?.done);
+      for (const t of new Set(B.items.map((x) => x.task))) rereadAfterWrite(t);
+    } catch (e) { say(`Batchen gick inte: ${e.message || e}`, null, true); }
+    render();
+  }
+  function batchHtml() {
+    const B = S.batch; if (!B) return "";
+    const plain = (t) => String(t || "").replace(/\s*Ångra:.*$/s, "");
+    const head = `<b>${esc(B.a.label)} · ${B.items.length} ${B.items.length === 1 ? "post" : "poster"}</b>`;
+    if (B.step === "params") return `<div class="confirm batchd" role="dialog" aria-label="Batch">${head}<span class="ctext">`
+      + (B.a.params || []).map((p) => `<label>${esc(p.label)} <input id="bp-${esc(p.name)}" type="${p.type === "number" ? "number" : p.type === "day" ? "date" : "text"}"${p.type === "party" ? ` list="bp-people"` : ""}></label>`).join(" ")
+      + `<datalist id="bp-people">${people().map((x) => `<option value="${esc(x.id)}">${esc(x.label)}</option>`).join("")}</datalist></span>`
+      + `<button class="quiet" data-act="batch-cancel">Avbryt</button><button class="go" data-act="batch-preview">Förhandsvisa</button></div>`;
+    if (B.step === "loading") return `<div class="confirm batchd" role="dialog" aria-label="Batch">${head}<span class="ctext">Förhandsvisar …</span><button class="quiet" data-act="batch-cancel">Avbryt</button></div>`;
+    const b = B.pv?.batch || { items: [], groups: {} }, by = (s) => b.items.filter((x) => x.ok && x.severity === s);
+    const grp = (s, name) => by(s).length ? `<div class="bgrp"><span class="lvl${s === "●" ? " d" : ""}">${s}</span> ${name} <span class="mmeta">${by(s).length}</span>`
+      + by(s).map((x) => s === "■" ? `<label class="brow"><input type="checkbox" data-act="batch-house" data-ref="${esc(x.ref)}"${B.house[x.ref] ? " checked" : ""}> ${esc(x.label)} <span class="mmeta">${esc(plain(x.preview))}</span></label>`
+        : `<div class="brow">${esc(x.label)} <span class="mmeta">${esc(plain(x.preview))}</span></div>`).join("") + `</div>` : "";
+    const no = b.items.filter((x) => !x.ok);
+    const n = by("●").length + by("◐").length + Object.values(B.house).filter(Boolean).length;
+    return `<div class="confirm batchd" role="dialog" aria-label="Förhandsvisning av batchen">${head}<span class="ctext"><span class="mmeta">Gäller ${b.applies} av ${b.count}. Inget är gjort än.</span>`
+      + grp("●", "Direkt") + grp("◐", "Med ditt ja") + grp("■", "Går utåt: kryssa i var och en")
+      + (no.length ? `<details class="bgrp"><summary>Gäller inte ${no.length}</summary>${no.map((x) => `<div class="brow">${esc(x.label)} <span class="mmeta">${esc(x.preview)}</span></div>`).join("")}</details>` : "")
+      + `</span><button class="quiet" data-act="batch-cancel">Avbryt</button><button class="go" data-act="batch-go"${n ? "" : " disabled"}>${esc(B.a.label)} ${n}</button></div>`;
+  }
+  /** «Markera alla i gruppen»: raderna i en grupp i «Idag». */
+  function selGroup(ctxs) { for (const c of ctxs.slice(0, SEL_MAX)) selToggle(c, true); render(); }
   function selbarHtml() {
     const n = selCount();
-    if (!n) return "";
+    if (!n || S.batch) return "";
     if (n === 1 && tzCardKey()) return ""; // i Tid är kortet åtgärden för ett steg
     const items = selItems(), acts = selActions(items);
     S.selActs = acts;
@@ -6675,7 +7483,7 @@ details.removed { margin-top: 10px; }
   const batchOf = (r) => r?.batch || { done: [], failed: [] };
   /** Klart på flera (●): syns direkt, det som inte gick rullas tillbaka. */
   async function selDone(items) {
-    const calls = items.flatMap((x) => x.kind === "case" ? x.looks.calls.map((c) => ({ ...c.args, label: x.label })) : [{ task: x.task, step: x.step, mark: "done", label: x.label }]);
+    const calls = items.flatMap((x) => x.kind === "case" ? x.looks.calls.map((c) => ({ ...c.args, label: x.label })) : [{ task: x.task, step: x.step, mark: "done", values: doneValues(), label: x.label }]);
     const ref = (c) => `${c.task}/${c.step}`, labelOf = (r) => calls.find((c) => ref(c) === r)?.label || r;
     const before = { data: S.data, sheets: S.sheetData };
     for (const c of calls) patchStepDone(c.task, c.step, true);
@@ -6744,6 +7552,13 @@ details.removed { margin-top: 10px; }
     render();
   }
 
+  /**
+   * ✓ i vyn (Daniel P 2026-10-13, «har inte funkat hittills»): i en målmodell gick
+   * mark: "done" genom momentets prövning och avvisades (resultat saknas, låst).
+   * Samma väg som kartans ✓: «redan gjort» med belägget vem och när; i en lista
+   * är det vanlig markering (servern tar bort belägget där). Ångra som förut.
+   */
+  const doneValues = () => ({ already_done: { evidence: { kind: "done_by", by: S.data?.party?.label || S.data?.party?.id || "vyn", at: new Date().toISOString().slice(0, 10) } } });
   async function markDone(s, done = true) {
     S.menu = null; S.peek = null;
     if (offline()) { if (done) queue({ kind: "done", task: s.task, step: s.step, label: s.label }); else say("Att öppna steget igen kan inte göras förrän dirigenten svarar. Inget ändrades.", null, true); render(); return; }
@@ -6757,7 +7572,7 @@ details.removed { margin-top: 10px; }
         try { await call("execute_step", { task: s.task, step: s.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." }); }
         catch (e) { S.data = back.data; S.sheetData = back.sheets; throw e; }
       } };
-      const r = await call("execute_step", done ? { task: s.task, step: s.step, mark: "done" } : { task: s.task, step: s.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." });
+      const r = await call("execute_step", done ? { task: s.task, step: s.step, mark: "done", values: doneValues() } : { task: s.task, step: s.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." });
       // Underlaget är inte godkänt: inget skrevs, så det direkta tas tillbaka tills frågan besvarats.
       if (done && r?.written === false && r?.basis) {
         S.data = before.data; S.sheetData = before.sheets; render();
@@ -6819,13 +7634,16 @@ details.removed { margin-top: 10px; }
     + (S.confirm.alt ? `<button class="quiet" data-act="confirm-alt">${esc(S.confirm.alt)}</button>` : "")
     + `<button class="go" data-act="confirm-go"${S.confirm.loading || !(S.confirm.next || S.confirm.basis) ? " disabled" : ""}>${S.confirm.dot ? "" : `${S.confirm.house ? "■" : "◐"} `}${esc(S.confirm.verb)}${S.confirm.dot ? " ●" : ""}${S.confirm.late ? ", nytt löfte" : ""}</button></div>`;
 
+  /** Menyns symbol ur kartans tabell (window.RotorSymbols, views/karta.html): samma handlingar och tecken överallt. */
+  const MENU_SYM = { done: "done", skip: "skip", "open-map": "open_map", later: "time", earlier: "time", take: "hand", "take-over": "hand" };
+  const menuSym = (id) => { const A = globalThis.RotorSymbols?.action; const k = MENU_SYM[id] || (String(id).startsWith("handover:") ? "hand" : null); return A && k ? A[k] : null; };
   function menuHtml() {
     const m = S.menu;
     if (!m) return "";
     const items = menuItems(m.target);
     return `<div class="menu" role="menu" style="left:${Math.round(m.x)}px;top:${Math.round(m.y)}px">`
       + items.map((it, i) => `${(it.id.startsWith("handover:") && !items[i - 1]?.id.startsWith("handover:")) || it.id === "done" || it.id === "chat" ? `<div class="msep"></div>` : ""}`
-        + `<button role="menuitem" class="mi${i === m.i ? " on" : ""}" data-act="menu-run" data-i="${i}"><span class="ml">${esc(it.l)}</span>`
+        + `<button role="menuitem"${menuSym(it.id) ? ` data-g="${menuSym(it.id).g}" title="${esc(menuSym(it.id).t)}"` : ""} class="mi${i === m.i ? " on" : ""}" data-act="menu-run" data-i="${i}"><span class="ml">${esc(it.l)}</span>`
         + `<span class="mk">${it.lvl ? `<span class="lvl${it.lvl === "●" ? " d" : ""}">${it.lvl}</span>` : ""}${it.key ? `<kbd>${esc(it.key)}</kbd>` : ""}</span></button>`).join("") + `</div>`;
   }
   function peekHtml() {
@@ -7038,7 +7856,10 @@ details.removed { margin-top: 10px; }
       const d = await call("read", { op: "presentation_draft", delivery });
       // Det urvalet förväljer urbockat (en artefakt i claude.ai) står som urbockat.
       const off = Object.fromEntries(d.blocks.flatMap((b) => (b.items || []).filter((i) => i.unchecked).map((i) => [i.ref, true])));
-      S.pres = { ...S.pres, loading: false, d, off, template: d.template, formats: [...(d.formats || [])], title: d.blocks.find((b) => b.type === "cover")?.title || label };
+      // De sparade texterna (del H3b): den senaste versionen per plats står i fälten; det som sparats jämförs vid nästa sparning.
+      const texts = JSON.parse(JSON.stringify(d.texts || {})), title = texts.cover?.title || d.blocks.find((b) => b.type === "cover")?.title || label;
+      S.pres = { ...S.pres, loading: false, d, off, template: d.template, formats: [...(d.formats || [])], title, texts,
+        saved: JSON.parse(JSON.stringify({ ...texts, cover: { ...(texts.cover || {}), title: texts.cover?.title || "" } })), versions: d.text_versions || [], src: {}, ai: {} };
     } catch (e) { S.pres = { ...S.pres, loading: false, error: e?.message || String(e) }; }
     render();
   }
@@ -7141,10 +7962,108 @@ details.removed { margin-top: 10px; }
     }
     render();
   }
+  /* ── Presentationens texter som versioner (Daniel P 2026-10-14, del H3b: «Texter skrivbara eller få hjälp av claude») ──
+     Rubriken, inledningen och beskrivningen per material skrivs själv eller tas fram med Claude, och sparas med
+     write { op: "presentation_text" } som nya versioner. Inget skrivs över; en äldre version tas tillbaka som en ny. */
+  /** Texterna som ändrats sedan de sparades, för ett block (key) eller alla (null). */
+  function presChanged(p, key) {
+    const out = [], src = (k, f, r) => p.src?.[`${k}|${f}|${r || ""}`] || "self";
+    const cur = { ...p.texts, cover: { ...(p.texts.cover || {}), title: p.title || "" } };
+    for (const [k, t] of Object.entries(cur)) {
+      if (key && k !== key) continue;
+      const was = p.saved?.[k] || {};
+      for (const f of ["title", "lead"]) if (typeof t?.[f] === "string" && t[f].trim() !== (was[f] || "").trim()) out.push({ key: k, field: f, text: t[f], source: src(k, f) });
+      for (const [r, c] of Object.entries(t?.captions || {})) if ((c || "").trim() !== (was.captions?.[r] || "").trim()) out.push({ key: k, field: "caption", ref: r, text: c, source: src(k, "caption", r) });
+    }
+    return out;
+  }
+  /** Spara: varje ändrad text blir en ny version. `quiet` (före förhandsvisningen) säger bara till när något gick fel. */
+  async function presSave(key, quiet) {
+    const p = S.pres; if (!p?.d) return;
+    const texts = presChanged(p, key);
+    if (!texts.length) { if (!quiet) { p.note = "Inget att spara: texterna är de som står sparade."; render(); } return; }
+    try {
+      const r = await call("write", { op: "presentation_text", delivery: p.delivery, texts });
+      for (const t of texts) {
+        const b = (p.saved[t.key] ||= {});
+        if (t.field === "caption") b.captions = { ...(b.captions || {}), [t.ref]: t.text }; else b[t.field] = t.text;
+        let v = p.versions.find((x) => x.key === t.key && x.field === t.field && (x.ref || null) === (t.ref || null));
+        if (!v) { v = { key: t.key, field: t.field, ...(t.ref ? { ref: t.ref } : {}), versions: [] }; p.versions.push(v); }
+        v.versions = [...v.versions, { version: (v.versions.at(-1)?.version || 0) + 1, text: t.text, source: t.source, by: S.data?.party?.id || "", at: new Date().toISOString() }];
+        delete p.src[`${t.key}|${t.field}|${t.ref || ""}`];
+      }
+      p.undo = r?.next_call || null;
+      if (!quiet) p.note = summaryText(r) || `${texts.length} ${texts.length === 1 ? "text sparad" : "texter sparade"} som ny version.`;
+    } catch (e) { p.error = `Texterna sparades inte: ${e?.message || e}`; }
+    if (!quiet) render();
+  }
+  /** Ta tillbaka en äldre version: den står i fältet som ändrad, och sparas som en ny version när du sparar. */
+  function presRestore(key, field, ref, v) {
+    const p = S.pres; if (!p) return;
+    const x = p.versions.find((y) => y.key === key && y.field === field && (y.ref || null) === (ref || null))?.versions.find((y) => y.version === v);
+    if (!x) return;
+    if (key === "cover" && field === "title") p.title = x.text;
+    else { const t = p.texts[key] || {}; p.texts[key] = field === "caption" ? { ...t, captions: { ...(t.captions || {}), [ref]: x.text } } : { ...t, [field]: x.text }; }
+    p.note = `Version ${v} står i fältet. Spara för att lägga den som ny version.`; render();
+  }
+  /** Ändra med Claude: det du vill ändra i en mening; Claude skriver om blockets texter, som står i fälten tills du sparar. Utan Claude här: prompten till chatten. */
+  async function presAiText(key) {
+    const p = S.pres; if (!p?.d) return;
+    const ask = (p.ai?.[key]?.ask || "").trim();
+    const b = key === "cover" ? null : (p.d.blocks || []).find((x) => presKey(x) === key);
+    const now = key === "cover" ? { title: p.title } : { title: p.texts[key]?.title || "", lead: p.texts[key]?.lead || "", captions: p.texts[key]?.captions || {} };
+    const items = (b?.items || []).filter((i) => !p.off[i.ref]).map((i) => ({ ref: i.ref, label: i.item || i.label || "", part: i.part || "" }));
+    const brief = `Presentationen «${p.title}» för ${p.d.customer_label || "kunden"}, leveransen ${p.delivery}. ${key === "cover" ? "Sidans rubrik." : `Blocket «${PRES_BLOCK[b?.type] || b?.type || key}» (key ${key}).`}`;
+    if (!sample) {
+      const text = `Arbeta med dirigenten: ändra texterna i presentationen för leveransen ${p.delivery}, blocket ${key}. Läs urvalet och de sparade texterna med read { op: "presentation_draft", delivery: "${p.delivery}" }. ${p.d.text_change || ""}${ask ? `\n\nDet jag vill ändra: ${ask}` : ""}`;
+      try { navigator.clipboard?.writeText(text); } catch { /* utan urklipp */ }
+      p.ai = { ...(p.ai || {}), [key]: { ...(p.ai?.[key] || {}), prompt: text } }; render(); return;
+    }
+    if (!ask) { p.ai = { ...(p.ai || {}), [key]: { ...(p.ai?.[key] || {}), open: true } }; p.note = "Skriv först vad som ska ändras, till exempel «kortare och mer konkret»."; render(); return; }
+    p.ai[key] = { ...p.ai[key], busy: true }; render();
+    try {
+      const r = await sample([{ role: "user", content: `${brief}\nDet som visas: ${JSON.stringify(items)}\nTexterna nu: ${JSON.stringify(now)}\nÄndra så här: «${ask}».\n`
+        + `Skriv på kundens språk och i vanlig svenska, utan interna ord. Skriv aldrig om leveranstexterna; de visas ordagrant. Behåll det som inte ska ändras.\n`
+        + `Svara BARA med JSON: ${key === "cover" ? `{ "title": "…" }` : `{ "title": "…", "lead": "…", "captions": { "<ref>": "…" } }`}` }], { modelTier: "default" });
+      const m = /\{[\s\S]*\}/.exec(String(r?.text || "")), j = m ? JSON.parse(m[0]) : null;
+      if (!j) throw new Error("inget svar att läsa");
+      const mark = (f, ref) => { p.src[`${key}|${f}|${ref || ""}`] = "claude"; };
+      if (key === "cover") { if (j.title) { p.title = String(j.title); mark("title"); } }
+      else {
+        const t = { ...(p.texts[key] || {}) };
+        if (typeof j.title === "string") { t.title = j.title; mark("title"); }
+        if (typeof j.lead === "string") { t.lead = j.lead; mark("lead"); }
+        for (const [ref, c] of Object.entries(j.captions || {})) if (items.some((i) => i.ref === ref)) { t.captions = { ...(t.captions || {}), [ref]: String(c) }; mark("caption", ref); }
+        p.texts[key] = t;
+      }
+      p.ai[key] = { open: false };
+      p.note = "Claudes förslag står i fälten. Ändra det du vill och spara; det blir en ny version och syns i förhandsvisningen.";
+    } catch (e) {
+      if (e?.code === "not_granted") sample = null;
+      p.ai[key] = { ...p.ai[key], busy: false }; p.note = `Claude svarade inte (${e?.message || e}). Skriv texten själv.`;
+    }
+    render();
+  }
+  /** Texternas knappar under ett block: Spara, Ändra med Claude och de sparade versionerna. */
+  function presTextTools(p, key) {
+    const vs = (p.versions || []).filter((v) => v.key === key && v.versions?.length);
+    const n = vs.reduce((a, v) => a + v.versions.length, 0), ai = p.ai?.[key] || {}, dirty = presChanged(p, key).length;
+    const FIELD = { title: "Rubrik", lead: "Inledning", caption: "Beskrivning" };
+    const list = vs.flatMap((v) => v.versions.slice().reverse().map((x) => `<div class="pres-ver"><span class="mmeta">${FIELD[v.field]}${v.ref ? ` · ${esc(((p.d.blocks || []).flatMap((b) => b.items || []).find((i) => i.ref === v.ref)?.item) || "material")}` : ""} · version ${x.version} · ${x.source === "claude" ? "med Claude" : "skriven själv"} · ${esc(presWhen(x.at))}</span>`
+      + `<span class="pres-vt">${esc(x.text || "(tom)")}</span><button class="link" data-act="pres-restore" data-key="${esc(key)}" data-field="${esc(v.field)}" data-ref="${esc(v.ref || "")}" data-v="${x.version}">Ta tillbaka</button></div>`)).join("");
+    // Fälten ritas inte om medan du skriver: knappen är alltid tryckbar, och sparningen säger till när inget ändrats.
+    return `<div class="pres-tx"><button class="link" data-act="pres-save" data-key="${esc(key)}">Spara texterna${dirty ? ` (${dirty} ändrade)` : ""}</button>`
+      + `<button class="link" data-act="pres-ai" data-key="${esc(key)}"${ai.busy ? " disabled" : ""}>${ai.busy ? "Claude skriver …" : "Ändra med Claude"}</button>`
+      + (n ? `<details class="pres-vers"><summary class="mmeta">Sparade versioner (${n})</summary>${list}</details>` : "") + `</div>`
+      + (ai.open ? `<div class="pres-ask"><input id="pres-ai-${esc(key)}" value="${esc(ai.ask || "")}" placeholder="Vad ska ändras? Till exempel «kortare, och säg att ni kan börja i januari»"><button data-act="pres-ai-go" data-key="${esc(key)}">Ändra</button></div>` : "")
+      + (ai.prompt ? `<div class="mmeta">Claude finns inte här. Prompten är kopierad: klistra in den i chatten.</div><textarea rows="4" readonly>${esc(ai.prompt)}</textarea>` : "");
+  }
   /** Förhandsvisa: sidan som kunden ser den, ur urval, mall och sidotexter. Ren läsning — inga mottagare, inget steg, inget ja. */
   async function presPreview() {
     const p = S.pres; if (!p?.d) return;
     p.error = null; p.busy = "Förhandsvisar …"; render();
+    // Det som ändrats sparas som nya versioner först, så att förhandsvisningen visar det som står sparat (del H3b).
+    if (!p.single) await presSave(null, true);
     try {
       const r = await call("read", { op: "presentation_draft", delivery: p.delivery, template: p.template, render: { title: p.title, blocks: presBlocks(p) } });
       p.preview = { html: r?.preview_html || "", v: Date.now() };
@@ -7233,10 +8152,11 @@ details.removed { margin-top: 10px; }
       const kinds = [...new Set(parts.map((i) => i.part).filter(Boolean))].filter((x) => !/^bild\b/i.test(x) || cur.includes((/(\d+)\s*[:x]\s*(\d+)/.exec(x) || []).slice(1).join("x")));
       return `<label class="pres-thing${checked ? "" : " off"}"><span class="pres-ph" style="aspect-ratio:${img?.format ? img.format.replace("x", " / ") : "4 / 5"}">${img && S.thumbs?.[img.ref] ? `<img src="${S.thumbs[img.ref]}" alt="">` : `<span class="mmeta">${!img ? "Ingen bild" : S.thumbs?.[img.ref] === "" ? "Ingen förhandsbild" : "Hämtar …"}</span>`}</span>`
         + `<span class="pres-tn"><input type="checkbox" data-act="pres-thing" data-refs="${esc(JSON.stringify(parts.map((i) => i.ref)))}"${checked ? " checked" : ""}> <b>${esc(name)}</b></span>`
-        + `<span class="mmeta">${esc(kinds.join(" · "))}</span></label>`;
+        + `<span class="mmeta">${esc(kinds.join(" · "))}</span>`
+        + (checked ? `<textarea id="pres-k-${esc(key)}-${esc(String(name).replace(/[^a-z0-9]/gi, "").slice(0, 24))}" data-key="${esc(key)}" data-ref="${esc(parts[0].ref)}" rows="2" placeholder="Beskrivning (valfri)">${esc(t.captions?.[parts[0].ref] || "")}</textarea>` : "") + `</label>`;
     }).join("");
     return `<div class="pres-b"><h3 class="sh">${esc(PRES_BLOCK.items)} · ${on} av ${groups.size} med</h3>${fmts}<div class="pres-things">${cards}</div>`
-      + `<div class="pres-row"><input id="pres-t-${esc(key)}" placeholder="${esc(presThingsTitle(b) || "Rubrik över sakerna, till exempel «Annonserna»")}" value="${esc(t.title || "")}"><textarea id="pres-l-${esc(key)}" rows="2" placeholder="Ingress (valfri)">${esc(t.lead || "")}</textarea></div></div>`;
+      + `<div class="pres-row"><input id="pres-t-${esc(key)}" placeholder="${esc(presThingsTitle(b) || "Rubrik över sakerna, till exempel «Annonserna»")}" value="${esc(t.title || "")}"><textarea id="pres-l-${esc(key)}" rows="2" placeholder="Inledning (valfri)">${esc(t.lead || "")}</textarea></div>${presTextTools(p, key)}</div>`;
   }
   /* Förhandsvisningen ligger utanför vyns omritning (en ram som ritas om laddar om sidan med alla bilder, och vyn
    * ritas om var och varannan sekund): EN ram i sidan, lagd över platshållaren i rutan och flyttad när rutan rör sig. */
@@ -7291,8 +8211,9 @@ details.removed { margin-top: 10px; }
       presThumbs((b.items || []).filter((i) => /^image\//.test(i.mime || "")).map((i) => i.ref));
             const items = (b.items || []).map((i) => `<label class="pres-i"><input type="checkbox" data-act="pres-tick" data-ref="${esc(i.ref)}"${p.off[i.ref] ? "" : " checked"}>${/^image\//.test(i.mime || "") ? `<span class="pres-mini">${S.thumbs?.[i.ref] ? `<img src="${S.thumbs[i.ref]}" alt="">` : ""}</span>` : ""} ${esc(i.label || i.ref.slice(-12))}${i.mime ? ` <span class="mmeta">${esc(/^image\//.test(i.mime) ? "bild" : "text, visas ordagrant")}</span>` : ""}</label>`
         + (/^image\//.test(i.mime || "") ? ((r) => r ? pickBtn("pres-image", { ...resultTarget(r), after: "pres", customer: p.d.customer || customerOfTask(r.task) }, "Byt bild") : "")(allResults().find((y) => y.id === i.ref)) : "")).join("");
+      const caps = (b.items || []).filter((i) => !p.off[i.ref]).map((i, n) => `<textarea id="pres-k-${esc(key)}-${n}" data-key="${esc(key)}" data-ref="${esc(i.ref)}" rows="1" placeholder="Beskrivning av «${esc(i.label || i.item || "materialet")}» (valfri)">${esc(t.captions?.[i.ref] || "")}</textarea>`).join("");
       const texts = (b.items || []).length
-        ? `${postFields}<input id="pres-t-${esc(key)}" placeholder="Rubrik" value="${esc(t.title || "")}"><textarea id="pres-l-${esc(key)}" rows="2" placeholder="Ingress">${esc(t.lead || "")}</textarea>` : "";
+        ? `${postFields}<input id="pres-t-${esc(key)}" placeholder="Rubrik" value="${esc(t.title || "")}"><textarea id="pres-l-${esc(key)}" rows="2" placeholder="Inledning">${esc(t.lead || "")}</textarea>${caps}${presTextTools(p, key)}` : "";
       const hint = PRES_NUM_HINT[b.type];
       const nums = hint ? `<textarea id="pres-n-${esc(b.type)}" rows="4" placeholder="${esc(hint)}">${esc(p.nums?.[b.type] || "")}</textarea>`
         + `<input id="pres-t-${esc(b.type)}" placeholder="Rubrik" value="${esc(t.title || "")}">`
@@ -7308,7 +8229,8 @@ details.removed { margin-top: 10px; }
     return `<div class="mv pres" role="dialog" aria-label="Presentera">${head}`
       + `<div class="mmeta">Mall: <select id="pres-template">${(d.templates || []).map((t) => `<option value="${esc(t.id)}"${t.id === p.template ? " selected" : ""}>${esc(t.label)}</option>`).join("")}</select>`
       + `${d.brand ? "" : " · kunden har ingen färgprofil, husets färg används"}</div>`
-      + `<label class="mh" for="pres-title">Rubrik</label><input id="pres-title" value="${esc(p.title)}">`
+      + `<label class="mh" for="pres-title">Rubrik</label><input id="pres-title" value="${esc(p.title)}">${presTextTools(p, "cover")}`
+      + (p.note ? `<div class="mmeta pres-note">${esc(p.note)}${p.undo ? ` <button class="link" data-act="pres-undo">Ångra</button>` : ""}</div>` : "")
       + `<h3 class="sh">Vad ska visas?</h3>`
       + (d.suggestion ? `<div class="mmeta">Förvalt: ${esc(d.suggestion)}</div>` : "")
       + `<div class="pres-ask"><input id="pres-ask" value="${esc(p.ask || "")}" placeholder="Säg det i en mening, till exempel «de fyra startannonserna i 4:5»">`
@@ -7343,6 +8265,11 @@ details.removed { margin-top: 10px; }
       p.formats = cur.includes(f) ? (cur.length > 1 ? cur.filter((x) => x !== f) : cur) : all.filter((x) => cur.includes(x) || x === f); }
     else if (act === "pres-fmt-first") { const f = el.getAttribute("data-fmt"); p.formats = [f, ...(p.formats || []).filter((x) => x !== f)]; }
     else if (act === "pres-claude") { presSideTexts(); return; }
+    else if (act === "pres-undo") { const u = p.undo; p.undo = null; if (u) call(u.tool, u.args).then(() => openPres(p.delivery, p.label)).catch((e) => { p.error = e?.message || String(e); render(); }); return; }
+    else if (act === "pres-save") { presSave(el.getAttribute("data-key")); return; }
+    else if (act === "pres-ai") { const k = el.getAttribute("data-key"); p.ai = { ...(p.ai || {}), [k]: { ...(p.ai?.[k] || {}), open: !p.ai?.[k]?.open } }; }
+    else if (act === "pres-ai-go") { presAiText(el.getAttribute("data-key")); return; }
+    else if (act === "pres-restore") { presRestore(el.getAttribute("data-key"), el.getAttribute("data-field"), el.getAttribute("data-ref") || null, Number(el.getAttribute("data-v"))); return; }
     else if (act === "pres-choose") { presChoose(); return; }
     else if (act === "pres-preview") { presPreview(); return; }
     else if (act === "pres-back") { p.phase = "pick"; p.preview = null; }
@@ -7361,6 +8288,8 @@ details.removed { margin-top: 10px; }
     else if ((m = /^pres-n-(.+)$/.exec(el.id))) p.nums = { ...(p.nums || {}), [m[1]]: el.value };
     else if ((m = /^pres-([cd])-(.+)$/.exec(el.id))) p.posts = { ...(p.posts || {}), [m[2]]: { ...(p.posts?.[m[2]] || {}), [m[1] === "c" ? "channel" : "scheduled"]: el.value } };
     else if ((m = /^pres-([tl])-(.+)$/.exec(el.id))) p.texts[m[2]] = { ...(p.texts[m[2]] || {}), [m[1] === "t" ? "title" : "lead"]: el.value };
+    else if (/^pres-k-/.test(el.id)) { const k = el.getAttribute("data-key"), r = el.getAttribute("data-ref"); const t = p.texts[k] || {}; p.texts[k] = { ...t, captions: { ...(t.captions || {}), [r]: el.value } }; }
+    else if ((m = /^pres-ai-(.+)$/.exec(el.id))) p.ai = { ...(p.ai || {}), [m[1]]: { ...(p.ai?.[m[1]] || {}), ask: el.value } };
   }
   async function presTemplate(id) {
     const p = S.pres; if (!p) return;
@@ -8131,6 +9060,7 @@ details.removed { margin-top: 10px; }
       + `<button class="${T.group === "person" ? "on" : ""}" data-act="time-group" data-g="person">Per person</button></div>`
       + `<div class="nav"><button data-act="time-shift" data-d="-7" aria-label="En vecka tidigare">‹</button><button data-act="time-today">I dag</button><button data-act="time-shift" data-d="7" aria-label="En vecka senare">›</button></div>`
       + `<div class="wks">${WEEKS.map((w) => `<button class="${T.weeks === w ? "on" : ""}" data-act="time-weeks" data-w="${w}">${w} v</button>`).join("")}</div>`
+      + (T.group === "delivery" && T.tl ? byPick("time", T.tl.tasks) : "")
       + `<span class="zleg"><span><i class="zl-span"></i>spann</span><span><i class="zl-fill"></i>timmar</span><span><i class="zl-busy"></i>möten</span><span>◆ lovat</span><span class="zl-now">│ i dag</span></span>`
       + `</div>`;
     if (T.error && !tl) return bar + `<div class="banner"><span style="flex:1">Tiden kunde inte läsas: ${esc(T.error.message || T.error)}</span><button data-act="time-reload">Försök igen</button></div>`;
@@ -8176,7 +9106,7 @@ details.removed { margin-top: 10px; }
           return y > x && (st.s !== b.s || st.e !== b.e) ? `<span class="zghost" style="left:${pct(x)};width:${pct(y - x)}"></span>` : ""; })() : "";
         const info = T.zinfo?.key === b.key ? T.zinfo : null;
         const tag = info ? `<div class="ztag" style="left:calc(${pct(z)} + 8px)">${info.text ? `<span class="t1">${esc(info.text)}</span>` : ""}${info.text2 ? `<span class="t2">${esc(info.text2)}</span>` : ""}${info.stop ? `<span class="t1">${esc(info.stop)}</span>` : ""}</div>` : "";
-        barHtml = ghost + tag + `<div class="${cls}" data-act="tz-pick" data-zpick="${esc(ctx)}"${st.x || st.lk ? "" : ` data-zbar="${esc(b.key)}" data-f="${fill.toFixed(3)}"`} style="left:${pct(a)};width:${pct(z - a)}" title="${esc(`${st.n} · ${tzDay(b.s)}–${tzDay(tzLast(b.s, b.e))}${b.h ? ` · ${hh(b.h)} h` : ""}`)}">`
+        barHtml = ghost + tag + `<div class="${cls}" data-act="tz-pick" data-zpick="${esc(ctx)}"${st.x || st.lk ? "" : ` data-zbar="${esc(b.key)}" data-f="${fill.toFixed(3)}"`} style="left:${pct(a)};width:${pct(z - a)}" title="${esc(`${st.n} · ${tzDay(b.s)}–${tzDay(tzLast(b.s, b.e))}${b.h ? ` · ${hh(b.h)} h` : ""}${st.nd ? " · dra för att flytta passet, ⌘-dra för att låsa tiden" : ""}`)}">`
           + `<span class="zf" style="width:${(fill * 100).toFixed(1)}%"></span><span class="zh">${esc(label)}</span></div>`;
       }
       const ini = personMode ? "" : st.x ? "kund" : who?.sh || "";
@@ -8234,9 +9164,17 @@ details.removed { margin-top: 10px; }
         if (tzOpen(T, "p:x")) rows += cust.map((b) => stepRow(b, true)).join("");
       }
     } else {
-      for (const g of tzDeliveries(tl, res, base)) {
+      // Fältgrupperingen (som «Idag»): leveranserna under rubriker ur uppgifternas `g`; utan val som förut.
+      const dels = tzDeliveries(tl, res, base).map((g) => ({ ...g, g: taskOf(tl, g.tasks[0])?.g || {} }));
+      const tby = byOf("time");
+      const drawGroup = (gr) => { const k = `G:${gr.key}`, open = tzOpen(T, k, true); top += 25;
+        let out = `<div class="zrow zgrp zfield"><div class="zl" data-act="tz-fold" data-k="${esc(k)}" role="button" aria-expanded="${open}"><span class="zcaret">${open ? "▾" : "▸"}</span>`
+          + `<div class="zgn"><div class="zn">${esc(gr.label)}</div><div class="zsub">${gr.n} ${gr.n === 1 ? "leverans" : "leveranser"}</div></div></div>${track("", 24)}</div>`;
+        if (open) out += gr.groups ? gr.groups.map(drawGroup).join("") : gr.rows.map((d) => delRows(d)).join("");
+        return out; };
+      const delRows = (g) => { let rows = "";
         const mine = steps.filter((b) => (b.t.d || b.t.id) === g.id);
-        if (!mine.length) continue;
+        if (!mine.length) return "";
         const first = Math.max(0, Math.min(...mine.map((b) => b.a))), fin = tzSpan(tl, g.finish, g.finish).a + 1, due = dayIdx(tl, g.due) + 1;
         const strip = (a, z, cls) => { const x = Math.max(0, a), y = Math.min(days, z); return y > x ? `<span class="zstrip ${cls}" style="left:${pct(x)};width:${pct(y - x)}"></span>` : ""; };
         let inner = strip(first, Math.min(fin, due), "ok") + (fin > due ? strip(Math.max(first, due), fin, "over") : "");
@@ -8246,14 +9184,16 @@ details.removed { margin-top: 10px; }
         if (g.late && due > 0 && fin <= days) inner += `<span class="ztx late" style="left:calc(${pct(fin)} + 8px);top:15px">+${g.late} d</span>`;
         const sub = `lovat ${dayLabel(g.due)} · klar ${dayLabel(g.finish)}${g.finish !== g.before ? ` (var ${tzDay(g.before)})` : ""}${g.late ? ` · ${g.late} d sen` : " · håller"}`;
         rows += group(`d:${g.id}`, g.name, sub, g.late ? "red" : g.finish !== g.before ? "amber" : "", inner, 46, "", ctxsOf(mine));
-        if (!tzOpen(T, `d:${g.id}`)) continue;
+        if (!tzOpen(T, `d:${g.id}`)) return rows;
         // Delprojekten: en leverans med flera uppgifter visar varje uppgift som en egen
         // hopfällbar rad med en sammanfattande stapel ovanför sina steg (Daniel P 2026-10-07).
         const parts = [...new Set(mine.map((b) => b.t.id))];
-        if (parts.length < 2) { rows += mine.map((b) => stepRow(b, false)).join(""); continue; }
+        if (parts.length < 2) { rows += mine.map((b) => stepRow(b, false)).join(""); return rows; }
         const partsOpen = parts.length <= TZ_PARTS_OPEN;
         for (const tid of parts) rows += partRow(tid, mine.filter((b) => b.t.id === tid), partsOpen);
-      }
+        return rows; };
+      const live = dels.filter((g) => steps.some((b) => (b.t.d || b.t.id) === g.id));
+      rows += tby.length ? groupRows(live, tby).map(drawGroup).join("") : live.map((g) => delRows(g)).join("");
     }
     return bar + `<div class="zbox"><div class="zin${card ? " hascard" : ""}">${head}${rows || `<div class="mmeta" style="padding:16px 12px">Inget planerat i fönstret.</div>`}`
       + (card ? tzCard(card, tl, res, loads) : "") + `</div></div>`;
@@ -8550,7 +9490,9 @@ details.removed { margin-top: 10px; }
     const tw = el.closest?.(".ztrack")?.getBoundingClientRect?.().width || 900;
     const [task, step] = key.split("|"), t = taskOf(T.tl, task), st = t?.steps.find((x) => x.id === step);
     if (!st) return false;
-    T.zdrag = { key, keys, zone, x0: e.clientX, y0: e.clientY, from: changeList(), started: false, h0: placed(consequences(), t, st).h || 0, s0: placed(consequences(), t, st).s, dayPx: tw / T.tl.days };
+    T.zdrag = { key, keys, zone, x0: e.clientX, y0: e.clientY, from: changeList(), started: false, h0: placed(consequences(), t, st).h || 0, s0: placed(consequences(), t, st).s, dayPx: tw / T.tl.days,
+      // Ett moment i en målmodell (D6): draget blir ett pass, eller med ⌘/Ctrl en låst tid; båda förhandsvisas av servern.
+      ...(st.nd && keys.length === 1 && zone !== "hours" ? { nd: st.nd, lock: !!(e.metaKey || e.ctrlKey) } : {}) };
     return false; // inget omritas förrän pekaren rört sig
   }
   function tzDragMove(e) {
@@ -8584,10 +9526,41 @@ details.removed { margin-top: 10px; }
     if (!g) return;
     T.zdrag = null;
     if (!g.started) return; // ett klick: valet görs av klicket
+    if (g.nd && (g.lock || g.zone === "move")) { tzSwallow = Date.now(); tzPassOrLock(g); return; }
     T.zhist = [...(T.zhist || []), g.from].slice(-50);
     tzSaveDraft();
     tzSwallow = Date.now(); // klicket efter draget väljer inget
     tzInfoFade();
+    render();
+  }
+  /**
+   * Dra ett moment i en målmodell (D6): utan tangent flyttas passet (execute_step { schedule }, ett förslag för
+   * hela dagen som planeringen får flytta); med ⌘/Ctrl låses tiden (goal.lock, «kunden har bett om det» är inte
+   * känt här, så skälet är «annat» med en anteckning). Båda går som de andra ◐: serverns förhandsvisning först,
+   * Genomför sedan. Utkastet står streckat tills det är genomfört; Avbryt låter det stå, ⌘Z tar bort det.
+   */
+  async function tzPassOrLock(g) {
+    const T = timeState(), [task, step] = g.key.split("|"), t = taskOf(T.tl, task), st = t?.steps.find((x) => x.id === step);
+    if (!st) return;
+    T.zhist = [...(T.zhist || []), g.from].slice(-50);
+    tzSaveDraft(); render();
+    const p = placed(consequences(), t, st), last = tzLast(p.s, p.e);
+    const done = () => { delete T.changes[g.key]; tzSaveDraft(); loadTid(); };
+    if (g.lock) {
+      const args = { op: "task_lock", task, goal: { lock: { node: g.nd, from: p.s, to: last, reason: "other", note: "låst genom att dra i tidslinjen" } }, reason: "tiden låst i tidslinjen" };
+      return tzPreviewWrite("write", args, `Lås «${st.n}» ${tzDay(p.s)}–${tzDay(last)}`, done);
+    }
+    return tzPreviewWrite("execute_step", { task, step, schedule: { start: p.s } }, `Flytta passet «${st.n}» till ${tzDay(p.s)}`, done);
+  }
+  /** ◐ för ett enskilt anrop: förhandsvisningen utan confirmed, Genomför med (samma väg som previewTime). */
+  async function tzPreviewWrite(tool, args, verb, onDone) {
+    if (offline()) { say("Det kräver förhandsvisning och kan inte göras förrän dirigenten svarar. Utkastet står kvar.", null, true); render(); return; }
+    S.confirm = { loading: true, verb, text: "Räknar …" };
+    render();
+    try {
+      const r = await call(tool, args);
+      S.confirm = { verb, text: summaryText(r), onDone, next: r?.next?.tool ? r.next : { tool, args: { ...args, confirmed: true } } };
+    } catch (e) { S.confirm = null; say(`Kunde inte förhandsvisa: ${e.message || e}`, null, true); }
     render();
   }
   /** «2», «1,5», «30m», «2h»: kvartar, minst en kvart. */
@@ -8606,7 +9579,28 @@ details.removed { margin-top: 10px; }
      att något hänt hämtas skillnaden (plan_state { since_seq }), och bara det som
      syns och har ändrats läses om. Kopian ligger i webbläsaren, så att ett
      återbesök visar läget direkt. */
-  const MEMORY = "v6.overview";
+  /* Per användare (Daniel P 2026-10-14): nyckeln bär vem som tittar, och byts personen rensas
+     det sparade läget (översikt, Idag, karta), så att ingen ser en annans. Vem det är vet vyn
+     först när dirigenten svarat (plan_state { format: "seq" } bär party). */
+  const WHO_KEY = "v6.who";
+  const OWN = [/^v6\.overview/, /^v6\.sheetdata/, /^rotor-karta:/];
+  let who = null;
+  globalThis.RotorWho = () => who;
+  function setWho(party) {
+    if (!party || party === who) return;
+    try {
+      const before = globalThis.localStorage?.getItem(WHO_KEY);
+      if (before && before !== party) {
+        const ls = globalThis.localStorage;
+        for (const k of Object.keys(ls)) if (OWN.some((r) => r.test(k))) ls.removeItem(k);
+      }
+      globalThis.localStorage?.removeItem("v6.overview"); globalThis.localStorage?.removeItem("v6.sheetdata"); // de gamla nycklarna utan person
+      globalThis.localStorage?.setItem(WHO_KEY, party);
+    } catch { /* stängd */ }
+    who = party;
+  }
+  const MEMORY0 = "v6.overview";
+  const memKey = () => `${MEMORY0}:${who || "?"}`;
   /* Kopian gäller bara sidan som sparade den: en ny utläggning kan ha ändrat
      radernas form, så en kopia från en annan sida läses om (Daniel P såg
      stegnamnen kvar efter #355). Sidans längd räcker som avtryck. */
@@ -8614,12 +9608,12 @@ details.removed { margin-top: 10px; }
      claude.ai till eget i sidan, och då missade kopian vid varje omladdning (tom vy). */
   const BUILD = `${SIDA.version}:${globalThis.document?.currentScript?.textContent?.length ?? 0}`;
   function remember() {
-    try { globalThis.localStorage?.setItem(MEMORY, JSON.stringify({ build: BUILD, at: S.fetchedAt, seq: S.seq, data: S.data })); } catch { /* full eller stängd */ }
+    try { if (!who) return; globalThis.localStorage?.setItem(memKey(), JSON.stringify({ build: BUILD, at: S.fetchedAt, seq: S.seq, data: S.data })); } catch { /* full eller stängd */ }
   }
   function recall() {
-    try { const m = JSON.parse(globalThis.localStorage?.getItem(MEMORY) || "null"); return m?.data?.rows && m.build === BUILD ? m : null; } catch { return null; }
+    try { if (!who) return null; const m = JSON.parse(globalThis.localStorage?.getItem(memKey()) || "null"); return m?.data?.rows && m.build === BUILD ? m : null; } catch { return null; }
   }
-  function forget() { try { globalThis.localStorage?.removeItem(MEMORY); } catch { /* stängd */ } }
+  function forget() { try { globalThis.localStorage?.removeItem(memKey()); } catch { /* stängd */ } }
 
   /* ── Kön (BESLUT 11): ● som görs när dirigenten inte svarar sparas här och
      skickas i ordning när den svarar igen. Varje ändring bär markören den
@@ -8673,7 +9667,7 @@ details.removed { margin-top: 10px; }
           if (d?.reload || (theirs && (d.steps || []).includes(runKey(x.task, x.step)))) { S.clash = { item: x, now: stepNow(x) }; break; }
         }
         try {
-          await call("execute_step", x.kind === "done" ? { task: x.task, step: x.step, mark: "done" } : { task: x.task, step: x.step, focus: x.on });
+          await call("execute_step", x.kind === "done" ? { task: x.task, step: x.step, mark: "done", values: doneValues() } : { task: x.task, step: x.step, focus: x.on });
           sent++;
         } catch (e) {
           if (unreachable(e)) { S.error = e; break; }
@@ -8715,6 +9709,7 @@ details.removed { margin-top: 10px; }
     if (!d?.overview) throw Object.assign(new Error("Svaret saknade översikten."), { code: "SHAPE" });
     const mine = d.overview.party?.id;
     if (S.data && S.data.party?.id && mine && S.data.party.id !== mine) { S.sheets = []; S.time = null; } // en annan person i samma webbläsare
+    setWho(mine);
     S.data = d.overview;
     if (d.views?.version) AUTO_S.server = d.views.version;
     S.viewsUrl = d.views?.url || null;
@@ -8830,7 +9825,7 @@ details.removed { margin-top: 10px; }
       ? `${r.inbox.new} nya, den äldsta ${r.inbox.oldest_days ? `${r.inbox.oldest_days} d gammal` : "från i dag"}. Bedöms i In i nuvarande vyn.` : "Inget nytt i posten."}</span></div>`
       + `<div class="step"><span></span><span class="meta" style="grid-column:span 3"><button class="link" data-act="open-inbox">Öppna Inkommet: mejl som inte hittade sin väg →</button></span></div></div>`;
     const me = S.data.party?.label;
-    if (r.start) return `<div class="steps"><div class="step"><span></span><span class="meta" style="grid-column:span 3">${esc(plain(r.state_text))}.`
+    if (r.start && !r.start.text) return `<div class="steps"><div class="step"><span></span><span class="meta" style="grid-column:span 3">${esc(plain(r.state_text))}.`
       + ` Nytt arbete gås igenom innan det läggs in: vad som ska levereras, delarna, vem och när.</span></div>`
       + `<div class="opens"><button class="link" data-act="start-project" data-key="${esc(r.key)}">${esc(/^(Planera om|Fortsätt projektet)/.test(r.headline || r.label || "") ? "Fortsätt ↗" : "Starta projekt ↗")}</button></div></div>`;
     if (r.cases) return casesList(o, r, me);
@@ -8917,7 +9912,13 @@ details.removed { margin-top: 10px; }
     // Utan metod (svar 9): alltid en egen grupp sist, vilken gruppering som än gäller.
     const bare = shown.filter((r) => r.no_method), rest = shown.filter((r) => !r.no_method);
     let body = "";
-    if (ch.group === "none" || !ch.group) body = rest.map(rowHtml).join("");
+    const fby = byOf("list");
+    // Fältgrupperingen (som «Idag»), när ett fält är valt: två nivåer, hopfällda över tre rader. Inkommet står först, utanför.
+    if (fby.length) {
+      const grp = (g) => `<details class="idag-g lgrp"${g.open ? " open" : ""}><summary><b>${esc(g.label)}</b> <span class="mmeta">${g.n}</span></summary>${g.groups ? g.groups.map(grp).join("") : g.rows.map(rowHtml).join("")}</details>`;
+      body = rest.filter((r) => r.kind === "inbox").map(rowHtml).join("") + groupRows(rest.filter((r) => r.kind !== "inbox").map((r) => ({ ...r, g: rowG(o, r) })), fby).map(grp).join("");
+    }
+    else if (ch.group === "none" || !ch.group) body = rest.map(rowHtml).join("");
     else {
       const me = o.party?.id, today = o.today;
       const keyOf = (r) => {
@@ -8967,7 +9968,7 @@ details.removed { margin-top: 10px; }
       ? `<input id="ov-name" maxlength="40" placeholder="Namn på vyn" value="${esc(S.saving)}" autocomplete="off"><button class="primary" data-act="ov-save"><span class="lvl d">●</span> Spara vyn</button><button class="link" data-act="ov-save-cancel">Avbryt</button>`
       : `<button class="addf save" data-act="ov-save-start"${block ? ` aria-disabled="true" title="${esc(block)}"` : ` title="Filtret och grupperingen sparas som en egen vy, för dig, på alla datorer"`}>☆ Spara vyn</button>`;
     const views = `<div class="vrow">${vbtn}<span class="sep"></span><button class="addf" data-act="ov-filter" aria-expanded="${!!S.filterOpen}">+ Filter</button>${saveBtn}${people ? `<span class="sep"></span>${people}` : ""}${bodies}</div>`;
-    const groups = S.body === "list" ? `<div class="vrow"><span class="glbl">Gruppera</span>${GROUPS.map(([k, l]) => `<button class="gopt${(ch.group || "none") === k ? " on" : ""}" data-act="ov-group" data-g="${k}">${l}</button>`).join("")}</div>` : "";
+    const groups = S.body === "list" ? `<div class="vrow"><span class="glbl">Gruppera</span>${GROUPS.map(([k, l]) => `<button class="gopt${!byOf("list").length && (ch.group || "none") === k ? " on" : ""}" data-act="ov-group" data-g="${k}">${l}</button>`).join("")}<span class="sep"></span>${byPick("list", rows.filter((r) => r.kind !== "inbox").map((r) => ({ g: rowG(o, r) })))}</div>` : "";
     const opt = (k, v, l, on) => `<button class="fopt${on ? " on" : ""}" data-act="ov-opt" data-k="${k}" data-v="${esc(v)}">${esc(l)}</button>`;
     const has = (k, v) => (f[k] || []).includes(v);
     const by = f.when ? (f.by || "due") : (S.timeBy || "due");
@@ -9021,7 +10022,7 @@ details.removed { margin-top: 10px; }
       // En sparad vy bär sin gruppering; de förinställda rör den inte.
       setOv({ filter: JSON.parse(JSON.stringify(p)), ...(v ? { group: v.group || "none" } : {}) });
     } else if (act === "ov-filter") S.filterOpen = !S.filterOpen;
-    else if (act === "ov-group") setOv({ group: el.getAttribute("data-g") });
+    else if (act === "ov-group") { if (byOf("list").length) setBy("list", 0, ""); setOv({ group: el.getAttribute("data-g") }); }
     else if (act === "ov-person") {
       const id = el.getAttribute("data-id"), cur = f.owner || [], on = cur.includes(id);
       f.owner = shift ? (on ? cur.filter((y) => y !== id) : [...cur, id]) : (on && cur.length === 1 ? [] : [id]);
@@ -9110,10 +10111,10 @@ details.removed { margin-top: 10px; }
       main = `<div class="empty"><h2>Inget i översikten än</h2><p>Leveranser hamnar här när en beställning läggs in eller ett mejl blir till något. Posten till huset syns överst så fort en inkorg är kopplad.</p>`
         + `<div class="ways"><button data-act="start" data-way="order">Lägg in en beställning ↗</button><button data-act="start" data-way="inbox">Koppla en inkorg ↗</button><button data-act="start" data-way="methods">Se metoderna ↗</button></div>`
         + `<p class="mmeta" style="margin-top:12px">Vägarna kopierar en prompt till vanliga Claude-chatten, som har samma verktyg mot dirigenten.</p></div>`;
-    } else main = stateLine() + clashHtml() + outboxHtml() + (S.body === "time" ? timeBody() : S.body === "cal" ? calendarBody() : reviewsHtml(o) + list(o));
+    } else main = stateLine() + clashHtml() + outboxHtml() + (S.body === "time" ? timeBody() : S.body === "cal" ? calendarBody() : reviewsHtml(o) + idagHtml(o) + list(o));
     const mainSel = selDecorate(main), sheetsSel = selDecorate(sheetsHtml());
     S.selVisible = S.sheets.length ? sheetsSel.ctxs : mainSel.ctxs;
-    root.innerHTML = linkHtml(top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + presHtml() + imgPickHtml() + selbarHtml() + confirmHtml() + toastHtml());
+    root.innerHTML = linkHtml(top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + presHtml() + imgPickHtml() + selbarHtml() + batchHtml() + confirmHtml() + toastHtml());
     presFramePlace();
     if (presScroll !== null) { const box = root.querySelector?.(".mv.pres"); if (box) box.scrollTop = presScroll; }
     if (act0) { const el = root.querySelector?.(`#${focusId}`); if (el) { el.focus?.({ preventScroll: true }); try { if (presSel[0] != null) el.setSelectionRange?.(presSel[0], presSel[1]); } catch { /* inte ett textfält */ } } }
@@ -9180,6 +10181,8 @@ details.removed { margin-top: 10px; }
     else if (act === "wd-save") { saveWorkday(); return; }
     else if (act === "open-delivery") { const k = el.getAttribute("data-key"); openSheet("delivery", k, rowOf(k)?.label); return; }
     else if (act === "open-map") { openMap(el.getAttribute("data-task"), el.getAttribute("data-ms")); return; }
+    else if (act === "idag-done") { markDone({ task: el.getAttribute("data-task"), step: el.getAttribute("data-step"), label: el.getAttribute("data-label") }); return; }
+    else if (act === "idag-skip") { skipMoment(el.getAttribute("data-task"), el.getAttribute("data-node"), el.getAttribute("data-label")); return; }
     else if (act === "open-task") { const r = rowOfTask(el.getAttribute("data-task")); if (r) openSheet("delivery", r.key, r.label); return; }
     else if (act === "pres-approve-step") {
       const task = el.getAttribute("data-task"), step = el.getAttribute("data-step"), label = el.getAttribute("data-label"), x = top1();
@@ -9300,6 +10303,11 @@ details.removed { margin-top: 10px; }
     else if (act === "case-choice") { const t = top1(); if (t) t.choice = el.getAttribute("data-id"); }
     else if (act === "sel-clear") { selClear(); return; }
     else if (act === "sel-run") { const a = (S.selActs || [])[Number(el.getAttribute("data-i"))]; if (a) a.run(); return; }
+    else if (act === "batch-cancel") { S.batch = null; render(); return; }
+    else if (act === "batch-preview") { batchPreview(); return; }
+    else if (act === "batch-go") { batchGo(); return; }
+    else if (act === "batch-house") { if (S.batch) { const r = el.getAttribute("data-ref"); S.batch.house[r] = !S.batch.house[r]; render(); } return; }
+    else if (act === "sel-group") { e.preventDefault?.(); e.stopPropagation?.(); selGroup((el.getAttribute("data-ctxs") || "").split(" ").filter(Boolean)); return; }
     else if (act === "case-close") { const task = el.getAttribute("data-task"), t = top1(); const d = t && S.sheetData[sheetKey(t)]?.looksDone
         || (S.caseDone || {})[task]; caseClose(task, d); return; }
     else if (act === "case-call") { const t = top1(); if (t) caseCall(t, Number(el.getAttribute("data-i"))); return; }
@@ -9612,17 +10620,25 @@ details.removed { margin-top: 10px; }
   });
 
 
-  const memory = recall();
-  if (memory) { S.data = memory.data; S.seq = memory.seq; S.fetchedAt = memory.at; S.loading = false; S.refreshing = true; overlayOutbox(); }
+  // Det sparade läget visas först när dirigenten sagt vem som tittar (setWho), aldrig en annans.
+  let memory = null;
   // En länk: översikten ur minnet, och arken ovanpå direkt med titeln ur länken. Resten fylls på när dirigenten svarar.
   // Utan adress (artefakten omladdad av claude.ai): arken som var öppna senast.
   S.sheets = hashSheets(hereRaw() || recallStack()); relabel(); recallSheets();
+  // Passets länk (Del D): #/karta/<namn>-<uppgift>|<delmål> öppnar kartan på delmålet när översikten finns.
+  const mapLink = S.sheets.find((x) => x.kind === "map");
+  S.sheets = S.sheets.filter((x) => x.kind !== "map");
   globalThis.addEventListener?.("pagehide", rememberSheets);
   render();
   pickMcp({ claude: typeof claude !== "undefined" ? claude : undefined, document, location, fetch: (u, i) => fetch(u, i) })
     .then(({ mcp: m, web }) => { mcp = m; WEB.on = web;
       if (!web && typeof claude !== "undefined" && claude.use) Promise.resolve(claude.use("sample")).then((x) => { sample = x || null; }, () => { sample = null; });
-      return (memory ? revisit(memory) : load()).then(() => { relabel(); freshen(); render(); if (!web) { saveOwnAddress(S.viewsUrl); return autoCheck("open"); } }); })
+      // Utan sparad person finns inget sparat läge att visa: rakt på översikten (ett anrop).
+      let known = null; try { known = globalThis.localStorage?.getItem(WHO_KEY) || null; } catch { /* stängd */ }
+      return (known ? call("plan_state", { format: "seq" }).then((c) => { setWho(c?.party); memory = recall(); recallSheets(); }, () => {}) : Promise.resolve())
+        .then(() => memory ? revisit(memory) : load()).then(() => { relabel(); freshen(); render();
+        if (mapLink) { const [mt, mms] = String(mapLink.id).split("|"); openMap(mt, mms || null); }
+        if (!web) { saveOwnAddress(S.viewsUrl); return autoCheck("open"); } }); })
     .catch((e) => { S.error = e; S.loading = false; S.refreshing = false; render(); });
 })();
 </script>
