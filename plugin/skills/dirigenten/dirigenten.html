@@ -1752,7 +1752,7 @@ ${need.map((p) => `${esc(p.label)}${p.required ? "" : " (valfritt)"}` + (p.type 
   function batchGo(params) {
     const B = K.batch; if (!B) return;
     for (const p of B.a.params || []) { const v = val(`k-bp-${p.name}`); if (v) params[p.name] = p.type === "number" ? Number(v) : v; }
-    return act("write", { op: "batch_apply", action: B.a.id, items: B.items, params }, `${B.a.label} · ${B.items.length}`);
+    return act("write", { op: "batch_apply", action: B.a.id, items: B.items, params }, `${B.a.label} · ${B.items.length}`, null, { yes: true, approval: `${B.a.label} i kartan (${B.items.length})` });
   }
   /** Lås tid på ett delmål: en dag (punkt) eller ett spann, genom handlingstabellens «Lås tid». */
   function lockForm(ms) {
@@ -1928,11 +1928,37 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       if (all.every((id) => m.moments[`${ms}/${id}`] === "done") && m.state.milestones[ms]) m.state.milestones[ms].state = "done"; } },
   };
 
+  /* yes:start — Ett ja i vyn, en väg (Del 0, Daniel P 2026-10-14: «det gjorda sparas inte»). Blocket står
+     ordagrant i views/karta.html och i views/v6.html (test/sparning-optimistisk.test.ts prövar att de är lika).
+     Knappen är människans ja: anropet bär user_approval (knappens text) från början, så servern skriver ● och ◐
+     direkt. Svarar den ändå med en förhandsvisning (written: false) följs dess nästa anrop med samma ja, en gång,
+     i samma klick. ■ (det som går utåt: preview.asks, en exakt förhandsvisning, ■ i en batch) görs aldrig så:
+     svaret är { own } och vyn frågar per post. Klart är bara written === true; allt annat är ett fel. */
+  const YES = {
+    written: (d) => d?.written === true,
+    preview: (d) => !!d && d.written === false && (d.preview !== undefined || d.batch !== undefined || !!(d.next_call || d.next)),
+    own: (d) => (d?.preview?.asks || []).length > 0 || d?.preview?.exact === true || (d?.batch?.groups?.["■"] || []).length > 0,
+    nextOf: (d, approval) => { const n = d?.next_call || d?.next; if (!n?.args) return null;
+      return { tool: n.tool, args: { ...n.args, ...(d.preview_id && !n.args.preview_id ? { preview_id: d.preview_id } : {}), confirmed: true, user_approval: approval } }; },
+    text: (d) => String(d?._text || d?.summary || d?.message || "").split("\n\n")[0].trim(),
+    async send(call, tool, input, approval) {
+      let d = await call(tool, { ...input, user_approval: approval });
+      if (YES.written(d)) return { d };
+      if (d?.basis) return { d, basis: d.basis };
+      if (YES.preview(d) && !YES.own(d)) { const n = YES.nextOf(d, approval); if (n) { d = await call(n.tool || tool, n.args); if (YES.written(d)) return { d }; } }
+      if (YES.preview(d) && YES.own(d)) return { d, own: YES.nextOf(d, approval) };
+      throw Object.assign(new Error(YES.text(d) || "Dirigenten skrev inget."), { code: "NOT_WRITTEN" });
+    },
+  };
+  /* yes:end */
+
   /**
-   * En skrivning: först utan confirmed (förhandsvisning), sedan ett ja. `opt.optimistic`
-   * ändrar kartan direkt; ger servern en förhandsvisning eller ett fel rullas det tillbaka.
-   * Knappen (opt.k, opt.node) är spärrad med snurra tills svaret kommer.
+   * En skrivning. Med `opt.optimistic` (ja, gjort, hoppa över, ta tillbaka, ångra) ändras kartan direkt och
+   * skrivningen går genom YES; ■ rullas tillbaka och frågas per post. Utan går anropet som förut: först en
+   * förhandsvisning, sedan knappen. Ett fel eller ett uteblivet `written` rullas tillbaka och syns.
    */
+  /** Jaet per post: knappens ord med uppdraget och momentet, så att två moment med samma namn inte delar ja (src/plan/approval.ts). */
+  const yesWords = (label, a) => `Ja, gör det: ${label}${a?.node ? ` (${a.task} ${a.node})` : ""}`;
   async function act(tool, input, label, undoNode, opt = {}) {
     if (K.busy) return;
     const snap = K.map, nodes = opt.nodes || [];
@@ -1944,25 +1970,30 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     } else K.dialog = `<span class="k-wait">Frågar dirigenten …</span>`;
     render();
     const rollback = () => { if (opt.optimistic) { K.map = snap; K.pending = {}; } };
+    const approval = opt.approval || `${label} i kartan`;
+    const ownDialog = (d, next) => {
+      K.last = next ? { tool: next.tool || tool, input: next.args, label, undoNode, opt: opt.optimistic || opt.yes ? { ...opt, k: "confirm", approval: yesWords(label, next.args) } : { confirm: true, k: "confirm" } } : null;
+      const isOverride = !!input.values?.override;
+      const house = d?.batch?.groups?.["■"] || [];
+      K.dialog = `<b>Förhandsvisning: ${esc(label)}</b>\n${esc(YES.text(d))}\n`
+        + (house.length ? `<div>${house.map((r) => `<label class="k-sub"><input type="checkbox" data-house="${esc(r)}" style="width:auto"> ■ ${esc((d.batch.items.find((x) => x.ref === r) || {}).label || r)}</label>`).join("<br>")}</div>` : "")
+        + (next ? `<div style="margin-top:8px"><button class="yes" data-k="confirm">${isOverride ? "Gör ändå (inget ja)" : "Ja, gör det"}</button> <button data-k="cancel">Avbryt</button></div>` : `<button data-k="cancel">Stäng</button>`);
+      render();
+    };
+    const done = async (d) => { K.dialog = null; K.toast = { text: `✓ ${YES.text(d).slice(0, 600)}`, undo: undoNode || null, undoCall: d?.undo || null }; await load(); };
     try {
-      const d = await K.call(tool, input);
-      const text = d?._text || d?.message || JSON.stringify(d).slice(0, 400);
-      const preview = d && !input.confirmed && (d.preview || d.confirm || d.written === false || d.needs_confirmation || /förhandsvis|bekräfta|confirmed/i.test(text));
-      K.busy = null;
-      if (preview) {
-        rollback();
-        // Kvittot följer med jaet (preview_id); utan det avvisades jaet och fick ges igen.
-        K.last = { tool, input: { ...input, ...(d.next?.args || {}), confirmed: true, ...(d.preview_id ? { preview_id: d.preview_id } : {}) }, label, undoNode,
-          opt: tool === "execute_step" && input.node && !input.values && !input.mark ? { optimistic: "yes", nodes: [undoNode || input.node], k: "confirm" } : { k: "confirm" } };
-        const isOverride = !!input.values?.override;
-        const house = input.op === "batch_apply" ? (d.batch?.groups?.["■"] || []) : [];
-        K.dialog = `<b>Förhandsvisning: ${esc(label)}</b>\n${esc(text)}\n`
-          + (house.length ? `<div>${house.map((r) => `<label class="k-sub"><input type="checkbox" data-house="${esc(r)}" style="width:auto"> ■ ${esc((d.batch.items.find((x) => x.ref === r) || {}).label || r)}</label>`).join("<br>")}</div>` : "")
-          + `<div style="margin-top:8px"><button class="yes" data-k="confirm">${isOverride ? "Gör ändå (inget ja)" : "Ja, gör det"}</button> <button data-k="cancel">Avbryt</button></div>`;
-        render(); return;
+      if (opt.optimistic || opt.yes) {
+        const r = await YES.send(K.call, tool, input, approval);
+        K.busy = null;
+        if (r.own || r.basis) { rollback(); return ownDialog(r.d, r.own); }
+        return await done(r.d);
       }
-      K.dialog = null; K.toast = { text: `✓ ${text.slice(0, 600)}`, undo: undoNode || null, undoCall: d?.undo || null };
-      await load();
+      // Ett ja per post i dialogen (■, ett val, «gör ändå», en ändring i strukturen): anropet som det står, med knappens ord.
+      const d = await K.call(tool, opt.confirm ? { ...input, confirmed: true, user_approval: yesWords(label, input) } : input);
+      K.busy = null;
+      if (!opt.confirm && YES.preview(d)) { rollback(); return ownDialog(d, YES.nextOf(d, yesWords(label, input))); }
+      if (!YES.written(d)) throw Object.assign(new Error(YES.text(d) || "Dirigenten skrev inget."), { code: "NOT_WRITTEN" });
+      await done(d);
     } catch (e) {
       K.busy = null; rollback();
       if (opt.optimistic) { K.dialog = null; K.toast = { text: `Gick inte: ${e?.message || e}\nÄndringen är återställd i kartan.` }; render(); }
@@ -2060,9 +2091,9 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       case "mband": K.mband = Math.max(0, Math.min(K.map.bands.length - 1, K.mband + Number(el.getAttribute("data-d")))); root().querySelector(".k-scroll").scrollTo(0, 0); return render();
       case "sel": return select(el.getAttribute("data-ms"));
       case "toast-x": K.toast = null; return render();
-      case "undo-call": { const u = K.toast?.undoCall; K.toast = null; return u ? act(u.tool, u.args, "Ångra ändringen") : null; }
+      case "undo-call": { const u = K.toast?.undoCall; K.toast = null; return u ? act(u.tool, u.args, "Ångra ändringen", null, { yes: true, approval: "Ångra i kartan" }) : null; }
       case "cancel": K.dialog = null; K.last = null; return render();
-      case "run": return act("execute_step", { ...tn(node) }, title(node), node, { k, node });
+      case "run": return act("execute_step", { ...tn(node) }, title(node), node, { optimistic: "yes", nodes: [node], k, node, approval: `${el.textContent?.trim() || "Ja"} i kartan: ${title(node)}` });
       case "choose": return act("execute_step", { ...tn(node), values: { choose: el.getAttribute("data-out") } }, `Välj «${el.getAttribute("data-out")}»`, node);
       case "confirm": { const l = K.last; K.last = null;
         // ■ i en batch görs bara ikryssade (servern: house).
@@ -2108,7 +2139,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
         return act("execute_step", { task: tn(raw[0]).task, node: nodes[0], values: { already_done: { nodes, evidence, ...(before ? { with_before: true } : {}) } } }, "Markera som gjort", null,
           { optimistic: "done", nodes: raw, k, node: el.getAttribute("data-nodes") });
       }
-      case "undo-go": return act("execute_step", { ...tn(node), mark: "undone", reason: val("k-note") || "ångrat i kartan" }, "Ångra");
+      case "undo-go": return act("execute_step", { ...tn(node), mark: "undone", reason: val("k-note") || "ångrat i kartan" }, "Ångra", null, { yes: true, approval: `Ångra i kartan: ${title(node)}` });
       case "grow-go": return act("write", { op: "task_lock", task: K.sel ? tn(K.sel).task : K.delivery ? K.map.regions?.[0]?.task : K.task, goal: { results: [val("k-res")] }, reason: val("k-note") || "uppdraget växer, ur kartan" }, "Låt uppdraget växa");
       case "move-go": { const to = val("k-newband") || val("k-band"), mm = el.getAttribute("data-ms"); return act("write", { op: "task_lock", task: tn(mm).task, goal: { bands: { move: { [strip(mm)]: to.replace(/^.* · /, "") } } }, reason: "flyttat i kartan" }, `Flytta till «${to}»`); }
       case "rename-band-go": return act("write", { op: "task_lock", task: tn(el.getAttribute("data-band")).task, goal: { bands: { rename: { [strip(el.getAttribute("data-band"))]: val("k-name").replace(/^.* · /, "") } } }, reason: "namn ändrat i kartan" }, "Byt namn på delen");
@@ -2133,6 +2164,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const el = root();
     if (!el.dataset.wired) { el.dataset.wired = "1"; el.addEventListener("click", onClick);
       document.getElementById("karta-strip")?.addEventListener("click", closeMap); el.addEventListener("dblclick", onDbl);
+      // Esc i kartan: först rutan, sedan valet, sist kartan (som översiktens ark). Före vyns egna tangenter.
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape" || el.hidden || !K.map || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName || "") || e.target?.isContentEditable) return;
+        e.preventDefault(); e.stopImmediatePropagation();
+        if (K.dialog) { K.dialog = null; render(); } else if (K.sel) select(null); else closeMap();
+      }, true);
       el.addEventListener("keydown", (e) => { const n = e.target.closest?.(".k-node"); if (n && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); select(n.getAttribute("data-ms")); } });
       el.addEventListener("change", (e) => {
         if (e.target.getAttribute?.("data-k") === "mat-by") { K.matBy[Number(e.target.getAttribute("data-i"))] = e.target.value; K.matBy = K.matBy.filter(Boolean); if (!K.matBy.length) K.matBy = ["task"]; delete K.detail["@material"]; render(); detail("@material"); return; }
@@ -2183,7 +2220,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "12770622", published: "2026-10-14" };
+  const SIDA = { version: "2e1585b5", published: "2026-10-14" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2263,6 +2300,35 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     return d;
   }
   const call = (tool, input) => callOn(SERVER, tool, input);
+  /* yes:start — Ett ja i vyn, en väg (Del 0, Daniel P 2026-10-14: «det gjorda sparas inte»). Blocket står
+     ordagrant i views/karta.html och i views/v6.html (test/sparning-optimistisk.test.ts prövar att de är lika).
+     Knappen är människans ja: anropet bär user_approval (knappens text) från början, så servern skriver ● och ◐
+     direkt. Svarar den ändå med en förhandsvisning (written: false) följs dess nästa anrop med samma ja, en gång,
+     i samma klick. ■ (det som går utåt: preview.asks, en exakt förhandsvisning, ■ i en batch) görs aldrig så:
+     svaret är { own } och vyn frågar per post. Klart är bara written === true; allt annat är ett fel. */
+  const YES = {
+    written: (d) => d?.written === true,
+    preview: (d) => !!d && d.written === false && (d.preview !== undefined || d.batch !== undefined || !!(d.next_call || d.next)),
+    own: (d) => (d?.preview?.asks || []).length > 0 || d?.preview?.exact === true || (d?.batch?.groups?.["■"] || []).length > 0,
+    nextOf: (d, approval) => { const n = d?.next_call || d?.next; if (!n?.args) return null;
+      return { tool: n.tool, args: { ...n.args, ...(d.preview_id && !n.args.preview_id ? { preview_id: d.preview_id } : {}), confirmed: true, user_approval: approval } }; },
+    text: (d) => String(d?._text || d?.summary || d?.message || "").split("\n\n")[0].trim(),
+    async send(call, tool, input, approval) {
+      let d = await call(tool, { ...input, user_approval: approval });
+      if (YES.written(d)) return { d };
+      if (d?.basis) return { d, basis: d.basis };
+      if (YES.preview(d) && !YES.own(d)) { const n = YES.nextOf(d, approval); if (n) { d = await call(n.tool || tool, n.args); if (YES.written(d)) return { d }; } }
+      if (YES.preview(d) && YES.own(d)) return { d, own: YES.nextOf(d, approval) };
+      throw Object.assign(new Error(YES.text(d) || "Dirigenten skrev inget."), { code: "NOT_WRITTEN" });
+    },
+  };
+  /* yes:end */
+  /** Ett ja genom YES; ■ eller ett obesvarat underlag kan inte gå den här vägen och blir ett fel som syns. */
+  async function sendYes(tool, input, approval) {
+    const r = await YES.send(call, tool, input, approval);
+    if (r.own || r.basis) throw Object.assign(new Error(`${YES.text(r.d) || "Det här kräver ett ja per post."} Inget är gjort härifrån; öppna det och svara där.`), { code: "NEEDS_YES" });
+    return r.d;
+  }
 
   /* ── Tiderna (?debug eller ⌘K «Visa tider») ──
      Varje anrop går webbläsare → claude.ai → kopplingen → servern; antalet anrop per
@@ -2646,8 +2712,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     return `<div class="wk-bg" data-act="walk-close"></div><div class="wk" role="dialog" aria-label="Godkänn">${head}<div class="wk-card">`
       + `<div class="wk-top">${shapeHtml("yes")}<div><b class="wk-t">${esc(x.h)}</b><span class="wk-s">${esc([row?.label || x.b, row?.customer?.label].filter(Boolean).join(" · "))}</span></div>${urgHtml(row?.u || 0)}</div>`
       + `<dl class="wk-box">${x.start ? `<dt>Planeringen</dt><dd>${esc(x.r || "pausad")}</dd><dt>Sedan</dt><dd>Projektstarten öppnas där den stannade.</dd>`
-        : `<dt>Det du godkänner</dt><dd>${esc(x.h)}</dd>${x.b ? `<dt>Hör till</dt><dd>${esc(x.b)}</dd>` : ""}${x.r ? `<dt>Varför nu</dt><dd>${esc(x.r)}</dd>` : ""}<dt>Sedan</dt><dd>Momentet markeras klart och det som väntar låses upp. Ångra finns i kvittot.</dd>`}</dl>`
-      + `<div class="wk-acts"><button class="wk-y" data-act="walk-yes"${W.busy ? " disabled" : ""}>${x.start ? "Fortsätt planeringen" : "Godkänn"}<kbd>y</kbd></button><button class="wk-n" data-act="walk-later">Senare<kbd>n</kbd></button><span style="flex:1"></span>`
+        : `<dt>Det du godkänner</dt><dd>${esc(x.h)}</dd>${x.b ? `<dt>Hör till</dt><dd>${esc(x.b)}</dd>` : ""}${x.r ? `<dt>Varför nu</dt><dd>${esc(x.r)}</dd>` : ""}${x.own ? `<dt>Det här går utåt</dt><dd>${esc(x.ownText || "")}</dd>` : ""}<dt>Sedan</dt><dd>Momentet markeras klart och det som väntar låses upp. Ångra finns i kvittot.</dd>`}</dl>`
+      + `<div class="wk-acts"><button class="wk-y" data-act="walk-yes"${W.busy ? " disabled" : ""}>${x.start ? "Fortsätt planeringen" : x.own ? "Ja, gör det" : "Godkänn"}<kbd>y</kbd></button><button class="wk-n" data-act="walk-later">Senare<kbd>n</kbd></button><span style="flex:1"></span>`
       + (x.start ? "" : `<button class="wk-o" data-act="walk-open">Öppna och ändra först<kbd>↵</kbd></button>`) + `</div></div></div>`;
   }
   function walkAct(act) {
@@ -2659,7 +2725,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (act === "walk-open") { S.walk = null; openMap(x.task, x.ms); return; }
     // Nästa sak visas direkt (Daniel P 2026-10-14: «man fattar inte att något händer»); svaret kommer i bakgrunden.
     if (act === "walk-yes") { W.done++; W.i++; render();
-      markDone({ task: x.task, step: x.step, node: x.node, approve: true, label: x.h }).then((ok) => { if (!ok) { W.done--; W.failed = (W.failed || 0) + 1; } render(); }); }
+      const go = x.own ? confirmOwn(x) : markDone({ task: x.task, step: x.step, node: x.node, approve: true, label: x.h, inWalk: true });
+      go.then((ok) => {
+        // ■: servern visade vad som går utåt. Posten läggs sist i genomgången med den texten och ett eget ja.
+        if (ok && ok.own) { W.done--; W.items.push({ ...x, own: ok.own, ownText: ok.text }); }
+        else if (!ok) { W.done--; W.failed = (W.failed || 0) + 1; }
+        render(); }); }
   }
 
   function dayMeterHtml(o) {
@@ -4104,10 +4175,10 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (!h || !R?.text.trim()) return;
     const [task] = splitStep(id), reason = R.text.trim();
     try {
-      for (const s of h.steps) await call("execute_step", { task, step: s.step, mark: "done", reason, confirmed: true });
+      for (const s of h.steps) await sendYes("execute_step", { task, step: s.step, mark: "done", reason, confirmed: true }, `Klart i vyn: ${s.label} (${reason})`);
       delete S.helpReason[`${id}|${i}`];
       say(`${h.steps.length > 1 ? `${h.steps.length} steg` : `«${h.steps[0].label}»`} är markerat klart: ${reason}`, { fn: async () => {
-        for (const s of h.steps) await call("execute_step", { task, step: s.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." }); } });
+        for (const s of h.steps) await sendYes("execute_step", { task, step: s.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." }, `Ångra i vyn: ${s.label}`); } });
       staleStep(id, task);
     } catch (e) { say(`Kunde inte markera klart: ${e.message || e}. Inget ändrades.`, null, true); }
     render();
@@ -5599,13 +5670,13 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       if (subj.redo.kind === "human") {
         // Steget öppnas igen för den som gjorde det (step_reopened), om det var klart, och hen får feedbacken som meddelande.
         let reopened = null;
-        if (subj.reopen) { try { await call("execute_step", { task: subj.reopen.task, step: subj.reopen.step, mark: "undone", reason: `Inte godkänt: ${feedback}` }); reopened = subj.reopen; } catch { /* inte klart: inget att öppna */ } }
+        if (subj.reopen) { try { await sendYes("execute_step", { task: subj.reopen.task, step: subj.reopen.step, mark: "undone", reason: `Inte godkänt: ${feedback}` }, `Inte godkänt i vyn: ${subj.name}`); reopened = subj.reopen; } catch { /* inte klart: inget att öppna */ } }
         const me = S.data?.party?.id;
         if (subj.redo.party && subj.redo.party !== me && subj.reopen)
           try { await call("write", { op: "message", to: subj.redo.party, text: `Inte godkänt: «${subj.name}». Ändra så här: ${feedback}`, about: { task: subj.reopen.task, step: subj.reopen.step }, confirmed: true }); } catch { /* meddelandet är en bonus */ }
         say(`Inte godkänt. ${subj.redo.label} gör om${reopened ? "; steget är öppet igen" : ""}.`, { fn: async () => {
           await call("write", { op: "content_approve", withdraw: event });
-          if (reopened) await call("execute_step", { task: reopened.task, step: reopened.step, mark: "done" });
+          if (reopened) await sendYes("execute_step", { task: reopened.task, step: reopened.step, mark: "done" }, `Ångra i vyn: ${subj.name}`);
         } });
       } else {
         const toast = { text: "Inte godkänt. Claude kör om med det du skrev.", undo: { tool: "write", args: { op: "content_approve", withdraw: event } } };
@@ -5731,8 +5802,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   async function skipMoment(task, node, label) {
     const reason = "behövs inte i det här uppdraget";
     try {
-      await call("execute_step", { task, node, values: { skip: { reason } } });
-      say(`«${label}» hoppas över.`, { fn: async () => { await call("execute_step", { task, node, values: { skip: false } }); rereadAfterWrite(task); } });
+      await sendYes("execute_step", { task, node, values: { skip: { reason } } }, `Hoppa över i vyn: ${label}`);
+      say(`«${label}» hoppas över.`, { fn: async () => { await sendYes("execute_step", { task, node, values: { skip: false } }, `Ta tillbaka i vyn: ${label}`); rereadAfterWrite(task); } });
       rereadAfterWrite(task);
     } catch (e) { say(`Kunde inte hoppa över «${label}»: ${e.message || e}. Inget ändrades.`, null, true); }
     render();
@@ -6204,8 +6275,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const text = patch.merged_into ? `${one} slogs ihop med «${caseTitleOf(patch.merged_into)}».` : patch.archived === true ? `${one} ${n === 1 ? "är arkiverat" : "arkiverade"}. ${n === 1 ? "Det finns" : "De finns"} under Arkiverade.`
       : patch.resolved === true ? `${one} ${n === 1 ? "är löst" : "lösta"}.` : `${one} ${n === 1 ? "är" : "är"} tillbaka bland de öppna.`;
     try {
-      const r = await call("write", { op: "case_mark", task: n === 1 ? tasks[0] : tasks, ...patch });
-      const undo = r?.next ? { fn: async () => { S.marks = before; render(); await call(r.next.tool, r.next.args); } } : null;
+      const r = await sendYes("write", { op: "case_mark", task: n === 1 ? tasks[0] : tasks, ...patch }, `I vyn: ${text}`);
+      const undo = r?.next ? { fn: async () => { S.marks = before; render(); await sendYes(r.next.tool, r.next.args, `Ångra i vyn: ${one}`); } } : null;
       say(text, undo, false, patch.resolved === true ? { tasks } : null);
       refreshSoon();
     } catch (e) { S.marks = before; say(`Kunde inte märka ${one}: ${e.message || e}. Inget ändrades.`, null, true); }
@@ -6215,7 +6286,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   async function saveCaseNote(text) {
     const n = S.toast?.note; if (!n || !text.trim()) { S.toast = null; render(); return; }
     S.toast = null;
-    try { for (const task of n.tasks) await call("write", { op: "case_mark", task, note: text.trim() });
+    try { for (const task of n.tasks) await sendYes("write", { op: "case_mark", task, note: text.trim() }, `Rad på ärendet i vyn: ${text.trim()}`);
       S.marks = { ...(S.marks || {}), ...Object.fromEntries(n.tasks.map((k) => [k, { ...(marksNow()[k] || {}), resolved: { ...(marksNow()[k]?.resolved || {}), note: text.trim() } }])) };
       say(`Sparat: «${text.trim()}»`); }
     catch (e) { say(`Raden kunde inte sparas: ${e.message || e}`, null, true); }
@@ -7821,12 +7892,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     patchMsgs((m) => set.has(m.id) ? { ...m, resolved: { at, note: null }, read: true } : m);
     S.sel = {}; render();
     try {
-      const r = await call("write", { op: "message", resolve: ids.length === 1 ? ids[0] : ids, confirmed: true });
+      const r = await sendYes("write", { op: "message", resolve: ids.length === 1 ? ids[0] : ids, confirmed: true }, `Löst i vyn: ${ts.length} ${ts.length === 1 ? "tråd" : "trådar"}`);
       const bad = new Set((r?.batch?.failed || []).map((f) => f.ref));
       if (bad.size) patchMsgs((m) => bad.has(m.id) ? { ...m, resolved: null } : m);
       const done = ids.filter((id) => !bad.has(id));
       say(`${ts.length === 1 ? "Tråden" : `${ts.length} trådar`} ${ts.length === 1 ? "är löst" : "lösta"}. ${ts.length === 1 ? "Den finns" : "De finns"} under Lösta.`,
-        done.length ? { fn: async () => { patchMsgs((m) => done.includes(m.id) ? { ...m, resolved: null } : m); render(); for (const id of done) await call("write", { op: "message", resolve: id, undo: true }); } } : null);
+        done.length ? { fn: async () => { patchMsgs((m) => done.includes(m.id) ? { ...m, resolved: null } : m); render(); for (const id of done) await sendYes("write", { op: "message", resolve: id, undo: true }, "Ångra löst i vyn"); } } : null);
       refreshSoon();
     } catch (e) { patchMsgs((m) => set.has(m.id) ? { ...m, resolved: null } : m); say(`Inget markerades löst: ${e.message || e}`, null, true); }
     render();
@@ -7894,6 +7965,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     try {
       const r = await call("write", { op: "batch_apply", action: B.a.id, items: B.items, params: B.params });
       B.pv = r; B.step = "preview";
+      // Inget ■: valet i menyn är jaet, och batchen görs direkt (Del 0). ■ kryssas i per post.
+      if (!YES.own(r) && (r?.batch?.applies || 0) > 0) { render(); return batchGo(); }
     } catch (e) { S.batch = null; say(`Kunde inte förhandsvisa: ${e.message || e}. Inget ändrades.`, null, true); }
     render();
   }
@@ -7901,13 +7974,14 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const B = S.batch; if (!B?.pv) return;
     const next = B.pv.next || B.pv.next_call;
     const args = { ...(next?.args || {}), house: Object.keys(B.house).filter((k) => B.house[k]) };
-    if (/^</.test(String(args.user_approval || ""))) args.user_approval = `Ja (batch i vyn: ${B.a.label})`;
+    args.confirmed = true; if (!args.user_approval || /^</.test(String(args.user_approval))) args.user_approval = `Ja (batch i vyn: ${B.a.label} · ${B.items.length})`;
     S.batch = null; S.sel = {}; render();
     try {
       const r = await call("write", args);
+      if (!r?.batch?.results) throw new Error(YES.text(r) || "Dirigenten skrev inget.");
       const res = r?.batch?.results || [], bad = res.filter((x) => !x.ok);
       say(`${B.a.label}: ${r?.batch?.done ?? 0} av ${res.length} gjorda.${bad.length ? ` Inte gjorda: ${bad.map((x) => `«${x.label}» (${x.text})`).join("; ")}.` : ""}`,
-        r?.undo ? { fn: async () => { const u = await call(r.undo.tool, r.undo.args); const n2 = u?.next || u?.next_call; if (n2) await call(n2.tool, n2.args); refreshSoon(); } } : null, !r?.batch?.done);
+        r?.undo ? { fn: async () => { await sendYes(r.undo.tool, r.undo.args, `Ångra i vyn: ${B.a.label}`); refreshSoon(); } } : null, !r?.batch?.done);
       for (const t of new Set(B.items.map((x) => x.task))) rereadAfterWrite(t);
     } catch (e) { say(`Batchen gick inte: ${e.message || e}`, null, true); }
     render();
@@ -7956,13 +8030,13 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     for (const c of calls) patchStepDone(c.task, c.step, true);
     S.sel = {}; render();
     try {
-      const r = await call("execute_step", { task: calls.map(({ label: _l, ...c }) => c), confirmed: true, user_approval: `Ja (● för ${items.length} markerade i vyn)` });
+      const r = await sendYes("execute_step", { task: calls.map(({ label: _l, ...c }) => c), confirmed: true }, `Klart i vyn för ${items.length} markerade: ${items.map((x) => x.label).join(", ").slice(0, 300)}`);
       const b = batchOf(r);
       for (const f of b.failed || []) { const c = calls.find((y) => ref(y) === f.ref); if (c) patchStepDone(c.task, c.step, false); }
       const done = (b.done || []).map((d) => calls.find((c) => ref(c) === d.ref)).filter(Boolean);
       const undo = done.length ? { fn: async () => {
         for (const c of done) patchStepDone(c.task, c.step, false); render();
-        for (const c of done) await call("execute_step", { task: c.task, step: c.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." });
+        for (const c of done) await sendYes("execute_step", { task: c.task, step: c.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." }, `Ångra i vyn: ${c.label}`);
       } } : null;
       say(`${done.length} av ${calls.length} klara.${failLine(b.failed || [], labelOf)}`, undo, !!(b.failed || []).length && !done.length);
       for (const t of new Set(calls.map((c) => c.task))) rereadAfterWrite(t);
@@ -7976,12 +8050,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     S.sel = {}; render();
     const labelOf = (r) => items.find((x) => `${x.task}/${x.step}` === r)?.label || r;
     try {
-      const r = await call("execute_step", { task: items.map((x) => ({ task: x.task, step: x.step, focus: true })), confirmed: true });
+      const r = await sendYes("execute_step", { task: items.map((x) => ({ task: x.task, step: x.step, focus: true })), confirmed: true }, `Lägg i Igång i vyn: ${items.length} markerade`);
       const b = batchOf(r), bad = new Set((b.failed || []).map((f) => f.ref));
       S.data = { ...S.data, running: S.data.running.filter((x) => !(x.pending && bad.has(`${x.task}/${x.step}`))).map((x) => ({ ...x, pending: false })) };
       const done = items.filter((x) => !bad.has(`${x.task}/${x.step}`));
       say(`${done.length} av ${items.length} ligger i Igång.${failLine(b.failed || [], labelOf)}`,
-        done.length ? { fn: async () => { const r2 = await call("execute_step", { task: done.map((x) => ({ task: x.task, step: x.step, focus: false })), confirmed: true });
+        done.length ? { fn: async () => { const r2 = await sendYes("execute_step", { task: done.map((x) => ({ task: x.task, step: x.step, focus: false })), confirmed: true }, `Ta ur Igång i vyn: ${done.length}`);
           const back = new Set((batchOf(r2).done || []).map((d) => d.ref)); S.data = { ...S.data, running: (S.data.running || []).filter((x) => !back.has(`${x.task}/${x.step}`)) }; } } : null, !done.length);
     } catch (e) { S.data = { ...S.data, running: before }; say(`Inget lades i Igång: ${e.message || e}. Allt är som förut.`, null, true); }
     render();
@@ -7993,11 +8067,11 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     mark(new Set(ids), true); S.sel = {}; render();
     const labelOf = (r) => items.find((x) => x.id === r)?.label || r;
     try {
-      const r = await call("write", { op: "message", resolve: ids, confirmed: true });
+      const r = await sendYes("write", { op: "message", resolve: ids, confirmed: true }, `Löst i vyn: ${ids.length} meddelanden`);
       const b = batchOf(r), bad = new Set((b.failed || []).map((f) => f.ref));
       mark(bad, false);
       const done = ids.filter((id) => !bad.has(id));
-      say(`${done.length} av ${ids.length} markerade lösta.${failLine(b.failed || [], labelOf)}`, done.length ? { fn: async () => { for (const id of done) await call("write", { op: "message", resolve: id, undo: true }); } } : null, !done.length);
+      say(`${done.length} av ${ids.length} markerade lösta.${failLine(b.failed || [], labelOf)}`, done.length ? { fn: async () => { for (const id of done) await sendYes("write", { op: "message", resolve: id, undo: true }, "Ångra löst i vyn"); } } : null, !done.length);
       refreshSoon();
     } catch (e) { S.sheetData = before; say(`Inget markerades löst: ${e.message || e}. Allt är som förut.`, null, true); }
     render();
@@ -8009,12 +8083,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     hide(threads); S.sel = {}; render();
     const labelOf = (r) => items.find((x) => x.thread === r)?.label || r;
     try {
-      const r = await call("write", { op: "classify_accept", thread: items.map((x) => ({ thread: x.thread, classification: { route: { to: x.to } } })), confirmed: true });
+      const r = await sendYes("write", { op: "classify_accept", thread: items.map((x) => ({ thread: x.thread, classification: { route: { to: x.to } } })), confirmed: true }, `Godta Claudes bedömning i vyn: ${items.length}`);
       const b = batchOf(r), bad = new Set((b.failed || []).map((f) => f.ref));
       if (bad.size) { const back = before; for (const [k, sd] of Object.entries(back)) if (sd.queue?.inbox && S.sheetData[k]?.queue) S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], queue: { ...S.sheetData[k].queue, inbox: [...S.sheetData[k].queue.inbox, ...sd.queue.inbox.filter((c) => bad.has(c.thread))] } } }; }
       const done = items.filter((x) => !bad.has(x.thread));
       say(`${done.length} av ${items.length} flyttade dit Claude föreslog.${failLine(b.failed || [], labelOf)}`,
-        done.length ? { fn: async () => { for (const x of done) await call("write", { op: "classify_accept", thread: x.thread, classification: { route: { undo: true } } }); } } : null, !done.length);
+        done.length ? { fn: async () => { for (const x of done) await sendYes("write", { op: "classify_accept", thread: x.thread, classification: { route: { undo: true } } }, "Ångra i vyn"); } } : null, !done.length);
     } catch (e) { S.sheetData = before; say(`Inget flyttades: ${e.message || e}. Allt är som förut.`, null, true); }
     render();
   }
@@ -8028,10 +8102,10 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   const doneValues = () => ({ already_done: { evidence: { kind: "done_by", by: S.data?.party?.label || S.data?.party?.id || "vyn", at: new Date().toISOString().slice(0, 10) } } });
   async function markDone(s, done = true) {
     S.menu = null; S.peek = null;
-    if (offline()) { if (done) queue({ kind: "done", task: s.task, step: s.step, label: s.label }); else say("Att öppna steget igen kan inte göras förrän dirigenten svarar. Inget ändrades.", null, true); render(); return; }
     // Ett moment i en karta: momentets egen väg, som i kartan (stegets id finns inte alltid i registret).
     // Godkänn (approve) går momentets väg till ett ja; ✓ är «redan gjort» med belägg.
     const node = s.node || idagRowOf(s.task, s.step)?.node || "";
+    if (offline()) { if (done) queue({ kind: "done", task: s.task, step: s.step, node, approve: !!s.approve, label: s.label }); else say("Att öppna steget igen kan inte göras förrän dirigenten svarar. Inget ändrades.", null, true); render(); return; }
     const at = node ? { task: s.task, node } : { task: s.task, step: s.step };
     const before = { data: S.data, sheets: S.sheetData };
     patchStepDone(s.task, s.step, done, node);
@@ -8040,32 +8114,59 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       const undo = { fn: async () => {
         const back = { data: S.data, sheets: S.sheetData };
         patchStepDone(s.task, s.step, false, node); render();
-        try { await call("execute_step", { ...at, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." }); }
+        try { await sendYes("execute_step", { ...at, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." }, `Ångra i vyn: ${s.label}`); }
         catch (e) { S.data = back.data; S.sheetData = back.sheets; throw e; }
       } };
-      const r = await call("execute_step", done ? (node && s.approve ? at : node ? { ...at, values: { already_done: { nodes: [node], evidence: doneValues().already_done.evidence } } } : { ...at, mark: "done", values: doneValues() }) : { ...at, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." });
+      const input = done ? doneInput(at, node, !!s.approve) : { ...at, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." };
+      const r = await YES.send(call, "execute_step", input, done ? `${s.approve ? "Godkänn" : "Klart"} i vyn: ${s.label}` : `Öppna igen i vyn: ${s.label}`);
       // Underlaget är inte godkänt: inget skrevs, så det direkta tas tillbaka tills frågan besvarats.
-      if (done && r?.written === false && r?.basis) {
+      if (done && r.basis) {
         S.data = before.data; S.sheetData = before.sheets; render();
         askBasis(r.basis, async (args) => {
           const back = { data: S.data, sheets: S.sheetData };
-          patchStepDone(s.task, s.step, true); render();
-          try { await call("execute_step", args); } catch (e) { S.data = back.data; S.sheetData = back.sheets; throw e; }
+          patchStepDone(s.task, s.step, true, node); render();
+          try { const d = await call("execute_step", args); if (!YES.written(d)) throw new Error(YES.text(d) || "Dirigenten skrev inget."); }
+          catch (e) { S.data = back.data; S.sheetData = back.sheets; throw e; }
           say(`«${s.label}» är klart.${args.user_approval ? " Underlaget är godkänt." : ""}`, undo);
           rereadAfterWrite(s.task);
         });
-        return;
+        return false;
+      }
+      // ■: det som går utåt görs inte av klicket. Läget tas tillbaka och ett ja per post frågas.
+      if (r.own) {
+        S.data = before.data; S.sheetData = before.sheets;
+        const own = { own: r.own, text: YES.text(r.d) };
+        if (!s.inWalk) confirmOwn({ ...s, own: r.own, h: s.label, ownText: own.text }, true);
+        render(); return own;
       }
       say(done ? `«${s.label}» är klart.` : `«${s.label}» är öppet igen.`, done ? undo : null);
       rereadAfterWrite(s.task);
       render(); return true;
     } catch (e) {
       S.data = before.data; S.sheetData = before.sheets;
-      if (unreachable(e) && done) { S.error = e; queue({ kind: "done", task: s.task, step: s.step, label: s.label }); return; }
+      if (unreachable(e) && done) { S.error = e; queue({ kind: "done", task: s.task, step: s.step, node, approve: !!s.approve, label: s.label }); return false; }
       say(`Kunde inte ${done ? "markera" : "öppna"} «${s.label}» ${done ? "klart" : "igen"}: ${e.message || e}. Inget ändrades.`, null, true);
     }
     render();
     return false;
+  }
+  /** Det som skickas för ✓ och Godkänn: momentets ja, «redan gjort» på ett moment, eller ett steg markerat klart. */
+  const doneInput = (at, node, approve) => node && approve ? at : node ? { ...at, values: { already_done: { nodes: [node], evidence: doneValues().already_done.evidence } } } : { ...at, mark: "done", values: doneValues() };
+  /**
+   * ■ med ett uttryckligt ja per post: serverns förhandsvisning står i rutan, och knappen skickar dess anrop med kvittot.
+   * `dialog`: i en ruta (S.confirm); annars direkt (genomgångens kort är rutan). Klart bara med written === true.
+   */
+  function confirmOwn(x, dialog = false) {
+    // Ett ja gäller ett moment (src/plan/approval.ts, yesUsedElsewhere): uppdraget och momentet står i orden, så att två moment med samma namn inte delar ja.
+    const approval = `Ja, gör det: ${x.h} (${x.own.args.task || x.task} ${x.own.args.node || x.own.args.step || ""})`.trim();
+    const run = async () => {
+      const d = await call(x.own.tool || "execute_step", { ...x.own.args, confirmed: true, user_approval: approval });
+      if (!YES.written(d)) throw new Error(YES.text(d) || "Dirigenten skrev inget.");
+      return d;
+    };
+    if (dialog) { S.confirm = { verb: "Ja, gör det", sym: "■", text: x.ownText || "", next: x.own, runAll: run, onDone: () => rereadAfterWrite(x.task) }; render(); return Promise.resolve(false); }
+    return run().then(() => { say(`«${x.h}» är gjort.`); rereadAfterWrite(x.task); return true; },
+      (e) => { say(`«${x.h}» gick inte: ${e.message || e}. Inget ändrades.`, null, true); return false; });
   }
   /**
    * Flytta och lämna över (◐): servern räknar planen med ändringen och säger vad den gör;
@@ -8095,6 +8196,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     render();
     try {
       const r = c.runAll ? await c.runAll() : await call(c.next.tool, c.next.args);
+      // Inget «Genomfört» utan att något skrevs (Del 0): en ny förhandsvisning eller ett tomt svar är ett fel.
+      if (!c.runAll && r?.written === false) throw new Error(YES.text(r) || "Dirigenten skrev inget.");
       S.confirm = null;
       say(`Genomfört. ${summaryText(r).replace(/^Genomfört \(nr [^)]*\)\.\s*/, "")}`, r?.receipt?.undo || null);
       c.onDone?.();
@@ -9056,7 +9159,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   }
   const finishOf = (t, placed) => {
     let last = "";
-    t.steps.forEach((st, i) => { if (!st.x && placed[i].e > last)
+    t.steps.forEach((st, i) => { if (!st.x && !st.dn && placed[i].e > last)
       last = placed[i].e; });
     return last || t.due;
   };
@@ -10066,27 +10169,33 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   async function flushOutbox() {
     if (flushing || S.clash || !S.data || S.error) return;
     const mine = S.data.party?.id;
-    const other = outbox.filter((x) => x.party && x.party !== mine);
-    if (other.length) { outbox = outbox.filter((x) => !other.includes(x)); saveOutbox(); } // en annan persons kö skickas aldrig härifrån
-    if (!outbox.length) return;
+    // En annan persons kö skickas aldrig härifrån, och slängs inte heller: den står kvar och syns (Del 0).
+    const sendable = () => outbox.find((x) => (!x.party || x.party === mine) && !x.failed);
+    if (!sendable()) return;
     flushing = true;
     let sent = 0;
     try {
-      while (outbox.length) {
-        const x = outbox[0];
+      for (let x = sendable(); x; x = sendable()) {
         if (!x.force && typeof x.seq === "number") {
           const d = await call("plan_state", { since_seq: x.seq });
           const theirs = d && (d.events || 0) > (d.own || 0);
           if (d?.reload || (theirs && (d.steps || []).includes(runKey(x.task, x.step)))) { S.clash = { item: x, now: stepNow(x) }; break; }
         }
         try {
-          await call("execute_step", x.kind === "done" ? { task: x.task, step: x.step, mark: "done", values: doneValues() } : { task: x.task, step: x.step, focus: x.on });
+          // Samma väg som klicket: momentets eget ja eller «redan gjort», med jaet i anropet, och klart bara med written.
+          const at = x.node ? { task: x.task, node: x.node } : { task: x.task, step: x.step };
+          // Igång (focus) skrivs direkt för alla och har inget ja; klart och godkänn går YES-vägen.
+          if (x.kind === "done") await sendYes("execute_step", doneInput(at, x.node, !!x.approve), `${x.approve ? "Godkänn" : "Klart"} i vyn (köat): ${x.label}`);
+          else await call("execute_step", { task: x.task, step: x.step, focus: x.on });
           sent++;
+          outbox = outbox.filter((y) => y !== x);
         } catch (e) {
           if (unreachable(e)) { S.error = e; break; }
-          say(`${outboxText(x)} gick inte att skicka: ${e.message || e}. Det är borttaget ur kön.`, null, true);
+          // Det som inte gick står kvar, märkt med felet, tills personen försöker igen eller slänger det.
+          x.failed = String(e.message || e).slice(0, 300);
+          say(`${outboxText(x)} gick inte att skicka: ${x.failed}. Det står kvar i utkorgen.`, null, true);
         }
-        outbox.shift(); saveOutbox();
+        saveOutbox();
       }
     } catch (e) { if (unreachable(e)) S.error = e; }
     flushing = false;
@@ -10108,10 +10217,17 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       + ` Din ändring: ${esc(outboxText(c.item))}. I dirigenten nu: «${esc(c.item.label)}» ${esc(c.now)}. Vad ska gälla?</span>`
       + `<button data-act="clash-mine">Skicka min ändring</button><button data-act="clash-theirs">Behåll deras, släng min</button></div>`;
   }
+  /** Utkorgen: köat, det som inte gick (med felet, försök igen eller släng) och det en annan inloggning lämnade här. */
   function outboxHtml() {
-    const q = outbox.filter((x) => x.party === S.data?.party?.id);
-    if (!q.length) return "";
-    return `<div class="updating outbox"><span class="bdot" style="background:var(--muted)"></span>Väntar på att skickas: ${q.map((x) => esc(outboxText(x))).join(" · ")}</div>`;
+    const me = S.data?.party?.id;
+    const q = outbox.filter((x) => !x.party || x.party === me), wait = q.filter((x) => !x.failed), bad = q.filter((x) => x.failed);
+    const other = outbox.filter((x) => x.party && x.party !== me);
+    if (!q.length && !other.length) return "";
+    return `<div class="updating outbox">`
+      + (wait.length ? `<div><span class="bdot" style="background:var(--muted)"></span>Väntar på att skickas: ${wait.map((x) => esc(outboxText(x))).join(" · ")}</div>` : "")
+      + bad.map((x) => `<div><span class="bdot" style="background:var(--late)"></span>Gick inte att skicka: ${esc(outboxText(x))}: ${esc(x.failed)} <button data-act="outbox-retry" data-at="${esc(String(x.at))}">Försök igen</button><button data-act="outbox-drop" data-at="${esc(String(x.at))}">Släng</button></div>`).join("")
+      + (other.length ? `<div><span class="bdot" style="background:var(--muted)"></span>${other.length} ${other.length === 1 ? "ändring" : "ändringar"} från en annan inloggning i den här webbläsaren väntar. De skickas när den personen öppnar vyn här.</div>` : "")
+      + `</div>`;
   }
 
   /** Hela översikten, med markören tagen före, så att inget som händer under tiden tappas. */
@@ -10177,10 +10293,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       const c = await call("plan_state", { format: "seq", since_seq: S.seq });
       if (c?.unchanged || c?.seq === S.seq) { S.error = null; S.checkedAt = Date.now(); return; }
       const diff = await call("plan_state", { since_seq: S.seq });
-      if (diff?.reload || diff?.registry) { S.refreshing = true; render(); await fetchOverview(diff.seq); }
+      // Hämtningen i bakgrunden visar ingen rad «Uppdaterar»: den sköt allt nedåt och tillbaka
+      // var gång någon annan ändrat något (vy-sessionen 2026-10-14). Det nya patchas in när det kommit.
+      if (diff?.reload || diff?.registry) await fetchOverview(diff.seq);
       else if (diff && diff.events > diff.own && diff.rows?.length) {
         // Någon annan har ändrat något som syns: översikten räknas om på servern, i ett anrop.
-        S.refreshing = true; render(); await fetchOverview(diff.seq);
+        await fetchOverview(diff.seq);
       } else if (diff) { S.seq = diff.seq; remember(); } // bara egna ändringar, som redan syns
       if (diff && !diff.reload) {
         // Ett öppet ark följer sin sak; ett ark under läses om först när man går tillbaka till det.
@@ -10193,7 +10311,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       }
       S.error = null; S.checkedAt = Date.now();
     } catch (e) { S.error = e; if (e.code === "NO_SESSION") forget(); }
-    finally { S.polling = false; S.refreshing = false; render(); }
+    finally { S.polling = false; render(); }
     await flushOutbox();
   }
 
@@ -10389,6 +10507,53 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const el = root.querySelector?.(`#${id}`);
     if (el) { el.focus?.(); try { el.setSelectionRange?.(s0, s1); } catch { /* inte ett textfält */ } }
   }
+  /* Omritningen patchar (vy-sessionen 2026-10-14: översikten hoppade var tjugonde
+     sekund under hämtningen, när hela sidan byttes ut). Samma html: ingenting rörs.
+     Annars jämförs den nya med den som står och bara det som skiljer byts; element
+     som står kvar behåller rullning, fokus, markör och det man skrivit. */
+  let painted = null;
+  const ELEMENT = 1, TEXT = 3;
+  function morphAttrs(a, b) {
+    for (const { name } of [...a.attributes]) if (!b.hasAttribute(name)) a.removeAttribute(name);
+    for (const { name, value } of [...b.attributes]) if (a.getAttribute(name) !== value) a.setAttribute(name, value);
+    const live = a === document.activeElement;
+    if (a.tagName === "INPUT") {
+      if (a.type === "checkbox" || a.type === "radio") a.checked = b.hasAttribute("checked");
+      else if (!live && a.value !== (b.getAttribute("value") ?? "")) a.value = b.getAttribute("value") ?? "";
+    } else if (a.tagName === "TEXTAREA" && !live && a.value !== b.value) a.value = b.value;
+  }
+  /** Samma sorts nod: samma tagg, id och klass (en rad är samma rad om den bara ändrat innehåll). */
+  const sameNode = (x, y) => !!x && !!y && x.nodeType === y.nodeType && (x.nodeType !== ELEMENT
+    || (x.tagName === y.tagName && (x.id || "") === (y.id || "") && (x.getAttribute("class") || "") === (y.getAttribute("class") || "")));
+  const sameKind = (x, y) => !!x && !!y && x.nodeType === y.nodeType && (x.nodeType !== ELEMENT || (x.tagName === y.tagName && (x.id || "") === (y.id || "")));
+  function morphKids(a, b) {
+    const next = [...b.childNodes];
+    let i = 0;
+    for (const y of next) {
+      let x = a.childNodes[i];
+      // En rad som kommit till eller försvunnit (en banderoll överst, en rad i listan): resten står kvar.
+      if (x && !sameNode(x, y)) {
+        if (sameNode(a.childNodes[i + 1], y)) { a.removeChild(x); x = a.childNodes[i]; }
+        else if (sameNode(x, next[next.indexOf(y) + 1])) { a.insertBefore(y, x); i++; continue; }
+      }
+      if (!x) { a.appendChild(y); i++; continue; }
+      if (!sameKind(x, y)) { a.replaceChild(y, x); i++; continue; }
+      if (x.nodeType === TEXT || x.nodeType === 8) { if (x.nodeValue !== y.nodeValue) x.nodeValue = y.nodeValue; i++; continue; }
+      if (x.nodeType === ELEMENT) { morphAttrs(x, y); if (x.tagName !== "TEXTAREA") morphKids(x, y); }
+      i++;
+    }
+    while (a.childNodes.length > next.length) a.removeChild(a.lastChild);
+  }
+  function paint(html) {
+    const tpl = typeof document.createElement === "function" && root.childNodes && root.firstChild ? document.createElement("template") : null;
+    // Utan DOM (första ritningen, provsidan): hela html:en, men aldrig samma igen.
+    if (!tpl || !tpl.content) { if (html === painted) return false; painted = html; root.innerHTML = html; return true; }
+    // Med DOM jämförs alltid mot det som står, så att det ingen ritat (en markering, ett drag) också rättas.
+    painted = html;
+    tpl.innerHTML = html;
+    morphKids(root, tpl.content);
+    return true;
+  }
   function render() {
     if (S.mapBase != null && S.sheets.length <= S.mapBase) { S.mapBase = null; document.body.classList.remove("over-map"); }
     saveScroll();
@@ -10430,7 +10595,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     } else main = stateLine() + clashHtml() + outboxHtml() + (S.body === "time" ? timeBody() : S.body === "cal" ? calendarBody() : reviewsHtml(o) + list(o));
     const mainSel = selDecorate(main), sheetsSel = selDecorate(sheetsHtml());
     S.selVisible = S.sheets.length ? sheetsSel.ctxs : mainSel.ctxs;
-    root.innerHTML = linkHtml(top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + presHtml() + imgPickHtml() + selbarHtml() + batchHtml() + confirmHtml() + walkHtml() + toastHtml());
+    paint(linkHtml(top + igang + bar + mainSel.html + timeFooter() + sheetsSel.html + menuHtml() + peekHtml() + mvHtml() + presHtml() + imgPickHtml() + selbarHtml() + batchHtml() + confirmHtml() + walkHtml() + toastHtml()));
     presFramePlace();
     if (presScroll !== null) { const box = root.querySelector?.(".mv.pres"); if (box) box.scrollTop = presScroll; }
     if (act0) { const el = root.querySelector?.(`#${focusId}`); if (el) { el.focus?.({ preventScroll: true }); try { if (presSel[0] != null) el.setSelectionRange?.(presSel[0], presSel[1]); } catch { /* inte ett textfält */ } } }
@@ -10485,8 +10650,11 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     else if (act === "walk-open-all") { S.walk = { items: yesItems(), i: 0, done: 0, later: 0 }; }
     else if (/^walk-/.test(act)) { walkAct(act); return; }
     else if (act === "retry") { load(); return; }
+    else if (act === "outbox-retry" || act === "outbox-drop") { const x = outbox.find((y) => String(y.at) === el.getAttribute("data-at"));
+      if (x) { if (act === "outbox-drop") { outbox = outbox.filter((y) => y !== x); say(`${outboxText(x)} är slängd ur utkorgen.`); } else delete x.failed; saveOutbox(); overlayOutbox(); }
+      if (act === "outbox-retry") flushOutbox(); render(); }
     else if (act === "clash-mine" || act === "clash-theirs") { const c = S.clash; S.clash = null;
-      if (c && outbox[0] === c.item) { if (act === "clash-mine") c.item.force = true; else { outbox.shift(); say(`${outboxText(c.item)} är slängd; den andra ändringen gäller.`); } saveOutbox(); overlayOutbox(); }
+      if (c && outbox.includes(c.item)) { if (act === "clash-mine") c.item.force = true; else { outbox = outbox.filter((y) => y !== c.item); say(`${outboxText(c.item)} är slängd; den andra ändringen gäller.`); } saveOutbox(); overlayOutbox(); }
       flushOutbox(); }
     else if (act === "pin" || act === "unpin") { setRunning(el.getAttribute("data-task"), el.getAttribute("data-step"), el.getAttribute("data-label") || "", act === "pin"); return; }
     else if (act === "undo") { undoToast(); return; }
