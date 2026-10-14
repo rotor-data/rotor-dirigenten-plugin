@@ -2178,7 +2178,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "25fc5ced", published: "2026-10-14" };
+  const SIDA = { version: "8ae4274f", published: "2026-10-14" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2651,7 +2651,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (x.start && (act === "walk-yes" || act === "walk-open")) { S.walk = null; startProject(x.k || x.task); return; }
     if (act === "walk-open") { S.walk = null; openMap(x.task, x.ms); return; }
     if (act === "walk-yes" && !W.busy) { W.busy = true; render();
-      markDone({ task: x.task, step: x.step, label: x.h }).then(() => { W.busy = false; W.done++; W.i++; render(); }, () => { W.busy = false; render(); }); }
+      markDone({ task: x.task, step: x.step, node: x.node, approve: true, label: x.h }).then((ok) => { W.busy = false; if (ok) W.done++; else W.later++; W.i++; render(); }, () => { W.busy = false; render(); }); }
   }
 
   function dayMeterHtml(o) {
@@ -8013,6 +8013,10 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   async function markDone(s, done = true) {
     S.menu = null; S.peek = null;
     if (offline()) { if (done) queue({ kind: "done", task: s.task, step: s.step, label: s.label }); else say("Att öppna steget igen kan inte göras förrän dirigenten svarar. Inget ändrades.", null, true); render(); return; }
+    // Ett moment i en karta: momentets egen väg, som i kartan (stegets id finns inte alltid i registret).
+    // Godkänn (approve) går momentets väg till ett ja; ✓ är «redan gjort» med belägg.
+    const node = s.node || idagRowOf(s.task, s.step)?.node || "";
+    const at = node ? { task: s.task, node } : { task: s.task, step: s.step };
     const before = { data: S.data, sheets: S.sheetData };
     patchStepDone(s.task, s.step, done);
     render();
@@ -8020,10 +8024,10 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       const undo = { fn: async () => {
         const back = { data: S.data, sheets: S.sheetData };
         patchStepDone(s.task, s.step, false); render();
-        try { await call("execute_step", { task: s.task, step: s.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." }); }
+        try { await call("execute_step", { ...at, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." }); }
         catch (e) { S.data = back.data; S.sheetData = back.sheets; throw e; }
       } };
-      const r = await call("execute_step", done ? { task: s.task, step: s.step, mark: "done", values: doneValues() } : { task: s.task, step: s.step, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." });
+      const r = await call("execute_step", done ? (node && s.approve ? at : node ? { ...at, values: { already_done: { nodes: [node], evidence: doneValues().already_done.evidence } } } : { ...at, mark: "done", values: doneValues() }) : { ...at, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." });
       // Underlaget är inte godkänt: inget skrevs, så det direkta tas tillbaka tills frågan besvarats.
       if (done && r?.written === false && r?.basis) {
         S.data = before.data; S.sheetData = before.sheets; render();
@@ -8038,12 +8042,14 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       }
       say(done ? `«${s.label}» är klart.` : `«${s.label}» är öppet igen.`, done ? undo : null);
       rereadAfterWrite(s.task);
+      render(); return true;
     } catch (e) {
       S.data = before.data; S.sheetData = before.sheets;
       if (unreachable(e) && done) { S.error = e; queue({ kind: "done", task: s.task, step: s.step, label: s.label }); return; }
       say(`Kunde inte ${done ? "markera" : "öppna"} «${s.label}» ${done ? "klart" : "igen"}: ${e.message || e}. Inget ändrades.`, null, true);
     }
     render();
+    return false;
   }
   /**
    * Flytta och lämna över (◐): servern räknar planen med ändringen och säger vad den gör;
