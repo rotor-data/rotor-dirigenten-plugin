@@ -304,6 +304,11 @@ body.over-map .sheets { z-index: 61; }
 .cbody .sh { margin-top: 18px; }
 .cbody { max-width: 860px; }
 .crow { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px solid var(--l5); font-size: 13.5px; }
+.qhead { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 4px 0 10px; }
+.qacts { white-space: nowrap; display: flex; gap: 10px; align-items: flex-start; }
+.qform { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 14px; padding: 8px 0 12px; border-bottom: 1px solid var(--l5); }
+.qform label { display: flex; flex-direction: column; gap: 3px; }
+.qform .doacts { grid-column: 1 / -1; }
 .crow.sub { padding-left: 16px; }
 .opens { display: flex; gap: 18px; padding-top: 10px; font-size: 13.5px; }
 /* Menyn, Titta, förhandsvisningen och ⌘K (1.4). */
@@ -1966,7 +1971,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "b3a623c7", published: "2026-10-14" };
+  const SIDA = { version: "e993bb7c", published: "2026-10-14" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2540,7 +2545,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   function openMaterial(row, ref, l, kind, ctx) {
     const comp = /^tool:/.test(kind || "") ? kind.slice(5) : null, asset = (ctx.kind || kind) === "asset";
     const sheetRef = asset && ref && !/^bank:\/\//.test(ref) ? `asset:${ref}` : ref;
-    if (comp === "image-picker") { delete IPS.pick; S.imgPick = { place: "step-tool", t: { task: ctx.task || null, step: ctx.step || null, customer: customerOfTask(ctx.task) } }; return render(); }
+    if (comp === "image-picker") { delete IPS.pick; S.imgPick = { place: "step-tool", t: { task: ctx.task || null, step: ctx.step || null, customer: ctx.customer || customerOfTask(ctx.task) } }; return render(); }
     if (comp === "presenter") return openPres(row.key, row.label || l);
     if (ref && (comp === "preview" || sentType(ctx.type))) return previewOne(row, ref, sheetRef, l);
     if (ref) return openSheet("result", sheetRef, l);
@@ -2971,6 +2976,9 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
         .then((d) => { put({ loading: false, draft: d, error: null }); orderAsk(x); }).catch((e) => put({ loading: false, error: e }));
     } else if (x.kind === "focus" || x.kind === "chat") {
       put({ loading: false });
+    } else if (x.kind === "quick") {
+      const c = quickCust(x);
+      call("read", { op: "quick_actions", ...(c ? { customer: c } : {}) }).then((d) => put({ loading: false, q: d, error: null })).catch((e) => put({ loading: false, error: e }));
     } else if (x.kind === "customer") {
       call("read", { op: "view_file", sheet: "customer", customer: x.id, tab: x.tab || "overview" })
         .then((d) => put({ loading: false, [x.tab || "overview"]: d, label: d?.label }))
@@ -3256,12 +3264,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   const QUICK_STATE = { done: "klar", running: "pågår", failed: "föll", made: "gjord" };
   function quickHtml(x, q) {
     if (!q) return "";
-    const offers = (q.offers || []).map((o, i) => `<div class="crow"><button class="link" data-act="quick-run" data-i="${i}">${esc(o.label)} <span class="lvl">◐</span></button>`
+    const offers = (q.offers || []).map((o, i) => `<div class="crow"><button class="link" data-act="quick-run" data-i="${i}">${esc(o.label)} <span class="lvl">${esc(o.level || "◐")}</span></button>`
       + `<span class="mmeta">${esc(o.from ? `värden ur ${o.from}` : "bibliotekets värden")}</span></div>`).join("");
     const log = (q.log || []).map((r) => `<div class="crow"><span>${esc(r.label)} · ${esc(r.by_label || "")} · ${esc(shortIso(r.at))}${r.approval ? ` · efter «${esc(r.approval)}»` : ""}</span>`
       + `<span class="mmeta">${esc(QUICK_STATE[r.state] || r.state)}${r.files.length ? ` · ${r.files.map((f) => esc(f.name || "fil")).join(", ")}` : ""}`
       + `${r.files.some((f) => f.tasks.length) ? " · i ett uppdrag" : ""}</span></div>`).join("");
-    return `<h3 class="sh">Gör snabbt</h3>${offers || `<div class="mmeta">Inga snabbhandlingar för kunden.</div>`}`
+    return `<h3 class="sh">Gör snabbt <button class="link" data-act="quick-window" data-id="${esc(x.id)}" data-label="${esc(x.label)}">⚡ Alla snabbhandlingar …</button></h3>${offers || `<div class="mmeta">Inga snabbhandlingar för kunden.</div>`}`
       + `<h3 class="sh">Snabbhandlingar</h3>${log || `<div class="mmeta">Inga än.</div>`}`;
   }
   async function quickRun(customer, label, offer) {
@@ -3275,6 +3283,93 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
         onDone: () => { const t = top1(); if (t?.kind === "customer") fetchSheet(t, true); } };
     } catch (e) { S.confirm = null; say(`Gick inte: ${e?.message || e}`, null, true); }
     render();
+  }
+  /* ── Snabbt: snabbhandlingarna i ett eget fönster (del I, Daniel P 2026-10-14) ──
+     Registrets val (core.setting.quick_actions) med read { op: "quick_actions" }: grupperat på vad den
+     gör eller område (samma gruppering som «Idag»), med två vägar per post: «Kopiera till Claude» och
+     «Öppna verktyget». Gör direkt där det går: formulär → förhandsvisning → ja. Det som skapats kopplas
+     till ett uppdrag med batchens «Koppla material», med ångra. */
+  const QUICK_BY = [["auto", "Auto"], ["verb", "Vad den gör"], ["module", "Område"]];
+  function openQuick(customer, label) { openSheet("quick", customer || "all", customer ? `Snabbt · ${label || customer}` : "Snabbt"); }
+  const quickCustomers = () => { const m = new Map(); for (const r of S.data?.rows || []) if (r.customer?.id && !m.has(r.customer.id)) m.set(r.customer.id, r.customer.label); return [...m]; };
+  const quickCust = (x) => x.cust || (x.id !== "all" ? x.id : null);
+  function quickSheetHtml(x) {
+    const sd = S.sheetData[sheetKey(x)] || {}, d = sd.q;
+    if (!d) return `<div class="mmeta">${sd.error ? `Kunde inte läsas: ${esc(sd.error.message || sd.error)}` : "Hämtar …"}</div>`;
+    const cust = quickCust(x), by = x.by || "auto";
+    const pick = `<label class="mmeta">För kunden <select data-act="quick-cust"><option value="">Välj kund …</option>${quickCustomers().map(([id, l]) => `<option value="${esc(id)}"${id === cust ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>`;
+    const bys = QUICK_BY.map(([k, l]) => `<button class="tab${k === by ? " on" : ""}" data-act="quick-by" data-by="${k}">${esc(l)}</button>`).join("");
+    const row = (o) => {
+      const open = x.open === o.i, busy = sd.busy === o.i;
+      const form = open ? `<div class="qform">${o.fields.map((f) => `<label class="mmeta">${esc(f.label)}${f.required ? " *" : ""} <input data-qf="${esc(f.name)}" value="${esc(f.value ?? "")}"${f.required ? " required" : ""}></label>`).join("")}`
+        + `<div class="doacts"><button class="go" data-act="quick-go" data-i="${o.i}"${busy ? " disabled" : ""}>${busy ? "Förhandsvisar …" : o.level === "●" ? "● Gör nu" : `${o.level} Förhandsvisa`}</button>`
+        + `<button class="quiet" data-act="quick-close">Stäng</button></div></div>` : "";
+      return `<div class="qrow"><div class="crow"><span><b>${esc(o.label)}</b> <span class="lvl${o.level === "●" ? " d" : ""}">${o.level}</span>${o.summary ? `<br><span class="mmeta">${esc(o.summary)}</span>` : ""}`
+        + `${o.from ? `<br><span class="mmeta">Värden ur ${esc(o.from)}</span>` : ""}</span>`
+        + `<span class="qacts"><button class="link" data-act="quick-open" data-i="${o.i}">Gör …</button> <button class="link" data-act="quick-copy" data-i="${o.i}">Kopiera till Claude</button>`
+        + `${o.tool?.component ? ` <button class="link" data-act="quick-tool" data-i="${o.i}">Öppna ${esc(o.tool.label.toLowerCase())}</button>` : ""}</span></div>${form}</div>`;
+    };
+    const rows = (d.offers || []).map((o, i) => ({ ...o, i }));
+    const groups = groupRows(rows, [by]);
+    const list = groups.map((g) => `<h3 class="sh">${esc(g.label)} <span class="mmeta">${g.n}</span></h3>${(g.rows || []).map(row).join("")}`).join("")
+      || `<div class="mmeta">Inga snabbhandlingar i registret.</div>`;
+    const last = sd.last ? `<h3 class="sh">Senast</h3><div class="crow"><span>${esc(sd.last.text)}</span></div>` : "";
+    const attach = sd.attach ? `<h3 class="sh">Koppla «${esc(sd.attach.name)}» till uppdrag</h3>`
+      + (sd.attach.list ? (sd.attach.list.length ? sd.attach.list.map((a, i) => `<div class="crow"><button class="link" data-act="quick-attach" data-i="${i}">${esc(a.label)}</button><span class="mmeta">${esc(a.node_label ? `på «${a.node_label}»` : "i uppdragets förråd")}</span></div>`).join("")
+        : `<div class="mmeta">Kunden har inget öppet uppdrag.</div>`) : `<div class="mmeta">Hämtar förslagen …</div>`) : "";
+    const recent = (d.recent || []).map((r, ri) => `<div class="crow"><span>${esc(r.label)} · ${esc(r.customer?.label || "")} · ${esc(r.by_label || "")} · ${esc(shortIso(r.at))}${r.approval ? ` · efter «${esc(r.approval)}»` : ""}`
+      + `<br><span class="mmeta">${esc(QUICK_STATE[r.state] || r.state)}${r.files.length ? ` · ${r.files.map((f) => esc(f.name || "fil")).join(", ")}` : ""}${r.files.some((f) => f.tasks.length) ? " · i ett uppdrag" : ""}</span></span>`
+      + `<span class="qacts">${r.call ? `<button class="link" data-act="quick-again" data-ri="${ri}">Gör om</button>` : ""}`
+      + `${r.files[0] ? ` <button class="link" data-act="quick-attach-open" data-ri="${ri}">Koppla till uppdrag …</button>` : ""}</span></div>`).join("");
+    return `<div class="qhead">${pick}<span class="tabs">${bys}</span></div>${last}${attach}${list}`
+      + `<h3 class="sh">Senaste snabbhandlingarna</h3>${recent || `<div class="mmeta">Inga än.</div>`}`;
+  }
+  /** Formulärets värden: tomma fält utelämnas; en lista eller ett objekt skrivs som JSON. */
+  function quickValues() {
+    const out = {};
+    for (const el of root.querySelectorAll?.("[data-qf]") || []) {
+      const v = String(el.value || "").trim(); if (!v) continue;
+      try { out[el.getAttribute("data-qf")] = /^[[{]/.test(v) ? JSON.parse(v) : v; } catch { out[el.getAttribute("data-qf")] = v; }
+    }
+    return out;
+  }
+  async function quickGo(x, i) {
+    const sd = S.sheetData[sheetKey(x)], o = sd?.q?.offers?.[i], cust = quickCust(x);
+    if (!o) return;
+    if (!cust) { say("Välj kunden först: snabbhandlingen görs för en kund och hamnar i kundens bank.", null, true); return render(); }
+    const label = quickCustomers().find(([id]) => id === cust)?.[1] || cust;
+    const args = { call: o.call, customer: cust, values: quickValues() };
+    qd(x, { busy: i }); render();
+    try {
+      const r = await call("execute_step", args);
+      qd(x, { busy: null });
+      const next = r?.next || r?.next_call;
+      const after = (r2) => { qd(x, { last: { text: summaryText(r2) || `«${o.label}» för ${label}.` } }); fetchSheet(x, true);
+        const ref = (r2?.refs || [])[0]; if (ref) quickAttachOpen(x, ref, o.label, cust, label); };
+      if (next?.tool === "execute_step" && next.args?.confirmed) {
+        S.confirm = { verb: o.label, sym: o.level, text: summaryText(r) || `«${o.label}» för ${label}.`,
+          next: { tool: next.tool, args: { ...next.args, ...(/^</.test(String(next.args.user_approval || "")) ? { user_approval: `Ja (${o.level} ${o.label} i vyn)` } : {}) } },
+          runAll: async () => { const r2 = await call("execute_step", { ...args, confirmed: true, user_approval: `Ja (${o.level} ${o.label} i vyn)` }); after(r2); return r2; } };
+      } else after(r);
+    } catch (e) { qd(x, { busy: null }); say(`Gick inte: ${e?.message || e}. Inget är gjort.`, null, true); }
+    render();
+  }
+  /** Fönstrets data: alltid den senaste (en omhämtning byter objektet). */
+  const qd = (x, patch) => { const k = sheetKey(x); if (patch) S.sheetData = { ...S.sheetData, [k]: { ...(S.sheetData[k] || {}), ...patch } }; return S.sheetData[k] || {}; };
+  async function quickAttachOpen(x, ref, name, cust, label) {
+    const attach = { ref, name: name || "filen", list: null, customer: cust, label };
+    qd(x, { attach }); render();
+    try { const d = await call("read", { op: "quick_actions", customer: cust, ref }); qd(x, { attach: { ...attach, list: d?.attach || [], params: d?.params || { ref } } }); }
+    catch (e) { qd(x, { attach: null }); say(`Kunde inte hämta uppdragen: ${e.message || e}`, null, true); }
+    render();
+  }
+  /** Koppla genom batchen (Koppla material, ●), med ångra («koppla loss»). */
+  function quickAttach(x, i) {
+    const sd = qd(x), a = sd.attach?.list?.[i];
+    const act0 = (S.batchTable || []).find((b) => b.id === "attach_material") || { id: "attach_material", label: "Koppla material", severity: "●", kinds: ["node", "task"], params: [] };
+    if (!a) return;
+    S.batch = { a: { ...act0, params: [] }, items: [{ task: a.task, ...(a.node ? { node: a.node } : {}), label: a.node_label ? `${a.label} · ${a.node_label}` : a.label }], params: sd.attach.params, step: "loading", house: {} };
+    qd(x, { attach: null }); render(); batchPreview().then(() => fetchSheet(x, true));
   }
   /** Dra tillbaka från kundkortet: förhandsvisning i steget där den publicerades, sedan ◐. */
   async function presWithdrawCard(id, task, step, label) {
@@ -4206,7 +4301,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   });
   // «Idag»: grupperingens två nivåer.
   document.addEventListener("change", (e) => { const t = e.target; if (t?.getAttribute?.("data-act") === "idag-by") setIdagBy(Number(t.getAttribute("data-i")), t.value);
-    else if (t?.getAttribute?.("data-act") === "by-set") setBy(t.getAttribute("data-scope"), Number(t.getAttribute("data-i")), t.value); });
+    else if (t?.getAttribute?.("data-act") === "by-set") setBy(t.getAttribute("data-scope"), Number(t.getAttribute("data-i")), t.value);
+    else if (t?.getAttribute?.("data-act") === "quick-cust") { const x = top1(); if (x?.kind === "quick") { x.cust = t.value || null; x.open = null; fetchSheet(x, true); } } });
   document.addEventListener("change", (e) => {
     const root = e.target?.closest?.("[data-ip]"), P = root && IPS[root.dataset.ip];
     if (!P || !e.target.matches("[data-ip-content]")) return;
@@ -6956,7 +7052,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const crumbs = [`<button data-act="crumb" data-i="-1">Översikt</button>`, ...S.sheets.slice(0, -1).map((s, i) => `<button data-act="crumb" data-i="${i}">${esc(s.label)}</button>`), `<b>${esc(x.label)}</b>`].join(`<span class="cs">/</span>`);
     const prev = n > 1 ? S.sheets[n - 2].label : "Översikt";
     const body = linkStateHtml(x, n > 1 ? S.sheets[n - 2].label : null) ?? { delivery: deliverySheet, part: partSheet, step: stepSheetHtml, result: resultSheetHtml, case: caseSheetHtml, library: librarySheetHtml, method: methodSheetHtml, how: howSheetHtml, settings: settingsSheetHtml,
-      focus: focusSheetHtml, messages: messagesSheetHtml, thread: threadSheetHtml, inbox: inboxSheetHtml, chat: chatSheetHtml, person: personSheetHtml, order: orderSheetHtml }[x.kind]?.(x) ?? customerSheet(x);
+      focus: focusSheetHtml, messages: messagesSheetHtml, thread: threadSheetHtml, inbox: inboxSheetHtml, chat: chatSheetHtml, person: personSheetHtml, order: orderSheetHtml, quick: quickSheetHtml }[x.kind]?.(x) ?? customerSheet(x);
     return `<div class="sheets"><div class="scrim" data-act="sheet-back"></div>${strips}`
       + `<section class="sheet" style="left:${left(n - 1)}px" data-i="${n - 1}" role="dialog" aria-label="${esc(x.label)}" data-sheet="${esc(sheetKey(x))}">`
       + `<header class="shead"><button class="back" data-act="sheet-back" title="Tillbaka · ⌫">‹ ${esc(prev)}</button><nav class="crumbs">${crumbs}</nav>`
@@ -7138,7 +7234,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (t.kind === "row" && t.row.tasks?.length === 1 && t.row.kind !== "stream" && (t.row.people || []).some((p) => p !== S.data?.party?.id))
       out.push({ id: "take-task", l: "Ta över uppgiften", lvl: "●", run: () => takeOver(t.row.tasks[0], null, t.row.label) });
     out.push(...hlMenu(t));
-    if (t.kind === "row" && t.row?.customer?.id) out.push({ id: "quick", l: `Gör snabbt för ${t.row.customer.label} …`, lvl: "◐", run: () => openSheet("customer", t.row.customer.id, t.row.customer.label) });
+    if (t.kind === "row" && t.row?.customer?.id) out.push({ id: "quick", l: `⚡ Snabbt för ${t.row.customer.label} …`, run: () => openQuick(t.row.customer.id, t.row.customer.label) });
     if (targetSheets(t).length) out.push({ id: "link", l: "Kopiera länk", key: "⇧⌘C", run: () => copyLink(targetSheets(t)) });
     out.push({ id: "chat", l: "Arbeta i chatten ↗", run: () => copyToChat(t.kind === "case" ? casePrompt(t.task, t.label) : s ? stepPrompt(s) : chatPrompt(rowKey), "prompten") });
     out.push({ id: "claude", l: sample ? "Be Claude om förslag" : "Be Claude om förslag ↗", run: () => suggestInView(t) });
@@ -7629,10 +7725,10 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     } catch (e) { S.confirm = null; say(`Inget genomfördes: ${e.message || e}`, null, true); }
     render();
   }
-  const confirmHtml = () => !S.confirm ? "" : `<div class="confirm${S.confirm.house ? " house" : ""}" role="dialog" aria-label="Förhandsvisning"><span class="ci">${S.confirm.house ? "■" : "◐"}</span><span class="ctext">${esc(S.confirm.text)}</span>`
+  const confirmHtml = () => !S.confirm ? "" : `<div class="confirm${S.confirm.house ? " house" : ""}" role="dialog" aria-label="Förhandsvisning"><span class="ci">${S.confirm.sym || (S.confirm.house ? "■" : "◐")}</span><span class="ctext">${esc(S.confirm.text)}</span>`
     + `<button class="quiet" data-act="confirm-cancel">Avbryt</button>`
     + (S.confirm.alt ? `<button class="quiet" data-act="confirm-alt">${esc(S.confirm.alt)}</button>` : "")
-    + `<button class="go" data-act="confirm-go"${S.confirm.loading || !(S.confirm.next || S.confirm.basis) ? " disabled" : ""}>${S.confirm.dot ? "" : `${S.confirm.house ? "■" : "◐"} `}${esc(S.confirm.verb)}${S.confirm.dot ? " ●" : ""}${S.confirm.late ? ", nytt löfte" : ""}</button></div>`;
+    + `<button class="go" data-act="confirm-go"${S.confirm.loading || !(S.confirm.next || S.confirm.basis) ? " disabled" : ""}>${S.confirm.dot ? "" : `${S.confirm.sym || (S.confirm.house ? "■" : "◐")} `}${esc(S.confirm.verb)}${S.confirm.dot ? " ●" : ""}${S.confirm.late ? ", nytt löfte" : ""}</button></div>`;
 
   /** Menyns symbol ur kartans tabell (window.RotorSymbols, views/karta.html): samma handlingar och tecken överallt. */
   const MENU_SYM = { done: "done", skip: "skip", "open-map": "open_map", later: "time", earlier: "time", take: "hand", "take-over": "hand" };
@@ -8419,6 +8515,13 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
 
   /* ⌘K: samma handlingar som menyn, för allt som syns, plus att öppna en leverans. */
   const fold = (x) => String(x || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  /** Snabbhandlingarna för ⌘K, hämtade en gång per besök. */
+  function quickIndex() {
+    if (S.quickIdx || S.quickIdxLoading || offline()) return S.quickIdx || [];
+    S.quickIdxLoading = true;
+    call("read", { op: "quick_actions" }).then((d) => { S.quickIdx = d?.offers || []; if (S.pal) render(); }, () => { S.quickIdx = []; });
+    return [];
+  }
   function paletteEntries() {
     const o = S.data;
     if (!o) return [];
@@ -8454,7 +8557,11 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const custs = new Map();
     for (const r of o.rows) if (r.customer?.id && !custs.has(r.customer.id)) custs.set(r.customer.id, r.customer.label);
     for (const [id, label] of custs)
-      out.push({ id: "quick", l: `Gör snabbt för ${label} …`, where: "rendera mall, tryck-PDF", lvl: "◐", hay: fold(`gor snabbt snabbhandling rendera mall tryck pdf ${label}`), run: () => openSheet("customer", id, label) });
+      out.push({ id: "quick", l: `⚡ Snabbt för ${label} …`, where: "snabbhandlingarna", hay: fold(`gor snabbt snabbhandling ${label}`), run: () => openQuick(id, label) });
+    // «Gör …» per snabbhandling (registrets val, hämtat en gång): öppnar fönstret med formuläret.
+    out.push({ id: "quick", l: "⚡ Snabbt …", where: "gör något direkt, utan uppdrag", hay: fold("snabbt snabbhandlingar gor direkt utan uppdrag quick"), run: () => openQuick(null) });
+    for (const [i, q] of (quickIndex() || []).entries())
+      out.push({ id: "quick", l: `Gör: ${q.label}`, where: "snabbhandling", lvl: q.level, hay: fold(`gor ${q.label} ${q.summary || ""} snabbhandling`), run: () => { openQuick(null); const t = top1(); if (t?.kind === "quick") { t.open = i; render(); } } });
     out.push(...hlPalette(), ...mbPalette());
     return out;
   }
@@ -10091,6 +10198,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     // Knapparna som inte gör något än (Fokus, Meddelanden, ⚙, Claude) står inte med: hellre ingen knapp än en död.
     const top = `<div class="top"><span class="brand">rotor</span><span class="title">Översikt</span><span class="date">${esc(dayLabel(today))}</span>`
       + `<button class="edge" data-act="order-new" title="Ny beställning · N">＋ Ny</button>`
+      + `<button class="edge" data-act="quick-window" title="Snabbhandlingar: gör något direkt, utan uppdrag">⚡ Snabbt</button>`
       + `<div class="search"><input id="pal-q" data-act="pal-open" placeholder="Sök eller gör" autocomplete="off" value="${esc(S.pal?.q || "")}" aria-label="Sök eller gör (⌘K)"><kbd>⌘K</kbd>${paletteHtml()}</div>`
       + (can("change_methods") ? `<button class="plain" data-act="open-library">Biblioteket</button>` : "")
       + `<button class="edge" data-act="open-focus">◎ Fokus</button>`
@@ -10197,6 +10305,20 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     else if (act === "open-customer") { openSheet("customer", el.getAttribute("data-id"), el.getAttribute("data-label")); return; }
     else if (act === "quick-run") { const t = top1(), o = t?.kind === "customer" ? S.sheetData[sheetKey(t)]?.overview?.overview?.quick?.offers?.[Number(el.getAttribute("data-i"))] : null;
       if (o) { quickRun(t.id, S.sheetData[sheetKey(t)]?.label || t.label, o); return; } }
+    else if (act === "quick-window") { const id = el.getAttribute("data-id"); openQuick(id, el.getAttribute("data-label")); return; }
+    else if (act === "quick-by") { const t = top1(); if (t) { t.by = el.getAttribute("data-by"); render(); } return; }
+    else if (act === "quick-open") { const t = top1(); if (t) { const i = Number(el.getAttribute("data-i")); t.open = t.open === i ? null : i; render(); } return; }
+    else if (act === "quick-close") { const t = top1(); if (t) { t.open = null; render(); } return; }
+    else if (act === "quick-go") { const t = top1(); if (t) quickGo(t, Number(el.getAttribute("data-i"))); return; }
+    else if (act === "quick-copy") { const t = top1(), o = t && S.sheetData[sheetKey(t)]?.q?.offers?.[Number(el.getAttribute("data-i"))]; if (o) copyToChat(o.prompt, "snabbhandlingen till Claude"); return; }
+    else if (act === "quick-tool") { const t = top1(), o = t && S.sheetData[sheetKey(t)]?.q?.offers?.[Number(el.getAttribute("data-i"))];
+      if (o?.tool?.component) openMaterial({ key: null, label: o.label }, "", o.label, `tool:${o.tool.component}`, { customer: quickCust(t) }); return; }
+    else if (act === "quick-again") { const t = top1(), sd = t && S.sheetData[sheetKey(t)], r = sd?.q?.recent?.[Number(el.getAttribute("data-ri"))];
+      const i = r ? (sd.q.offers || []).findIndex((o) => o.call === r.call || o.operation === r.call) : -1;
+      if (t && r) { if (!t.cust && r.customer?.id) t.cust = r.customer.id; if (i >= 0) { t.open = i; render(); } else say(`«${r.label}» står inte längre bland snabbhandlingarna.`, null, true); } return; }
+    else if (act === "quick-attach-open") { const t = top1(), r = t && S.sheetData[sheetKey(t)]?.q?.recent?.[Number(el.getAttribute("data-ri"))];
+      if (r?.files?.[0]) quickAttachOpen(t, r.files[0].ref, r.files[0].name || r.label, r.customer?.id, r.customer?.label); return; }
+    else if (act === "quick-attach") { const t = top1(); if (t) quickAttach(t, Number(el.getAttribute("data-i"))); return; }
     else if (act === "crumb") { sheetJump(Number(el.getAttribute("data-i"))); return; }
     else if (act === "sheet-back") { sheetBack(); return; }
     else if (act === "sheet-close") { sheetJump(-1); return; }
