@@ -129,6 +129,9 @@ body { background: var(--white); color: var(--ink); font-family: var(--sans); }
 .step.mthread .mlast { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vrow .mq { flex: 0 1 220px; min-width: 140px; margin-left: auto; border: 1px solid var(--l2); border-radius: 8px; padding: 5px 10px; font-size: 13px; min-height: 34px; }
 .step.case { grid-template-columns: 16px minmax(0, 1fr) auto auto; }
+.cqa { display: inline-flex; gap: 2px; margin-right: 4px; }
+.cqa .qa { border: 0; background: none; color: var(--muted); font: inherit; padding: 0 4px; cursor: pointer; border-radius: 4px; }
+.cqa .qa:hover, .cqa .qa:focus-visible { color: var(--ink); background: var(--l5); }
 .qpost { border: 1.5px dashed var(--l2); border-radius: 10px; padding: 8px 12px; margin: 6px 0 14px; }
 .qpost .qp { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--l5); font-size: 13.5px; }
 .qpost .qp:last-child { border-bottom: 0; }
@@ -876,6 +879,22 @@ details.removed { margin-top: 10px; }
 .wrap.dropok > .row { outline: 2px dashed var(--teal); outline-offset: -2px; }
 /* Köns och arkens smala bredd (ordning, del 1). */
 @media (max-width: 760px) { .sgrid { grid-template-columns: minmax(0, 1fr); gap: 20px; } .step.case .who { display: none; } }
+/* Mobil (Daniel P 2026-10-14): ingenting ger horisontell rullning vid 375 px. Toppraden bryts, arken tar hela bredden
+   och långa ord bryts; kön, ärendets karta och arken prövas i scripts/prov-mobil-bredd (skärmbild). */
+@media (max-width: 760px) {
+  .top { flex-wrap: wrap; white-space: normal; row-gap: 8px; }
+  .top .search { flex: 1 1 100%; order: 9; min-width: 0; }
+  .top .search input { width: 100%; min-width: 0; }
+  .sheet { left: 0 !important; width: auto !important; max-width: 100vw; }
+  .sheet .shead { flex-wrap: wrap; white-space: normal; }
+  .sheet .shead .hint { display: none; }
+  .sbody, .smain, .stitle, .sline, .step.case { min-width: 0; overflow-wrap: anywhere; }
+  .vrow { flex-wrap: wrap; }
+  :root { --grid: 28px minmax(0, 1fr); }
+  .row > :nth-child(n+3), .skel > :nth-child(n+3) { grid-column: 2; min-width: 0; }
+  .head { display: none; }
+  .segs, .needs, .state { min-width: 0; flex-wrap: wrap; overflow-wrap: anywhere; }
+}
 /* Verktyget i steget: bildväljaren och det som granskas (docs/plan-some-enkel.md). */
 .ip { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 14px; }
 .ip-bar, .ip-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -2080,7 +2099,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "1e896dfd", published: "2026-10-14" };
+  const SIDA = { version: "8713614d", published: "2026-10-14" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2573,6 +2592,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      uppgifterna med målmodell (`goal`), kartans svar hämtas en gång per uppgift, och
      fronten är momenten som går att göra eller väntar på ett ja, per delmål och band. */
   const goalTasks = (row) => row?.goal || [];
+  /** Leveransen visas som kö (serverns val ur registret, src/views/queue.ts): en löpande ström eller mallens `view: "queue"`. */
+  const isQueue = (row) => row?.view === "queue" || row?.kind === "stream";
   const isGoalTask = (task) => (S.data?.rows || []).some((r) => goalTasks(r).includes(task));
   function goalMap(task) {
     S.goalMaps ||= {};
@@ -2692,7 +2713,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (!id) return;
     // En leverans öppnar kartan (Daniel P 2026-10-13: «När man öppnar en leverans vill man se kartan»).
     // Kartan är navigationen; listan nås från kartan. Utan delmål finns ingen karta, och sidan står kvar.
-    const goalRow = kind === "delivery" && !asList ? (S.data?.rows || []).find((r) => r.key === id && r.goal?.length) : null;
+    // En kö (src/views/queue.ts: fristående ärenden, till exempel support) öppnas som listan; kartan finns på begäran.
+    const goalRow = kind === "delivery" && !asList ? (S.data?.rows || []).find((r) => r.key === id && r.goal?.length && !isQueue(r)) : null;
     if (goalRow && globalThis.RotorKarta) { openRowMap(goalRow); return; }
     const t = top1();
     if (t && t.kind === kind && t.id === id) return;
@@ -2952,7 +2974,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (x.kind === "part") return { op: "view_file", sheet: "delivery", task: x.id };
     const row = rowOf(x.id), tasks = row?.tasks?.length ? row.tasks : [x.id];
     const isDelivery = row ? row.kind === "delivery" || row.kind === "stream" : /^d_/.test(x.id);
-    const stream = row?.kind === "stream";
+    const stream = isQueue(row);
     return { op: "view_file", sheet: "delivery", ...(isDelivery ? { delivery: x.id } : {}),
       ...(isDelivery && tasks.length > 1 ? { parts: true } : { task: tasks[0] }),
       ...(stream ? { stream: true, ...(row.customer?.id ? { customer: row.customer.id } : {}) } : {}) };
@@ -2963,6 +2985,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       ...(x.kind === "delivery" ? { delivery: d?.delivery || null } : {}),
       ...(d?.parts ? { parts: d.parts } : { plans: d?.plans || [] }),
       ...(d?.stream || "queue" in (d || {}) ? { queue: d?.queue || null } : {}),
+      ...(d?.threads ? { threads: d.threads } : {}),
       ...(sp ? { month: { text: `Tiden i ${monthName(sp.month)}: ${hh(sp.hours || 0)} h, ${sp.regime || "löpande · inget tak"}.` } } : {}) };
   }
   /* ── Förhämtning ──
@@ -3213,7 +3236,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const err = sd.error ? `<div class="banner"><span style="flex:1">Allt kunde inte läsas: ${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>` : "";
     return `<div class="slabel">${esc(label)}</div><h1 class="stitle">${((t) => row?.kind === "delivery" || row?.kind === "stream" ? rn("delivery", x.id, t) : row?.tasks?.length === 1 ? rn("task", row.tasks[0], t) : esc(t))(row?.label || d?.label || x.label)}</h1><p class="sline">${esc(plain(sentence))}</p>`
       + `<div class="sacts">${acts}</div>${err}`
-      + `<div class="sgrid"><div class="smain">${row?.kind === "stream" ? supportHtml(x, sd) : ""}${one ? taskNextHtml(one.task, one, me) + questionsHtml(one.task, sd.task?.questions) + revisionHtml(sd.task?.revision) + roundsHtml(sd.task?.rounds) : ""}${made}<h3 class="sh">${sd.parts ? `Delarna · ${sd.parts.length}` : gt.length && !listPlans?.length ? "Delmålen" : gt.length ? "Delmålen och momenten" : "Momenten"}</h3><div class="ssteps">${steps}${one ? removedHtml(sd.task?.removed_steps) : ""}</div></div>${margin}</div>`;
+      + `<div class="sgrid"><div class="smain">${isQueue(row) ? supportHtml(x, sd) : ""}${one ? taskNextHtml(one.task, one, me) + questionsHtml(one.task, sd.task?.questions) + revisionHtml(sd.task?.revision) + roundsHtml(sd.task?.rounds) : ""}${made}<h3 class="sh">${sd.parts ? `Delarna · ${sd.parts.length}` : gt.length && !listPlans?.length ? "Delmålen" : gt.length ? "Delmålen och momenten" : "Momenten"}</h3><div class="ssteps">${steps}${one ? removedHtml(sd.task?.removed_steps) : ""}</div></div>${margin}</div>`;
   }
 
   /** Stegen som arbetssteg (src/plan/work-steps.ts): delmoment i följd med samma work_step blir ett steg. */
@@ -5889,6 +5912,23 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   /* ── Kön (ordning, del 1): en ärenderad i översikten och kön, Post att bedöma, Öppna/Lösta/Arkiverade ── */
   const QVIEWS = [["open", "Öppna"], ["resolved", "Lösta"], ["archived", "Arkiverade"]];
   const QGROUPS = [["state", "Läge"], ["from", "Avsändare"], ["who", "Ansvarig"], ["none", "Ingen"]];
+  /* queue-group:start — samma regel som src/views/queue.ts, utan typerna (provet jämför dem). */
+  const QUEUE_GROUPS = ["Nytt", "Väntar på oss", "Pågår", "Väntar på kunden", "Klart senaste veckan"];
+  function queueGroup(c, today) {
+    if (c.closed_at !== undefined || c.state === "done") {
+      if (!c.closed_at) return null;
+      const days = (Date.parse(`${today}T12:00:00Z`) - Date.parse(c.closed_at)) / 864e5;
+      return days <= 7 ? "Klart senaste veckan" : null;
+    }
+    if (c.state === "customer" || c.last === "us") return "Väntar på kunden";
+    if (c.state === "new") return "Nytt";
+    if (c.last === "them") return "Väntar på oss";
+    return "Pågår";
+  }
+  /* queue-group:end */
+  /** Ärendet i köns form: läget i planen, när det stängdes och vem som skrev sist i tråden. */
+  const queueIn = (c) => { const m = c.mark, at = m?.merged_into ? (m.at || null) : m?.archived?.at || m?.resolved?.at;
+    return { state: c.state, ...(isClosed(m) ? { closed_at: at ?? null } : {}), last: c.thread?.last ?? null }; };
   const QSORTS = [["risk", "Spricker först"], ["oldest", "Äldst först"], ["changed", "Senast ändrat"], ["from", "Avsändare"], ["who", "Ansvarig"]];
   const relDay = (iso) => { if (!iso || !S.data?.today) return undefined; return Math.round((Date.parse(`${String(iso).slice(0, 10)}T12:00:00Z`) - Date.parse(`${S.data.today}T12:00:00Z`)) / 864e5); };
   /** Märkningarna (löst, arkiverat, ihopslaget) som vyn känner nu: serverns, med det som just gjorts ovanpå. */
@@ -5917,25 +5957,30 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const looks = !closed && (S.caseDone || {})[c.task];
     const sug = looks ? `<button class="otag" data-act="q-resolve" data-task="${esc(c.task)}" data-label="${esc(c.title)}" title="${esc(looks.reason || "")}">Ser löst ut · Markera löst <span class="lvl d">●</span></button>`
       : closed && !(m.resolved && m.resolved.at === null) ? `<button class="otag" data-act="q-back" data-task="${esc(c.task)}" data-label="${esc(c.title)}">Ta tillbaka <span class="lvl d">●</span></button>` : "";
-    const meta = [c.received === undefined ? "" : daysAgo(c.received), !closed && c.now ? `nu: ${c.now}` : "", c.tight && !c.late && !closed ? "utan marginal" : ""].filter(Boolean).join(" · ");
+    // Läget i tråden (kartans huvud, PR 597): vem som väntar och sedan när.
+    const thr = !closed && c.thread ? `${c.thread.last === "them" ? "kunden skrev" : "vi svarade"} ${c.thread.days <= 0 ? "i dag" : c.thread.days === 1 ? "i går" : `för ${c.thread.days} d sedan`}` : "";
+    const meta = [c.received === undefined ? "" : daysAgo(c.received), thr, !closed && c.now ? `nu: ${c.now}` : "", c.tight && !c.late && !closed ? "utan marginal" : ""].filter(Boolean).join(" · ");
+    const SA = globalThis.RotorSymbols?.action || {}, ok = SA.done || { g: "✓", t: "Markera som gjort" }, no = SA.skip || { g: "⊘", t: "Behövs inte" };
+    const acts = closed ? "" : `<span class="cqa"><button class="qa" data-act="q-resolve" data-task="${esc(c.task)}" data-label="${esc(c.title)}" title="Markera löst" aria-label="Markera löst">${ok.g}</button>`
+      + `<button class="qa" data-act="q-archive" data-task="${esc(c.task)}" data-label="${esc(c.title)}" title="Behövs inte: arkivera" aria-label="Behövs inte: arkivera">${no.g}</button></span>`;
     const merged = m?.merged_into ? `<div class="cmerged">slogs ihop med «${esc(caseTitleOf(m.merged_into))}»</div>` : m?.resolved?.note ? `<div class="cmerged">Gjort: ${esc(m.resolved.note)}</div>` : "";
     return `<div class="step case" data-act="open-case"${rowKey ? ` data-key="${esc(rowKey)}"` : ""} data-task="${esc(c.task)}" data-label="${esc(c.title)}" data-ctx="case|${esc(c.task)}" draggable="true" data-drag="${esc(c.task)}" role="button">`
       + `<span class="sdot ${dot}"></span><div style="min-width:0"><span class="${closed ? "done" : ""}">${esc(c.title)}</span>${c.no_method ? `<span class="nm" title="Ingen metod och inga steg">utan metod</span>` : ""}`
       + `${time ? `<span class="ctime ${cls}">${esc(time)}</span>` : ""}${c.outcome && !closed ? ` <span class="otag">bedömt: ${esc(c.outcome)}</span>` : ""}${sug}`
       + `<div class="meta">${senderHtml(c.from, c.from_email, meta ? " · " : "")}${esc(meta)}</div>${merged}</div>`
-      + `<span class="who">${esc(c.who === me ? "du" : c.who || "")}</span><span class="pin-slot">${!closed && c.step && isRunning(c.task, c.step) ? `<span class="meta">igång</span>` : ""}</span></div>`;
+      + `<span class="who">${esc(c.who === me ? "du" : c.who || "")}</span><span class="pin-slot">${acts}${!closed && c.step && isRunning(c.task, c.step) ? `<span class="meta">igång</span>` : ""}</span></div>`;
   }
   function caseTitleOf(task) { const f = findCase(task); return f?.title || task; }
   /** Ärendena i kön: de öppna ur översiktens rad (alla fält), de andra ur leveransens uppgifter. */
   function queueCases(x, sd) {
-    const o = S.data, row = rowOf(x.id), marks = marksNow(), d = sd.delivery;
+    const o = S.data, row = rowOf(x.id), marks = marksNow(), d = sd.delivery, thr = sd.threads || {};
     const seen = new Set(), out = [];
     for (const c of row?.cases || []) { seen.add(c.task); out.push(caseNorm(c, o, marks[c.task])); }
     for (const t of d?.tasks || []) { if (seen.has(t.id)) continue; const n = caseNorm(t, o, marks[t.id]);
       // Klart i planen räknas som löst (alla steg gjorda); det tas inte tillbaka härifrån.
       if (n.state === "done" && !isClosed(n.mark)) n.mark = { resolved: { at: null } };
       out.push(n); }
-    return out;
+    return out.map((n) => thr[n.task] ? { ...n, thread: thr[n.task] } : n);
   }
   function supportHtml(x, sd) {
     const d = sd.delivery;
@@ -5957,9 +6002,17 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     cs = [...cs].sort(by[srt] || by.risk);
     const all8 = !!S.allCases[`sheet:${x.id}`];
     const shown = all8 ? cs : cs.slice(0, Math.max(CASES_SHOWN * 3, 24));
-    const keyOf = (c) => grp === "state" ? (STATUS4.find(([k]) => k === c.state)?.[1] || "") : grp === "from" ? (c.from || "Okänd avsändare") : grp === "who" ? (c.who || "Ingen") : "";
+    // Läget (förval): nytt, väntar på oss, pågår, väntar på kunden och klart senaste veckan (src/views/queue.ts),
+    // grupperat med samma regel som «Idag» (groupRows, src/views/grouping.ts).
+    const today = S.data?.today || new Date().toISOString().slice(0, 10);
+    const recent = qv === "open" && grp === "state" ? all.filter((c) => isClosed(c.mark) && queueGroup(queueIn(c), today)) : [];
+    const keyOf = (c) => grp === "state" ? (queueGroup(queueIn(c), today) || "") : grp === "from" ? (c.from || "Okänd avsändare") : grp === "who" ? (c.who || "Ingen") : "";
     const groups = new Map();
-    for (const c of shown) { const k = qv === "open" ? keyOf(c) : grp === "state" ? "" : keyOf(c); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(c); }
+    if (qv === "open" && grp !== "none") {
+      const gs = groupRows([...shown, ...recent].map((c) => ({ c, g: { q: keyOf(c) } })), ["q"]);
+      const rank = (l) => { const i = QUEUE_GROUPS.indexOf(l); return grp === "state" && i >= 0 ? i : 99; };
+      for (const g of [...gs].sort((a, b) => rank(a.label) - rank(b.label))) groups.set(g.label === "Övrigt" && grp === "state" ? "" : g.label, g.rows.map((r) => r.c));
+    } else for (const c of shown) { const k = grp === "state" || grp === "none" ? "" : keyOf(c); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(c); }
     const body = [...groups.entries()].map(([k, list]) => (k ? `<div class="cgrp"><div class="mh2">${esc(k)} <span class="mmeta">${list.length}</span></div>` : `<div class="cgrp">`)
       + list.map((c) => caseRowHtml(c, me, x.id)).join("") + `</div>`).join("");
     const empty = !cs.length ? `<div class="mmeta" style="padding:10px 0">${qv === "open" ? "Inga öppna ärenden med de här valen." : qv === "resolved" ? "Inget löst de senaste 14 dagarna. Lösta arkiveras av sig själva efter 14 dagar." : "Inget arkiverat."}</div>` : "";
@@ -5968,12 +6021,15 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const tools = `<div class="vrow"><span class="glbl">Gruppera</span>${QGROUPS.map(([k, l]) => `<button class="gopt${grp === k ? " on" : ""}" data-act="q-g" data-v="${k}">${l}</button>`).join("")}</div>`
       + `<div class="vrow"><span class="glbl">Sortera</span>${QSORTS.map(([k, l]) => `<button class="gopt${srt === k ? " on" : ""}" data-act="q-s" data-v="${k}">${l}</button>`).join("")}</div>`;
     const more = cs.length > shown.length ? `<div class="doacts"><button class="link" data-act="cases-all" data-key="sheet:${esc(x.id)}">Visa alla ${cs.length}</button></div>` : "";
-    return `<h3 class="sh">Kön</h3>${month ? `<div class="layers">${esc(month)}</div>` : ""}` + unassessedHtml(d, sd) + views + tools + body + empty + more;
+    const row = rowOf(x.id), whole = goalTasks(row).length && globalThis.RotorKarta
+      ? `<div class="doacts"><button class="link" data-act="open-delivery-map" data-key="${esc(x.id)}" title="Alla ärenden som regioner i en karta">Öppna hela leveransens karta</button></div>` : "";
+    return `<h3 class="sh">Kön</h3>${whole}${month ? `<div class="layers">${esc(month)}</div>` : ""}` + unassessedHtml(d, sd) + views + tools + body + empty + more;
   }
   function queueAct(act, el) {
     const t = top1();
     if (act === "q-resolve") { markCases([el.getAttribute("data-task")], { resolved: true }, el.getAttribute("data-label")); return; }
     if (act === "q-back") { markCases([el.getAttribute("data-task")], { resolved: false, archived: false }, el.getAttribute("data-label")); return; }
+    if (act === "q-archive") { markCases([el.getAttribute("data-task")], { archived: true }, el.getAttribute("data-label")); return; }
     if (!t) return;
     if (act === "q-view") t.qv = el.getAttribute("data-v");
     else if (act === "q-f") { const k = el.getAttribute("data-k"); t.qf = { ...(t.qf || {}), [k]: !(t.qf || {})[k] }; }
@@ -10543,7 +10599,11 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
         methods: "Arbeta med dirigenten: visa metoderna som finns och vad var och en levererar." }[w] || "", "prompten"); return; }
     else if (act === "body") { S.body = el.getAttribute("data-body"); if (S.body === "time" && !timeState().tl) { loadTimeline(); return; }
       if (S.body === "cal" && !calState().data) { loadCalendar(); return; } }
-    else if (act === "open-case") { openCaseOver(el.getAttribute("data-key"), el.getAttribute("data-task"), el.getAttribute("data-label")); return; }
+    else if (act === "open-case") { const k = el.getAttribute("data-key"), task = el.getAttribute("data-task"), row = rowOf(k);
+      // I kön: ärendets egen karta (inzoomning) med tråden; utan karta ärendets ark som förut.
+      if (row && isQueue(row) && goalTasks(row).includes(task) && globalThis.RotorKarta) { openRowMap(row, task); return; }
+      openCaseOver(k, task, el.getAttribute("data-label")); return; }
+    else if (act === "open-delivery-map") { const row = rowOf(el.getAttribute("data-key")); if (row && globalThis.RotorKarta && goalTasks(row).length) { openRowMap(row); return; } }
     else if (act === "open-row-step") { openStepOver(el.getAttribute("data-key"), el.getAttribute("data-task"), el.getAttribute("data-step"), el.getAttribute("data-label")); return; }
     else if (act === "case-choice") { const t = top1(); if (t) t.choice = el.getAttribute("data-id"); }
     else if (act === "sel-clear") { selClear(); return; }
