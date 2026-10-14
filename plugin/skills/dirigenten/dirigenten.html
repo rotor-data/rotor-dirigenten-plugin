@@ -1189,7 +1189,7 @@ details.removed { margin-top: 10px; }
       open_map: { g: "↗", t: "Öppna kartan på delmålet", batch: false }, time: { g: "◷", t: "Flytta i tid eller lås en tid", batch: true },
       hand: { g: "⇆", t: "Lägg över på någon annan, eller ta över", batch: true }, undo: { g: "↺", t: "Ångra", batch: false },
       yes: { g: "⬡", t: "Ditt ja", batch: true }, wait: { g: "⧗", t: "Väntar på kunden", batch: true },
-      move: { g: "⇥", t: "Flytta till en annan leverans eller period", batch: true }, close: { g: "⊠", t: "Stäng uppdraget", batch: true },
+      move: { g: "⇥", t: "Flytta till en annan leverans eller period", batch: true }, close: { g: "⊠", t: "Avbryt uppdraget", batch: true },
       switch: { g: "⟳", t: "Byt metod eller kundens sätt, med materialkontroll", batch: true }, attach: { g: "⌁", t: "Koppla material", batch: true },
       assign: { g: "⊕", t: "Ingen ansvarig än: sätt en ansvarig", batch: false },
       present: { g: "▣", t: "Visa för kunden som: presentationssida, PDF eller annat", batch: true },
@@ -2178,7 +2178,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "8ae4274f", published: "2026-10-14" };
+  const SIDA = { version: "577a2abf", published: "2026-10-14" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2470,7 +2470,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   const STATE = { done: "klar", started: "pågår", next: "näst på tur", todo: "inte påbörjad", customer: "väntar på kunden", handover: "väntar på att någon tar emot" };
 
   /* ── Översiktens vyer, filter och gruppering (ordning, del 3): valen bor i Mina inställningar (`overview_view`) ── */
-  const STATUS_LABEL = { todo: "Inte påbörjad", doing: "Pågår", customer: "Väntar på kunden", ready: "Klar att lämna" };
+  const STATUS_LABEL = { todo: "Inte påbörjad", doing: "Pågår", customer: "Väntar på kunden", ready: "Klar att lämna", delivered: "Levererad" };
   const TYPE_LABEL = { project: "Projekt", recurring: "Återkommande", stream: "Löpande", once: "Engång" };
   /** Ordningen (paket 6): mest bråttom eller per bolag. Momenten står alltid under sin leverans. */
   const GROUPS = [["none", "Mest bråttom"], ["cust", "Per bolag"]];
@@ -2509,6 +2509,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (f.cust?.length && !f.cust.includes(r.customer?.id || "")) return false;
     if (f.owner?.length && !f.owner.includes(r.owner?.id || "")) return false;
     if (f.status?.length && (r.kind === "inbox" || !f.status.includes(rowStatus(r)))) return false;
+    // Levererat syns bara när läget väljs (serverns rader, src/views/overview.ts DELIVERED_DAYS).
+    if (rowStatus(r) === "delivered" && !f.status?.includes("delivered")) return false;
     if (f.type?.length && !f.type.includes(r.type)) return false;
     if (f.late && !r.lens.late) return false;
     if (f.mine && !r.lens.mine) return false;
@@ -2634,7 +2636,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const list = W.items, x = list[W.i];
     const bars = list.map((_, i) => `<i class="${i < W.i ? "d" : i === W.i ? "c" : ""}"></i>`).join("");
     const head = `<div class="wk-h"><b>${x ? `${W.i + 1} av ${list.length}` : "Klart"}</b><span class="wk-bars">${bars}</span><button class="wk-x" data-act="walk-close" aria-label="Stäng"><svg viewBox="0 0 24 24" width="12" height="12"><use href="#i-x"/></svg></button></div>`;
-    if (!x) return `<div class="wk-bg" data-act="walk-close"></div><div class="wk">${head}<div class="wk-card"><b class="wk-t">${W.done ? `${W.done} ${W.done === 1 ? "godkänd" : "godkända"}` : "Inget godkänt"}${W.later ? `, ${W.later} till senare` : ""}.</b><div class="wk-acts"><button class="wk-y" data-act="walk-close">Stäng</button></div></div></div>`;
+    if (!x) return `<div class="wk-bg" data-act="walk-close"></div><div class="wk">${head}<div class="wk-card"><b class="wk-t">${W.done ? `${W.done} ${W.done === 1 ? "godkänd" : "godkända"}` : "Inget godkänt"}${W.later ? `, ${W.later} till senare` : ""}${W.failed ? `, ${W.failed} gick inte (se kvittot)` : ""}.</b><div class="wk-acts"><button class="wk-y" data-act="walk-close">Stäng</button></div></div></div>`;
     const row = rowOfTask(x.task);
     return `<div class="wk-bg" data-act="walk-close"></div><div class="wk" role="dialog" aria-label="Godkänn">${head}<div class="wk-card">`
       + `<div class="wk-top">${shapeHtml("yes")}<div><b class="wk-t">${esc(x.h)}</b><span class="wk-s">${esc([row?.label || x.b, row?.customer?.label].filter(Boolean).join(" · "))}</span></div>${urgHtml(row?.u || 0)}</div>`
@@ -2650,8 +2652,9 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (act === "walk-later") { W.later++; W.i++; render(); return; }
     if (x.start && (act === "walk-yes" || act === "walk-open")) { S.walk = null; startProject(x.k || x.task); return; }
     if (act === "walk-open") { S.walk = null; openMap(x.task, x.ms); return; }
-    if (act === "walk-yes" && !W.busy) { W.busy = true; render();
-      markDone({ task: x.task, step: x.step, node: x.node, approve: true, label: x.h }).then((ok) => { W.busy = false; if (ok) W.done++; else W.later++; W.i++; render(); }, () => { W.busy = false; render(); }); }
+    // Nästa sak visas direkt (Daniel P 2026-10-14: «man fattar inte att något händer»); svaret kommer i bakgrunden.
+    if (act === "walk-yes") { W.done++; W.i++; render();
+      markDone({ task: x.task, step: x.step, node: x.node, approve: true, label: x.h }).then((ok) => { if (!ok) { W.done--; W.failed = (W.failed || 0) + 1; } render(); }); }
   }
 
   function dayMeterHtml(o) {
@@ -7639,9 +7642,17 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
    * synliga. Nu: ändringen läggs in lokalt på en gång (steget, stegremsan, raden i översikten och
    * leveransens delar), skickas, och arken läses om efteråt. Går det fel rullas allt tillbaka.
    */
-  function patchStepDone(task, step, done) {
+  function patchStepDone(task, step, done, node = "") {
     const flip = (on) => on !== done;
     let changed = false;
+    // Igångs och Godkänns moment (idag.rows): det klara försvinner direkt; Ångra lägger tillbaka det.
+    const idag = S.data?.idag;
+    if (idag?.rows) {
+      const same = (x) => x.task === task && (node ? x.node === node : (x.step || "") === (step || ""));
+      const gone = S.idagGone || (S.idagGone = {}), k = `${task}|${node || step || ""}`;
+      if (done && idag.rows.some(same)) { gone[k] = idag.rows.filter(same); S.data = { ...S.data, idag: { ...idag, rows: idag.rows.filter((x) => !same(x)) } }; changed = true; }
+      else if (!done && gone[k]) { S.data = { ...S.data, idag: { ...idag, rows: [...idag.rows, ...gone[k]] } }; delete gone[k]; changed = true; }
+    }
     if (S.data?.rows) S.data = { ...S.data, running: done ? (S.data.running || []).filter((x) => !(x.task === task && x.step === step)) : S.data.running,
       rows: S.data.rows.map((r) => {
         const i = r.tasks.indexOf(task); if (i < 0) return r;
@@ -8018,12 +8029,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const node = s.node || idagRowOf(s.task, s.step)?.node || "";
     const at = node ? { task: s.task, node } : { task: s.task, step: s.step };
     const before = { data: S.data, sheets: S.sheetData };
-    patchStepDone(s.task, s.step, done);
+    patchStepDone(s.task, s.step, done, node);
     render();
     try {
       const undo = { fn: async () => {
         const back = { data: S.data, sheets: S.sheetData };
-        patchStepDone(s.task, s.step, false); render();
+        patchStepDone(s.task, s.step, false, node); render();
         try { await call("execute_step", { ...at, mark: "undone", reason: "Ångrat i vyn direkt efter att det markerades klart." }); }
         catch (e) { S.data = back.data; S.sheetData = back.sheets; throw e; }
       } };
