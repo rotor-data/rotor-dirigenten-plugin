@@ -1008,6 +1008,30 @@ details.removed { margin-top: 10px; }
 #karta .k-multibar { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: #1c1c1a; color: #fff; border-radius: 10px; padding: 6px 10px; z-index: 3; }
 #karta .k-multibar button { margin-left: 6px; background: transparent; color: #fff; border-color: rgba(255,255,255,.4); }
 #karta .k-empty { padding: 40px; color: var(--muted, #66655f); }
+/* Kartans huvud och tråden (Daniel P 2026-10-14: «svårt att se vad kartan syftar till … man vill kunna se tråden»).
+   .rk-thr står utan #karta: samma tråd visas i vyns läsruta (v6, arket «Tråden»). */
+#karta .k-src { display: flex; align-items: baseline; gap: 6px 12px; flex-wrap: wrap; padding: 7px 16px; border-bottom: 1px solid rgba(29,31,36,.08); background: #fbf9f5; }
+#karta .k-goal { min-width: 0; max-width: 760px; overflow-wrap: anywhere; }
+#karta .k-lage.them { background: #fbe6c8; color: #7a4a0c; }
+#karta .k-lage.us { background: #e3efe9; color: #2d5a45; }
+#karta .k-thrbox { border-left: 3px solid #d9d3c6; padding: 4px 0 4px 10px; margin: 8px 0; }
+#karta .k-thrbox .rk-pt { max-height: 160px; overflow: auto; }
+.rk-thr { font-size: 13px; line-height: 1.45; }
+.rk-thr .rk-state { margin: 2px 0 10px; color: #55544e; }
+.rk-post { border: 1px solid #e4e2da; border-radius: 9px; padding: 8px 11px; margin: 8px 0; background: #fff; }
+.rk-post.ours { background: #f4f7f5; border-color: #d6e3dc; }
+.rk-ph { display: flex; gap: 8px; justify-content: space-between; color: #55544e; font-size: 12px; margin-bottom: 4px; flex-wrap: wrap; }
+.rk-ph b { color: #1c1c1a; }
+.rk-pt { white-space: pre-wrap; overflow-wrap: anywhere; }
+.rk-att { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; color: #66655f; font-size: 12px; align-items: center; }
+.rk-att button { font: inherit; font-size: 12px; cursor: pointer; border: 1px solid #c9c7be; background: #fbf9f5; border-radius: 7px; padding: 2px 8px; }
+.rk-draft { border: 1px dashed #b9b2a5; border-radius: 9px; padding: 8px 11px; margin: 12px 0 4px; background: #fbf9f5; }
+.rk-dl { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: #7b7568; margin-bottom: 4px; }
+.rk-err { color: #7b7568; font-style: italic; margin: 6px 0; }
+.rk-view { position: fixed; inset: 0; z-index: 400; background: rgba(20,20,18,.82); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+.rk-view img { max-width: 100%; max-height: calc(100% - 48px); object-fit: contain; background: #fff; border-radius: 6px; }
+.rk-view .rk-vh { color: #fff; display: flex; gap: 12px; align-items: center; margin-bottom: 8px; max-width: 100%; overflow-wrap: anywhere; }
+.rk-view button { font: inherit; cursor: pointer; border: 1px solid rgba(255,255,255,.5); background: transparent; color: #fff; border-radius: 7px; padding: 3px 10px; }
 </style>
 <div id="karta" hidden></div>
 <script data-part="karta">
@@ -1058,6 +1082,71 @@ details.removed { margin-top: 10px; }
   const HOW = { tool: "verktyget", molecule: "en sak som händer i systemet", atom_proposal: "koden, som inte finns än (förslag)", recipe: "receptet", generic: "kontrollfrågan" };
   const NW = 192, NH = 56, CG = 50, RG = 12, LW = 200, BP = 14, BG = 22, MINI_H = 46;
   const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* ── Tråden uppdraget kom ur (Daniel P 2026-10-14) ──
+     Läst först när den behövs: plan_state { task, format: "map", node: "@thread" } (läget, posterna, bilagorna, utkastet),
+     och utkastets text med read { op: "content_get" }. Cachad per uppdrag en minut. Samma visning i kartan och i vyns ark. */
+  const dayText = (iso) => { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? "" : `${d.toLocaleDateString("sv-SE", { day: "numeric", month: "short" })} ${String(iso).slice(11, 16)}`; };
+  const clip = (t, n) => { const s = String(t ?? "").replace(/\s+/g, " ").trim(); return s.length > n ? `${s.slice(0, n)} …` : s; };
+  const THR = new Map(), THR_MS = 60_000;
+  let thrCall = null;
+  function loadThread(call, task, force) {
+    const hit = THR.get(task);
+    if (hit && !force && Date.now() - hit.at < THR_MS) return hit.p;
+    thrCall = call;
+    const p = call("plan_state", { task, format: "map", node: "@thread" }).then(async (d) => {
+      const n = d?.node || null;
+      if (n?.draft?.id && /^ct_/.test(n.draft.id)) n.draft_text = await call("read", { op: "content_get", id: n.draft.id }).then((c) => c?.markdown ?? c?.text ?? null).catch(() => null);
+      return n;
+    });
+    THR.set(task, { at: Date.now(), p });
+    p.catch(() => THR.delete(task));
+    return p;
+  }
+  function draftHtml(d) {
+    if (!d?.draft) return "";
+    return `<div class="rk-draft"><div class="rk-dl">Vårt utkast till svar · inte skickat${d.draft.at ? ` · ${esc(dayText(d.draft.at))}` : ""}${d.draft.by ? ` · ${esc(d.draft.by)}` : ""}</div>`
+      + `<div class="rk-pt">${d.draft_text != null ? esc(d.draft_text) : esc(d.draft.name || "Utkastet")}</div></div>`;
+  }
+  function attHtml(d, p) {
+    const imgs = p.images || [], rest = Math.max(0, (p.attachments || 0) - imgs.length);
+    if (!imgs.length && !rest) return "";
+    return `<div class="rk-att">${imgs.map((im) => `<button data-thr-img="${esc(im.id)}" data-thread="${esc(d.thread)}" data-name="${esc(im.filename)}" title="Visa bilden">▣ ${esc(im.filename)}</button>`).join("")}`
+      + (rest ? `<span>${rest} ${rest === 1 ? "bilaga" : "bilagor"} till: öppnas i Gmail</span>` : "") + `</div>`;
+  }
+  function postHtml(d, p, n) { return `<div class="rk-post${p.ours ? " ours" : ""}"><div class="rk-ph"><b>${esc(p.from)}</b><span>${esc(dayText(p.at))}</span></div>`
+    + `<div class="rk-pt">${esc(n ? clip(p.text, n) : p.text) || "<i>Ingen text.</i>"}</div>${attHtml(d, p)}</div>`; }
+  /** Hela tråden: läget, posterna äldst först, bilagorna och vårt utkast. */
+  function threadHtml(d, opts) {
+    if (!d) return `<div class="k-wait">Läser tråden …</div>`;
+    const subj = d.subject && !opts?.noSubject ? `<b>${esc(d.subject)}</b>` : "";
+    const head = `<div class="rk-thr"><div class="rk-state">${subj}${subj && d.state ? " · " : ""}${d.state ? esc(d.state.text) : ""}</div>`;
+    if (d.error) return head + `<div class="rk-err">Tråden går inte att läsa här: ${esc(d.error)}.</div>${draftHtml(d)}</div>`;
+    return head + (d.text_error ? `<div class="rk-err">Hela texten gick inte att läsa; det som visas är utdrag.</div>` : "")
+      + (d.posts || []).map((p) => postHtml(d, p)).join("") + draftHtml(d) + `</div>`;
+  }
+  /** Det som hör till ett moment: utkastet på ett svarsmoment, annars det senaste från kunden (eller det senaste alls). */
+  function threadBox(node, d) {
+    const more = `<button class="link" data-k="thread" title="Hela tråden som ett lager">Hela tråden →</button>`;
+    if (!d) return `<div class="k-thrbox"><div class="k-wait">Läser tråden …</div></div>`;
+    if ((d.reply_moments || []).includes(strip(node))) return `<div class="k-thrbox"><div class="k-sub">Svaret</div>${d.draft ? draftHtml(d) : `<div class="k-sub">Inget utkast till svar än.</div>`}${more}</div>`;
+    if (d.error) return `<div class="k-thrbox"><div class="k-sub">Tråden går inte att läsa här.</div>${more}</div>`;
+    const posts = d.posts || [], p = posts.find((x) => x.id === d.latest_inbound) || posts[posts.length - 1];
+    return p ? `<div class="k-thrbox"><div class="k-sub">${p.ours ? "Senast i tråden" : "Senast från kunden"}</div>${postHtml(d, p, 600)}${more}</div>` : "";
+  }
+  /** En bild ur tråden i bildvisaren: hämtas när den öppnas, inget sparas. */
+  async function showImage(call, thread, id, name) {
+    const v = document.createElement("div"); v.className = "rk-view";
+    v.innerHTML = `<div class="rk-vh"><span>${esc(name)}</span><button data-rk-x>Stäng</button></div><div class="k-wait" style="color:#fff">Hämtar bilden …</div>`;
+    v.addEventListener("click", (e) => { if (e.target === v || e.target.hasAttribute("data-rk-x")) v.remove(); });
+    document.body.appendChild(v);
+    try {
+      const r = await call("read", { op: "intake_status", thread, image: id, size: "full", for_view: true });
+      v.lastElementChild.outerHTML = `<img alt="${esc(name)}" src="data:${esc(r.mime)};base64,${r.data}">`;
+    } catch (e) { v.lastElementChild.textContent = `Bilden gick inte att hämta: ${e?.message || e}`; }
+  }
+  document.addEventListener("click", (e) => { const b = e.target.closest?.("[data-thr-img]"); const c = thrCall || K.call;
+    if (b && c) { e.preventDefault(); showImage(c, b.getAttribute("data-thread"), b.getAttribute("data-thr-img"), b.getAttribute("data-name")); } });
 
   const K = { task: null, call: null, map: null, open: {}, sel: null, zoom: 1, dir: "lr", mband: 0, dialog: null, toast: null, store: false, error: null, loading: false, last: null,
     /** Delmålen som hämtats (kortet, materialet, verktyget), per skelettets version; förrådet under "@store". */
@@ -1362,6 +1451,8 @@ details.removed { margin-top: 10px; }
     h.push(`<button class="k-close" data-k="sel" data-ms="">Stäng</button><div class="k-kind">${KIND_TEXT[kind]} · ${esc(band?.name || "")}</div>`);
     h.push(`<h2 title="Dubbelklicka för att byta namn" data-k="rename" data-ms="${esc(ms)}">${esc(title(ms))}</h2>`);
     h.push(`<div><span class="k-pill" style="background:${PAL[st].f};color:${PAL[st].t};border:1px solid ${PAL[st].s}">${STATE_TEXT[st]}</span> <span class="k-sub">${esc(moments.map(([, x]) => (x.title || x.label || "").toLowerCase()).join(" → "))}</span></div>`);
+    // Det ur tråden som hör till delmålet (Daniel P 2026-10-14): senaste från kunden, eller utkastet på ett svarsmoment.
+    if (!K.delivery && M.source?.thread) h.push(`<h3>Ur tråden</h3>${threadBox(nx || `${ms}/${(moments.find(([id]) => (K.detail["@thread"]?.reply_moments || []).includes(`${strip(ms)}/${id}`)) || moments[0] || [""])[0]}`, K.detail["@thread"])}`);
     h.push(`<h3>I registret</h3><div class="k-reg">${esc(D?.label || title(ms))} · <code>${esc(ms)}</code></div>`);
     if (st === "unknown") h.push(`<div class="k-gap">Okänt än: det avgörs av ${esc((s.until || []).map((u) => u.moment).join(", ") || "ett beslut eller en lista som inte finns ännu")}.</div>`);
     if (st === "not_needed") h.push(M.skipped?.[ms] ? `<div class="k-gap">Hoppas över: ${esc(M.skipped[ms].reason || "")} <button class="link" data-k="unskip" data-node="${esc(ms)}" title="Ta tillbaka" aria-label="Ta tillbaka">↺</button></div>`
@@ -1591,15 +1682,28 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       + `<button data-k="mat" title="Allt material i ${K.delivery ? "leveransen" : "uppdraget"}, grupperat">${K.mat ? "Dölj materialet" : "Materialet"}${K.map.counts?.material ? ` (${K.map.counts.material})` : ""}</button>`
       + (K.onList ? `<button data-k="list" title="Allt i leveransen som en lista">Listan</button>` : "")
       + `<button data-k="close">Stäng</button></div>`
+      + srcHtml()
       + `<div class="k-body"><div class="k-scroll" onscroll="RotorKarta.stick()">${svg(L)}${K.toast ? `<div class="k-toast">${esc(K.toast.text)}${K.toast.undoCall ? `<button data-k="undo-call">Ångra</button>` : K.toast.undo ? `<button data-k="undo" data-node="${esc(K.toast.undo)}">Ångra</button>` : ""}<button data-k="toast-x">×</button></div>` : ""}</div>`
       + (K.sel ? `<div class="k-panel">${panel()}</div>` : "") + (K.store ? `<div class="k-store">${storeWindow()}</div>` : "")
       + (K.mat ? `<div class="k-store k-mat">${matWindow()}</div>` : "")
+      + (K.thr ? `<div class="k-store"><button class="k-close" data-k="thread" style="float:right">Stäng</button><b>Tråden</b>${threadHtml(K.detail["@thread"])}</div>` : "")
       + (Object.keys(K.multi).length ? `<div class="k-multibar">${Object.keys(K.multi).length} markerade <button data-k="multi-menu">Handlingar …</button><button data-k="multi-clear">Avmarkera</button></div>` : "")
       + `</div>` + (K.menu ? menuHtml() : "") + (K.dialog && !K.sel ? `<div class="k-dialog" style="position:absolute;right:16px;top:60px;width:380px">${K.dialog}</div>` : "");
     const sc = el.querySelector(".k-scroll");
     if (sc && keep) { sc.scrollLeft = keep[0]; sc.scrollTop = keep[1]; }
     markBusy(el);
     stickHeads();
+  }
+  /** Kartans huvud för ett uppdrag: målet för just det här, vem som frågade och när, läget i tråden och knappen «Tråden». */
+  function srcHtml() {
+    const src = !K.delivery && K.map?.source; if (!src) return "";
+    const T = K.detail["@thread"];
+    return `<div class="k-src">`
+      + (src.goal ? `<span class="k-goal" title="${esc(src.goal)}"><b>Målet:</b> ${esc(clip(src.goal, 200))}</span>` : "")
+      + (src.asked_by || src.at ? `<span class="k-sub">${src.asked_by ? `Frågade: ${esc(src.asked_by)}` : "Kom in"}${src.at ? ` · ${esc(dayText(src.at))}` : ""}</span>` : "")
+      + (src.thread ? (T?.state ? `<span class="k-pill k-lage ${esc(T.state.last)}">${esc(T.state.text)}</span>` : T ? "" : `<span class="k-wait">Läser tråden …</span>`)
+        + `<button data-k="thread" title="Mejltråden som ett lager ovanpå kartan">Tråden${T?.posts ? ` (${T.posts.length})` : ""}</button>` : "")
+      + `</div>`;
   }
   /** Knappen som väntar på svar: spärrad och med snurra, också efter en omritning. */
   function markBusy(el) {
@@ -1665,7 +1769,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     K.loading = false; K.stale = false; render();
     if (first && K.map && L) { const fx = Object.entries(L.pos).filter(([m]) => ["doable", "yes"].includes(stateOf(m))).map(([, p]) => p.x).sort((a, b) => a - b)[0];
       const sc = root()?.querySelector(".k-scroll"); if (sc && fx > 400 && !L.tb) sc.scrollLeft = (fx - LW - 40) * K.zoom; stickHeads(); }
-    if (K.map) { if (K.sel) detail(K.sel); if (K.store) detail("@store"); if (K.mat) detail("@material"); prefetch(); }
+    if (K.map) { if (K.sel) detail(K.sel); if (K.store) detail("@store"); if (K.mat) detail("@material"); if (!K.delivery && K.map.source?.thread) detail("@thread"); prefetch(); }
   }
 
   /** Ett delmål (eller "@store") hämtas när det öppnas, en gång per version. */
@@ -1673,6 +1777,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   function detail(ms) {
     if (!ms || !K.map || K.detail[ms] || inflight[ms]) return inflight[ms] || null;
     const task = K.task, v = K.map.version;
+    if (ms === "@thread") return (inflight[ms] = loadThread(K.call, task).then((n) => { if (task !== K.task || !K.map) return; K.detail[ms] = n || { error: "tomt svar" }; render(); })
+      .catch((e) => { if (task === K.task) { K.detail[ms] = { error: e?.message || String(e) }; render(); } }).finally(() => { delete inflight[ms]; }));
     // Biblioteket hör till uppdraget kanten ligger i (i leveransens karta).
     const node = K.delivery && ms === "@library" && K.addEdge ? `${tn(K.addEdge.from).task}${SEP}@library` : ms;
     return (inflight[ms] = K.call("plan_state", { ...scope(), format: "map", node, ...(ms === "@material" ? { group_by: K.matBy.join(",") } : {}) }).then((d) => {
@@ -1830,6 +1936,9 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       case "zoom": K.zoom = Math.min(1.3, Math.max(.4, Math.round((K.zoom + .1 * Number(el.getAttribute("data-z"))) * 10) / 10)); return render();
       case "fit": { const sc = root().querySelector(".k-scroll"); K.zoom = Math.min(1.3, Math.max(.4, Math.floor(Math.min(sc.clientWidth / L.W, sc.clientHeight / L.H) * 10) / 10)); return render(); }
       case "store": K.store = !K.store; render(); return K.store ? detail("@store") : null;
+      // Tråden som lager (läsrutan i vyn, K.onOpen); den fristående kartan visar den i en sidoruta.
+      case "thread": if (K.onOpen && !K.thr) return K.onOpen(K.task, "Tråden", "thread", { task: K.task });
+        K.thr = !K.thr; render(); return K.thr ? detail("@thread") : null;
       case "more": K.more = !K.more; return render();
       case "list": { const f = K.onList; root().hidden = true; K.map = null; K.sel = null; return f?.(); }
       // Arbetsytan och läsrutan läggs ovanpå kartan; kartan står kvar under och syns igen när de stängs.
@@ -1913,7 +2022,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   function open(task, call, opts) {
     if (opts?.delivery !== undefined) K.delivery = opts.delivery || null; else if (!opts?.keep) K.delivery = null;
     if (opts?.deliveryId) { K.deliveryId = opts.deliveryId; K.deliveryLabel = opts.deliveryLabel || null; } else if (!opts?.keep) K.deliveryId = null;
-    K.mat = false; K.multi = {}; K.menu = null;
+    K.mat = false; K.thr = false; K.multi = {}; K.menu = null;
     K.task = task; K.call = call; K.map = null; K.mband = 0; K.sel = opts?.sel || null; K.dialog = null; K.toast = null; K.open = {}; K.detail = {}; K.pending = {}; K.busy = null;
     if (opts?.tasks) { K.tasks = opts.tasks; K.onList = opts.onList || null; K.onWork = opts.onWork || null; K.onOpen = opts.onOpen || null; K.onTime = opts.onTime || null; }
     else if (!opts?.keep) { K.tasks = null; K.onList = null; K.onWork = null; K.onOpen = null; K.onTime = null; }
@@ -1939,7 +2048,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       }); }
     return load();
   }
-  window.RotorKarta = { open, stick: stickHeads };
+  window.RotorKarta = { open, stick: stickHeads, loadThread, threadHtml };
 
   // Fristående (scripts/vy-lokalt.mjs --fil karta): uppgiften ur adressen, #/karta/<uppgift>.
   if (!document.getElementById("v6")) {
@@ -1971,7 +2080,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "4364a5ea", published: "2026-10-14" };
+  const SIDA = { version: "1e896dfd", published: "2026-10-14" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2543,6 +2652,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   const SHOWN_AS_SENT = /(^|_)(mail|mejl|email|utskick|ad|ads|annons|campaigns?|kampanj|social|post|inlagg|inlägg|page|sida|landningssida|presentation)(_|$)/;
   const sentType = (t) => SHOWN_AS_SENT.test(String(t || "").replace(/^[a-z]+\.asset\./, "").toLowerCase());
   function openMaterial(row, ref, l, kind, ctx) {
+    // Tråden uppdraget kom ur (Daniel P 2026-10-14): som ark i läsrutan, ovanpå kartan.
+    if (kind === "thread") return openSheet("taskthread", ctx.task || ref, l || "Tråden");
     const comp = /^tool:/.test(kind || "") ? kind.slice(5) : null, asset = (ctx.kind || kind) === "asset";
     const sheetRef = asset && ref && !/^bank:\/\//.test(ref) ? `asset:${ref}` : ref;
     if (comp === "image-picker") { delete IPS.pick; S.imgPick = { place: "step-tool", t: { task: ctx.task || null, step: ctx.step || null, customer: ctx.customer || customerOfTask(ctx.task) } }; return render(); }
@@ -2944,6 +3055,11 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       if (file && S.files?.[x.id]) { put({ loading: false, doc: S.files[x.id] }); links(S.files[x.id]); return; }
       call(o.tool, o.args).then((d) => { if (file && d && !d.download_url) S.files = { ...(S.files || {}), [x.id]: d }; put({ loading: false, doc: d || null }); links(d); })
         .catch((e) => put({ loading: false, error: e }));
+    } else if (x.kind === "taskthread") {
+      // Samma läsning och visning som kartan (views/karta.html, loadThread och threadHtml), cachad per uppdrag.
+      const K6 = globalThis.RotorKarta;
+      if (!K6?.loadThread) put({ loading: false, error: new Error("kartan är inte laddad") });
+      else K6.loadThread(call, x.id, force).then((d) => put({ loading: false, node: d })).catch((e) => put({ loading: false, error: e }));
     } else if (x.kind === "case") {
       call("read", { op: "view_file", sheet: "case", task: x.id }).then((d) => {
         put({ loading: false, case: d });
@@ -6983,6 +7099,13 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const older = !sd.since && (v === "archived" || v === "all" || q.length) ? `<div class="doacts"><button class="link" data-act="mt-older">Sök också äldre än 30 dagar</button></div>` : "";
     return head + views + tools + note + (body || `<div class="mmeta" style="padding:10px 0">${q.length ? "Inget som matchar sökningen." : v === "reply" ? "Inget att svara på." : "Inga trådar här."}</div>`) + older;
   }
+  /** Tråden ett uppdrag kom ur, som ark (kartans «Tråden»): läget, posterna äldst först, bilagorna och vårt utkast. */
+  function taskThreadSheetHtml(x) {
+    const sd = S.sheetData[sheetKey(x)] || {};
+    const body = sd.error ? `<div class="banner"><span style="flex:1">Tråden kunde inte läsas: ${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>`
+      : globalThis.RotorKarta?.threadHtml ? globalThis.RotorKarta.threadHtml(sd.node || null, { noSubject: true }) : "";
+    return `<div class="slabel">Tråden</div><h1 class="stitle">${esc(sd.node?.subject || x.label)}</h1>${body}`;
+  }
   /** Tråden som ark: det senaste överst, med Svara, Markera läst, Löst, Arkivera och Öppna saken. */
   function threadSheetHtml(x) {
     const sd = S.sheetData[sheetKey(x)] || {}, ms = sd.messages;
@@ -7052,7 +7175,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const crumbs = [`<button data-act="crumb" data-i="-1">Översikt</button>`, ...S.sheets.slice(0, -1).map((s, i) => `<button data-act="crumb" data-i="${i}">${esc(s.label)}</button>`), `<b>${esc(x.label)}</b>`].join(`<span class="cs">/</span>`);
     const prev = n > 1 ? S.sheets[n - 2].label : "Översikt";
     const body = linkStateHtml(x, n > 1 ? S.sheets[n - 2].label : null) ?? { delivery: deliverySheet, part: partSheet, step: stepSheetHtml, result: resultSheetHtml, case: caseSheetHtml, library: librarySheetHtml, method: methodSheetHtml, how: howSheetHtml, settings: settingsSheetHtml,
-      focus: focusSheetHtml, messages: messagesSheetHtml, thread: threadSheetHtml, inbox: inboxSheetHtml, chat: chatSheetHtml, person: personSheetHtml, order: orderSheetHtml, quick: quickSheetHtml }[x.kind]?.(x) ?? customerSheet(x);
+      focus: focusSheetHtml, messages: messagesSheetHtml, thread: threadSheetHtml, taskthread: taskThreadSheetHtml, inbox: inboxSheetHtml, chat: chatSheetHtml, person: personSheetHtml, order: orderSheetHtml, quick: quickSheetHtml }[x.kind]?.(x) ?? customerSheet(x);
     return `<div class="sheets"><div class="scrim" data-act="sheet-back"></div>${strips}`
       + `<section class="sheet" style="left:${left(n - 1)}px" data-i="${n - 1}" role="dialog" aria-label="${esc(x.label)}" data-sheet="${esc(sheetKey(x))}">`
       + `<header class="shead"><button class="back" data-act="sheet-back" title="Tillbaka · ⌫">‹ ${esc(prev)}</button><nav class="crumbs">${crumbs}</nav>`
