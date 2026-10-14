@@ -44,7 +44,8 @@ body { background: var(--bg-page); color: var(--ink); font-family: var(--sans); 
 .is-busy::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -7px 0 0 -7px; border: 2px solid var(--do); border-right-color: transparent; border-radius: 50%; animation: v6-spin .7s linear infinite; }
 @keyframes v6-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .is-busy::after { animation: none; } }
-.top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: nowrap; white-space: nowrap; }
+/* Toppraden bryts i stället för att göra sidan bredare (Daniel P 2026-10-14: «alldeles för bred»). */
+.top { display: flex; align-items: center; gap: 12px; row-gap: 8px; margin-bottom: 16px; flex-wrap: wrap; white-space: nowrap; }
 .brand { font-weight: 700; font-size: var(--fs-delivery); letter-spacing: -.02em; }
 .title { font-family: var(--sans); font-size: var(--fs-page); font-weight: 600; margin-left: 8px; letter-spacing: -.015em; }
 .date { color: var(--meta); font-size: var(--fs-step); }
@@ -59,7 +60,7 @@ body { background: var(--bg-page); color: var(--ink); font-family: var(--sans); 
 .bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; font-size: var(--fs-step); }
 .lens { padding: 6px 12px; border-radius: 7px; background: #fff; border: 1px solid var(--line); white-space: nowrap; font-size: var(--fs-step); }
 .lens.on, .person.on, .fopt.on { background: var(--ink); color: #fff !important; border-color: var(--ink); }
-.vrow { display: flex; gap: 6px; align-items: center; overflow-x: auto; padding-bottom: 4px; margin-bottom: 8px; font-size: var(--fs-step); }
+.vrow { display: flex; flex-wrap: wrap; gap: 6px; row-gap: 6px; align-items: center; padding-bottom: 4px; margin-bottom: 8px; font-size: var(--fs-step); }
 .vrow .lens, .vrow .addf, .vrow .person { flex: none; min-height: 34px; }
 .addf { padding: 5px 11px; border-radius: 7px; background: #fff; border: 1px dashed var(--line); white-space: nowrap; font-size: var(--fs-step); }
 .vrow .glbl { color: var(--meta); flex: none; }
@@ -439,7 +440,8 @@ body.over-map .sheets { z-index: 61; }
 .seg2 button, .wks button, .nav button { border: 0; background: none; padding: 4px 12px; border-radius: var(--r-pill); font: 800 var(--fs-meta) var(--sans); color: var(--meta) !important; white-space: nowrap; }
 .seg2 button.on, .wks button.on { color: var(--ink) !important; background: var(--bg); }
 .nav button:hover, .wks button:hover, .seg2 button:hover { background: var(--bg-quiet); }
-.wk { position: absolute; top: 8px; padding-left: 6px; border-left: 1px solid var(--line-soft); white-space: nowrap; overflow: hidden; }
+/* Veckorna i Tid: eget namn, `.wk` är genomgångsrutan för Godkänn (krocken lade rubrikerna mitt på skärmen). */
+.zwk { position: absolute; top: 8px; padding-left: 6px; border-left: 1px solid var(--line-soft); white-space: nowrap; overflow: hidden; }
 .wkend { position: absolute; top: 0; bottom: 0; background: var(--bg-field); }
 .tnow { position: absolute; top: 0; bottom: 0; width: 1.5px; background: var(--do); opacity: .5; }
 .tfoot ~ .toast, .tfoot ~ .confirm { bottom: 130px; }
@@ -995,9 +997,12 @@ details.removed { margin-top: 10px; }
 .chip .cx:hover { background: rgba(255,255,255,.1); }
 .chip.wait { opacity: .6; }
 /* Toppraden: dagsmätaren och Godkänn. */
-.dmeter { flex: none; width: 46px; height: 8px; border-radius: var(--r-pill); background: var(--bg-quiet); overflow: hidden; }
-.dmeter span { display: block; height: 100%; background: var(--do); }
-.dmeter.over span { background: var(--late); }
+/* Dagsmätaren: stapeln och timmarna i ord (Daniel P 2026-10-14: «en mörk stapel utan text»). */
+.dmeter { flex: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: var(--fs-meta); color: var(--meta); }
+.dmeter .dbar { width: 46px; height: 8px; border-radius: var(--r-pill); background: var(--bg-quiet); overflow: hidden; }
+.dmeter .dbar span { display: block; height: 100%; background: var(--do); }
+.dmeter.over .dbar span { background: var(--late); }
+.dmeter.over .dtxt { color: var(--late); }
 .yesbtn { flex: none; display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 5px 0 13px; border: 0; background: var(--bg-dark); color: #fff !important; border-radius: var(--r-pill); font-size: var(--fs-step); font-weight: 800; white-space: nowrap; }
 .yesbtn > span:last-child { min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: var(--r-pill); background: var(--yes); color: var(--ink); display: grid; place-items: center; font-size: var(--fs-meta); }
 /* Tipsrutan: mörk, radie 14, bredd 264. */
@@ -2178,7 +2183,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "577a2abf", published: "2026-10-14" };
+  const SIDA = { version: "12770622", published: "2026-10-14" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2529,7 +2534,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   const mineOnly = () => { const k = Object.keys(fClean(ovChoice().filter)); return !k.length || (k.length === 1 && k[0] === "mine"); };
 
   const stepOf = (o, r, x) => ({ task: r.tasks[x[0]], id: x[1], label: o.names[x[2]] ?? "", state: x[3], s: x[4], e: x[5],
-    who: x[6] >= 0 ? o.names[x[6]] : null, critical: (x[7] & 1) === 1, to: x[8] !== undefined ? o.names[x[8]] : null });
+    who: x[6] >= 0 ? o.names[x[6]] : null, critical: (x[7] & 1) === 1, to: x[8] !== undefined && x[8] >= 0 ? o.names[x[8]] : null, node: x[9] || null });
 
   /* ── Översikten, paket 6 (views/CLAUDE.md): brådskan ur servern (`u`), momenten i kartans former. ── */
   const URG_TEXT = ["Gott om tid", "Börjar bli trångt: 2–4 dagars marginal", "Ingen marginal: 0–1 dagar", "Sent mot det lovade datumet"];
@@ -2662,7 +2667,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const m = /^([\d,]+)\/([\d,]+)/.exec(d.text || ""), used = m ? Number(m[1].replace(",", ".")) : 0, cap = m ? Number(m[2].replace(",", ".")) : 0;
     const pct = cap ? Math.min(100, Math.round(used / cap * 100)) : 0;
     const rows = [...(o.idag.sessions || []).map((p) => `${p.title}\t${String(p.hours).replace(".", ",")} h`), ...(o.idag.conflicts || []).map((c) => c.text)];
-    return `<span class="dmeter${d.over ? " over" : ""}" data-ctx="meter|today"${tipAttr(`I dag: ${d.text}`, d.over ? "Mer än dagen rymmer: högerklicka för förslag" : "Dagens beläggning efter utjämningen", rows)}><span style="width:${pct}%"></span></span>`;
+    return `<span class="dmeter${d.over ? " over" : ""}" data-ctx="meter|today"${tipAttr(`I dag: ${d.text}`, d.over ? "Mer än dagen rymmer: högerklicka för förslag" : "Dagens beläggning efter utjämningen", rows)}><span class="dbar"><span style="width:${pct}%"></span></span><span class="dtxt">${esc(d.text)}</span></span>`;
   }
   let toastTimer = null;
   /** Kvittot: längst ner i mitten, med Ångra i 8 s. Ett fel står kvar lite längre. */
@@ -7856,7 +7861,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       const [k, task, step] = ctx.split("|");
       if (k !== "step" && k !== "case") continue;
       const t = targetOf(ctx), g = step ? idagRowOf(task, step) : null;
-      out.push({ task, step: step || t?.step?.step || undefined, node: g?.node || undefined, label: g?.h || t?.label || task });
+      out.push({ task, step: step || t?.step?.step || undefined, node: g?.node || t?.step?.node || undefined, label: g?.h || t?.label || task });
     }
     return out;
   }
@@ -9521,7 +9526,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const weeks = T.weeks === 2 ? Array.from({ length: days }, (_, i) => { const iso = isoAdd(tl.from, i);
       return isWd(iso) ? `<span class="zdl${iso === tl.today ? " now" : ""}" style="left:${pct(i)}">${esc(tzDay(iso))}${i % 7 === 0 ? `<small>v${isoWeek(iso)}</small>` : ""}</span>` : ""; }).join("")
       : Array.from({ length: Math.ceil(days / 7) }, (_, k) => { const iso = isoAdd(tl.from, k * 7);
-        return `<span class="wk" style="left:${pct(k * 7)};width:${pct(7)}">v${isoWeek(iso)}${T.weeks <= 4 ? ` · ${esc(shortIso(iso))}` : ""}</span>`; }).join("");
+        return `<span class="zwk" style="left:${pct(k * 7)};width:${pct(7)}">v${isoWeek(iso)}${T.weeks <= 4 ? ` · ${esc(shortIso(iso))}` : ""}</span>`; }).join("");
     const head = `<div class="zrow zhead"><div class="zl">${T.group === "person" ? "PERSON" : "LEVERANS"}</div><div class="ztrack" style="height:${T.weeks === 2 ? 44 : 30}px">${weeks}</div></div>`;
     const overIn = (who, a, z) => { const l = loads[who]; if (!l) return false; for (let i = Math.max(0, a); i < Math.min(days, z); i++) if (l[i].over) return true; return false; };
     const capIn = (who, a, z) => { const l = loads[who]; let n = 0; for (let i = a; i < z; i++) if (isWd(isoAdd(tl.from, i))) n += i >= 0 && i < days && l ? l[i].cap : 8; return n; };
