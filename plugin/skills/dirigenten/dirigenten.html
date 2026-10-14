@@ -465,6 +465,36 @@ body.over-map .sheets { z-index: 61; }
 /* Steget, paket 6 (views/CLAUDE.md §4). */
 .sheet[data-sheet^="step:"] .sbody { background: var(--bg-page); }
 .ss { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+/* Ett steg, två storlekar: smal panel med kartan bakom, och full bredd. Samma innehåll. */
+.pres-mv { display: inline-flex; gap: 4px; margin-left: 10px; vertical-align: middle; }
+.pres-mv .ss-act { padding: 2px 8px; }
+.ss-forms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ss-form { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 12px; border: 1.5px solid var(--line-soft); border-radius: var(--r-field); background: var(--bg); text-align: left; cursor: pointer; font: 800 var(--fs-step) var(--sans); color: var(--ink); }
+.ss-form.on { border-color: var(--do); }
+.ss-169 { display: flex; align-items: center; padding: 0 22px; margin-top: 10px; width: 100%; aspect-ratio: 16 / 9; max-height: 340px; border: 0; border-radius: var(--r-field); background: var(--bg-dark); color: #fff !important; font: 800 var(--fs-sheet) var(--sans); text-align: left; cursor: pointer; }
+.ss-node { display: flex; flex-direction: column; gap: 8px; }
+.ss-chain { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ss-chain .cs { color: var(--muted); }
+.ss-chip.here { background: var(--bg-dark); color: #fff; border-color: var(--bg-dark); }
+.ss-chip.done { color: var(--done-ink); }
+.ss-acts, .ss-dec { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ss-act, .ss-tool { border: 1px solid var(--btn-line); background: var(--btn-bg); color: var(--btn-ink); border-radius: var(--r-field); padding: 5px 10px; font: 600 var(--fs-meta) var(--sans); white-space: nowrap; cursor: pointer; }
+.ss-act:hover, .ss-tool:hover { background: var(--btn-hover); }
+.ss-tool { background: var(--btn-primary-bg); color: var(--btn-primary-ink) !important; border-color: var(--btn-primary-bg); }
+.ss-mg { margin-top: 4px; }
+.ss-mats { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; margin-top: 4px; }
+.ss-mat { position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; min-height: 92px; padding: 8px; border: 1px solid var(--line-soft); border-radius: var(--r-field); background: var(--bg-field) center / cover no-repeat; text-align: left; font: 600 var(--fs-meta) var(--sans); color: var(--ink); cursor: pointer; overflow: hidden; }
+.ss-mat:hover { border-color: var(--line); }
+.ss-mat.img .ss-mn { background: var(--bg); border-radius: 6px; padding: 2px 6px; }
+.ss-mat .ss-mi { position: absolute; top: 8px; left: 8px; color: var(--muted); }
+.ss-mat .ss-mn { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.ss-mat.ok { border: 1.5px solid var(--done); }
+.ss-ok { position: absolute; top: 6px; right: 6px; background: var(--done); color: #fff; border-radius: var(--r-pill); padding: 1px 7px; font: 700 var(--fs-label) var(--sans); letter-spacing: .02em; }
+.ss-up { margin-top: 4px; }
+.ss-fold > summary { cursor: pointer; font: 800 var(--fs-step) var(--sans); color: var(--ink); list-style: none; }
+.ss-fold > summary::before { content: "▸ "; color: var(--muted); }
+.ss-fold[open] > summary::before { content: "▾ "; }
+.ss-proptext { white-space: pre-wrap; font: 600 var(--fs-meta)/1.55 var(--sans); background: var(--bg-field); border-radius: var(--r-field); padding: 10px 12px; margin: 6px 0; }
 .ss .sgrid { grid-template-columns: minmax(0, 1fr) 200px; gap: 24px; }
 .ss .smain { display: flex; flex-direction: column; gap: 14px; }
 .ss-head, .ss-tags, .ss-chips, .ss-ask { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -668,6 +698,12 @@ details.removed { margin-top: 10px; }
 .vrefresh:hover { background: var(--bg-quiet); color: var(--ink); }
 .vrefresh:focus-visible { outline: 2px solid var(--do); outline-offset: 2px; }
 .vbadge.new .vrefresh { border-color: var(--do); color: var(--do); }
+.vrefresh[aria-busy] { color: var(--do); }
+.vrefresh[aria-busy]::before { content: ""; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid currentColor; border-top-color: transparent; animation: spin 1s linear infinite; }
+.vnote { font: 600 var(--fs-meta) var(--sans); color: var(--meta); min-width: 0; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.vwait { font: 700 var(--fs-meta) var(--sans); color: var(--do); }
+.ov-d.flash > .ov-r { animation: rowflash 2.4s ease-out; }
+@keyframes rowflash { from { background: var(--do-l); } to { background: transparent; } }
 .vrefresh .vnew { font: 600 var(--fs-meta) var(--sans); }
 .cgrp { margin-bottom: 14px; }
 .mh2 { font-size: var(--fs-meta); font-weight: 600; color: var(--meta); padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
@@ -910,15 +946,25 @@ details.removed { margin-top: 10px; }
 .ip-bar, .ip-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .ip-bar input[type="search"] { flex: 1; min-width: 0; }
 .ip-row select { max-width: 100%; }
-.ip-seg { display: flex; flex-wrap: wrap; gap: 4px; }
-.ip-seg button[aria-pressed="true"] { border-color: var(--do); background: var(--do-l); }
-.ip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-.ip-card { display: flex; flex-direction: column; gap: 3px; min-width: 0; border: 1px solid var(--line-soft); border-radius: 8px; padding: 6px; cursor: pointer; background: var(--bg); }
-.ip-card[aria-pressed="true"] { border-color: var(--do); background: var(--do-l); }
+
+/* Bildväljaren enligt paket 6 «Verktygen»: rutnät i 4:5, nummer på det markerade, källa och mått i en rad längst ned. */
+.ip-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.ip-card { position: relative; aspect-ratio: 4 / 5; display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; border: 2.5px solid transparent; border-radius: 12px; padding: 0; overflow: hidden; cursor: pointer; background: var(--bg-quiet) center / cover no-repeat; }
+.ip-card[aria-pressed="true"] { border-color: var(--do); }
+.ip-n { position: absolute; right: 6px; top: 6px; width: 20px; height: 20px; border-radius: 50%; background: var(--do); color: #fff; display: grid; place-items: center; font: 800 var(--fs-label) var(--sans); }
+.ip-meta { padding: 6px 8px; background: var(--bg); opacity: .92; font: 700 var(--fs-label) var(--sans); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ip-meta.warn { color: var(--late); }
+.ip-cmp4 { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: var(--r-tip); background: var(--bg-page); }
+.ip-c4 { position: relative; aspect-ratio: 4 / 5; border-radius: var(--r-field); overflow: hidden; background: var(--bg-quiet) center / cover no-repeat; }
+.ip-c4 .ta { position: absolute; left: 10%; right: 10%; bottom: 10%; height: 26%; border: 1.5px dashed #fff; border-radius: 6px; }
+.ip-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--r-pill); background: var(--bg-quiet); }
+.ip-seg button { height: 28px; padding: 0 11px; border: 0 !important; border-radius: var(--r-pill); background: transparent; font: 800 var(--fs-meta) var(--sans); color: var(--meta); white-space: nowrap; }
+.ip-seg button[aria-pressed="true"] { background: var(--bg) !important; color: var(--ink); }
+.ip-bar input[type="search"] { height: 38px; border: 1.5px solid var(--line-soft); border-radius: var(--r-pill); padding: 0 14px; }
 .ip-card .ph { aspect-ratio: 4 / 3; border-radius: 6px; background: var(--bg-quiet); overflow: hidden; }
 .ip-card .ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ip-card .t, .ip-cmp .t { font-weight: 600; font-size: var(--fs-step); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ip-cost { align-self: flex-start; font-size: var(--fs-meta); color: var(--yes-ink); background: var(--yes-l); border-radius: 6px; padding: 1px 6px; }
+.ip-cost { position: absolute; left: 6px; top: 6px; align-self: flex-start; font-size: var(--fs-meta); color: var(--yes-ink); background: var(--yes-l); border-radius: 6px; padding: 1px 6px; }
 .ip-warn { color: var(--yes-ink); font-size: var(--fs-meta); }
 .ip-cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
 .ip-cmp .col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -1014,6 +1060,7 @@ details.removed { margin-top: 10px; }
 .tipbox li { display: flex; gap: 8px; justify-content: space-between; }
 .tipbox em { font-style: normal; color: #b9bcc6; white-space: nowrap; }
 /* Godkänn: genomgången, en sak i taget (den enda rutan mitt på skärmen). */
+.wk-err { margin: 10px 0 0; padding: 8px 10px; border-radius: var(--r-field); background: var(--late-l); color: var(--late); font-size: var(--fs-meta); }
 .wk-bg { position: fixed; inset: 0; z-index: 95; background: rgba(29,31,36,.32); }
 .wk { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 96; width: min(560px, calc(100vw - 32px)); display: flex; flex-direction: column; gap: 12px; }
 .wk-h { display: flex; align-items: center; gap: 10px; color: #fff; font-size: var(--fs-meta); }
@@ -1543,7 +1590,9 @@ details.removed { margin-top: 10px; }
     const ap = momentDetail(node)?.approval;
     if (ap?.path === "customer_yes" && st === "waiting") return `<button class="primary" data-k="customer-yes" data-node="${esc(node)}">${esc(ap.button)}</button>`;
     if (st === "waiting") return `<button disabled>Väntar på kunden</button>`;
-    if (st === "needs_yes" || ap?.path === "own_yes") return `<button class="yes" data-k="run" data-node="${esc(node)}">Förhandsvisa</button>`;
+    // Ordet ur momentets verkan (serverns kort): «Skicka …» med förhandsvisning, och «Redan gjort utanför» bredvid.
+    if (st === "needs_yes" || ap?.path === "own_yes") return `<button class="yes" data-k="run" data-node="${esc(node)}">${esc(ap?.button || "Förhandsvisa")}</button>`
+      + (ap?.outside ? `<button data-k="done-form" data-nodes="${esc(node)}" data-name="${esc(title(node))}">${esc(ap.outside)}</button>` : "");
     if (m.kind === "decide") return "";
     const t = ap?.path === "review" ? ap.button : m.by === "claude" ? "Låt Claude göra det" : m.by === "code" ? "Kör" : "Markera som gjort";
     return `<button class="primary" data-k="run" data-node="${esc(node)}">${t}</button>`;
@@ -1614,7 +1663,7 @@ details.removed { margin-top: 10px; }
     if (s.unlocked_by?.length) h.push(`<h3>Väntar på</h3><ul>${s.unlocked_by.map((u) => `<li><button class="link" data-k="sel" data-ms="${esc(u.milestone || u.node || "")}">${esc(title(u.milestone || u.node || u.input || ""))}</button></li>`).join("")}</ul>`);
     h.push(`<h3>Så görs det</h3><ol>${moments.map(([id, x]) => {
       const n = `${ms}/${id}`, t = momentDetail(n)?.tool, done = M.moments[n] === "done", skip = M.skipped?.[n], off = M.moments[n] === "not_needed";
-      const name = esc(title(n));
+      const name = x.step && K.onWork ? `<button class="link" data-k="work" data-node="${esc(n)}" data-step="${esc(x.step)}" data-label="${esc(title(n))}">${esc(title(n))}</button>` : esc(title(n));
       return `<li>${done ? "✓ " : ""}<b>${off ? `<s>${name}</s>` : name}</b>${skip ? ` <span class="k-sub">hoppas över: ${esc(skip.reason || "")}</span>` : ""} <span class="k-sub">· ${WHO[x.by] || x.by}${x.leaves ? ` · lämnar ${esc(x.leaves)}` : ""}${t ? ` · ${esc(HOW[t.how])}${t.call ? ` «${esc(t.call)}»` : ""}` : ""}</span>`
         + `${whoHtml(n) && !done && !off ? `<div class="k-sub">Ansvarig: ${whoHtml(n)}</div>` : ""}`
         + `${timeOf(n) ? `<div class="k-reg">${timeOf(n)}</div>` : ""}`
@@ -1798,7 +1847,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
         + `<button data-k="store">${K.store ? "Dölj förrådet" : "Förrådet"}</button><button data-k="grow">Låt uppdraget växa …</button><button data-k="reload">Hämta igen</button>` : "")
       + `<button data-k="more" title="Zoom, riktning, förrådet">${K.more ? "Mindre" : "Mer …"}</button>`
       + `<button data-k="mat" title="Allt material i ${K.delivery ? "leveransen" : "uppdraget"}, grupperat">${K.mat ? "Dölj materialet" : "Materialet"}${K.map.counts?.material ? ` (${K.map.counts.material})` : ""}</button>`
-      + (K.onList ? `<button data-k="list" title="Allt i leveransen som en lista">Listan</button>` : "")
+
       + `<button data-k="close">Stäng</button></div>`
       + srcHtml()
       + `<div class="k-body"><div class="k-scroll" onscroll="RotorKarta.stick()">${svg(L)}${K.toast ? `<div class="k-toast">${esc(K.toast.text)}${K.toast.undoCall ? `<button data-k="undo-call">Ångra</button>` : K.toast.undo ? `<button data-k="undo" data-node="${esc(K.toast.undo)}">Ångra</button>` : ""}<button data-k="toast-x">×</button></div>` : ""}</div>`
@@ -2082,9 +2131,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       case "thread": if (K.onOpen && !K.thr) return K.onOpen(K.task, "Tråden", "thread", { task: K.task });
         K.thr = !K.thr; render(); return K.thr ? detail("@thread") : null;
       case "more": K.more = !K.more; return render();
-      case "list": { const f = K.onList; root().hidden = true; K.map = null; K.sel = null; return f?.(); }
       // Arbetsytan och läsrutan läggs ovanpå kartan; kartan står kvar under och syns igen när de stängs.
-      case "work": return K.onWork?.(tn(el.getAttribute("data-node") || "").task || K.task, el.getAttribute("data-step"), el.getAttribute("data-label"));
+      case "work": return K.onWork?.(tn(el.getAttribute("data-node") || "").task || K.task, el.getAttribute("data-step"), el.getAttribute("data-label"), strip(el.getAttribute("data-node") || "") || null);
       case "open-mat": return K.onOpen?.(el.getAttribute("data-ref"), el.getAttribute("data-label"), el.getAttribute("data-kind"), { task: tn(el.getAttribute("data-node") || "").task || K.task, type: el.getAttribute("data-type") || null });
       // Verktyget (registrets view_tool) som lager: momentets senaste material, annars det det läser; vyn väljer förhandsvisningen.
       case "dir": K.dir = K.dir === "tb" ? "lr" : "tb"; return render();
@@ -2220,7 +2268,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "2e1585b5", published: "2026-10-14" };
+  const SIDA = { version: "98fae6f6", published: "2026-10-14" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2392,7 +2440,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   };
   const artifactCap = async () => { try { return typeof claude !== "undefined" && claude.use && !WEB.on ? await claude.use("artifact") : null; } catch { return null; } };
   async function selfUpdate() {
-    SELF.state = "busy"; SELF.msg = ""; render();
+    SELF.state = "busy"; SELF.msg = ""; saveSpot(); render();
     const a = await artifactCap();
     if (!a) { SELF.state = "no"; SELF.msg = "Vyn kan inte uppdatera sig själv här."; render(); return; }
     try { await a.publish(wrapView(await fetchViewText())); }
@@ -2412,10 +2460,32 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const calm = !x.busy && !x.dirty && !x.dialogOpen;
     // Vid öppning bara när inga ark är öppna: en sida som laddats om med arken återställda byts inte ut under fötterna.
     if (x.trigger === "open") return calm ? "now" : "offer";
+    // Ett säkert ögonblick (Daniel P 2026-10-15: «smart update»): arket stängt, inget osparat, inget pågår — bytet görs direkt.
+    if (x.trigger === "safe") return calm ? "now" : "offer";
     if (calm && (x.hidden || x.idleMs >= AUTO.IDLE_MS)) return "now";
     return "offer";
   }
+  /** Raden när en ny version väntar: varför den väntar, i ord. Null när inget väntar. */
+  function pendingLine(x) {
+    if (!x.offer) return null;
+    if (x.dialogOpen) return "Ny version – byts när du stänger steget";
+    if (x.dirty) return "Ny version – byts när det du skriver är sparat";
+    if (x.busy) return "Ny version – byts när det som pågår är klart";
+    return "Ny version – byts strax";
+  }
   /*AUTO-END*/
+  /*REFRESH-BEGIN*/
+  /** Vad en hämtning ändrade: raderna som är nya eller ändrade, och kvittot i ord («Uppdaterat 14:32 · 3 ändringar»). */
+  function refreshSummary(before, after, at) {
+    const was = new Map((before || []).map((r) => [r.key, JSON.stringify(r)]));
+    const changed = (after || []).filter((r) => was.get(r.key) !== JSON.stringify(r)).map((r) => r.key);
+    const gone = [...was.keys()].filter((k) => !(after || []).some((r) => r.key === k)).length;
+    const n = changed.length + gone, hh = new Date(at).toTimeString().slice(0, 5);
+    return { changed, text: `Uppdaterat ${hh} · ${n ? `${n} ${n === 1 ? "ändring" : "ändringar"}` : "Inget nytt"}` };
+  }
+  /** Hur gammalt det som visas är, kort. */
+  function fetchedText(ms, now) { const m = Math.floor(Math.max(0, now - ms) / 60000); return m < 1 ? "hämtat nyss" : `hämtat för ${m} min sedan`; }
+  /*REFRESH-END*/
   /*BADGE-BEGIN*/
   /** Läget i klartext: ok = senaste, new = nyare finns, unknown = /vy/version nåddes inte. */
   function versionState(own, server) {
@@ -2452,7 +2522,13 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     // Versionen står i titeln, inte som text som trycker ut knappen ur toppraden.
     const can = st.k === "new" && CAN_SELF !== false;
     const tip = `v${SIDA.version} · ${SIDA.published} · ${st.k === "new" ? (can ? "Ny version finns – klicka för att uppdatera" : "Ny version finns – den här vyn kan inte uppdatera sig själv") : "Senaste – klicka för att kontrollera"}${SELF.msg ? ` · ${SELF.msg}` : ""}`;
-    return `<span class="vbadge ${st.k}"><button class="vrefresh" data-act="${can ? "vself" : "vcheck"}" title="${esc(tip)}" aria-label="${esc(tip)}">↻${st.k === "new" ? `<span class="vnew">Uppdatera</span>` : ""}</button></span>`;
+    const spin = !!(MANUAL.busy || S.refreshing);
+    const wait = pendingLine({ offer: AUTO_S.offer && st.k === "new", dialogOpen: dialogNow(), dirty: dirtyNow(), busy: busyNow() });
+    // Kvittot efter ett klick står kvar en stund; annars hur gammalt det som visas är (Daniel P 2026-10-15: «man märker inte att något händer»).
+    const note = MANUAL.text && Date.now() - MANUAL.at < 8000 ? MANUAL.text : S.fetchedAt ? `${fetchedText(S.fetchedAt, Date.now())}${spin ? " · hämtar …" : ""}` : "";
+    return `<span class="vbadge ${st.k}">${wait ? `<span class="vwait">${esc(wait)}</span>${can ? `<button class="link" data-act="vself">Uppdatera nu</button>` : ""}` : ""}`
+      + `<span class="vnote" aria-live="polite">${esc(note)}</span>`
+      + `<button class="vrefresh" data-act="${can ? "vself" : "vcheck"}" title="${esc(tip)}" aria-label="${esc(tip)}"${spin ? ` aria-busy="true"` : ""}>↻${st.k === "new" ? `<span class="vnew">Uppdatera</span>` : ""}</button></span>`;
   }
   /** trigger: "open" (stämpeln kom med översikten), "tick" (var 5:e minut) eller "click" (märket). */
   async function autoCheck(trigger) {
@@ -2472,13 +2548,37 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     } catch { /* nästa koll försöker igen */ }
     finally { AUTO_S.running = false; }
   }
+  /** Läget som ska stå kvar över ett versionsbyte: arken (som vanligt), kroppen och rullningen. */
+  const SPOT_KEY = "dirigenten-vybyte";
+  function saveSpot() { try { rememberSheets(); globalThis.localStorage?.setItem(SPOT_KEY, JSON.stringify({ at: Date.now(), body: S.body, y: globalThis.scrollY || 0 })); } catch { /* utan lagring: arken återställs ändå */ } }
+  function restoreSpot() { try { const v = JSON.parse(globalThis.localStorage?.getItem(SPOT_KEY) || "null"); globalThis.localStorage?.removeItem(SPOT_KEY);
+    if (!v || Date.now() - v.at > 120000) return; if (v.body) S.body = v.body; if (v.y) setTimeout(() => globalThis.scrollTo?.(0, v.y), 50); } catch { /* inget sparat */ } }
+  /** Ett säkert ögonblick efter en ritning: väntar en ny version och inget ark, fält eller anrop är öppet, byts den. */
+  function safeMoment() {
+    if (!AUTO_S.offer || AUTO_S.running || !CAN_SELF || dialogNow() || busyNow() || dirtyNow()) return;
+    if (Date.now() - (AUTO_S.safeAt || 0) < 15000) return;
+    AUTO_S.safeAt = Date.now(); setTimeout(() => autoCheck("safe"), 600);
+  }
+  /** ↻: hämtar läget direkt med snurra och kvitto, och kontrollerar versionen. Ändrade rader lyser kort. */
+  const MANUAL = { busy: false, text: "", at: 0, flash: null };
+  async function manualRefresh() {
+    if (MANUAL.busy) return;
+    MANUAL.busy = true; MANUAL.text = ""; render();
+    const before = S.data?.rows || [];
+    try { await fetchOverview(); const r = refreshSummary(before, S.data?.rows || [], Date.now());
+      MANUAL.text = r.text; MANUAL.flash = new Set(r.changed); S.error = null; }
+    catch (e) { MANUAL.text = `Kunde inte hämta: ${e.message || e}`; }
+    MANUAL.busy = false; MANUAL.at = Date.now(); render();
+    setTimeout(() => { MANUAL.flash = null; render(); }, 2500);
+    autoCheck("click");
+  }
   async function autoPublish() {
     const g = readGuard(), stamp = AUTO_S.server;
     const a = await artifactCap();
     if (!a) { AUTO_S.offer = true; render(); return; }
     // Stämpeln skrivs före utläggningen: en omladdning mitt i får aldrig lägga ut samma en gång till.
     writeGuard({ ...g, published: stamp });
-    SELF.state = "busy"; SELF.msg = "Ny version, laddar om…"; render();
+    SELF.state = "busy"; SELF.msg = "Ny version, laddar om…"; saveSpot(); render();
     try { await a.publish(wrapView(await fetchViewText())); }
     catch (e) {
       writeGuard({ published: g.published, failedAt: Date.now() });   // backa; nästa försök tidigast om 30 min
@@ -2668,7 +2768,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const drag = r.kind === "task" && r.tasks.length === 1 ? ` draggable="true" data-drag="${esc(r.tasks[0])}"` : "";
     const ctxs = ms.map((m) => m.ctx).filter((c) => /^(step|case)\|[^|]+\|?[^|]*$/.test(c) && !c.endsWith("|"));
     const gbox = ctxs.length > 1 ? `<input type="checkbox" class="selbox gsel" data-act="sel-group" data-ctxs="${esc(ctxs.join(" "))}"${ctxs.every((c) => S.sel?.[c]) ? " checked" : ""} aria-label="Markera alla moment i ${esc(r.label)}">` : "";
-    return `<div class="ov-d${plan ? " plan" : ""}" data-row="${esc(r.key)}">${gbox}<div class="ov-r" ${act} data-ctx="row|${esc(r.key)}"${drag} role="button"${tip}>`
+    return `<div class="ov-d${plan ? " plan" : ""}${MANUAL.flash?.has(r.key) ? " flash" : ""}" data-row="${esc(r.key)}">${gbox}<div class="ov-r" ${act} data-ctx="row|${esc(r.key)}"${drag} role="button"${tip}>`
       + `<span${tipAttr(URG_TEXT[r.u || 0], r.u ? plain(r.state_text) : "Räknat på leveransens och delleveransernas datum")}>${urgHtml(r.u || 0)}</span>`
       + `<div class="ov-n"><b>${esc(r.label)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</div>${shapes}</div>`
       + (open && bare ? `<div class="ov-ms">${homelessHtml(r.tasks[0], r.label, hlPlan(r.tasks[0]))}</div>` : open && ms.length ? `<div class="ov-ms">${ms.map(momentHtml).join("")}</div>` : "") + `</div>`;
@@ -2712,10 +2812,24 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     return `<div class="wk-bg" data-act="walk-close"></div><div class="wk" role="dialog" aria-label="Godkänn">${head}<div class="wk-card">`
       + `<div class="wk-top">${shapeHtml("yes")}<div><b class="wk-t">${esc(x.h)}</b><span class="wk-s">${esc([row?.label || x.b, row?.customer?.label].filter(Boolean).join(" · "))}</span></div>${urgHtml(row?.u || 0)}</div>`
       + `<dl class="wk-box">${x.start ? `<dt>Planeringen</dt><dd>${esc(x.r || "pausad")}</dd><dt>Sedan</dt><dd>Projektstarten öppnas där den stannade.</dd>`
-        : `<dt>Det du godkänner</dt><dd>${esc(x.h)}</dd>${x.b ? `<dt>Hör till</dt><dd>${esc(x.b)}</dd>` : ""}${x.r ? `<dt>Varför nu</dt><dd>${esc(x.r)}</dd>` : ""}${x.own ? `<dt>Det här går utåt</dt><dd>${esc(x.ownText || "")}</dd>` : ""}<dt>Sedan</dt><dd>Momentet markeras klart och det som väntar låses upp. Ångra finns i kvittot.</dd>`}</dl>`
-      + `<div class="wk-acts"><button class="wk-y" data-act="walk-yes"${W.busy ? " disabled" : ""}>${x.start ? "Fortsätt planeringen" : x.own ? "Ja, gör det" : "Godkänn"}<kbd>y</kbd></button><button class="wk-n" data-act="walk-later">Senare<kbd>n</kbd></button><span style="flex:1"></span>`
+        : `<dt>${x.out ? "Det som görs" : "Det du godkänner"}</dt><dd>${esc(x.h)}</dd>${x.b ? `<dt>Hör till</dt><dd>${esc(x.b)}</dd>` : ""}${x.r ? `<dt>Varför nu</dt><dd>${esc(x.r)}</dd>` : ""}${x.own ? `<dt>Det här går utåt</dt><dd>${esc(x.ownText || "")}</dd>` : ""}${x.out && !x.own ? `<dt>Det här går utåt</dt><dd>Det skickas till kunden. Du ser exakt vad som skickas och säger ja innan något går iväg.</dd>` : ""}`
+        + `<dt>Sedan</dt><dd>${x.out ? "Momentet är klart när det är skickat, eller när du säger att det redan är gjort utanför dirigenten." : "Momentet markeras klart och det som väntar låses upp. Ångra finns i kvittot."}</dd>`}</dl>`
+      + (x.err ? `<div class="wk-err" role="alert"><b>Inget skrevs.</b> ${esc(x.err)}</div>` : "")
+      + `<div class="wk-acts"><button class="wk-y" data-act="walk-yes"${W.busy ? " disabled" : ""}>${walkVerb(x)}<kbd>y</kbd></button>`
+      + (x.out && !x.start ? `<button class="wk-n" data-act="walk-outside"${W.busy ? " disabled" : ""}>Redan gjort utanför</button>` : "")
+      + `<button class="wk-n" data-act="walk-later">Senare<kbd>n</kbd></button><span style="flex:1"></span>`
       + (x.start ? "" : `<button class="wk-o" data-act="walk-open">Öppna och ändra först<kbd>↵</kbd></button>`) + `</div></div></div>`;
   }
+  /*WALKVERB-BEGIN*/
+  /** Knappens ord följer momentets verkan (Daniel P 2026-10-15): ett moment som går utåt heter det det gör, aldrig «Godkänn». */
+  function walkVerb(x) {
+    if (x.start) return "Fortsätt planeringen";
+    if (x.own) return "■ Ja, gör det";
+    // Ordet kommer från servern (src/views/moment-verb.ts); vyn väljer det aldrig själv.
+    if (x.out) return `■ ${x.v || "Förhandsvisa …"}`;
+    return x.v || "Godkänn";
+  }
+  /*WALKVERB-END*/
   function walkAct(act) {
     const W = S.walk; if (!W) return;
     const x = W.items[W.i];
@@ -2723,13 +2837,24 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (act === "walk-later") { W.later++; W.i++; render(); return; }
     if (x.start && (act === "walk-yes" || act === "walk-open")) { S.walk = null; startProject(x.k || x.task); return; }
     if (act === "walk-open") { S.walk = null; openMap(x.task, x.ms); return; }
+    // Det som går utåt: först serverns förhandsvisning på kortet, sedan ett eget ja. Kortet står kvar tills något skrivits eller sagts.
+    const stay = (ok) => { W.busy = false;
+      if (ok && ok.own) { x.own = ok.own; x.ownText = ok.text; x.err = null; }
+      else if (ok === true) { x.err = null; W.done++; W.i++; }
+      else x.err = String(S.toast?.text || "Dirigenten svarade utan att skriva något.").replace(/^✓\s*/, "");
+      render(); };
+    if (act === "walk-outside") { W.busy = true; render();
+      markDone({ task: x.task, step: x.step, node: x.node, approve: false, label: x.h, inWalk: true }).then(stay); return; }
+    if (act === "walk-yes" && (x.out || x.own)) { W.busy = true; render();
+      (x.own ? confirmOwn(x) : markDone({ task: x.task, step: x.step, node: x.node, approve: true, label: x.h, inWalk: true })).then(stay); return; }
     // Nästa sak visas direkt (Daniel P 2026-10-14: «man fattar inte att något händer»); svaret kommer i bakgrunden.
     if (act === "walk-yes") { W.done++; W.i++; render();
       const go = x.own ? confirmOwn(x) : markDone({ task: x.task, step: x.step, node: x.node, approve: true, label: x.h, inWalk: true });
       go.then((ok) => {
         // ■: servern visade vad som går utåt. Posten läggs sist i genomgången med den texten och ett eget ja.
         if (ok && ok.own) { W.done--; W.items.push({ ...x, own: ok.own, ownText: ok.text }); }
-        else if (!ok) { W.done--; W.failed = (W.failed || 0) + 1; }
+        // Gick det inte: posten kommer tillbaka direkt efter, med skälet på kortet (inte bara i kvittot).
+        else if (!ok) { W.done--; W.failed = (W.failed || 0) + 1; W.items.splice(W.i, 0, { ...x, err: String(S.toast?.text || "Dirigenten svarade utan att skriva något.") }); }
         render(); }); }
   }
 
@@ -2894,8 +3019,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       // «⏱ Visa i Tid» (Daniel P 2026-10-14): Tid med leveransen utfälld.
       onTime: () => { const T = timeState(); T.group = "delivery"; T.zopen = { ...(T.zopen || {}), [`d:${row.key}`]: true }; S.sheets = []; S.body = "time";
         document.body.classList.remove("over-map"); if (!T.tl) loadTimeline(); else render(); },
-      onList: () => openSheet("delivery", row.key, row.label, true),
-      onWork: (t, step, l) => overMap(() => openStep(t, step, l)),
+      onWork: (t, step, l, node) => overMap(() => openStep(t, step, l, node ? { node } : {})),
       onOpen: (ref, l, kind, ctx) => overMap(() => openMaterial(row, ref, l, kind, ctx || {})),
     });
   }
@@ -2908,12 +3032,26 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   /** Typer (registrets eller innehållets, utan förled) som visas som det som skickas: mejl, annons, inlägg, sida, presentation. */
   const SHOWN_AS_SENT = /(^|_)(mail|mejl|email|utskick|ad|ads|annons|campaigns?|kampanj|social|post|inlagg|inlägg|page|sida|landningssida|presentation)(_|$)/;
   const sentType = (t) => SHOWN_AS_SENT.test(String(t || "").replace(/^[a-z]+\.asset\./, "").toLowerCase());
+  /**
+   * Ett verktyg ur registrets view_tool: bildväljaren öppnas direkt; presentatören och förhandsvisningen som
+   * leveransens förhandsvisning; resten i steget i full bredd, där verktyget används på plats.
+   */
+  function openTool(c, row, l, ctx) {
+    if (c === "image-picker") { delete IPS.pick; S.imgPick = { place: "step-tool", t: { task: ctx.task || null, step: ctx.step || null, customer: ctx.customer || customerOfTask(ctx.task) } }; render(); return; }
+    if ((c === "presenter" || c === "preview") && row?.key) return openPres(row.key, l);
+    if (ctx.task && ctx.step) { const t = top1();
+      if (t?.kind === "step" && t.id === stepId(ctx.task, ctx.step)) { say(`«${l}» används här i steget.`); render(); return; }
+      return openStep(ctx.task, ctx.step, l, { size: "full" }); }
+    say(`«${l}» används i steget det hör till. Öppna steget.`); render();
+  }
   function openMaterial(row, ref, l, kind, ctx) {
     // Tråden uppdraget kom ur (Daniel P 2026-10-14): som ark i läsrutan, ovanpå kartan.
     if (kind === "thread") return openSheet("taskthread", ctx.task || ref, l || "Tråden");
+    // «Öppna verktyget» (registrets view_tool): verktyget själv, inte «inget material».
+    if (String(kind || "").startsWith("tool:")) return openTool(String(kind).slice(5), row, l, ctx);
     const asset = (ctx.kind || kind) === "asset";
     const sheetRef = asset && ref && !/^bank:\/\//.test(ref) ? `asset:${ref}` : ref;
-    if (ref && sentType(ctx.type)) return previewOne(row, ref, sheetRef, l);
+    if (ref && sentType(ctx.type) && row?.key) return previewOne(row, ref, sheetRef, l);
     if (ref) return openSheet("result", sheetRef, l);
     say(`Inget material att visa i «${l}» än.`); render();
   }
@@ -2953,7 +3091,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const t = top1();
     if (t && t.kind === kind && t.id === id) return;
     S.menu = null;
-    S.sheets = [...S.sheets, { kind, id, label: label || id, scroll: 0, tab: kind === "customer" ? "overview" : null }];
+    S.sheets = [...S.sheets, { kind, id, label: label || id, scroll: 0, tab: kind === "customer" ? "overview" : null, ...(kind === "step" && S.stepOpts ? S.stepOpts : {}) }];
     if (kind === "result") S.reader = null;
     fetchSheet(top1());
     render();
@@ -3298,7 +3436,9 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       return p;
     } else if (x.kind === "step") {
       const [task, step] = splitStep(x.id);
-      const p = call("read", { op: "step_sheet", task, step }).then((d) => put({ loading: false, stale: false, at: Date.now(), pending: null, sheet: d?.sheet || null, brief: d?.brief || null }))
+      // Ett anrop: stegets ark, kartans kort för momentet (node) och läget ur en källa (state, src/plan/state); vyn räknar inget själv.
+      const p = call("read", { op: "step_sheet", task, step, ...(x.node ? { node: x.node } : {}) }).then((d) => put({ loading: false, stale: false, at: Date.now(), pending: null,
+        sheet: d?.sheet || null, brief: d?.brief || null, node: d?.node || null, state: d?.state || null }))
         .catch((e) => put({ loading: false, pending: null, error: e }));
       S.sheetData[k].pending = p;
       return p;
@@ -3821,7 +3961,22 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      (förhandsvisas med serverns anrop och skickas sedan med confirmed). */
   const stepId = (task, step) => `${task}|${step}`;
   const splitStep = (id) => { const i = String(id).indexOf("|"); return [id.slice(0, i), id.slice(i + 1)]; };
-  function openStep(task, step, label) { openSheet("step", stepId(task, step), label || stepLabel(task, step)); }
+  /**
+   * Ett steg (Daniel P 2026-10-15: «sidovyn i kartan och vyn från översikten … har inte samma material»): EN komponent
+   * och en väg in, från kartan, översikten, Idag, kön och ⌘K. Samma ark och samma data i två storlekar: smal panel
+   * (kartan bakom syns och går att klicka i) och full bredd (arbetsytan där verktyget används direkt).
+   * opts.size: "panel" | "full"; opts.node: momentet i kartan, när det är känt (annars räknas det ur kartan).
+   */
+  function openStep(task, step, label, opts = {}) {
+    const id = stepId(task, step), t = top1();
+    // Momentet följer med från kartan, och från översikten och Idag ur raden: ett steg på flera moment visar då samma moment.
+    const node = opts.node || idagRowOf(task, step)?.node || null;
+    S.stepOpts = node ? { node } : null;
+    openSheet("step", id, label || stepLabel(task, step));
+    S.stepOpts = null;
+
+  }
+  globalThis.RotorOpenStep = (task, step, label, opts) => openStep(task, step, label, opts || {});
   const edits = (id) => S.edits?.[id] || {};
   function setEdit(id, patch) {
     const cur = { ...edits(id), ...patch };
@@ -4184,6 +4339,58 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     render();
   }
 
+  /*PROMPTPARTS-BEGIN*/
+  /** Promptstandardens sex delar och receptets tre, med rubrikerna Claude ombeds skriva. */
+  const PROMPT_PARTS = [["purpose", "Syfte"], ["read_first", "Läs först"], ["how_to", "Så gör du"], ["must_not", "Får inte"], ["answer_format", "Svarsformat"], ["ask_when", "Fråga när"]];
+  const RECIPE_PARTS = [["needs", "Vad behövs"], ["how", "Så gör du"], ["check", "Kontrollera"]];
+  /** De delar som saknas i ett förslag: en rubrik per del, på en egen rad. */
+  function missingParts(text, parts) {
+    const t = String(text || "");
+    return parts.filter(([, h]) => !new RegExp(`(^|\\n)\\s*(#+\\s*)?\\**${h}\\**\\s*:?`, "i").test(t)).map(([, h]) => h);
+  }
+  /** Receptets «Så gör du» som moment att bocka av: de numrerade raderna. */
+  function recipeSteps(text) {
+    const t = String(text || ""), i = t.search(/Så gör du/i), rest = i < 0 ? t : t.slice(i);
+    const end = rest.slice(1).search(/\n\s*(#+\s*)?\**Kontrollera/i);
+    return (end < 0 ? rest : rest.slice(0, end + 1)).split("\n").map((l) => /^\s*\d+[.)]\s+(.+)$/.exec(l)?.[1]?.trim()).filter(Boolean);
+  }
+  /*PROMPTPARTS-END*/
+  /** Kopiera prompten, och Claudes förslag (prompt för Claude-steg, recept för människosteg) som visas för ja före något sparas. */
+  function promptToolsHtml(x, sh) {
+    const claudeStep = sh.who === "claude" || sh.who === "mixed", R = S.propose?.[x.id] || {};
+    const parts = claudeStep ? PROMPT_PARTS : RECIPE_PARTS, miss = R.text != null ? missingParts(R.text, parts) : [];
+    return `<div class="doacts"><button class="ss-claude" data-act="step-propose"${R.busy ? " disabled" : ""}><span class="ss-spark" aria-hidden="true">✦</span> ${R.busy ? "Claude skriver …" : claudeStep ? (sh.prompt ? "Föreslå en ny prompt" : "Föreslå prompt") : "Föreslå instruktion"}${sample ? "" : " i chatten ↗"}</button></div>`
+      + (R.text != null ? `<div class="ss-prop"><b>Förslag från Claude</b><span class="mmeta"> · ${claudeStep ? "promptstandardens sex delar" : "som recept: Vad behövs, Så gör du, Kontrollera"}</span>`
+        + (miss.length ? `<div class="missing"><b>Saknas:</b> ${esc(miss.join(", "))}.</div>` : "")
+        + `<pre class="ss-proptext">${esc(R.text)}</pre><div class="doacts"><button class="ss-claude" data-act="step-propose-take"${miss.length ? " disabled" : ""}>Lägg in</button><button class="quiet" data-act="step-propose-drop">Avvisa</button>`
+        + `<span class="mmeta">Inget sparas förrän du väljer var ändringen gäller.</span></div></div>` : "");
+  }
+  /** Frågan till Claude: steget i ord, underlaget och det det lämnar; aldrig kundens namn (de fylls i av dirigenten). */
+  function proposeAsk(sh) {
+    const claudeStep = sh.who === "claude" || sh.who === "mixed";
+    const ctx = `Steget «${sh.label}». Varför: ${sh.purpose || "–"}. Underlaget: ${sh.reads.map((r) => r.label).join(", ") || "inget"}. Lämnar: ${sh.leaves.join(", ") || "inget"}. Klart när: ${sh.enough || "–"}.`;
+    return claudeStep
+      ? `Skriv prompten för ett Claude-steg enligt promptstandardens sex delar, var och en under en egen rubrik på egen rad: ${PROMPT_PARTS.map(([, h]) => h).join(", ")}. ${ctx} Skriv allmänt: {customer} står för kunden, inga namn. Svara bara med prompten.`
+      : `Skriv instruktionen för ett steg som en människa gör, som ett recept med tre rubriker på egna rader: Vad behövs, Så gör du (numrerade steg, en sak per steg), Kontrollera. ${ctx} Skriv så att någon som aldrig gjort det kan följa det. Svara bara med receptet.`;
+  }
+  async function stepPropose(id) {
+    const sh = sheetOf(id); if (!sh) return;
+    const ask = proposeAsk(sh);
+    if (!sample) return copyToChat(ask, "frågan till Claude");
+    S.propose = { ...S.propose, [id]: { busy: true } }; render();
+    try { const r = await sample([{ role: "user", content: ask }], { modelTier: "default" });
+      S.propose = { ...S.propose, [id]: { text: String(r?.text ?? r ?? "").trim() } }; }
+    catch (e) { if (e?.code === "not_granted") sample = null; S.propose = { ...S.propose, [id]: {} }; say(`Claude kunde inte föreslå: ${e.message || e}.`, null, true); }
+    render();
+  }
+  /** Lägg in: prompten eller momenten blir en ändring i steget; lagerfrågan (detta uppdrag, kundens sätt, metoden) sparar den. */
+  function stepProposeTake(id) {
+    const sh = sheetOf(id), R = S.propose?.[id]; if (!sh || R?.text == null) return;
+    const claudeStep = sh.who === "claude" || sh.who === "mixed";
+    if (claudeStep) setEdit(id, { prompt: R.text });
+    else { const xs = recipeSteps(R.text); setEdit(id, { checklist: xs.length ? xs : [R.text] }); }
+    S.propose = { ...S.propose, [id]: {} };
+  }
   /** «Be Claude ändra» (views/CLAUDE.md §4): förslag med före och efter; Lägg in blir en ändring som lagerfrågan sparar. */
   function askClaudeHtml(x, now) {
     const A = S.askClaude?.[x.id] || {};
@@ -4213,30 +4420,194 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       + (F ? `<div class="ss-ask"><input id="fix-text" data-step-id="${esc(x.id)}" value="${esc(F.text || "")}" placeholder="Vad ska rättas?" aria-label="Vad ska rättas?"><button class="primary" data-act="step-fix-go"${(F.text || "").trim() ? "" : " disabled"}>Rätta</button></div>` : "");
   }
   const TOOL6 = { send: "Utskick", preview: "Presentatören", image: "Bildväljaren", image_prompt: "Bildväljaren" };
+  /*STEPNODE-BEGIN*/
+  /** Materialets sort i ord, utan registrets förled. */
+  const matType = (x) => { const t = String(x.type || "").replace(/^[a-z]+\.asset\./, "").replace(/_/g, " ");
+    return !t || t === "material" ? (x.kind === "asset" ? "Fil" : "Text") : t[0].toUpperCase() + t.slice(1); };
+  /**
+   * Materialet grupperat logiskt: det momentet själv lämnar först (posten eller annonsen med sina texter och bilder),
+   * sedan de andra momenten i delmålet, sist underlaget per delmål det bygger på. Det godkända först i varje grupp.
+   */
+  function stepMaterialGroups(list, node, titleOf) {
+    const ms = node.slice(0, node.indexOf("/")), groups = new Map();
+    for (const x of list || []) {
+      const k = x.node === node ? "here" : x.milestone === ms ? `ms:${x.node}` : `read:${x.milestone}`;
+      const label = k === "here" ? "Det här momentet" : k.startsWith("ms:") ? titleOf(x.node) : `Underlag från «${titleOf(x.milestone)}»`;
+      if (!groups.has(k)) groups.set(k, { key: k, label, items: [] });
+      groups.get(k).items.push({ ref: x.ref, kind: x.kind, type: x.type || null, label: x.label || matType(x), version: x.version || null, approved: !!x.approved, at: x.at || null });
+    }
+    const rank = (g) => g.key === "here" ? 0 : g.key.startsWith("ms:") ? 1 : 2;
+    return [...groups.values()].sort((a, b) => rank(a) - rank(b))
+      .map((g) => ({ ...g, items: g.items.sort((a, b) => Number(b.approved) - Number(a.approved) || String(b.at || "").localeCompare(String(a.at || ""))) }));
+  }
+  /**
+   * Det steget visar ur kartans kort (plan_state { task, format: "map", node }), i fast form. Samma indata ger samma
+   * innehåll, varifrån steget än öppnades (test/ett-steg.test.ts jämför).
+   */
+  function stepNodeModel(N) {
+    if (!N?.d || !N.at) return null;
+    const d = N.d, mo = d.moments?.[N.at] || {}, t = (n) => N.titles?.[n] || d.moments?.[n]?.label || d.label || n;
+    return { goal: N.goal || null, milestone: N.titles?.[d.node] || d.label || d.node, moment: t(N.at), check: mo.check || null,
+      by: N.by?.[N.at] || null, card: mo.card || [],
+      approval: mo.approval || null,
+      tool: mo.tool ? { label: mo.tool.label || null, component: mo.tool.component || null } : null,
+      time: mo.time || null,
+      chain: Object.keys(d.moments || {}).map((n) => ({ node: n, label: t(n), here: n === N.at, step: N.steps?.[n] || null, done: N.state?.[n] === "done" })),
+      outcomes: N.outcomes || [], decide: N.decide || null,
+      groups: stepMaterialGroups(d.material, N.at, t), thread: !!N.thread };
+  }
+  /** Stegets rad ur läget (format "state"): fasen och brådskan, momentets fönster och ja, och vad som står i vägen. */
+  function stepStateModel(st, node) {
+    if (!st) return null;
+    const w = node ? (st.windows || []).find((x) => x.node === node) || null : null, yes = node ? (st.approvals || []).find((x) => x.node === node) || null : null;
+    return { phase: st.phase, late: st.lateness?.state || null, days_late: st.lateness?.days_late || 0, promise: st.promise?.text || st.promise?.date || (typeof st.promise === "string" ? st.promise : null),
+      window: w ? { from: w.from, to: w.to, hours: w.hours, why: w.why, locked: !!w.locked } : null,
+      yes: yes ? { from: yes.from, given: !!yes.given } : null, blocked: st.blocked_by || [], ask: st.ask_user || null };
+  }
+  /*STEPNODE-END*/
+  const IMG_REF = /\.(png|jpe?g|gif|webp|svg)(\?|$)/i;
+  /*STEPLINE-BEGIN*/
+  /** Meningen under rubriken (skissen «Steget»): när, vad det väntar på och marginalen, ur läget. Högst en mening per sak. */
+  function stepSentence(L, M) {
+    if (!L && !M) return "";
+    const w = L?.window, day = (iso) => { const d = new Date(`${String(iso).slice(0, 10)}T12:00:00Z`); return `${d.getUTCDate()} ${["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"][d.getUTCMonth()]}`; };
+    const when = w ? `${day(w.from)}${w.to && w.to !== w.from ? `–${day(w.to)}` : ""}, ${String(w.hours).replace(".", ",")} h${w.locked ? ", låst" : ""}.` : "";
+    const wait = L?.blocked?.length ? `Väntar på «${L.blocked[0]}»${L.blocked.length > 1 ? ` och ${L.blocked.length - 1} till` : ""}.` : "";
+    const late = L?.late === "sent" ? `Sent ${L.days_late} ${L.days_late === 1 ? "dag" : "dagar"}.` : L?.late === "brådskar" ? "Utan marginal mot leveransen." : "";
+    return [when, wait, late].filter(Boolean).join(" ");
+  }
+  /*STEPLINE-END*/
+  /*STEPTOOLS-BEGIN*/
+  /** Verktygen (registrets view_tool) som steget ritar som en yta i «Gör det». Ett moment utan yta är ett fel (test/ett-steg.test.ts). */
+  const STEP_SURFACES = ["image-picker", "image-viewer", "presenter", "preview", "text-editor", "decision-form", "decision-cards", "scheduler", "wait-card", "generic-check"];
+  /*STEPTOOLS-END*/
+  /**
+   * Verktyget är ytan där man gör saken (Daniel P 2026-10-15: «när man ska välja bilden – hur går det till?»), i «Gör det»,
+   * valt av registrets view_tool när stegets ark inte redan ritar ett (sh.tool). Paket 6 «Verktygen».
+   */
+  function stepToolHtml(x, sh, M, sd) {
+    // Utan eget verktyg (registrets fallback) är ytan kontrollfrågan.
+    const c = M?.tool?.component || (M ? "generic-check" : null);
+    if (!c || sh.done || sh.tool?.kind) return "";
+    // Ett Claude-moment utan ordagrann prompt: kortet (gör så här, underlaget, var det sparas) kopieras till chatten, och svaret klistras in här.
+    if (M.by === "claude" && !sh.prompt) { const r = S.run?.[x.id] || {};
+      return `<div class="doacts"><button class="primary" data-act="step-copy-card" title="Momentets kort: vad som ska göras, underlaget och var resultatet sparas">Kopiera prompten</button></div>`
+        + `<div class="draftbox"><textarea id="run-draft" rows="5" data-step-id="${esc(x.id)}" placeholder="Klistra in Claudes svar här, eller låt Claude spara det">${esc(r.text || "")}</textarea></div>`
+        + ((r.text || "").trim() ? `<div class="doacts"><button class="primary" data-act="run-save"><span class="lvl d">●</span> Spara utkastet</button></div>` : ""); }
+    if (c === "image-picker" || c === "image-viewer") return ipHtml(x, { ...sh, tool: { kind: "image" } });
+    if (c === "presenter" || c === "preview") {
+      const on = (f) => (M.present?.format || "presentation") === f;
+      const opt = (f, t, sub, lvl) => `<button class="ss-form${on(f) ? " on" : ""}" data-act="step-present" data-f="${f}" title="${esc(sub)} · ${lvl}"><b>${t}</b><span class="mmeta">${esc(sub)}</span></button>`;
+      return `<div class="bh"><b>Visa för kunden som</b><span class="mmeta">samma innehåll, olika form</span></div>`
+        + `<div class="ss-forms">${opt("presentation", "Presentationssida", "med delbar länk", "■")}${opt("pdf_screen", "PDF för skärm", "sparas i förrådet", "●")}${opt("other", "Annat sätt", "beskriv hur", "◐")}</div>`
+        + `<button class="ss-169" data-act="step-tool" data-c="${esc(c)}" data-label="${esc(M.tool.label || "Förhandsvisningen")}" title="Förhandsvisa det kunden får" aria-label="Förhandsvisa det kunden får"><span>${esc(M.goal || M.milestone || "")}</span></button>`;
+    }
+    if (c === "decision-cards" || c === "decision-form") return stepDecideHtml(M, sd) || `<div class="mmeta">Besluten saknas i kartan.</div>`;
+    if (c === "wait-card") return `<div class="ss-wait"><b>Väntar</b> <span class="mmeta">${esc(M.check || "på svar utanför huset")}</span></div>`;
+    if (c === "text-editor") { const T = S.toolText?.[x.id] ?? "";
+      return `<textarea id="tool-text" class="rtext" data-step-id="${esc(x.id)}" rows="8" placeholder="Skriv texten här (markdown)">${esc(T)}</textarea>`
+        + `<div class="doacts"><button class="primary" data-act="tool-text-save"${T.trim() ? "" : " disabled"}><span class="lvl d">●</span> Spara texten</button></div>`; }
+    // Kontrollfrågan och det övriga: frågan, och filen som läggs på steget.
+    return `${M.check ? `<div><span class="hk">Klart när</span> ${esc(M.check)}</div>` : ""}<div class="ss-up"><label class="link" title="Lägg en fil på steget">⊕ Lägg till fil<input type="file" data-act-change="step-upload" hidden></label></div>`;
+  }
+  /** Materialet bakom fällning (skissens första läge visar bara underlaget): grupperat, miniatyrer, godkänt med bock. */
+  function stepMaterialHtml(x, sd, M) {
+    if (!M) return "";
+    const n = M.groups.reduce((a, g) => a + g.items.length, 0), ok = M.groups.reduce((a, g) => a + g.items.filter((i) => i.approved).length, 0);
+    const mats = M.groups.map((g) => `<div class="ss-mg"><div class="mh">${esc(g.label)}</div><div class="ss-mats">${g.items.map((it) => {
+      const img = it.kind === "asset" && /^https?:/.test(it.ref || "") && IMG_REF.test(it.ref) ? it.ref : null, name = `${it.label}${it.version && String(it.version).length < 12 ? ` v${it.version}` : ""}`;
+      return `<button class="ss-mat${img ? " img" : ""}${it.approved ? " ok" : ""}" data-act="step-mat" data-ref="${esc(it.ref)}" data-kind="${esc(it.kind || "")}" data-type="${esc(it.type || "")}" data-label="${esc(name)}"${img ? ` style="background-image:url('${esc(img)}')"` : ""} title="${esc(name)}${it.approved ? " · godkänt för publicering" : ""}" aria-label="Öppna ${esc(name)}${it.approved ? ", godkänt för publicering" : ""}">`
+        + `<span class="ss-mi" aria-hidden="true">${it.kind === "asset" ? "▣" : "¶"}</span><span class="ss-mn">${esc(name)}</span>${it.approved ? `<span class="ss-ok" aria-hidden="true">✓</span>` : ""}</button>`; }).join("")}</div></div>`).join("");
+    return `<section class="ss-card"><details class="ss-fold"${n && n <= 6 ? " open" : ""}><summary>Materialet <span class="mmeta">${n}${ok ? ` · ${ok} ✓` : ""}</span></summary>${mats}`
+      + `<div class="ss-up"><label class="link" title="Lägg en fil på steget">⊕ Fil<input type="file" id="step-upload" data-act-change="step-upload" hidden></label>${M.thread ? ` <button class="link" data-act="step-thread">Tråden</button>` : ""}</div></details></section>`;
+  }
+  /** Beslutet, när momentet har ett: ett val per utfall. */
+  const stepDecideHtml = (M, sd) => M?.decide && M.outcomes.length && !sd.sheet?.done ? `<div class="ss-dec">${M.outcomes.map((o) => `<button class="ss-act" data-act="step-choose" data-node="${esc(M.decide)}" data-out="${esc(o.id)}" title="Välj · ◐${o.adds ? ` · lägger till ${o.adds} delmål` : ""}">${esc(o.label || o.id)}</button>`).join("")}</div>` : "";
+
+  /** Handlingarna i stegets kartdel; alla går de vägar som redan finns (läsrutan, verktyget, batchen, YES). */
+  function stepAct(act, el) {
+    const x = top1(); if (x?.kind !== "step") return;
+    const [task, step] = splitStep(x.id), sd = S.sheetData[sheetKey(x)] || {}, at = sd.node?.at || null, row = rowOfTask(task);
+    const label = sheetOf(x.id)?.label || x.label;
+    if (act === "step-mat") return openMaterial(row, el.getAttribute("data-ref"), el.getAttribute("data-label"), el.getAttribute("data-kind"),
+      { kind: el.getAttribute("data-kind"), type: el.getAttribute("data-type"), task });
+    if (act === "step-tool") return openMaterial(row, "", el.getAttribute("data-label"), `tool:${el.getAttribute("data-c")}`, { task, step, customer: sheetOf(x.id)?.customer?.id || null });
+    if (act === "step-thread") return openSheet("taskthread", task, "Tråden");
+    if (act === "step-batch") { const a = batchTable().find((y) => y.id === el.getAttribute("data-a")), shape = a && batchShape(a, { task, step, node: at || undefined, label });
+      if (shape) batchOpen(a, [shape]); else { say("Handlingen gäller inte det här steget.", null, true); render(); } return; }
+    if (act === "step-choose") { const node = el.getAttribute("data-node"), out = el.getAttribute("data-out");
+      sendYes("execute_step", { task, node, values: { choose: out } }, `Välj «${out}» i vyn: ${label}`)
+        .then(() => { say(`Valt: ${out}.`); staleStep(x.id, task); }, (e) => { say(`Valet gick inte: ${e.message || e}. Inget ändrades.`, null, true); render(); }); }
+  }
+  /**
+   * «Gör det» med verktyget som yta, och knappens ord ur momentets verkan (serverns kort): ett moment som går utåt får
+   * «■ Skicka …» (momentets ja-väg, förhandsvisning och ett ja) och «Redan gjort utanför», aldrig «Markera klart».
+   */
+  function stepDoHtml(x, sh, M, sd) {
+    let h = doItHtml(x, sh).replace('<h3 class="sh">Gör det</h3>', (t) => t + stepToolHtml(x, sh, M, sd));
+    const ap = M?.approval;
+    // Ett ja eller en granskning: knappen heter vägen (serverns ord), och går momentets ja-väg.
+    if (!sh.done && ap && !ap.outside && ap.path !== "none") h = h.replace(/<button class="primary" data-act="step-done">[\s\S]*?<\/button>/,
+      `<button class="primary" data-act="step-yes">${esc(ap.button)}</button>`);
+    if (!sh.done && ap?.outside) h = h.replace(/<button class="primary" data-act="step-done">[\s\S]*?<\/button>/,
+      `<button class="primary" data-act="step-yes" title="Förhandsvisar vad som går ut och till vem; ett ja">■ ${esc(ap.button)}</button><button class="link" data-act="step-outside" title="Redan gjort utanför dirigenten, med vem och när">${esc(ap.outside)}</button>`);
+    return h;
+  }
+  /** Formen kunden får materialet i: handlingen «Visa för kunden som» ur tabellen (present_as), med förhandsvisning och ångra. */
+  function stepPresent(f) {
+    const x = top1(); if (x?.kind !== "step") return;
+    const [task] = splitStep(x.id), at = S.sheetData[sheetKey(x)]?.node?.at, a = batchTable().find((y) => y.id === "present_as");
+    if (!a || !at) { say("Formen går att välja i kartan för det här momentet.", null, true); render(); return; }
+    S.batch = { a, items: [{ task, node: at, label: sheetOf(x.id)?.label || x.label }], params: { format: f }, step: "loading", house: {} }; render(); batchPreview();
+  }
+  /** Textredigeraren: texten sparas som stegets utkast (content_save, ●); godkänns sedan som vanligt. */
+  async function toolTextSave(x) {
+    const [task, step] = splitStep(x.id), text = (S.toolText?.[x.id] ?? "").trim();
+    if (!text) return;
+    try { await call("write", { op: "content_save", for_task: task, for_step: step, markdown: text, confirmed: true });
+      S.toolText = { ...S.toolText, [x.id]: "" }; say("Texten är sparad som utkast på steget."); staleStep(x.id, task); }
+    catch (e) { say(`Texten sparades inte: ${e.message || e}. Den står kvar.`, null, true); }
+    render();
+  }
+  /** + Lägg till material: filen läggs på steget (och därmed momentet), med samma uppladdning som bildväljaren. */
+  async function stepUpload(input) {
+    const x = top1(), f = input?.files?.[0]; if (!f || x?.kind !== "step") return;
+    const [task, step] = splitStep(x.id), sh = sheetOf(x.id);
+    say(`Laddar upp ${f.name} …`); render();
+    try { await ipUpload(f, { asset_type: "core.asset.material", acquisition: "provided", for_task: task, for_step: step, ...(sh?.customer?.id ? { customer: sh.customer.id } : {}) });
+      say(`${f.name} ligger på steget.`); staleStep(x.id, task); }
+    catch (e) { say(`${f.name} gick inte upp: ${e.message || e}. Inget sparades.`, null, true); }
+    render();
+  }
   function stepSheetHtml(x) {
     const [task, step] = splitStep(x.id), sd = S.sheetData[sheetKey(x)] || {}, sh = sd.sheet;
     // Innan steget är läst: leveransen och läget ur översiktsraden direkt.
     if (!sh) { const r0 = rowOfTask(task); return `<div class="slabel">Moment${r0 ? ` · ${esc(r0.label)}` : ""}</div><h1 class="stitle">${esc(x.label)}</h1>${r0?.state_text ? `<p class="sline">${esc(plain(r0.state_text))}</p>` : ""}`
       + (sd.error ? `<div class="banner"><span style="flex:1">Steget kunde inte läsas: ${esc(sd.error.message || sd.error)}</span><button data-act="sheet-retry">Försök igen</button></div>` : `<p class="sline mmeta">Hämtar steget …</p>`); }
     const e = edits(x.id), row = rowOfTask(task);
+    // Kartans kort och läget (samma två källor varifrån steget än öppnas).
+    const M = sd.node ? stepNodeModel(sd.node) : null, L = stepStateModel(sd.state, M ? sd.node.at : null), line = stepSentence(L, M);
     const sub = [row?.label, sh.customer?.label].filter(Boolean).join(" · ");
     const name = `<input class="tname" id="step-label" data-step-id="${esc(x.id)}" value="${esc(e.label ?? sh.label)}" aria-label="Stegets namn">`;
     const resp = sh.responsible?.label, ini = resp ? resp.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "+";
     const shape = sh.done ? "done" : sh.who === "customer" ? "wait" : sh.approval ? "yes" : "do";
-    const head = `<div class="ss-head"><span class="ss-mark ${shape}" aria-hidden="true"></span><div class="ss-name">${name}${sub ? `<span class="mmeta">${esc(sub)}</span>` : ""}</div>`
+    const head = `<div class="ss-head" data-ctx="step|${esc(task)}|${esc(step)}"><span class="ss-mark ${shape}" aria-hidden="true"></span><div class="ss-name">${name}${sub ? `<span class="mmeta">${esc(sub)}</span>` : ""}</div>`
       + `<button class="ss-who" data-act="who-pick"${sh.done || sh.who === "customer" ? " disabled" : ""}><span class="ss-av${resp ? "" : " none"}">${esc(ini)}</span>${esc(resp ? (resp === S.data?.party?.label ? "Du" : resp) : "Ingen ansvarig")}</button></div>`
       + (x.whoPick ? `<div class="qchips">${people().filter((p) => p.id !== sh.responsible?.id).map((p) => `<button class="fopt" data-act="who-set" data-id="${esc(p.id)}" data-label="${esc(p.label)}">${esc(p.label)} ◐</button>`).join("")}</div>` : "");
     const WHO6 = { claude: "Claude gör det", mixed: "Koden och Claude gör det", code: "Koden gör det", human: "Du gör det", customer: "Kunden gör det" };
-    const tags = `<div class="ss-tags"><span class="ss-tag ${esc(sh.who)}">${esc(WHO6[sh.who] || sh.who_text)}</span>`
-      + (TOOL6[sh.tool?.kind] ? `<span class="ss-tag"><span class="k">Verktyg</span>${TOOL6[sh.tool.kind]}</span>` : sh.where.length ? `<span class="ss-tag"><span class="k">Var</span>${esc(sh.where.join(", "))}</span>` : "")
-      + (sh.purpose ? `<span class="ss-tag why"><span class="k">Varför</span>${esc(sh.purpose)}</span>` : "")
-      + (sh.tool?.kind === "send" ? `<span class="ss-tag out"><span class="lvl">■</span> Når någon utanför Rotor</span>` : "") + `</div>`;
+    // Vem som gör det: momentets utförare i kartan (en källa), annars stegets.
+    const who = M?.by && WHO6[M.by] ? M.by : sh.who;
+    const tags = `<div class="ss-tags"><span class="ss-tag ${esc(who)}">${esc(WHO6[who] || sh.who_text)}</span>`
+      + (TOOL6[sh.tool?.kind] ? `<span class="ss-tag"><span class="k">Verktyg</span>${TOOL6[sh.tool.kind]}</span>` : M?.tool?.label && M.tool.component !== "generic-check" ? `<span class="ss-tag"><span class="k">Verktyg</span>${esc(M.tool.label)}</span>` : sh.where.length ? `<span class="ss-tag"><span class="k">Var</span>${esc(sh.where.join(", "))}</span>` : "")
+      // «Varför nu» (paket 6) ur läget i en källa: när, vad det väntar på, sent. Stegets syfte står i tipsrutan.
+      + (line ? `<span class="ss-tag why" title="${esc(sh.purpose || "")}"><span class="k">Varför nu</span>${esc(line)}</span>` : sh.purpose ? `<span class="ss-tag why"><span class="k">Varför</span>${esc(sh.purpose)}</span>` : "")
+      + (sh.tool?.kind === "send" || M?.approval?.outside ? `<span class="ss-tag out"><span class="lvl">■</span> Når någon utanför Rotor</span>` : "") + `</div>`;
     const reads = sh.reads.length ? sh.reads.map((r) => r.have
       ? `<button class="ss-chip" data-act="material" data-key="${esc(r.key)}">${esc(r.label)}</button>`
       : `<span class="ss-chip miss">saknas: ${esc(r.label)}${r.left_by ? ` · lämnas av «${esc(r.left_by)}»` : ""}</span>`).join("") : `<span class="mmeta">Inget underlag.</span>`;
     const io = `<div class="ss-card ss-io"><span class="hk">Underlag</span><div class="ss-chips">${reads}</div>`
       + `<span class="hk">Lämnar</span><div class="ss-chips">${sh.leaves.length ? sh.leaves.map((l) => `<span class="ss-chip out">${esc(l)}</span>`).join("") : `<span class="mmeta">Inget som sparas.</span>`}</div>`
-      + (sh.enough ? `<span class="hk">Klart när</span><div>${esc(sh.enough)}</div>` : "") + `</div>`;
+      + (sh.enough || M?.check ? `<span class="hk">Klart när</span><div>${esc(sh.enough || M.check)}</div>` : "") + `</div>`;
     let block = assignHtml(x, sh);
     const claudeStep = sh.who === "claude" || sh.who === "mixed";
     if (sh.prompt || (claudeStep && sh.instruction)) {
@@ -4250,8 +4621,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
         // «Får inte» och «Stannar och frågar när» syns alltid för ett Claude-steg, också utan ordagrann prompt.
         + (composed ? "" : `<div class="rules"><span class="hk">Claude får inte</span><div>${sh.must_not.length ? sh.must_not.map(esc).join("<br>") : `<span class="mmeta">Inget särskilt.</span>`}</div>`
           + `<span class="hk">Stannar och frågar när</span><div>${sh.ask_when.length ? sh.ask_when.map(esc).join("<br>") : `<span class="mmeta">Inget särskilt.</span>`}</div></div>`);
-      block = `<section class="ss-card">${block}</section>`;
+      // Prompten går alltid att se och fälla ihop (Daniel P 2026-10-15).
+      block = `<section class="ss-card"><details class="ss-fold" open><summary>Prompt</summary>${block}${promptToolsHtml(x, sh)}</details></section>`;
     } else if (block) block = `<section class="ss-card">${block}</section>`;
+    // Ett Claude-steg utan prompt, och ett människosteg: Claude föreslår (de sex delarna, eller receptet), visat före något sparas.
+    if (!(sh.prompt || (claudeStep && sh.instruction)) && !sh.done) block += `<section class="ss-card"><details class="ss-fold"${claudeStep ? " open" : ""}><summary>${claudeStep ? "Prompt" : "Instruktion"}</summary>`
+      + `${claudeStep ? `<div class="mmeta">Steget har ingen prompt än.</div>` : ""}${promptToolsHtml(x, sh)}</details></section>`;
     // Med bildväljaren i steget säger panelen själv vad som ska göras; instruktionen fälls ihop under den (docs/forslag-bildval-instruktion.md).
     const picker = !sh.done && (sh.tool?.kind === "image" || sh.tool?.kind === "image_prompt");
     let howto = "";
@@ -4272,8 +4647,10 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const layerQ = layerQuestion(x, sh);
     // Var delarna kommer ifrån står på blocken; här bara det kundens sätt ändrar.
     const lay = sh.layers, layerLine = lay.customer_diffs?.length ? `<div class="layers">${esc(lay.customer || "Kunden")}s sätt: ${esc(lay.customer_diffs.join("; "))}.</div>` : "";
+    // Paket 6: steget i helbild, handlingarna i högerklicket på huvudet (handlingstabellen); uppdragets fråga (ask_user) hör till översikten.
+    const margin = stepMargin(x, sh, sd);
     return `<div class="ss">${head}${tags}${io}`
-      + `<div class="sgrid"><div class="smain">${helpHtml(x, sh)}${sh.review?.source ? reviewHtml(x, sh) : ""}${questionsHtml(task, sh.questions)}${block}${layerQ}${layerLine}<section class="ss-card">${doItHtml(x, sh)}${closedHtml(x, sh)}</section>${howto}${stepPartsHtml(sh)}</div>${stepMargin(x, sh, sd)}</div></div>`;
+      + `<div class="sgrid"><div class="smain">${helpHtml(x, sh)}${sh.review?.source ? reviewHtml(x, sh) : ""}${questionsHtml(task, sh.questions)}${block}${layerQ}${layerLine}${stepMaterialHtml(x, sd, M)}<section class="ss-card">${stepDoHtml(x, sh, M, sd)}${closedHtml(x, sh)}</section>${howto}${stepPartsHtml(sh)}</div>${margin}</div></div>`;
   }
 
   /**
@@ -4343,9 +4720,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     else if (sh.prompt && !sh.prompt.composed && r.phase === "idle") {
       const miss = sh.prompt.missing || [];
       body = (miss.length ? `<div class="missing"><b>Saknas:</b> ${esc(miss.join(", "))}. Claude säger det i utkastet om det fortsätter ändå.</div>` : "")
-        + `<div class="doacts"><button class="primary" data-act="run-start"><span class="lvl d">●</span> ${miss.length ? "Starta ändå med Claude" : "Starta med Claude"}</button>`
-        + `<button class="link" data-act="run-chat">Arbeta i chatten ↗</button><button class="link" data-act="step-done">Markera klart utan resultat</button></div>`
-        + `<div class="mmeta">${sample ? "Claude skriver ett utkast här" : "Prompten kopieras till chatten; klistra in svaret här"}. Inget sparas förrän du sparar.</div>`;
+        // Daniel P 2026-10-15: «vi ska nog ha kopiera prompten istället. Man vill ta den till chatten.» Ingen körning från vyn.
+        + `<div class="doacts"><button class="primary" data-act="run-start" title="Prompten med underlaget, och var Claude sparar resultatet">Kopiera prompten</button>`
+        + `<button class="link" data-act="step-done">Markera klart utan resultat</button></div>`
+        // Svaret från chatten klistras in här och sparas som utkast (eller sparas av Claude genom kopplingen).
+        + `<div class="draftbox"><textarea id="run-draft" rows="5" data-step-id="${esc(x.id)}" placeholder="Klistra in Claudes svar här, eller låt Claude spara det">${esc(r.text || "")}</textarea></div>`
+        + ((r.text || "").trim() ? `<div class="doacts"><button class="primary" data-act="run-save"><span class="lvl d">●</span> Spara utkastet</button></div>` : "");
     } else if (sh.prompt && !sh.prompt.composed) {
       body = `<div class="draftbox"><div class="mmeta">${r.phase === "run" ? "Claude skriver …" : "UTKAST · inte sparat · du kan skriva direkt i det"}</div><textarea id="run-draft" rows="10" data-step-id="${esc(x.id)}" placeholder="Klistra in Claudes svar här">${esc(r.text || "")}</textarea>`
         + `<div class="doacts"><button class="primary" data-act="run-save"${(r.text || "").trim() ? "" : " data-empty=\"1\""}><span class="lvl d">●</span> Spara utkastet</button>`
@@ -4470,12 +4850,13 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     return Math.abs(c.width / c.height - Number(m[1]) / Number(m[2])) > 0.02 ? `Bilden är inte ${m[1]}:${m[2]}; den beskärs till det formatet där den används.` : "";
   }
   function ipCard(P, c) {
-    const on = P.picked.has(ipKey(c)), img = ipThumb(c), warn = (c.too_small || [])[0] || ipCropNote(P, c);
-    return `<div class="ip-card" role="button" tabindex="0" aria-pressed="${on}" data-ip-pick="${esc(ipKey(c))}">`
-      + `<div class="ph">${img ? `<img src="${esc(img)}" alt="${esc(c.title)}" loading="lazy">` : ""}</div>`
-      + `<div class="t" title="${esc(c.title)}">${esc(c.title)}</div><div class="mmeta">${esc(ipSize(c))}</div>`
-      + `<div class="mmeta">${esc([c.photographer ? `Foto ${c.photographer}` : null, c.license].filter(Boolean).join(" · ") || "Ursprung okänt")}</div>`
-      + (c.cost ? `<span class="ip-cost">Kostar licens</span>` : "") + (warn ? `<div class="ip-warn">${esc(warn)}</div>` : "") + `</div>`;
+    // Paket 6 «Verktygen»: en ruta i 4:5 med bilden, numret när den är markerad, «Kostar licens» och en rad med källa och mått (eller varningen).
+    const on = P.picked.has(ipKey(c)), n = [...P.picked.keys()].indexOf(ipKey(c)) + 1, img = ipThumb(c), warn = (c.too_small || [])[0] || ipCropNote(P, c);
+    const src = P.sources?.find((s) => s.key === c.source)?.label || "";
+    const tip = [c.title, ipSize(c), [c.photographer ? `Foto ${c.photographer}` : null, c.license].filter(Boolean).join(" · ") || "Ursprung okänt"].join(" · ");
+    return `<div class="ip-card" role="button" tabindex="0" aria-pressed="${on}" data-ip-pick="${esc(ipKey(c))}" title="${esc(tip)}" aria-label="${esc(tip)}"${img ? ` style="background-image:url('${esc(img)}')"` : ""}>`
+      + (c.cost ? `<span class="ip-cost">Kostar licens</span>` : "") + (on ? `<span class="ip-n">${n}</span>` : "")
+      + `<span class="ip-meta${warn ? " warn" : ""}">${esc(warn || `${src ? `${src} · ` : ""}${c.width && c.height ? `${c.width} × ${c.height}` : "mått okända"}`)}</span></div>`;
   }
   function ipBody(P) {
     if (P.prompt) return `<div class="ip-prompt"><p>${esc(P.prompt.human_instruction)}</p><textarea data-ip-text data-ip-edit aria-label="Bildprompten">${esc(P.promptText ?? P.prompt.prompt)}</textarea>`
@@ -4507,13 +4888,16 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
         + `<button data-ip-only="${esc(ipKey(c))}">Välj den här</button></div>`).join("")}</div>`
         + `<p class="mmeta">Den streckade rutan är mallens textyta. Välj en bild där motivet håller i alla format och textytan ligger över en lugn del.</p>`;
     }
+    // Markerade 2–4: jämförelsen i 4:5 med mallens textyta direkt under rutnätet (paket 6).
+    const sel = P.results.filter((c) => P.picked.has(ipKey(c)));
     return `<div class="ip-grid">${P.results.map((c) => ipCard(P, c)).join("")}</div>`
+      + (sel.length >= 2 ? `<div class="ip-cmp4"><span class="mh">Jämför i 4:5, med mallens textyta</span><div class="ip-grid">${sel.map((c) => `<div class="ip-c4" style="background-image:url('${esc(ipThumb(c))}')"><span class="ta"></span></div>`).join("")}</div></div>` : "")
       + (P.more ? `<div class="doacts"><button class="quiet" data-ip-more="1">Visa fler</button></div>` : "");
   }
   function ipInner(P) {
-    const fmt = (P.formats || []).map((f) => typeof f === "string" ? f : `${String(f.label).replace("x", ":")}`).join(", ");
+    const fmt = (P.formats || []).map((f) => String(typeof f === "string" ? f : f.label).replace("x", ":")).join(", ");
     const n = P.picked.size, searchable = P.sources?.find((s) => s.key === P.source)?.searchable;
-    return `<div class="bh"><b>${P.kind === "image_prompt" ? "Bildprompt" : "Välj bild"}</b><span class="mmeta">${fmt ? `format ${esc(fmt)}` : ""}${P.textArea ? " · mallens textyta inritad vid jämförelse" : ""}</span></div>`
+    return `<div class="bh"><b>${P.kind === "image_prompt" ? "Bildprompt" : "Välj bild"}</b><span class="mmeta">${fmt ? `Bild ${esc(fmt)}` : "Bild 4:5"} · markera 2–4 för att jämföra</span></div>`
       + (P.contents.length ? `<label class="ip-row"><span class="mmeta">Till posten</span><select data-ip-content>${P.contents.map((c) => `<option value="${esc(c.id)}"${c.id === P.content ? " selected" : ""}>${esc(c.name)}</option>`).join("")}<option value=""${P.content ? "" : " selected"}>Ingen post — spara bara bilden i kundens filer</option></select></label>` : "")
       + (P.sources ? `<div class="ip-bar"><div class="ip-seg" role="group" aria-label="Källa">${P.sources.map((s) => `<button aria-pressed="${!P.prompt && s.key === P.source}" data-ip-src="${esc(s.key)}">${esc(s.label)}${s.cost ? ` <span class="mmeta">${esc(s.cost.toLowerCase())}</span>` : ""}</button>`).join("")}</div>`
         + `<button data-ip-prompt="1">Skapa bildprompt</button></div>` : "")
@@ -4524,7 +4908,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       + (P.busy && P.results?.length ? `<div class="mmeta" role="status">Arbetar …</div>` : "")
       + (P.prompt ? "" : `<div class="doacts">`
         + (P.results?.length && P.source !== "upload" ? `<button data-ip-compare="1" ${n >= 2 && n <= 4 ? "" : "disabled"}>${P.compare ? "Visa alla bilderna" : `Jämför ${n >= 2 ? n : "2–4"} valda`}</button>` : "")
-        + (P.source !== "adobe_stock" ? `<button class="primary" data-ip-save="1" ${P.source === "upload" || n === 1 ? "" : "disabled"}><span class="lvl d">●</span> ${P.source === "upload" ? "Ladda upp och välj" : "Välj bilden"}</button>` : "")
+        + (P.source !== "adobe_stock" ? `<button class="primary" data-ip-save="1" ${P.source === "upload" || n === 1 ? "" : "disabled"} title="Sparar bilden på momentet och markerar det gjort"><span class="lvl d">●</span> ${P.source === "upload" ? "Ladda upp och använd" : "Använd"}</button>` : "")
         + (P.source !== "upload" && n !== 1 && P.results?.length ? `<span class="mmeta">Välj en bild för att spara.</span>` : "") + `</div>`);
   }
   /** En fil genom kopplingen: liten i ett anrop, större i bitar om 256 kB (som i den gamla vyn). */
@@ -4583,7 +4967,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       if (T) { imgPicked(T, name); return; }
       const sh = sheetOf(P.id);
       say(`Bilden ${name} är vald${P.content ? " och kopplad till posten" : ""}.`);
-      if (sh && !sh.done) await markDone({ task: P.task, step: P.step, label: sh.label });
+      if (sh && !sh.done) await markDone({ task: P.task, step: P.step, node: S.sheetData[`step:${P.id}`]?.node?.at || undefined, label: sh.label });
       staleStep(P.id, P.task);
     } catch (e) { ipFail(P, e); }
     P.busy = false; render();
@@ -4679,6 +5063,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const root = e.target?.closest?.("[data-ip]"), P = root && IPS[root.dataset.ip];
     if (P && e.target.matches("[data-ip-edit]")) P.promptText = e.target.value;
   });
+  document.addEventListener("change", (e) => { if (e.target?.getAttribute?.("data-act-change") === "step-upload") stepUpload(e.target); });
   document.addEventListener("change", (e) => { const t = e.target; if (t?.getAttribute?.("data-act") === "by-set") setBy(t.getAttribute("data-scope"), Number(t.getAttribute("data-i")), t.value);
     else if (t?.getAttribute?.("data-act") === "quick-cust") { const x = top1(); if (x?.kind === "quick") { x.cust = t.value || null; x.open = null; fetchSheet(x, true); } } });
   document.addEventListener("change", (e) => {
@@ -4727,6 +5112,9 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     V.items = items; V.loading = false; render();
   }
   /** Förloppet: underlaget, ett steg per moment, och sist utkastet. */
+  /** Var Claude i chatten sparar resultatet: kopplingens anrop med uppdraget och steget ifyllda. */
+  const saveHint = (sh) => `\n\nNär du är klar: spara resultatet med rotor-dirigenten write ${JSON.stringify({ op: "content_save", for_task: sh.task, for_step: sh.step, markdown: "<resultatet>" })}`
+    + ` och markera steget klart med execute_step ${JSON.stringify({ task: sh.task, step: sh.step })}.`;
   const runPrompt = (sh, brief) => `${sh.prompt.text}\n\n—\nNivå: ${sh.level?.value === "quick" ? "snabb, kort svar" : sh.level?.value === "complex" ? "noggrann" : "förval"}.`
     + (sh.must_not.length ? `\nDu får inte: ${sh.must_not.join("; ")}.` : "") + (sh.ask_when.length ? `\nStanna och fråga när: ${sh.ask_when.join("; ")}.` : "")
     + (brief?.text ? `\n\nLäget:\n${brief.text}` : "") + redoPrompt(stepId(sh.task, sh.step)) + `\n\nSvara med utkastet i markdown.`;
@@ -4762,10 +5150,9 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
         async (args) => { if (args) await call("execute_step", args); runStart(id, toast, true); });
       return;
     }
-    if (!sample) { S.run = { ...(S.run || {}), [id]: { phase: "draft", text: "" } }; return copyToChat(runPrompt(sh, sd.brief), "prompten till Claude", toast); }
-    S.run = { ...(S.run || {}), [id]: { phase: "run", text: "" } }; render();
-    sample([{ role: "user", content: runPrompt(sh, sd.brief) }], { modelTier: "default" }).then((x) => { if (S.run?.[id]) S.run = { ...S.run, [id]: { phase: "draft", text: String(x?.text ?? x ?? "").trim() } }; },
-      (e) => { if (e?.code === "not_granted") sample = null; if (S.run?.[id]) S.run = { ...S.run, [id]: { phase: "draft", text: "" } }; say(`Claude svarade inte: ${e.message || e}. Klistra in svaret från chatten.`, null, true); }).then(render);
+    // Prompten går till chatten (claude.ai gör momentet och sparar genom kopplingen); svaret kan också klistras in här.
+    S.run = { ...(S.run || {}), [id]: { phase: "draft", text: "" } };
+    return copyToChat(runPrompt(sh, sd.brief) + saveHint(sh), "prompten", toast || { text: "Kopierad – klistra in i chatten." });
   }
   function runCancel(id) { const { [id]: _x, ...rest } = S.run || {}; S.run = rest; say("Avbrutet. Inget sparades."); }
   async function runSave(id) {
@@ -8796,7 +9183,9 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
         + `<div class="mmeta">En rad per värde: ${esc(hint.split("\n")[0])}. Sparas som en ögonblicksbild när du publicerar.</div>` : "";
       // Ett block utan material står inte som ett eget block, bara i raden «Utelämnas» under.
       if (!hint && !items) return "";
-      return `<div class="pres-b"><h3 class="sh">${esc(PRES_BLOCK[b.type] || b.type)}</h3>${hint ? nums : items + texts}</div>`;
+      // Ordningen på sidan (Daniel P 2026-10-15: «styra innehållet»): ↑ ↓ flyttar blocket; förhandsvisningen och publiceringen följer ordningen.
+      const mv = `<span class="pres-mv"><button class="ss-act" data-act="pres-move" data-key="${esc(key)}" data-d="-1" title="Flytta upp" aria-label="Flytta upp">↑</button><button class="ss-act" data-act="pres-move" data-key="${esc(key)}" data-d="1" title="Flytta ned" aria-label="Flytta ned">↓</button></span>`;
+      return `<div class="pres-b"><h3 class="sh">${esc(PRES_BLOCK[b.type] || b.type)}${mv}</h3>${hint ? nums : items + texts}</div>`;
     }).join("");
     const empty = d.blocks.filter((b) => b.type !== "cover" && !PRES_NUM_HINT[b.type] && !(b.items || []).length).map((b) => PRES_BLOCK[b.type] || b.type);
     const old = (d.presentations || []).map((x) => `<div class="pres-old"><span><b>${esc(x.title)}</b> · version ${x.version} · ${esc(presWhen(x.at))}${x.withdrawn ? " · tillbakadragen" : ""}</span>`
@@ -10555,6 +10944,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     return true;
   }
   function render() {
+    globalThis.queueMicrotask?.(safeMoment);
     if (S.mapBase != null && S.sheets.length <= S.mapBase) { S.mapBase = null; document.body.classList.remove("over-map"); }
     saveScroll();
     syncHash();
@@ -10714,6 +11104,19 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       if (S.confirm?.basis) { basisGo(true); return; }
       if (S.confirm?.run) hlRunConfirm(); else if (S.confirm?.cal) calCommit(); else if (S.confirm?.step) confirmStep(); else confirmTime(); return; }
     else if (act === "open-step") { openStep(el.getAttribute("data-task"), el.getAttribute("data-step"), el.getAttribute("data-label")); return; }
+    else if (act === "step-yes" || act === "step-outside") { const t = top1(); if (t?.kind === "step") { const [task, step] = splitStep(t.id), node = S.sheetData[sheetKey(t)]?.node?.at;
+      markDone({ task, step, ...(node ? { node } : {}), approve: act === "step-yes", label: sheetOf(t.id)?.label || t.label }).then(() => staleStep(t.id, task)); } return; }  // ■: markDone visar serverns förhandsvisning och frågar ett ja
+    else if (act === "step-copy-card") { const t = top1(), sd = t && S.sheetData[sheetKey(t)], M = sd?.node && stepNodeModel(sd.node), sh = t && sheetOf(t.id);
+      if (M && sh) { S.run = { ...(S.run || {}), [t.id]: { ...(S.run?.[t.id] || {}), phase: "idle" } }; copyToChat(`Gör momentet «${M.moment}» i «${M.milestone}» (${sh.customer?.label || ""}).\n\n${M.card.join("\n")}` + saveHint(sh), "prompten", { text: "Kopierad – klistra in i chatten." }); } return; }
+    else if (act === "pres-move") { const p = S.pres, k = el.getAttribute("data-key"), d = Number(el.getAttribute("data-d"));
+      if (p?.d) { const bs = [...p.d.blocks], i = bs.findIndex((b) => b.type !== "cover" && presKey(b) === k), j = i + d;
+        if (i >= 0 && j >= 0 && j < bs.length && bs[j].type !== "cover") { [bs[i], bs[j]] = [bs[j], bs[i]]; p.d = { ...p.d, blocks: bs }; } render(); } return; }
+    else if (act === "tool-text-save") { const t = top1(); if (t?.kind === "step") toolTextSave(t); return; }
+    else if (act === "step-present") { stepPresent(el.getAttribute("data-f")); return; }
+    else if (act === "step-propose") { const t = top1(); if (t?.kind === "step") stepPropose(t.id); return; }
+    else if (act === "step-propose-take") { const t = top1(); if (t?.kind === "step") stepProposeTake(t.id); }
+    else if (act === "step-propose-drop") { const t = top1(); if (t?.kind === "step") S.propose = { ...S.propose, [t.id]: {} }; }
+    else if (act === "step-mat" || act === "step-tool" || act === "step-thread" || act === "step-batch" || act === "step-choose") { stepAct(act, el); return; }
     else if (act === "open-result") { openResult(el.getAttribute("data-id")); return; }
     else if (act === "material") { const t = top1(); if (t) { const k = sheetKey(t); S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], material: el.getAttribute("data-key") || null } }; } }
     else if (act === "rename") { renameStart(el.getAttribute("data-rkind"), el.getAttribute("data-rid"), el.getAttribute("data-rold")); return; }
@@ -10877,7 +11280,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       if (m && (t.text || "").trim()) { call("write", { op: "message", to: [m.from.id], text: t.text.trim(), reply_to: m.id, ...(m.about ? { about: m.about } : {}), confirmed: true })
         .then(() => { t.reply = null; t.text = ""; say(`Svaret till ${m.from.label} ligger på saken.`); fetchSheet(t, true); }, (e) => { say(`Kunde inte skicka: ${e.message || e}. Texten står kvar.`, null, true); render(); }); return; } }
     else if (act === "vself") { selfUpdate(); return; }
-    else if (act === "vcheck") { autoCheck("click"); return; }
+    else if (act === "vcheck") { manualRefresh(); return; }
     else if (act === "open-chat") { openSheet("chat", `c${S.sheets.length}`, "Chatten"); return; }
     else if (act === "chat-copy") { copyToChat(chatContext().prompt, "det chatten får med sig"); return; }
     else if (act === "chat-as") { const t = top1(); if (t) t.as = el.getAttribute("data-as"); }
@@ -11062,7 +11465,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     else if (e.target?.id === "decline-text" && S.decline) { S.decline = { ...S.decline, feedback: e.target.value }; renderKeep(); }
     else if (e.target?.id === "decline-q" && S.decline) { S.decline = { ...S.decline, question: e.target.value }; }
     else if (e.target?.id === "review-text") { S.reviewText = e.target.value; renderKeep(); }
-    else if (e.target?.id === "run-draft") { const id = top1()?.id; if (id && S.run?.[id]) { S.run = { ...S.run, [id]: { ...S.run[id], text: e.target.value } }; renderKeep(); } }
+    else if (e.target?.id === "run-draft") { const id = top1()?.id; if (id) { S.run = { ...(S.run || {}), [id]: { ...(S.run?.[id] || { phase: "idle" }), text: e.target.value } }; renderKeep(); } }
+    else if (e.target?.id === "tool-text") { const id = top1()?.id; if (id) { const was = (S.toolText?.[id] || "").trim(); S.toolText = { ...(S.toolText || {}), [id]: e.target.value }; if (!was !== !e.target.value.trim()) renderKeep(); } }
     else if (e.target?.id === "case-reply") { const t = top1(); if (t) t.reply = e.target.value; }
     else if (e.target?.id === "case-hours") { const t = top1(); if (t) t.hours = e.target.value; }
     else if (e.target?.id === "msg-text") { const t = top1(); if (t) t.text = e.target.value; }
@@ -11162,7 +11566,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   let memory = null;
   // En länk: översikten ur minnet, och arken ovanpå direkt med titeln ur länken. Resten fylls på när dirigenten svarar.
   // Utan adress (artefakten omladdad av claude.ai): arken som var öppna senast.
-  S.sheets = hashSheets(hereRaw() || recallStack()); relabel(); recallSheets();
+  S.sheets = hashSheets(hereRaw() || recallStack()); relabel(); recallSheets(); restoreSpot();
   // Passets länk (Del D): #/karta/<namn>-<uppgift>|<delmål> öppnar kartan på delmålet när översikten finns.
   const mapLink = S.sheets.find((x) => x.kind === "map");
   S.sheets = S.sheets.filter((x) => x.kind !== "map");
