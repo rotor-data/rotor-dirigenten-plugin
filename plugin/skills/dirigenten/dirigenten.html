@@ -1594,7 +1594,10 @@ details.removed { margin-top: 10px; }
     if (st === "needs_yes" || ap?.path === "own_yes") return `<button class="yes" data-k="run" data-node="${esc(node)}">${esc(ap?.button || "Förhandsvisa")}</button>`
       + (ap?.outside ? `<button data-k="done-form" data-nodes="${esc(node)}" data-name="${esc(title(node))}">${esc(ap.outside)}</button>` : "");
     if (m.kind === "decide") return "";
-    const t = ap?.path === "review" ? ap.button : m.by === "claude" ? "Låt Claude göra det" : m.by === "code" ? "Kör" : "Markera som gjort";
+    // Claude-moment körs aldrig från vyn: prompten kopieras till chatten, där arbetet syns.
+    if (m.by === "claude" && ap?.path !== "review") return `<button class="primary" data-k="copy-claude" data-node="${esc(node)}">Kopiera till Claude</button>`
+      + `<details class="k-prompt" style="margin:6px 0"><summary class="k-sub">Prompt</summary><pre style="white-space:pre-wrap;font:inherit;margin:4px 0">${esc(momentPrompt(node))}</pre></details>`;
+    const t = ap?.path === "review" ? ap.button : m.by === "code" ? "Kör" : "Markera som gjort";
     return `<button class="primary" data-k="run" data-node="${esc(node)}">${t}</button>`;
   }
   /** Det hämtade om ett moment (kortet, ja-vägen, verktyget, tiden), när delmålet hämtats. */
@@ -1939,6 +1942,20 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (K.map) { if (K.sel) detail(K.sel); if (K.store) detail("@store"); if (K.mat) detail("@material"); if (!K.delivery && K.map.source?.thread) detail("@thread"); prefetch(); }
   }
 
+  /** Prompten för ett Claude-moment: exakt den text som visas under «Prompt» och kopieras. */
+  function momentPrompt(node) {
+    const ms = node.slice(0, node.indexOf("/")), card = momentDetail(node)?.card || [];
+    return `Gör momentet «${title(node)}» i «${title(ms)}» (uppdrag ${K.task}).` + (card.length ? `\n\n${card.join("\n")}` : "");
+  }
+  /** «Kopiera till Claude»: momentets kort till urklippet (samma text som stegets «Kopiera prompten»). Inget körs. */
+  async function copyClaude(node) {
+    const ms = node.slice(0, node.indexOf("/"));
+    await detail(ms);
+    const text = momentPrompt(node);
+    try { await navigator.clipboard.writeText(text); K.toast = { text: "Kopierad – klistra in i chatten." }; }
+    catch (e) { K.toast = { text: `Kunde inte kopiera: ${e?.message || e}\n\n${text}` }; }
+    render();
+  }
   /** Ett delmål (eller "@store") hämtas när det öppnas, en gång per version. */
   const inflight = {};
   function detail(ms) {
@@ -2139,6 +2156,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       case "mband": K.mband = Math.max(0, Math.min(K.map.bands.length - 1, K.mband + Number(el.getAttribute("data-d")))); root().querySelector(".k-scroll").scrollTo(0, 0); return render();
       case "sel": return select(el.getAttribute("data-ms"));
       case "toast-x": K.toast = null; return render();
+      case "copy-claude": return copyClaude(node);
       case "undo-call": { const u = K.toast?.undoCall; K.toast = null; return u ? act(u.tool, u.args, "Ångra ändringen", null, { yes: true, approval: "Ångra i kartan" }) : null; }
       case "cancel": K.dialog = null; K.last = null; return render();
       case "run": return act("execute_step", { ...tn(node) }, title(node), node, { optimistic: "yes", nodes: [node], k, node, approval: `${el.textContent?.trim() || "Ja"} i kartan: ${title(node)}` });
@@ -2268,7 +2286,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "98fae6f6", published: "2026-10-14" };
+  const SIDA = { version: "5cc234f4", published: "2026-10-15" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -4491,7 +4509,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (!c || sh.done || sh.tool?.kind) return "";
     // Ett Claude-moment utan ordagrann prompt: kortet (gör så här, underlaget, var det sparas) kopieras till chatten, och svaret klistras in här.
     if (M.by === "claude" && !sh.prompt) { const r = S.run?.[x.id] || {};
-      return `<div class="doacts"><button class="primary" data-act="step-copy-card" title="Momentets kort: vad som ska göras, underlaget och var resultatet sparas">Kopiera prompten</button></div>`
+      return `<div class="doacts"><button class="primary" data-act="step-copy-card">Kopiera till Claude</button></div>` + promptPeek(cardPrompt(M, sh))
         + `<div class="draftbox"><textarea id="run-draft" rows="5" data-step-id="${esc(x.id)}" placeholder="Klistra in Claudes svar här, eller låt Claude spara det">${esc(r.text || "")}</textarea></div>`
         + ((r.text || "").trim() ? `<div class="doacts"><button class="primary" data-act="run-save"><span class="lvl d">●</span> Spara utkastet</button></div>` : ""); }
     if (c === "image-picker" || c === "image-viewer") return ipHtml(x, { ...sh, tool: { kind: "image" } });
@@ -4721,8 +4739,9 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       const miss = sh.prompt.missing || [];
       body = (miss.length ? `<div class="missing"><b>Saknas:</b> ${esc(miss.join(", "))}. Claude säger det i utkastet om det fortsätter ändå.</div>` : "")
         // Daniel P 2026-10-15: «vi ska nog ha kopiera prompten istället. Man vill ta den till chatten.» Ingen körning från vyn.
-        + `<div class="doacts"><button class="primary" data-act="run-start" title="Prompten med underlaget, och var Claude sparar resultatet">Kopiera prompten</button>`
+        + `<div class="doacts"><button class="primary" data-act="run-start">Kopiera till Claude</button>`
         + `<button class="link" data-act="step-done">Markera klart utan resultat</button></div>`
+        + promptPeek(runText(sh, S.sheetData[`step:${x.id}`]?.brief))
         // Svaret från chatten klistras in här och sparas som utkast (eller sparas av Claude genom kopplingen).
         + `<div class="draftbox"><textarea id="run-draft" rows="5" data-step-id="${esc(x.id)}" placeholder="Klistra in Claudes svar här, eller låt Claude spara det">${esc(r.text || "")}</textarea></div>`
         + ((r.text || "").trim() ? `<div class="doacts"><button class="primary" data-act="run-save"><span class="lvl d">●</span> Spara utkastet</button></div>` : "");
@@ -5115,6 +5134,11 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   /** Var Claude i chatten sparar resultatet: kopplingens anrop med uppdraget och steget ifyllda. */
   const saveHint = (sh) => `\n\nNär du är klar: spara resultatet med rotor-dirigenten write ${JSON.stringify({ op: "content_save", for_task: sh.task, for_step: sh.step, markdown: "<resultatet>" })}`
     + ` och markera steget klart med execute_step ${JSON.stringify({ task: sh.task, step: sh.step })}.`;
+  /** Prompten för ett Claude-moment utan egen prompt: exakt den text som visas under «Prompt» och kopieras. */
+  const cardPrompt = (M, sh) => `Gör momentet «${M.moment}» i «${M.milestone}» (${sh.customer?.label || ""}).\n\n${M.card.join("\n")}` + saveHint(sh);
+  /** Den fällbara «Prompt»: visar texten som kopieras, ordagrant. */
+  const promptPeek = (text) => `<details class="prompt-peek"><summary class="mmeta">Prompt</summary><pre style="white-space:pre-wrap;font:inherit;margin:4px 0">${esc(text)}</pre></details>`;
+  const runText = (sh, brief) => runPrompt(sh, brief) + saveHint(sh);
   const runPrompt = (sh, brief) => `${sh.prompt.text}\n\n—\nNivå: ${sh.level?.value === "quick" ? "snabb, kort svar" : sh.level?.value === "complex" ? "noggrann" : "förval"}.`
     + (sh.must_not.length ? `\nDu får inte: ${sh.must_not.join("; ")}.` : "") + (sh.ask_when.length ? `\nStanna och fråga när: ${sh.ask_when.join("; ")}.` : "")
     + (brief?.text ? `\n\nLäget:\n${brief.text}` : "") + redoPrompt(stepId(sh.task, sh.step)) + `\n\nSvara med utkastet i markdown.`;
@@ -5152,7 +5176,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     }
     // Prompten går till chatten (claude.ai gör momentet och sparar genom kopplingen); svaret kan också klistras in här.
     S.run = { ...(S.run || {}), [id]: { phase: "draft", text: "" } };
-    return copyToChat(runPrompt(sh, sd.brief) + saveHint(sh), "prompten", toast || { text: "Kopierad – klistra in i chatten." });
+    return copyToChat(runText(sh, sd.brief), "prompten", toast || { text: "Kopierad – klistra in i chatten." });
   }
   function runCancel(id) { const { [id]: _x, ...rest } = S.run || {}; S.run = rest; say("Avbrutet. Inget sparades."); }
   async function runSave(id) {
@@ -5635,7 +5659,6 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     return `<div class="chbar"><div class="mmeta">Ändra med Claude: ${c.things.map((t) => `«${esc(t.name)}»`).join(", ")}</div>`
       + `<textarea id="change-text" rows="3" placeholder="Vad ska ändras? Till exempel: Kortare rubrik, och nämn priset i första meningen.">${esc(c.text || "")}</textarea>`
       + `<div class="doacts"><button class="primary" data-act="change-copy"${ok ? "" : " disabled"}>Kopiera prompten och öppna chatten ↗</button>`
-      + (sample && texts.length === c.things.length ? `<button class="link" data-act="change-sample"${ok && !c.busy ? "" : " disabled"}>${c.busy ? "Claude skriver …" : "Låt Claude föreslå här"}</button>` : "")
       + `<button class="quiet" data-act="change-close">Avbryt · Esc</button></div>`
       + `<div class="mmeta">Claude gör bara den ändringen och sparar en ny version av samma sak; den förra finns kvar.</div>`
       + (c.proposals || []).map((p) => `<div class="mmeta">FÖRSLAG · inte sparat · «${esc(p.name)}»</div><div class="prop">${esc(p.markdown)}</div>`
@@ -11107,7 +11130,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     else if (act === "step-yes" || act === "step-outside") { const t = top1(); if (t?.kind === "step") { const [task, step] = splitStep(t.id), node = S.sheetData[sheetKey(t)]?.node?.at;
       markDone({ task, step, ...(node ? { node } : {}), approve: act === "step-yes", label: sheetOf(t.id)?.label || t.label }).then(() => staleStep(t.id, task)); } return; }  // ■: markDone visar serverns förhandsvisning och frågar ett ja
     else if (act === "step-copy-card") { const t = top1(), sd = t && S.sheetData[sheetKey(t)], M = sd?.node && stepNodeModel(sd.node), sh = t && sheetOf(t.id);
-      if (M && sh) { S.run = { ...(S.run || {}), [t.id]: { ...(S.run?.[t.id] || {}), phase: "idle" } }; copyToChat(`Gör momentet «${M.moment}» i «${M.milestone}» (${sh.customer?.label || ""}).\n\n${M.card.join("\n")}` + saveHint(sh), "prompten", { text: "Kopierad – klistra in i chatten." }); } return; }
+      if (M && sh) { S.run = { ...(S.run || {}), [t.id]: { ...(S.run?.[t.id] || {}), phase: "idle" } }; copyToChat(cardPrompt(M, sh), "prompten", { text: "Kopierad – klistra in i chatten." }); } return; }
     else if (act === "pres-move") { const p = S.pres, k = el.getAttribute("data-key"), d = Number(el.getAttribute("data-d"));
       if (p?.d) { const bs = [...p.d.blocks], i = bs.findIndex((b) => b.type !== "cover" && presKey(b) === k), j = i + d;
         if (i >= 0 && j >= 0 && j < bs.length && bs[j].type !== "cover") { [bs[i], bs[j]] = [bs[j], bs[i]]; p.d = { ...p.d, blocks: bs }; } render(); } return; }
@@ -11145,7 +11168,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     else if (act === "step-done") { const t = top1(); if (t) { const [task, step] = splitStep(t.id); markDone({ task, step, label: sheetOf(t.id)?.label || t.label }).then(() => staleStep(t.id, task)); } return; }
     else if (act === "step-brief") { const t = top1(), b = t && S.sheetData[sheetKey(t)]?.brief; if (b) copyToChat(b.text, "lägesbilden"); return; }
     else if (act === "run-start") { const t = top1(); if (t) runStart(t.id); }
-    else if (act === "run-copy") { const t = top1(), sd = t && S.sheetData[sheetKey(t)]; if (sd?.sheet?.prompt) copyToChat(runPrompt(sd.sheet, sd.brief), "prompten till Claude"); return; }
+    else if (act === "run-copy") { const t = top1(), sd = t && S.sheetData[sheetKey(t)]; if (sd?.sheet?.prompt) copyToChat(runText(sd.sheet, sd.brief), "prompten till Claude"); return; }
     else if (act === "run-chat") { const t = top1(); if (t) { const [task, step] = splitStep(t.id); copyToChat(stepPrompt({ task, step, label: sheetOf(t.id)?.label || t.label, row: rowOfTask(task) }), "prompten"); } return; }
     else if (act === "run-cancel") { const t = top1(); if (t) runCancel(t.id); }
     else if (act === "run-save") { const t = top1(); if (t) runSave(t.id); return; }
@@ -11165,7 +11188,6 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     else if (act === "thing-change-picked") { S.change = { things: picked(), text: "" }; render(); return; }
     else if (act === "change-close") { S.change = null; render(); return; }
     else if (act === "change-copy") { const c = S.change; if (c && (c.text || "").trim()) { copyToChat(changePrompt(c.things, c.text, S.data?.party?.label || ""), "prompten med ändringen"); S.change = null; S.pick = {}; } return; }
-    else if (act === "change-sample") { changeSample(); return; }
     else if (act === "change-save") { changeSave(el.getAttribute("data-id")); return; }
     else if (act === "verdict") { const id = el.getAttribute("data-sheet"), k = el.getAttribute("data-key"), v = el.getAttribute("data-v"), R = S.review?.[id];
       if (R) { const cur = R.verdicts[k] || {}; R.verdicts = { ...R.verdicts, [k]: { ...cur, v: cur.v === v ? null : v } }; R.dirty = true; } render(); return; }
