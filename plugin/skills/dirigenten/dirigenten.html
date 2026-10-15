@@ -1646,7 +1646,7 @@ details.removed { margin-top: 10px; }
     if (nx && nm && st !== "done") {
       h.push(`<h3>Nästa moment</h3><div class="k-card"><b>${esc(title(nx))}</b><div class="k-sub">${WHO[nm.by] || nm.by}${timeOf(nx) ? ` · ${timeOf(nx)}` : ""}</div>${whoHtml(nx) ? `<div class="k-sub">Ansvarig: ${whoHtml(nx)}</div>` : ""}`);
       h.push(`<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${buttonFor(nx)}`
-        + (nm.step && K.onWork ? `<button data-k="work" data-node="${esc(nx)}" data-step="${esc(nm.step)}" data-label="${esc(title(nx))}" aria-label="Öppna steget i helbild"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4"/></svg> Helbild</button>` : "")
+        + openerFor(nx, false)
         + (M.moments[nx] === "locked" || st === "locked" ? `<button data-k="override" data-node="${esc(nx)}">Gör ändå …</button>` : "")
         + `</div>`);
       const md = momentDetail(nx);
@@ -1670,7 +1670,7 @@ details.removed { margin-top: 10px; }
     if (s.unlocked_by?.length) h.push(`<h3>Väntar på</h3><ul>${s.unlocked_by.map((u) => `<li><button class="link" data-k="sel" data-ms="${esc(u.milestone || u.node || "")}">${esc(title(u.milestone || u.node || u.input || ""))}</button></li>`).join("")}</ul>`);
     h.push(`<h3>Så görs det</h3><ol>${moments.map(([id, x]) => {
       const n = `${ms}/${id}`, t = momentDetail(n)?.tool, done = M.moments[n] === "done", skip = M.skipped?.[n], off = M.moments[n] === "not_needed";
-      const name = x.step && K.onWork ? `<button class="link" data-k="work" data-node="${esc(n)}" data-step="${esc(x.step)}" data-label="${esc(title(n))}">${esc(title(n))}</button>` : esc(title(n));
+      const name = openerFor(n, true) || esc(title(n));
       return `<li>${done ? "✓ " : ""}<b>${off ? `<s>${name}</s>` : name}</b>${skip ? ` <span class="k-sub">hoppas över: ${esc(skip.reason || "")}</span>` : ""} <span class="k-sub">· ${WHO[x.by] || x.by}${x.leaves ? ` · lämnar ${esc(x.leaves)}` : ""}${t ? ` · ${esc(HOW[t.how])}${t.call ? ` «${esc(t.call)}»` : ""}` : ""}</span>`
         + `${whoHtml(n) && !done && !off ? `<div class="k-sub">Ansvarig: ${whoHtml(n)}</div>` : ""}`
         + `${timeOf(n) ? `<div class="k-reg">${timeOf(n)}</div>` : ""}`
@@ -1686,6 +1686,28 @@ details.removed { margin-top: 10px; }
     return h.join("");
   }
 
+  /**
+   * Vägen in i ett moment från panelen (paket 6): steget i helbild när momentet har ett steg, annars
+   * momentets verktyg (registrets view_tool, t.ex. bildväljaren) som lager ovanpå kartan. Ett moment
+   * utan steg (inbäddade delmål, som bilden i bloggen) ska också nå sitt verktyg (Daniel P 2026-10-15).
+   */
+  function openerFor(node, link) {
+    const nm = momentOf(node), t = momentDetail(node)?.tool, l = title(node);
+    if (nm?.step && K.onWork) return link ? `<button class="link" data-k="work" data-node="${esc(node)}" data-step="${esc(nm.step)}" data-label="${esc(l)}">${esc(l)}</button>`
+      : `<button data-k="work" data-node="${esc(node)}" data-step="${esc(nm.step)}" data-label="${esc(l)}" aria-label="Öppna steget i helbild"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4"/></svg> Helbild</button>`;
+    if (t?.how === "tool" && t.component && K.onOpen) return link ? `<button class="link" data-k="open-tool" data-node="${esc(node)}" title="Öppna ${esc((t.label || t.tool).toLowerCase())}">${esc(l)}</button>`
+      : `<button data-k="open-tool" data-node="${esc(node)}" title="Öppnas som ett lager ovanpå kartan">Öppna ${esc((t.label || t.tool).toLowerCase())}</button>`;
+    return "";
+  }
+  /** Verktyget för ett moment som lager (K.onOpen med `tool:<komponent>`): momentets senaste material, annars det det läser. */
+  function openTool(node) {
+    const ms = node.slice(0, node.indexOf("/")), t = momentDetail(node)?.tool, nm = momentOf(node);
+    if (!t?.component || !K.onOpen) return;
+    const mat = K.detail[ms]?.material || [], own = mat.filter((x) => x.milestone === ms), base = mat.filter((x) => x.milestone !== ms);
+    const x = (own.length ? own : base).filter((y) => y.ref).at(-1) || null;
+    return K.onOpen(x?.ref || "", x ? title(x.milestone) : title(node), `tool:${t.component}`,
+      { ...tn(node), step: nm?.step || null, mode: t.mode, tool: t.tool, kind: x?.kind || null, type: x?.type || nm?.leaves || null });
+  }
   /** Ett material som länk: läsrutan och bildvisaren är vyns egna (v6), öppnade som ett lager ovanpå kartan. Kartan själv visar inget material. */
   const matLink = (x, text) => K.onOpen && x.ref ? `<button class="link" data-k="open-mat" data-ref="${esc(x.ref)}" data-kind="${esc(x.kind || "")}" data-type="${esc(x.type || "")}" data-label="${esc(text)}">${esc(text)}</button>` : esc(text);
   /** Materialet som miniatyrer: text och fil, en bild som bild när adressen går att visa. Klick öppnar läsrutan eller bildvisaren som lager (K.onOpen). */
@@ -2166,6 +2188,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       case "work": return K.onWork?.(tn(el.getAttribute("data-node") || "").task || K.task, el.getAttribute("data-step"), el.getAttribute("data-label"), strip(el.getAttribute("data-node") || "") || null);
       case "open-mat": return K.onOpen?.(el.getAttribute("data-ref"), el.getAttribute("data-label"), el.getAttribute("data-kind"), { task: tn(el.getAttribute("data-node") || "").task || K.task, type: el.getAttribute("data-type") || null });
       // Verktyget (registrets view_tool) som lager: momentets senaste material, annars det det läser; vyn väljer förhandsvisningen.
+      case "open-tool": return openTool(el.getAttribute("data-node"));
       case "dir": K.dir = K.dir === "tb" ? "lr" : "tb"; return render();
       case "mband": K.mband = Math.max(0, Math.min(K.map.bands.length - 1, K.mband + Number(el.getAttribute("data-d")))); root().querySelector(".k-scroll").scrollTo(0, 0); return render();
       case "sel": return select(el.getAttribute("data-ms"));
@@ -2300,7 +2323,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "f168b3c7", published: "2026-10-15" };
+  const SIDA = { version: "8ccc80c9", published: "2026-10-15" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -3059,7 +3082,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
    * Ett material eller ett moments verktyg från kartan (K.onOpen), i vyns egna lager — inget nytt:
    * bild och fil i filens ark (bildvisningen), text och rapport i läsrutan, och det som ska ut till
    * någon (mejl, annons per format, inlägg, sida) i presentatörens förhandsvisning av just det materialet.
-   * Materialets typ avgör. Ett moments verktyg öppnas i steget (Helbild), inte härifrån.
+   * Materialets typ avgör. Ett moments verktyg öppnas i steget (Helbild); har momentet inget steg öppnas verktyget här (openTool).
    */
   /** Typer (registrets eller innehållets, utan förled) som visas som det som skickas: mejl, annons, inlägg, sida, presentation. */
   const SHOWN_AS_SENT = /(^|_)(mail|mejl|email|utskick|ad|ads|annons|campaigns?|kampanj|social|post|inlagg|inlägg|page|sida|landningssida|presentation)(_|$)/;
@@ -3069,7 +3092,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
    * leveransens förhandsvisning; resten i steget i full bredd, där verktyget används på plats.
    */
   function openTool(c, row, l, ctx) {
-    if (c === "image-picker") { delete IPS.pick; S.imgPick = { place: "step-tool", t: { task: ctx.task || null, step: ctx.step || null, customer: ctx.customer || customerOfTask(ctx.task) } }; render(); return; }
+    if (c === "image-picker") { delete IPS.pick; S.imgPick = { place: "step-tool", t: { task: ctx.task || null, step: ctx.step || null, node: ctx.node || null, customer: ctx.customer || customerOfTask(ctx.task) } }; render(); return; }
     if ((c === "presenter" || c === "preview") && row?.key) return openPres(row.key, l);
     if (ctx.task && ctx.step) { const t = top1();
       if (t?.kind === "step" && t.id === stepId(ctx.task, ctx.step)) { say(`«${l}» används här i steget.`); render(); return; }
@@ -4819,7 +4842,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     let P = IPS[x.id];
     if (!P) {
       if (!sh.customer?.id) return `<div class="missing">Steget har ingen kund, så det finns inga bildkällor att välja ur.</div>`;
-      P = IPS[x.id] = { id: x.id, task: sh.task, step: sh.step, customer: sh.customer.id, customerLabel: sh.customer.label, kind: sh.tool.kind,
+      P = IPS[x.id] = { id: x.id, task: sh.task, step: sh.step, node: x.node || sh.node || null, customer: sh.customer.id, customerLabel: sh.customer.label, kind: sh.tool.kind,
         source: "bank", q: "", bankQ: "", hsQ: "", results: null, error: null, picked: new Map(), preset: false, compare: false, prompt: null,
         contents: [], content: "", sources: null, formats: [], textArea: null, busy: true, more: false, page: 1 };
       ipStart(P);
@@ -4972,8 +4995,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   async function ipSave(P, root) {
     const T = P.target;
     const base = T ? { asset_type: T.asset_type || "core.asset.image", ...(P.customer ? { customer: P.customer } : {}), ...(T.task ? { for_task: T.task } : {}),
-      ...(T.step ? { for_step: T.step } : {}), ...(T.item ? { item: T.item, ...(T.item_kind ? { item_kind: T.item_kind } : {}) } : {}), ...(P.content ? { unit: P.content } : {}) }
-      : { asset_type: "core.asset.image", customer: P.customer, for_task: P.task, for_step: P.step, ...(P.content ? { unit: P.content } : {}) };
+      ...(T.step ? { for_step: T.step } : {}), ...(T.node ? { for_node: T.node } : {}), ...(T.item ? { item: T.item, ...(T.item_kind ? { item_kind: T.item_kind } : {}) } : {}), ...(P.content ? { unit: P.content } : {}) }
+      : { asset_type: "core.asset.image", customer: P.customer, for_task: P.task, for_step: P.step, ...(P.node ? { for_node: P.node } : {}), ...(P.content ? { unit: P.content } : {}) };
     // Med ett mål: nästa version av delen (samma namn utan version), eller sakens namn och formatet.
     const fname = (chosen, mime) => T ? { filename: imageFileName(T, chosen, mime) } : {};
     P.error = null; P.busy = true; render();
