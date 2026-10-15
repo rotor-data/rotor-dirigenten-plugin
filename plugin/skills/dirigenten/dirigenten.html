@@ -1588,17 +1588,21 @@ details.removed { margin-top: 10px; }
     if (!m) return "";
     // Den enda vägen till ett ja per moment (src/plan/approval.ts), samma i kopplingen, kartan och dagens vy.
     const ap = momentDetail(node)?.approval;
-    if (ap?.path === "customer_yes" && st === "waiting") return `<button class="primary" data-k="customer-yes" data-node="${esc(node)}">${esc(ap.button)}</button>`;
-    if (st === "waiting") return `<button disabled>Väntar på kunden</button>`;
+    // «Kopiera till Claude» på varje öppet moment (Daniel P 2026-10-15): Claude kan hjälpa till också med människo- och kodmoment.
+    // «Prompt» visar exakt den text som kopieras.
+    const open = st !== "done" && st !== "not_needed";
+    const copy = (primary) => open ? `<button${primary ? ' class="primary"' : ""} data-k="copy-claude" data-node="${esc(node)}">Kopiera till Claude</button>`
+      + `<details class="k-prompt" style="margin:6px 0"><summary class="k-sub">Prompt</summary><pre style="white-space:pre-wrap;font:inherit;margin:4px 0">${esc(momentPrompt(node))}</pre></details>` : "";
+    if (ap?.path === "customer_yes" && st === "waiting") return `<button class="primary" data-k="customer-yes" data-node="${esc(node)}">${esc(ap.button)}</button>` + copy(false);
+    if (st === "waiting") return `<button disabled>Väntar på kunden</button>` + copy(false);
     // Ordet ur momentets verkan (serverns kort): «Skicka …» med förhandsvisning, och «Redan gjort utanför» bredvid.
     if (st === "needs_yes" || ap?.path === "own_yes") return `<button class="yes" data-k="run" data-node="${esc(node)}">${esc(ap?.button || "Förhandsvisa")}</button>`
-      + (ap?.outside ? `<button data-k="done-form" data-nodes="${esc(node)}" data-name="${esc(title(node))}">${esc(ap.outside)}</button>` : "");
-    if (m.kind === "decide") return "";
+      + (ap?.outside ? `<button data-k="done-form" data-nodes="${esc(node)}" data-name="${esc(title(node))}">${esc(ap.outside)}</button>` : "") + copy(false);
+    if (m.kind === "decide") return copy(false);
     // Claude-moment körs aldrig från vyn: prompten kopieras till chatten, där arbetet syns.
-    if (m.by === "claude" && ap?.path !== "review") return `<button class="primary" data-k="copy-claude" data-node="${esc(node)}">Kopiera till Claude</button>`
-      + `<details class="k-prompt" style="margin:6px 0"><summary class="k-sub">Prompt</summary><pre style="white-space:pre-wrap;font:inherit;margin:4px 0">${esc(momentPrompt(node))}</pre></details>`;
+    if (m.by === "claude" && ap?.path !== "review") return copy(true);
     const t = ap?.path === "review" ? ap.button : m.by === "code" ? "Kör" : "Markera som gjort";
-    return `<button class="primary" data-k="run" data-node="${esc(node)}">${t}</button>`;
+    return `<button class="primary" data-k="run" data-node="${esc(node)}">${t}</button>` + copy(false);
   }
   /** Det hämtade om ett moment (kortet, ja-vägen, verktyget, tiden), när delmålet hämtats. */
   const momentDetail = (node) => K.detail[node.slice(0, node.indexOf("/"))]?.moments?.[node] || null;
@@ -1942,10 +1946,20 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     if (K.map) { if (K.sel) detail(K.sel); if (K.store) detail("@store"); if (K.mat) detail("@material"); if (!K.delivery && K.map.source?.thread) detail("@thread"); prefetch(); }
   }
 
-  /** Prompten för ett Claude-moment: exakt den text som visas under «Prompt» och kopieras. */
+  /**
+   * Prompten för ett moment: exakt den text som visas under «Prompt» och kopieras. Inledningen efter vem som gör det
+   * (Claude gör det; en människa får hjälp; koden förbereds och körs efter ett ja), sedan kortet och vägen till anropen.
+   */
   function momentPrompt(node) {
-    const ms = node.slice(0, node.indexOf("/")), card = momentDetail(node)?.card || [];
-    return `Gör momentet «${title(node)}» i «${title(ms)}» (uppdrag ${K.task}).` + (card.length ? `\n\n${card.join("\n")}` : "");
+    const ms = node.slice(0, node.indexOf("/")), card = momentDetail(node)?.card || [], by = momentOf(node)?.by;
+    return `${promptOpener(by, `«${title(node)}» i «${title(ms)}» (uppdrag ${K.task})`)}` + (card.length ? `\n\n${card.join("\n")}` : "")
+      + `\n\nLäs momentet med rotor-dirigenten: read ${JSON.stringify({ op: "context", task: K.task, node })}.`;
+  }
+  /** Prompten inleds efter vem som gör momentet. */
+  function promptOpener(by, what) {
+    if (by === "code") return `Förbered momentet ${what} genom rotor-dirigenten: ta fram värdena ur underlaget och kundens sätt, visa förhandsvisningen och kör först efter mitt ja.`;
+    if (by === "human" || by === "customer") return `Hjälp mig göra momentet ${what}. Det är en människa som gör det: gå igenom receptet med mig, ta fram det som går ur underlaget och kundens sätt, och säg vad som ska fram och var det sparas.`;
+    return `Gör momentet ${what}.`;
   }
   /** «Kopiera till Claude»: momentets kort till urklippet (samma text som stegets «Kopiera prompten»). Inget körs. */
   async function copyClaude(node) {
@@ -2286,7 +2300,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "5cc234f4", published: "2026-10-15" };
+  const SIDA = { version: "f168b3c7", published: "2026-10-15" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -4504,6 +4518,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
    * valt av registrets view_tool när stegets ark inte redan ritar ett (sh.tool). Paket 6 «Verktygen».
    */
   function stepToolHtml(x, sh, M, sd) {
+    const h = stepSurfaceHtml(x, sh, M, sd);
+    // «Kopiera till Claude» också för människo- och kodmoment (Daniel P 2026-10-15); «Prompt» visar exakt det som kopieras.
+    if (!M || sh.done || M.by === "claude") return h;
+    return h + `<div class="doacts"><button data-act="step-copy-card">Kopiera till Claude</button></div>` + promptPeek(cardPrompt(M, sh));
+  }
+  function stepSurfaceHtml(x, sh, M, sd) {
     // Utan eget verktyg (registrets fallback) är ytan kontrollfrågan.
     const c = M?.tool?.component || (M ? "generic-check" : null);
     if (!c || sh.done || sh.tool?.kind) return "";
@@ -5134,8 +5154,17 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   /** Var Claude i chatten sparar resultatet: kopplingens anrop med uppdraget och steget ifyllda. */
   const saveHint = (sh) => `\n\nNär du är klar: spara resultatet med rotor-dirigenten write ${JSON.stringify({ op: "content_save", for_task: sh.task, for_step: sh.step, markdown: "<resultatet>" })}`
     + ` och markera steget klart med execute_step ${JSON.stringify({ task: sh.task, step: sh.step })}.`;
-  /** Prompten för ett Claude-moment utan egen prompt: exakt den text som visas under «Prompt» och kopieras. */
-  const cardPrompt = (M, sh) => `Gör momentet «${M.moment}» i «${M.milestone}» (${sh.customer?.label || ""}).\n\n${M.card.join("\n")}` + saveHint(sh);
+  /**
+   * Prompten för ett moment utan egen prompt: exakt den text som visas under «Prompt» och kopieras. Inledningen efter vem som gör det
+   * (Daniel P 2026-10-15: Claude hjälper också i människo- och kodmoment).
+   */
+  const cardPrompt = (M, sh) => {
+    const what = `«${M.moment}» i «${M.milestone}» (${sh.customer?.label || ""})`;
+    const open = M.by === "code" ? `Förbered momentet ${what} genom rotor-dirigenten: ta fram värdena ur underlaget och kundens sätt, visa förhandsvisningen och kör först efter mitt ja.`
+      : M.by === "human" || M.by === "customer" ? `Hjälp mig göra momentet ${what}. Det är en människa som gör det: gå igenom receptet med mig, ta fram det som går ur underlaget och kundens sätt, och säg vad som ska fram och var det sparas.`
+      : `Gör momentet ${what}.`;
+    return `${open}\n\n${M.card.join("\n")}` + (M.by === "code" ? "" : saveHint(sh));
+  };
   /** Den fällbara «Prompt»: visar texten som kopieras, ordagrant. */
   const promptPeek = (text) => `<details class="prompt-peek"><summary class="mmeta">Prompt</summary><pre style="white-space:pre-wrap;font:inherit;margin:4px 0">${esc(text)}</pre></details>`;
   const runText = (sh, brief) => runPrompt(sh, brief) + saveHint(sh);
