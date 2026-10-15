@@ -2037,7 +2037,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      i samma klick. ■ (det som går utåt: preview.asks, en exakt förhandsvisning, ■ i en batch) görs aldrig så:
      svaret är { own } och vyn frågar per post. Klart är bara written === true; allt annat är ett fel. */
   const YES = {
-    written: (d) => d?.written === true,
+    // Redan i det läget (already) räknas som gjort: ett ja som skickas igen efter ett avbrott har lyckats.
+    written: (d) => d?.written === true || d?.already === true,
     preview: (d) => !!d && d.written === false && (d.preview !== undefined || d.batch !== undefined || !!(d.next_call || d.next)),
     own: (d) => (d?.preview?.asks || []).length > 0 || d?.preview?.exact === true || (d?.batch?.groups?.["■"] || []).length > 0,
     nextOf: (d, approval) => { const n = d?.next_call || d?.next; if (!n?.args) return null;
@@ -2323,7 +2324,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "28f17237", published: "2026-10-15" };
+  const SIDA = { version: "0b5d4028", published: "2026-10-15" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2375,7 +2376,21 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   const slot = () => running < LIMIT ? (running++, Promise.resolve()) : new Promise((ok) => waiting.push(ok));
   const release = () => { const next = waiting.shift(); if (next) next(); else running--; };
   const READS = new Set(["plan_state", "read", "search"]);
-  const lostContact = (e) => e?.code === "NETWORK" || /failed to fetch|networkerror|load failed/i.test(e?.message || "");
+  /** claude.ai-kopplingens egna felkoder i klartext (mcp.d.ts); dirigentens egna fel har sin text från servern. */
+  const BRIDGE_TEXT = {
+    needs_reauth: "Kopplingen till dirigenten behöver loggas in igen: claude.ai → Inställningar → Kopplingar.",
+    server_not_connected: "Dirigenten är inte kopplad här: lägg till den under claude.ai → Inställningar → Kopplingar.",
+    not_in_manifest: "Vyn har inte rätt att anropa det här verktyget. Uppdatera vyn.",
+    approval_required: "Anropet behöver ditt godkännande i claude.ai. Försök igen och välj Tillåt.",
+    blocked_by_policy: "Organisationens regler stoppar det här anropet.",
+    cancelled: "Anropet avbröts.",
+  };
+  /* Ett svar som aldrig kom (Daniel P 2026-10-15: «serverfel … när man ska spara val och klarmarkera»). I claude.ai blir en
+     server som inte svarar i tid, eller svarar 5xx, `server_unavailable` (eller ett `upstream_error` märkt retryable) med engelsk
+     text; dirigentens eget övergående fel heter UNAVAILABLE. Läsningar försöks en gång till; en skrivning är oviss (den kan ha
+     hunnit sparas) och blir NETWORK, så att klart köas och skickas igen och allt annat säger det i klartext och läser om. */
+  const lostContact = (e) => e?.code === "NETWORK" || e?.code === "server_unavailable" || e?.code === "UNAVAILABLE"
+    || (e?.retryable === true && e?.code !== "rate_limited") || /failed to fetch|networkerror|load failed/i.test(e?.message || "");
   const clock = () => globalThis.performance?.now?.() ?? Date.now();
   async function callOn(server, tool, input) {
     if (!mcp) throw Object.assign(new Error(`anslutningen ${server} är inte tillgänglig här`), { code: "NOT_CONNECTED" });
@@ -2386,13 +2401,19 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     try {
       try { r = await mcp.callTool(server, tool, input); }
       catch (e) {
-        if (!lostContact(e) || !READS.has(tool)) throw e;
+        if (!(lostContact(e) || lostContact(data(e?.result)?.error)) || !READS.has(tool)) throw e;
+        // claude.ai ber om en kort väntan före ett nytt försök; ett tappat nät (NETWORK) prövas direkt, som förut.
+        if (e?.code !== "NETWORK") await new Promise((ok) => setTimeout(ok, 400 + Math.random() * 600));
         r = await mcp.callTool(server, tool, input);
       }
     }
     catch (e) {
-      if (lostContact(e)) throw Object.assign(new Error("Kontakten med dirigenten bröts, så det här kunde inte läsas. Försök igen."), { code: "NETWORK" });
-      const f = data(e?.result)?.error; throw f ? Object.assign(new Error(f.message), { code: f.code, context: f.context || null }) : e;
+      const f = data(e?.result)?.error;
+      if (lostContact(f) || (!f && lostContact(e))) throw Object.assign(new Error(READS.has(tool)
+        ? "Dirigenten svarade inte, så det här kunde inte läsas. Försök igen om en stund."
+        : "Dirigenten svarade inte i tid. Det kan ha hunnit sparas eller inte; vyn läser om läget."), { code: "NETWORK", write: !READS.has(tool) });
+      if (f) throw Object.assign(new Error(f.message), { code: f.code, context: f.context || null });
+      throw Object.assign(new Error(BRIDGE_TEXT[e?.code] || e?.message || String(e)), { code: e?.code || "ERROR" });
     }
     finally { release(); timeCall(op, t0, queued, r, click); }
     const d = data(r);
@@ -2410,7 +2431,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      i samma klick. ■ (det som går utåt: preview.asks, en exakt förhandsvisning, ■ i en batch) görs aldrig så:
      svaret är { own } och vyn frågar per post. Klart är bara written === true; allt annat är ett fel. */
   const YES = {
-    written: (d) => d?.written === true,
+    // Redan i det läget (already) räknas som gjort: ett ja som skickas igen efter ett avbrott har lyckats.
+    written: (d) => d?.written === true || d?.already === true,
     preview: (d) => !!d && d.written === false && (d.preview !== undefined || d.batch !== undefined || !!(d.next_call || d.next)),
     own: (d) => (d?.preview?.asks || []).length > 0 || d?.preview?.exact === true || (d?.batch?.groups?.["■"] || []).length > 0,
     nextOf: (d, approval) => { const n = d?.next_call || d?.next; if (!n?.args) return null;
@@ -2924,6 +2946,8 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   /** Kvittot: längst ner i mitten, med Ångra i 8 s. Ett fel står kvar lite längre. */
   function say(text, undo = null, error = false, note = null) {
     clearTimeout(toastTimer);
+    // En skrivning utan svar är oviss: «Inget ändrades» vore fel, och läget läses om i stället för att gissas (callOn).
+    if (error && /kan ha hunnit sparas/.test(text)) { text = text.replace(/\s*Inget (ändrades|är gjort|sparades)[^.]*\./g, ""); try { refreshSoon(); } catch { /* före första läsningen */ } }
     S.toast = { text, undo, error, note };
     toastTimer = setTimeout(() => { if (typeof document === "object" && document.activeElement?.id === "toast-note") return; S.toast = null; render(); }, note ? 14000 : undo ? 8000 : error ? 7000 : 4200);
   }
@@ -10604,7 +10628,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   try { const q = JSON.parse(globalThis.localStorage?.getItem(OUTBOX) || "[]"); if (Array.isArray(q)) outbox = q; } catch { /* stängd */ }
   const saveOutbox = () => { try { if (outbox.length) globalThis.localStorage?.setItem(OUTBOX, JSON.stringify(outbox)); else globalThis.localStorage?.removeItem(OUTBOX); } catch { /* full eller stängd */ } };
   /** Anropet nådde inte fram (nät, server nere), till skillnad från att servern sa nej. */
-  const unreachable = (e) => !!e && (e.code === "NETWORK" || /^HTTP_5/.test(e.code || "") || (!e.code && /svarar inte|fetch|network|timeout/i.test(e.message || "")));
+  const unreachable = (e) => !!e && (e.code === "NETWORK" || e.code === "UNAVAILABLE" || /^HTTP_5/.test(e.code || "") || (!e.code && /svarar inte|fetch|network|timeout/i.test(e.message || "")));
   const offline = () => !!S.error && S.error.code !== "NO_SESSION" && S.error.code !== "NOT_CONNECTED" && !!S.data;
   const outboxText = (x) => x.kind === "done" ? `«${x.label}» klart` : x.on ? `«${x.label}» i Igång` : `«${x.label}» ur Igång`;
   /** Köade ●-ändringar i Igång syns som om de gjorts, märkta «väntar på att skickas». */
