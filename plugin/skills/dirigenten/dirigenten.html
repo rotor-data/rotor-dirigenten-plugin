@@ -2324,7 +2324,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
      vyn filtrerar på linserna och ritar om lokalt, utan nya anrop. */
   /* Vilken version sidan är. Stämplas av `npm run bundle` ur git, samtidigt
      som servern (src/views/version.ts) — skriv inte raden för hand. */
-  const SIDA = { version: "b2477223", published: "2026-10-15" };
+  const SIDA = { version: "95a68e8c", published: "2026-10-15" };
   const SERVER = "rotor-dirigenten";
   let mcp = null;
   /** Claude i artefakten (förmågan sample); null på /v6 och där den inte ges. */
@@ -2969,13 +2969,18 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       : before.filter((x) => runKey(x.task, x.step) !== k) };
     S.busy = { ...S.busy, [k]: true };
     render();
+    let ok = false;
     try {
-      const r = await call("execute_step", { task, step, focus: on });
-      if (r?.written === false && r?.basis) {
+      // Samma väg som ✓ (A2): jaet i anropet, och Igång räknas bara med written === true.
+      const y = await YES.send(call, "execute_step", { task, step, focus: on }, `${on ? "Lägg i Igång" : "Ta bort ur Igång"} i vyn: ${label}`);
+      if (y.own) throw Object.assign(new Error(`${YES.text(y.d) || "Det här kräver ett ja per post."} Inget är gjort härifrån.`), { code: "NEEDS_YES" });
+      const r = y.d;
+      if (y.basis) {
         S.data = { ...S.data, running: before };
         const { [k]: _b, ...rb } = S.busy; S.busy = rb;
-        askBasis(r.basis, async (args) => {
+        askBasis(y.basis, async (args) => {
           const r2 = await call("execute_step", args);
+          if (!YES.written(r2)) throw new Error(YES.text(r2) || "Dirigenten skrev inget.");
           if (Array.isArray(r2?.running)) S.data = { ...S.data, running: r2.running };
           say(`«${label}» ligger i Igång.${args.user_approval ? " Underlaget är godkänt." : ""}`, r2?.undo || null);
         });
@@ -2983,14 +2988,18 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       }
       S.data = { ...S.data, running: Array.isArray(r?.running) ? r.running : S.data.running.map((x) => ({ ...x, pending: false })) };
       if (!quiet) say(on ? `«${label}» ligger i Igång.` : `«${label}» är borttaget ur Igång.`, r?.undo || null);
+      ok = true;
     } catch (e) {
       S.data = { ...S.data, running: before };
       if (unreachable(e)) { S.error = e; const { [k]: _q, ...r2 } = S.busy; S.busy = r2; queue({ kind: "focus", task, step, label, on }); return; }
-      say(`${on ? "Kunde inte lägga" : "Kunde inte ta bort"} «${label}» ${on ? "i" : "ur"} Igång: ${e.message || e}. Inget ändrades.`, null, true);
+      say(`${on ? "Kunde inte lägga" : "Kunde inte ta bort"} «${label}» ${on ? "i" : "ur"} Igång: ${errWhy(e)}. Inget ändrades.`, null, true);
     }
     const { [k]: _done, ...rest } = S.busy; S.busy = rest;
     render();
+    return ok;
   }
+  /** Skälet ur ett fel, utan avslutande punkt, så att kvittot kan fortsätta meningen. */
+  const errWhy = (e) => String(e?.message || e || "").trim().replace(/[.。]+$/, "");
   /** Ångra i kvittot: serverns eget ångra-anrop. */
   async function undoToast() {
     const u = S.toast?.undo;
@@ -3002,11 +3011,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
       render(); return;
     }
     if (u.tool === "execute_step" && u.args?.focus !== undefined) {
-      await setRunning(u.args.task, u.args.step, stepLabel(u.args.task, u.args.step), u.args.focus, true);
-      say("Ångrat."); render(); return;
+      if (await setRunning(u.args.task, u.args.step, stepLabel(u.args.task, u.args.step), u.args.focus, true)) say("Ångrat.");
+      render(); return;
     }
-    try { await call(u.tool, u.args); say("Ångrat."); if (u.args?.task) rereadAfterWrite(u.args.task); else refreshSoon(); if (S.body === "time") loadTimeline(); }
-    catch (e) { say(`Kunde inte ångra: ${e.message || e}`, null, true); }
+    // Ångra är också ett ja (A2): genom YES, och «Ångrat.» bara med written === true.
+    try { await sendYes(u.tool, u.args, "Ångra i vyn"); say("Ångrat."); if (u.args?.task) rereadAfterWrite(u.args.task); else refreshSoon(); if (S.body === "time") loadTimeline(); }
+    catch (e) { say(`Kunde inte ångra: ${errWhy(e)}. Inget ändrades.`, null, true); }
     render();
   }
   /** Stegets namn ur Igång eller översiktens rader, för kvittot. */
@@ -4649,9 +4659,12 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   async function toolTextSave(x) {
     const [task, step] = splitStep(x.id), text = (S.toolText?.[x.id] ?? "").trim();
     if (!text) return;
-    try { await call("write", { op: "content_save", for_task: task, for_step: step, markdown: text, confirmed: true });
-      S.toolText = { ...S.toolText, [x.id]: "" }; say("Texten är sparad som utkast på steget."); staleStep(x.id, task); }
-    catch (e) { say(`Texten sparades inte: ${e.message || e}. Den står kvar.`, null, true); }
+    // Direkt (●, A2): fältet töms på en gång; sparat bara med written === true, annars står texten kvar med skälet.
+    // Ingen utkorg: ett nytt utkast utan id blir ett till vid varje försök, så det skickas bara när någon klickar.
+    S.toolText = { ...S.toolText, [x.id]: "" }; render();
+    try { await sendYes("write", { op: "content_save", for_task: task, for_step: step, markdown: text, confirmed: true }, `Spara texten som utkast i vyn: ${sheetOf(x.id)?.label || x.label || step}`);
+      say("Texten är sparad som utkast på steget."); staleStep(x.id, task); }
+    catch (e) { S.toolText = { ...S.toolText, [x.id]: text }; say(`Texten sparades inte: ${errWhy(e)}. Den står kvar.`, null, true); }
     render();
   }
   /** + Lägg till material: filen läggs på steget (och därmed momentet), med samma uppladdning som bildväljaren. */
@@ -5320,6 +5333,28 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     } catch (e) { say(`Kunde inte spara: ${e.message || e}. Inget ändrades.`, null, true); }
     render();
   }
+  /**
+   * Gör om och Rätta (◐, A2): steget står öppet på en gång, jaet är knappens text, och öppet räknas bara
+   * med written === true; annars läggs läget tillbaka och skälet sägs. Ingen utkorg: att öppna något
+   * stängt görs inte i blindo (som markDone med done = false).
+   */
+  async function rerun(t, task, step, why) {
+    const label = sheetOf(t.id)?.label || t.label || step;
+    if (offline()) { say("Att öppna steget igen kan inte göras förrän dirigenten svarar. Inget ändrades.", null, true); render(); return; }
+    const node = idagRowOf(task, step)?.node || "";
+    const before = { data: S.data, sheets: S.sheetData };
+    patchStepDone(task, step, false, node);
+    const k = `step:${t.id}`, sd = S.sheetData[k];
+    if (sd?.sheet?.done) S.sheetData = { ...S.sheetData, [k]: { ...sd, sheet: { ...sd.sheet, done: null } } };
+    render();
+    try {
+      await sendYes("execute_step", { task, step, mark: "undone", reason: why ? `Rättas: ${why}` : "Görs om, öppnat i steget." }, `${why ? "Rätta" : "Gör om"} i vyn: ${label}`);
+      say(why ? `Steget är öppet igen för att rättas: ${why}` : "Steget är öppet igen.",
+        { fn: () => sendYes("execute_step", { task, step, mark: "done", reason: "Ångrat i vyn." }, `Ångra i vyn: ${label}`).then(() => staleStep(t.id, task)) });
+      staleStep(t.id, task);
+    } catch (e) { S.data = before.data; S.sheetData = before.sheets; say(`Kunde inte öppna steget: ${errWhy(e)}. Inget ändrades.`, null, true); }
+    render();
+  }
   /** Avbockning (●): ett moment, direkt, räknas inte som ändring. */
   async function tick(id, i) {
     const sh = sheetOf(id); if (!sh) return;
@@ -5330,8 +5365,13 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     const k = `step:${id}`, before = S.sheetData[k];
     S.sheetData = { ...S.sheetData, [k]: { ...before, sheet: { ...sh, checklist: sh.checklist.map((c) => c.text === t ? { ...c, done: !c.done } : c) } } };
     render();
-    try { await call("write", { op: "step_edit", task, step, layer: "here", ticked: next }); }
-    catch (e) { S.sheetData = { ...S.sheetData, [k]: before }; say(`Kunde inte bocka av: ${e.message || e}.`, null, true); render(); }
+    // Samma väg som ✓ (A2): genom YES, och bocken står bara med written === true. Nås inte dirigenten
+    // läggs hela listan i utkorgen (samma lista igen skriver samma sak, så det är säkert att skicka senare).
+    if (offline()) { queue({ kind: "tick", task, step, ticked: next, label: t }); return; }
+    try { await sendYes("write", { op: "step_edit", task, step, layer: "here", ticked: next }, `${next.includes(t) ? "Bocka av" : "Ta bort bocken"} i vyn: ${t}`); }
+    catch (e) {
+      if (unreachable(e)) { S.error = e; queue({ kind: "tick", task, step, ticked: next, label: t }); return; }
+      S.sheetData = { ...S.sheetData, [k]: before }; say(`Kunde inte bocka av: ${errWhy(e)}. Inget ändrades.`, null, true); render(); }
   }
 
   /* ── Resultat och läsformer (README «Resultat och rapportläsaren», BESLUT 6) ── */
@@ -5676,10 +5716,17 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     render();
   }
   async function approveDraft(id, name) {
-    try { await call("write", { op: "content_approve", id, user_approval: `Ja (● Godkänn «${name}» i vyn)`.slice(0, 500) }); say(`«${name}» är godkänt.`);
+    // Direkt (●, A2): utkastet står som godkänt på en gång; genom YES med confirmed, och bara written === true räknas.
+    // Ingen utkorg: ett ja ska ges när man ser det man godkänner.
+    const before = S.sheetData;
+    const mark = (d) => d.id === id ? { ...d, approved_at: new Date().toISOString() } : d;
+    for (const k of Object.keys(S.sheetData)) { const v = S.sheetData[k], sh = v?.sheet;
+      if (Array.isArray(sh?.drafts) && sh.drafts.some((d) => d.id === id)) S.sheetData = { ...S.sheetData, [k]: { ...v, sheet: { ...sh, drafts: sh.drafts.map(mark) } } }; }
+    render();
+    try { await sendYes("write", { op: "content_approve", id, confirmed: true }, `Ja (● Godkänn «${name}» i vyn)`.slice(0, 500)); say(`«${name}» är godkänt.`);
       for (const k of Object.keys(S.sheetData)) S.sheetData = { ...S.sheetData, [k]: { ...S.sheetData[k], stale: true } };
       const t = top1(); if (t) fetchSheet(t, true); }
-    catch (e) { say(`Kunde inte godkänna: ${e.message || e}.`, null, true); }
+    catch (e) { S.sheetData = before; say(`Kunde inte godkänna «${name}»: ${errWhy(e)}. Inget ändrades.`, null, true); }
     render();
   }
 
@@ -10630,7 +10677,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
   /** Anropet nådde inte fram (nät, server nere), till skillnad från att servern sa nej. */
   const unreachable = (e) => !!e && (e.code === "NETWORK" || e.code === "UNAVAILABLE" || /^HTTP_5/.test(e.code || "") || (!e.code && /svarar inte|fetch|network|timeout/i.test(e.message || "")));
   const offline = () => !!S.error && S.error.code !== "NO_SESSION" && S.error.code !== "NOT_CONNECTED" && !!S.data;
-  const outboxText = (x) => x.kind === "done" ? `«${x.label}» klart` : x.on ? `«${x.label}» i Igång` : `«${x.label}» ur Igång`;
+  const outboxText = (x) => x.kind === "done" ? `«${x.label}» klart` : x.kind === "tick" ? `Bocken «${x.label}»` : x.on ? `«${x.label}» i Igång` : `«${x.label}» ur Igång`;
   /** Köade ●-ändringar i Igång syns som om de gjorts, märkta «väntar på att skickas». */
   function overlayOutbox() {
     if (!S.data) return;
@@ -10672,9 +10719,10 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
         try {
           // Samma väg som klicket: momentets eget ja eller «redan gjort», med jaet i anropet, och klart bara med written.
           const at = x.node ? { task: x.task, node: x.node } : { task: x.task, step: x.step };
-          // Igång (focus) skrivs direkt för alla och har inget ja; klart och godkänn går YES-vägen.
+          // Allt går YES-vägen: klart och godkänn, Igång och bockar, och klart bara med written === true.
           if (x.kind === "done") await sendYes("execute_step", doneInput(at, x.node, !!x.approve), `${x.approve ? "Godkänn" : "Klart"} i vyn (köat): ${x.label}`);
-          else await call("execute_step", { task: x.task, step: x.step, focus: x.on });
+          else if (x.kind === "tick") await sendYes("write", { op: "step_edit", task: x.task, step: x.step, layer: "here", ticked: x.ticked }, `Bocka av i vyn (köat): ${x.label}`);
+          else await sendYes("execute_step", { task: x.task, step: x.step, focus: x.on }, `${x.on ? "Lägg i Igång" : "Ta bort ur Igång"} i vyn (köat): ${x.label}`);
           sent++;
           outbox = outbox.filter((y) => y !== x);
         } catch (e) {
@@ -11236,9 +11284,7 @@ Från<input id="k-from" type="date" value="${today}">Till<input id="k-to" type="
     else if (act === "ask-claude-drop") { const t = top1(); if (t) S.askClaude = { ...S.askClaude, [t.id]: { ...S.askClaude?.[t.id], proposal: null } }; }
     else if (act === "step-redo" || act === "step-fix-go") { const t = top1(); if (t) { const [task, step] = splitStep(t.id), why = act === "step-fix-go" ? (S.fixing?.[t.id]?.text || "").trim() : "";
       if (act === "step-fix-go" && !why) return; S.fixing = { ...S.fixing, [t.id]: null };
-      call("execute_step", { task, step, mark: "undone", reason: why ? `Rättas: ${why}` : "Görs om, öppnat i steget." })
-        .then(() => { say(why ? `Steget är öppet igen för att rättas: ${why}` : "Steget är öppet igen.", { fn: () => call("execute_step", { task, step, mark: "done", reason: "Ångrat i vyn." }).then(() => staleStep(t.id, task)) }); staleStep(t.id, task); render(); },
-          (e) => { say(`Kunde inte öppna steget: ${e.message || e}. Inget ändrades.`, null, true); render(); }); } return; }
+      rerun(t, task, step, why); } return; }
     else if (act === "step-fix") { const t = top1(); if (t) S.fixing = { ...S.fixing, [t.id]: S.fixing?.[t.id] ? null : { text: "" } }; }
     else if (act === "step-add-after") { const t = top1(); if (t) { const [task, step] = splitStep(t.id), gm = idagRowOf(task, step); if (gm) openMap(task, gm.ms); } return; }
     else if (act === "step-done") { const t = top1(); if (t) { const [task, step] = splitStep(t.id); markDone({ task, step, label: sheetOf(t.id)?.label || t.label }).then(() => staleStep(t.id, task)); } return; }
