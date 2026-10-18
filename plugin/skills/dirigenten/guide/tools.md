@@ -24,6 +24,7 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields (a wrong
 - `write{op:"message"}`: meddelande till en kollega; read, resolve
 - `write{op:"message_mark"}`: markera meddelanden
 - `read{op:"image_picker"}`: bildväljaren: sources, search, prompt
+- `write{op:"image_register"}`: bildväljarens val: pick_image { task, ref } ger målet; register + filename, provenance eller from_ref sparar en ny version
 - `write{op:"bug_report"}`: felrapport: text, eller resolve; utan båda listan
 - `write{op:"note_link"}`: anteckning med länk
 - `read{op:"plan_estimate"}`: uppskatta en plan
@@ -35,7 +36,7 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields (a wrong
 - `write{op:"content_approve"}`: godkänn innehåll
 - `write{op:"content_published"}`: markera publicerat
 - `read{op:"presentation_draft"}`: presentationens utkast
-- `read{op:"step_material"}`: stegets material per moment, grupperat, med version och godkänt: task, step, node
+- `read{op:"step_material"}`: momentets material i grupper (momentets först), med version och godkänt: task, node
 - `read{op:"delivery_material"}`: leveransens material och saker: task (whole: true för hela leveransen) eller delivery
 - `write{op:"presentation_text"}`: presentationens text
 - `read{op:"project_brief"}`: projektets brief

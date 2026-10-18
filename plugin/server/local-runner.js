@@ -21164,6 +21164,7 @@ function contentStates(view) {
     const p = e.payload;
     if (e.type === "content_version_saved") {
       const version2 = p["version"];
+      if (!version2 || typeof version2.sha256 !== "string") continue;
       const origin = p["origin"] ?? null;
       const f\u00F6re = alla.get(e.subject_ref);
       const tagged = "item" in p;
