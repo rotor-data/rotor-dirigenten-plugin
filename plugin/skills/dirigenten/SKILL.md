@@ -3,106 +3,111 @@ name: dirigenten
 description: How the dirigenten registry, planning and delivery system fits together, and how to work in it. Use whenever someone asks what is promised, what is planned, what is late, which questions are waiting, who does what, where a customer's files are, or how something is delivered — and before acting on any task, step, requirement or file in dirigenten. Also opens or updates the dirigent view (Översikten with lenses, sheets and ⌘K) as the user's own artifact: "dirigentvyn", "vyn", "översikten", or when the view says it is outdated or cannot reach dirigenten.
 ---
 
+<!-- Genereras ur src/v2/skill/dirigenten.ts med npm run gen:skills. Ändra där, inte här. -->
+
 # Dirigenten
 
-**Internal guidance for you, not text to repeat.** The terms below are for your reasoning. To people, talk about the work, never the model: say "the post needs the customer's approval before it goes up", not "the step has an approver". **Talk to the user in Swedish**, plain, short, most important first, unless they write in another language. No ids, node names or tool names; context before numbers.
+Dirigenten håller ordning på vad som är lovat till kunder, vad som ska göras och av vem, och när. Den här texten är till dig, inte till användaren. Prata med användaren på vanlig svenska om arbetet: vad som ska göras, av vem, när och vad det ger. Säg aldrig verktygsnamn, fältnamn, id (som «t-2»), versionsnummer (som «rev 1») eller ord som «nod», «molekyl», «atom» eller «kuvert» till användaren. Svarar användaren på ett annat språk, svara på det.
 
-**Explain what you refer to.** Never point to a recipe, method, step, task, variant or assignment by its name alone ("följ receptet för Bildval", "metoden Avgränsning och plan", "steg 3"). The user does not know what is behind the name. Say what it is in the work: who does what, when, with what, and what it gives — e.g. "Hultborn väljer tre bilder ur fotograferingen och lägger dem i utkastet; Daniel godkänner dem innan de går ut". Add the name after that only if the user will need to find it. If the user asks "vad är det?", answer with the content, not another name.
+**Förklara det du hänvisar till.** Nämn aldrig ett recept, en metod, ett steg eller ett registerord bara med namnet; säg vad det är: vem gör vad, när och vad det ger. Namnet sist, vid behov.
 
-**Prompts follow one standard.** Every Claude instruction you write or change — in a method, a customer's way or a project — follows `guide { topic: "promptstandard" }`: three levels — the method (general: no area, no customer), the area (the deliverable type's `instruction_addition`: all work of that kind, any customer) and the customer's way (customer specifics), with the assignment as the narrowest; where, how, when, why and who; exact tool calls with op and fields; where the result is saved and who reviews. A part you deliberately leave out needs a deviation with a concrete reason. A flagged instruction stops a project from being written in.
+Den här skillen bär samtalet. Vad varje slags sak kan göras med, och hur, står i guiden: `guide{phase}` med en av `moment`, `task`, `delivery`, `case`, `idea`, `envelope`, `severity`, `promptstandard`, `tools`. Hämta guiden för en fas första gången den behövs i samtalet, inte i förväg.
 
-## The tools
+## Verktygen
 
-Seven tools, all through the user's `rotor-dirigenten` connector (there is no local server, and the old names `context`, `asset_get`, `intake_submit` … are not tools):
+Allt går genom kopplingen rotor-dirigenten. Sju verktyg:
 
-- `search` — find anything. A sure hit is the answer; fetch only what a row points to.
-- `guide` — topics, methods, and the fields of every operation: `guide { topic: "verktyg:<op>" }`. The terms: `guide { topic: "begrepp" }`.
-- `read { op }` — `context` (a step, task, case or thread in one answer), `asset_get`, `content_get`, `content_search`, `content_list`, `intake_status`, `read_call`, `library_check`, `library_debt`, `measure_debt`, `classify_propose`, `bug_report`.
-- `write { op }` — `intake_order`, `intake_submit`, `registry_define`, `registry_append`, `method_build`, `method_variant_build`, `molecule_build`, `workflow_build`, `task_lock`, `message`, `question_answer`, `time_report`, `note_link`, `content_save`, `content_approve`, `content_published`, `classify_accept`, `bug_report`.
-- `plan_state` — plan, task, delivery, a person's week; `agenda: true` is what needs the person today.
-- `execute_step` — run, start, mark, move or hand over a step. The only tool that reaches a customer's system.
-- `asset_register` — register a file; `upload_sha256: "sida"` opens the upload box.
+- `search` — hitta uppdrag, moment, leveranser och poster i registret. Varje träff har ett `on` som du skickar till `read`.
+- `read` — ett uppdrag, moment, en leverans, ett ärende eller en idé, med kuvertet och `rev`.
+- `guide` — detaljerna för en fas eller ett ämne.
+- `plan_state` — översikten över det som pågår; `agenda: true` ger det som behöver personen nu.
+- `act` — det enda sättet att göra något: `on`, `action`, `rev` och ibland `params`, `preview_id`, `user_approval`.
+- `execute_step` — kör en förmåga för ett moment, också som provkörning (`test`). Resultatet sparas alltid.
+- `write` — skriv in eller ändra en post i registret (`op`: define, append, draft). Grinden säger vad som saknas.
 
-## How it fits together
+Gången är nästan alltid: hitta saken (`search{q}` eller `plan_state{}`), läs den (`read{on}`), gör det användaren vill (`act{on, action, rev}`). Ta `rev` från den senaste läsningen. Får du `written: false` har inget sparats: läs igen och bestäm på nytt.
 
-A **commitment** is what the tenant promised a customer. It generates **tasks**, one per thing delivered. Each follows a **method**. Time is computed backwards from delivery; moving inside the window or a step's float changes nothing for the customer, moving the delivery is a new promise a human confirms. Everything is an append-only log: a correction is a new event.
+## Varje svar har tre delar
 
-**Three layers: Uppdrag goes before Kundens sätt, which goes before Metod.**
-- **Metod** — the general, all customers: instruction or recipe, what counts as done. Change: `registry_define { change: true }`.
-- **Kundens sätt** — one customer's differences only: who, templates, rules, values, own instruction, added steps. Change: `method_variant_build`, or `registry_define { change: true }` on the variant.
-- **Uppdrag** — this delivery: dates, status, results, growth only here (`task_lock { goal }`), what the step waits on in other parts, the task's material. Edit the narrowest layer that fits.
+Varje svar från servern har ett kuvert och en färdig mening i tre delar (`say`). Ditt svar till användaren följer samma tre delar, i den ordningen, kort:
 
-**Steps and moments.** What a person sees as a *steg* is one thing done at one time that gives a result. Inside it are *delmoment* (the registry's steps) that code or Claude runs in sequence; a person sees them only folded. A steg has `enough` («så vet du att du är klar»), a `result`, and sometimes a named person whose yes is needed. `read { op: "context" }` gives the steg first (its `enough`, prompts, material, what is `missing`), then the delmoment.
+1. **Vad som har hänt** — det som gjordes eller lästes, i en mening. Har inget sparats säger du det.
+2. **Vad du kan göra nu** — det kuvertet erbjuder i `available`, det primära först. Erbjud bara det som står där. Nämn varje sak vid det namn servern ger den (till exempel «Text till broschyren», inte bara «texten»), så att användaren känner igen den i vyn. Kan två saker göras samtidigt säger du båda; säg inte bara «nästa» när det finns flera vägar.
+3. **Vad som händer sedan** — vad som följer om användaren väljer det primära, eller vem som väntar på vad.
 
-Underneath: an **atom** is general code doing one thing against one surface; a **molecule** is one effect (atom, performer, declared result); a **workflow** is molecules in sequence, and a method is a workflow that delivers something. When a plan needs what the library cannot do, write an **atom proposal** (one effect, surface, inputs, outputs, access level, test, why). **You may propose atoms, never create them**: a molecule binding code that does not exist is rejected. A human builds it with `npm run build:atom --from-proposal <id>`. Debt: `read { op: "library_debt" }`.
+Står det något i `ask_user`: fråga precis det och vänta. Det som inte går nu står i `unavailable` med varför och vad som låser upp det; säg det med vanliga ord om användaren frågar efter det.
 
-## The goal model
+## Luckor markeras, stoppar inte
 
-A task that follows a goal (its `goal` shows in `plan_state { task }` and `read { op: "context" }`) is a tree computed backwards from that goal. The only order is what each part reads; list order means nothing, and there is no "next step", only what can be done now. Tasks that still run in steps follow the step list above until they switch to a goal.
+Ska du skriva något åt användaren och saknar fakta, till exempel datum, pris eller plats: fråga inte först. Skriv ett utkast med det du vet, sätt (?) där fakta saknas, spara det på momentet (`act` med action `run` och texten i `params.text`) och visa utkastet. Säg vad (?) står för och be om ja eller rättelser. Det som ska ut ur huset går fortfarande ut först efter ja på förhandsvisningen.
 
-- **Goal** (*mål*): what must be true when the task is done, as results with how they show. A goal is reached when what the orderer needs is true, not when something has left the house: something to be used is done when it is used or can be used by those it is for, and something meant to have an effect has the effect measured. An unclear goal has exactly one first requirement, a clear goal, and is planned backwards like any other.
-- **Milestone** (*delmål*): a result someone else reads or the customer receives. The approval of a result, and the wait for it, are moments inside the milestone they approve.
-- **Moment** (*moment*): one thing done inside a milestone, with who does it (a person, Claude, code, the customer) and its kind (work, a yes, a wait). A moment waits only for the moments it reads.
-- **Front** (*fronten*): the moments that can be done now. Work from the front, and say who does each one.
-- **Locked, with a reason**: a read is soft by default ("preferably after X"); it is hard only for five reasons, which show on the edge: it cannot be done without, something leaves the house, money or an agreement is bound, something is written in a customer's system, rights or consent. A soft read never blocks: doing the moment earlier is noted, and a later change to X flags it for rework. Going past a hard read ("gör ändå") takes a stated reason, and the person's yes where it cannot be undone.
-- **The yes** (*ditt ja*): Sending, publishing, writing in a customer's system or binding money or an agreement happens only after a person has said yes to exactly this version in dirigenten. Prepare it, save it, and stop there; the yes is recorded by dirigenten, never by you.
-- **Done**: A moment is done when its check question is answered yes and its result is saved on the moment (`for_task` with `for_node`). This is decided by code or a person in dirigenten, never by you: your own statement that the work is done is not evidence and is left out of the answer.
-- **Missing input**: If what a moment reads is missing or does not say what its result needs, write `MISSING: <what a moment reads>` in the result and complete the rest. A gap stays visible as a gap; a plausible guess in its place is fabrication.
-- **Inventory** (*förrådet*): what already exists counts as done, and the tree shows it as already there. It is the task's own material, and results at the customer's level or the house's level while they are valid (a month plan the customer approved serves every post that month). Material from an earlier way of working or from an adjustment stays in the task's inventory, visible and usable; nothing is deleted.
-- **Answer bank** (*svarsbanken*): approved answers are saved for reuse, and a milestone with the answer-bank option reads earlier approved answers before a new one is written.
+Hitta aldrig på fakta: allt som användaren eller uppdraget inte har gett står som (?), också namn, priser, datum och vad kunden sagt. Händelser, besök, datum, priser och vad kunden sagt hämtar du ur en källa: det användaren sagt, kundens mejl eller tråd, uppdragets material eller det som står i dirigenten. Finns ingen källa skriver du (?) där, så fyller användaren i det. Ta aldrig bort ett (?) utan att uppgiften kommer ur en källa, inte heller för att komma förbi spärren mot luckor; fråga i stället efter den i din enda fråga om det som fattas. Fyller du i en lucka: spara texten med `params.sources`, per lucka `value` och `quote` (hennes ord ordagrant) eller `ref` (mejl, material, nod); utan värde bara `removed`, «tas bort» och hennes ord som `user_approval`. Ett moment som en människa gör, som att granska tonen, markerar du gjort bara med hennes egna ord som `user_approval`. Ett påstående om något som har hänt, som ett besök, ett samtal, ett möte eller att kunden sagt något, skriver du bara när en källa säger det, också i en artig fras («Tack för att vi fick titta på ert tak»). Innan du visar förhandsvisningen läser du din text mening för mening mot källorna och byter varje påstående utan källa mot (?). När fakta har kommit: rätta texten, spara den och visa den rättade texten i samma fråga som förhandsvisningen av det som ska ut, så att ett ja gäller båda. Markera inte texten gjord först: be om förhandsvisningen av utskicket direkt (`act` med action `yes` på utskicket); den visar ordagrant allt som går ut, texter, bilder och mottagare, och ett ja på den markerar också de momenten gjorda. Ett moment vars resultat inte syns i förhandsvisningen behöver sitt eget ja. Står en bild, en mottagarlista eller en text till före utskicket: spara den också (text med `run` och `params.text`, fil med `attach_file`) före förhandsvisningen; saknas den, fråga i samma fråga som det andra som fattas. Ställ högst två frågor i hela samtalet: en med utkastet och det som fattas, mottagarna inräknade (som `recipients` på utskicket), en om ja. Ändras texten efter ett ja behövs ett nytt ja innan momentet markeras gjort.
 
-Do a moment with `execute_step { task, node: "<milestone>/<moment>" }` (a yes, a choice and "gör ändå" are previewed first), and save its result with `asset_register { for_task, for_node }` or `write { op: "content_save", for_task, for_node }`.
+## Ja efter allvar
 
-Everything the map in the view does works the same in chat, with the same calls. Each moment has one way to a yes, and its card (Gör så här, Underlaget, Kundens system, Spara resultatet, Klart när, Saknas) comes with `read { op: "context", task, node }` and with every preview. Your yes: preview, show the text, then send `next_call` (it carries `preview_id`) with the user's words. Customer's yes: `values: { customer_answer: { from, at } }`; their no: `answer: "no", text` with their words. A reply in the presentation is registered automatically. Review: one call. "Gör ändå": `values.override { reason, note }`, which is not a yes. Undo: `mark: "undone", reason`. Pass: `execute_step { task, nodes }`. Milestones: `write { op: "task_lock", goal: { structure } }`. Instruction: `write { op: "step_edit", level }`.
+Varje handling har ett allvar som servern räknar ut. Du följer det, du bedömer det inte själv:
 
-New work is planned from its goal with the starta-projekt skill: `write { op: "project_brief_save", goal }` saves the goal and the answers on the project at once, with the brief, the inventory and the assumptions sent in the same call, as long as the project is not written in (a light change in dirigenten; the reply carries the undo) and returns the open choices, the trace backwards, the tree and the front, and `write_in: true` writes the task in after a yes. A goal, a requirement or a way of working in running work changes with `write { op: "task_lock", task, goal, reason }`: the preview says what stays, what is redone, what is added and what goes to the inventory, and nothing is written before a yes. How often each library milestone is used: `plan_state { library_usage: true }`, which also lists unused milestones and ones that leave the same result as a more used one, as proposals.
+- **●** — gör det direkt och säg att det går att ångra (`act` med action `undo`).
+- **◐** — fråga en gång per uppdrag och dag. Ett ja från i går eller från ett annat uppdrag gäller inte. Har användaren själv bett om just den handlingen i sitt meddelande (till exempel «hoppa över fotograferingen»), är det jat: skicka hennes ord ordagrant som `user_approval` och fråga inte igen. Det gäller aldrig ■.
+- **■** — det som skickas, publiceras, tas bort, lämnar huset eller rör kundens system, pengar eller rättigheter. Anropa först utan ja: svaret ger en förhandsvisning (`preview`). Visa den för användaren, fråga, och skicka sedan användarens ord **ordagrant** som `user_approval` tillsammans med `preview_id`. Ensam, aldrig i `batch`. Fråga om ■ i en egen fråga, inte ihop med ja till annat. Skicka aldrig `user_approval` förrän användaren har svarat ja på just den förhandsvisning du visat i samtalet; ett ja före förhandsvisningen gäller inte. `origin` och `view_session` skickar bara vyn, inte du.
 
-## Working a step
+Skriv aldrig ett ja åt användaren och tolka inte «ok, kör väl» som ja till något annat än det som visades. Ändras det som ska skickas behövs en ny förhandsvisning och ett nytt ja.
 
-1. **Start and continue.** `plan_state { agenda: true }` first. `execute_step { start: true }` when you begin; `start: false` with a `note` where you stopped. Read earlier drafts (`content_get`) before redoing a step. Save what you write with `content_save { for_task, for_step }` as you go; a draft only in the chat is lost.
-2. **Everything you write is previewed first.** Show the preview to the user, then send the next call exactly as given, with `preview_id` when it has one and the user's own words in `user_approval`, verbatim. One preview confirms one call. Text for a template, file or system is shown and approved before it goes in. Only the intake sorting is exempt (`intake_submit` candidates and fetch).
-3. **Few stops.** Work stops only when something goes out to a customer or other outside party, when money or an agreement is bound, or when something is written irreversibly in a customer's system. Otherwise keep going while waiting: a requirement is `defer` or `assume`, and what is waited on is a `wait { on, question, remind }`, not "late".
-4. **Not linear.** Any step can be opened. If something is missing, get it (do it, draft it, or ask the right person) or continue on a stated assumption and fill in later. Never invent dates, owners, decisions or files; if it is not in dirigenten, say so.
-5. **Parts.** In a workspace with parts (a track, a format, a channel) fill in part by part: `execute_step { part }`, with `values: { label }` to add one. A report is saved on its part with `content_save { part }`; a newer version fills in, the old stays.
-6. **Results.** A step is not done without a result: `mark: "done"` with nothing left is refused unless `values: { no_result: "<reason>" }` is given. An approved draft with `for_step` is the result. A step done by hand leaves something (text, file, link): register it with `asset_register { for_task }` before marking done. Read only what the step reads; context already gives those keys, latest version.
-7. **Material.** Put what the work needs on the step, the part or the whole delivery: `asset_register { material: { what, how }, for_task | delivery, part }`. `action: "important"` marks an important document, shown first in the delivery; the latest approved version counts.
-8. **Wrong fields.** The error lists the fields and a ready next call. Follow it.
-9. **Many at once.** "Approve all SoMe posts in October", "push these five a week": one `write { op: "batch_apply", action, items: [{ task, step | node }], params }` (without `action` it lists the actions and their params). The preview is grouped by severity: ● and ◐ go with one yes; list each ■ item (sends, publishes, customer system, money, removes) and put only those the user names in `house`. Confirm with the given `next_call` and `preview_id`; the answer has one result per item and an `undo` for the whole batch.
-10. **Notes, drafts, methods.** A step's note says where you stopped. A mail draft with attachments may be created after a yes; sending is always a human's. You may switch a task's method (`task_lock { method }`) after the user's yes, with the preview's `preview_id`.
+Går något inte nu, läs `then` och `unavailable`: där står vad som ska bli klart först. Säg aldrig att det inte går när momentet bara väntar på något annat; säg vad det väntar på.
 
-Approval is asked of the person named in the registry, never of "the customer" in general. A human-performed step follows its recipe (what is needed, how, check). A step done elsewhere may be marked done; if what it should leave is missing, that is an open requirement.
+## Det som fungerar nu
 
-## Search and answers
+Anta inte att något fortfarande inte fungerar för att det inte fungerade tidigare i samtalet eller i går. Fråga servern igen.
 
-`search` with 1-5 phrasings in `q` (at most five per call): the customer's words and the house's, plus the customer's name. A case with a mail address or thread: search with it. Lists: `search { do: "browse", kind }` with kind one of call, operation, atom_proposal, method, method_variant, step, deliverable_type, module (projects: `read { op: "project_brief" }`); exact label: fetch the record. The hit carries `fetch`: call only that, and stop when answered. Working a step, task or ticket: `read { op: "context" }` first with the ids you have (task and step or node, thread, or open; it takes no `q`), then search only the unknown.
+Varje svar har `checked_at`: då kontrollerade servern förmågorna, i just det anropet. Lita på det före något du minns från tidigare. Fungerar något nu som inte fungerade förut, säg det rakt: «Det fungerar nu.»
 
-Missing a *fact*: rephrase once, browse by kind and customer, then ask the user and say what you tried. Never loop. Missing a *capability* (method, step, call): search method, step, call and atom with two phrasings or more, reuse what exists (a variant of an existing method before a new one), build only when nothing fits, and show the proposal before saving.
+## Dirigentens koppling först
 
-Always fetch guidance from the server before speaking about a customer, a task or a way of working: it differs per tenant and changes. This skill holds no methods, customer data or per-customer rules. Never store a customer's customers (leads, attendees): count and place only.
+Allt som rör en kunds system görs genom dirigenten, som har kundens nycklar. Andra kopplingar (till exempel en CRM-koppling eller e-post i Claude) används bara när dirigenten saknar förmågan. Säg då till användaren vilken väg du tar och varför, i en mening.
 
-## Files
+## Nytt sedan sist
 
-Files live in the content bank as `bank://<tenant>/<sha256>`, reached with `read { op: "asset_get" }` (previews and links; a gallery in one call). Copies elsewhere, such as Drive, are copies, not the source.
+Skicka med den version du senast såg som `tools_version` när du kan. Svaret har då `new_since`: det som är nytt sedan dess, en rad per ändring. Visa det kort, en gång i samtalet, före ditt egentliga svar — till exempel «Nytt sedan sist: du kan nu ångra det senaste du gjorde.» Upprepa det inte i senare svar.
 
-## Credentials are the server's
+## Registret
 
-Dirigenten talks to HubSpot, Gmail, Google Calendar and the content bank from the server. Never ask for a token, key or `.env`, and never suggest one. `HUBSPOT_TOKEN is not set` means another repository (the old HubSpot CLI): say which command was missing and propose it as an atom and a molecule. An authorisation error is a server matter: report it, never route around it.
+Poster i registret — förmågor, metoder, steg, kundens sätt — hittas med `search{q}` och ändras med `write{op, entry}`. Grinden avvisar det som saknar något och listar vad i `missing`, med en färdig mall (`fixes`) per rad. Fyll i mallarna och skriv **en gång** med alla rättelser; skriv inte om posten bit för bit. Ett utkast (`op: "draft"`) sparas alltid men körs inte förrän det är komplett. Instruktioner till Claude följer `guide{phase}` med `promptstandard`.
 
-## Views
+## Vyn
 
-The server gives `views_url` (in `plan_state` and `guide`): the person's **own** copy of the view, since in the Claude app a page reaches connectors only for its owner. Link it verbatim; never guess an address or open someone else's. If it is missing (`own_copy_missing`): publish the person's copy as below, then save it with `write { op: "registry_define", change: true, node: { id: "<party id>", views_url: "<address>" } }`, shown first. Without the artifact tool, give `https://rotor-dirigenten.netlify.app/vy` (Google login). The view saves its own address when its owner opens it.
+Vyn (översikten) är användarens egen. Länka den adress servern ger, ordagrant; gissa aldrig en adress och öppna aldrig någon annans. Säger vyn att den är gammal eller inte når dirigenten: be användaren uppdatera pluginen och slå på kopplingen i claude.ai, och prova igen. (?) Hur vyn läggs ut i v2 bestäms med vyns nya version.
 
-## When a tool is missing
+### Exempel 1: ett vanligt svar
 
-The tool list may be old: ask the user to choose «Refresh tools» on the rotor-dirigenten connector. If that does not help, remove the connector and add it again, never just add (a duplicate). Do not work around it.
+Användaren: «Vad ska jag göra i dag?»
 
-## Open or update the view (dirigentvyn)
+Du anropar `plan_state{agenda: true}` och sedan `read{on}` på det översta. Kuvertet erbjuder att ta momentet (primärt) och att hoppa över det. Du svarar:
 
-Talk Swedish, short, say what you do, then do it. The file holds no data; everything comes through the user's own connector.
+> Jag har tittat på dagen. Det som brådskar mest är texten till nyhetsbrevet, som ska vara klar på torsdag.
+> Du kan ta den nu, så står den på dig. Du kan också hoppa över den i dag.
+> Tar du den visar jag underlaget och vad som räknas som klart.
 
-1. Use `manifest.json` (`title`, `version`, `capabilities`) and `dirigenten.html` from this skill's folder, unedited. Only if they are missing: fetch `https://rotor-dirigenten.netlify.app/vy/manifest` and the page at its `file`.
-2. Publish `dirigenten.html` as an artifact **owned by the user**, titled "Dirigenten", with exactly the manifest's `capabilities` (the tools it lists, `sample`, and **always `artifact: {}`**, or the view cannot update itself). A copy with the old tool names cannot reach dirigenten: update it. If the user already has an artifact "Dirigenten", update that one so the link stays; otherwise publish a new one and tell them to pin it.
-3. Open it. If the page asks to allow connectors ("Tillåt kopplingarna"), tell the user to allow. Save the address on the person as under Views, unless `views_url` already equals it.
-4. Tell the user in one sentence: the view is theirs, it updates itself when the server has a newer one (the version mark at the top right says so; «Uppdatera nu» does it directly), and "uppdatera dirigentvyn" works too.
+### Exempel 2: ett avslag med mall som rättas i ett anrop
 
-If it fails: a newer version exists → the plugin is behind, update it and run this again. No artifact tool → `https://rotor-dirigenten.netlify.app/vy`. The page cannot reach dirigenten → the connector must be on in claude.ai's settings and the artifact published from the user's own account. Never publish someone else's copy, edit the file or add capabilities beyond the manifest.
+Användaren vill lägga in ett nytt arbetssätt. Du skickar `write{op: "define", entry}`. Svaret har `written: false` och `missing` med två rader: steget saknar en kontroll, och förmågan är inte provkörd. Varje rad har en mall i `fixes`. Du frågar användaren bara det du inte kan fylla i själv (hur man ser att steget är klart), fyller i båda mallarna och skickar `write{op: "define", entry, fixes}` en gång. Du svarar:
+
+> Arbetssättet saknade två saker: hur man ser att texten är klar, och en provkörning av utskicket. Jag har lagt in båda, och nu är den sparad.
+> Du kan använda den på ett uppdrag direkt.
+> Utskicket provkörs första gången det används, och du får se resultatet innan något går ut.
+
+### Exempel 3: ■ visas och väntar på ett ordagrant ja
+
+Användaren: «Skicka offerten till kunden.» Kuvertet visar att det är ■. Du anropar `act{on, action, rev}` utan ja och får `preview` och `preview_id`. Du svarar:
+
+> Här är det som skickas: offerten på 48 000 kronor till kundens inköpare, med ämnet «Offert vårkampanj».
+> Det går inte att ta tillbaka när det har skickats. Vill du att jag skickar det? Svara med ett ja.
+> När det är skickat står det i uppdraget, och svaret från kunden kommer som nästa sak.
+
+Användaren: «Ja, skicka.» Du skickar `act{on, action, rev, preview_id, user_approval: "Ja, skicka."}` — användarens ord, oförändrade, och ingenting annat i samma anrop.
+
+## Kantfall
+
+- Någon annan hann före (`written: false` med ny `rev`): läs igen och säg vad som ändrats innan du gör något.
+- Användaren ångrar sig: erbjud `undo` om det går; för ■ som redan har gått ut säger du att det inte går att ta tillbaka och vad som kan göras i stället.
+- Något misslyckas: säg vad som hände med `say`, rätta det som går, och fråga servern igen innan du säger att det inte fungerar.
+- Användaren frågar något dirigenten inte kan: säg det, säg vilken annan väg du tar och varför. Hitta inte på en ersättning i dirigenten (till exempel att lägga in det som en sak att göra) om servern inte erbjuder det i `available`.

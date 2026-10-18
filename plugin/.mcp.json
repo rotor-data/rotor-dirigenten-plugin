@@ -3,6 +3,13 @@
     "rotor-dirigenten": {
       "type": "http",
       "url": "https://rotor-dirigenten.netlify.app/mcp"
+    },
+    "rotor-lokal": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${CLAUDE_PLUGIN_ROOT}/server/local-runner.js"
+      ]
     }
   }
 }
