@@ -16450,7 +16450,7 @@ var _ = async function(_2 = {}) {
     throw e(a2), a2;
   }
   function D() {
-    return t.locateFile ? (_3 = "mupdf-wasm.wasm", t.locateFile ? t.locateFile(_3, l) : l + _3) : new URL("mupdf-wasm.wasm", import.meta.url).href;
+    return t.locateFile ? (_3 = "mupdf-wasm.wasm", t.locateFile ? t.locateFile(_3, l) : l + _3) : new URL("../../../mupdf-wasm.wasm", import.meta.url).href;
     var _3;
   }
   async function F(_3) {
