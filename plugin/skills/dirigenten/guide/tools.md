@@ -35,6 +35,8 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields (a wrong
 - `write{op:"content_approve"}`: godkänn innehåll
 - `write{op:"content_published"}`: markera publicerat
 - `read{op:"presentation_draft"}`: presentationens utkast
+- `read{op:"step_material"}`: stegets material per moment, grupperat, med version och godkänt: task, step, node
+- `read{op:"delivery_material"}`: leveransens material och saker: task (whole: true för hela leveransen) eller delivery
 - `write{op:"presentation_text"}`: presentationens text
 - `read{op:"project_brief"}`: projektets brief
 - `write{op:"project_brief_save"}`: spara projektets brief
