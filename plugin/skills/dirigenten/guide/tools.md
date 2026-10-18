@@ -38,6 +38,7 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields (a wrong
 - `read{op:"presentation_draft"}`: presentationens utkast
 - `read{op:"step_material"}`: momentets material i grupper (momentets först), med version och godkänt: task, node
 - `read{op:"delivery_material"}`: leveransens material och saker: task (whole: true för hela leveransen) eller delivery
+- `read{op:"step_card"}`: stegets ark som v6 visade det, med lägesbilden: task, step (momentets nyckel)
 - `write{op:"presentation_text"}`: presentationens text
 - `read{op:"project_brief"}`: projektets brief
 - `write{op:"project_brief_save"}`: spara projektets brief
@@ -47,6 +48,11 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields (a wrong
 - `read{op:"measure_debt"}`: mät skuld
 - `read{op:"classify_propose"}`: förslag på klassning
 - `read{op:"intake_status"}`: beställningens läge
+- `read{op:"messages"}`: meddelandena: varje meddelande med tråd, läst, löst, arkiverat; since
+- `read{op:"inbox_sheet"}`: Inkommet: kön och varje tråds öde; days
+- `write{op:"classify_accept"}`: flytta inkommet dit det hör: thread, classification.route.to
+- `write{op:"case_mark"}`: märk ärenden: task, resolved, note, archived, merged_into
+- `write{op:"case_take_over"}`: ta över ett ärende: task
 - `read{op:"quick_actions"}`: snabbhandlingarna per kund; med ref: uppdragen filen kan kopplas till
 - `write{op:"intake_order"}`: lägg in en beställning: kund, leveranstyp, datum, vem som beställt; blir ett uppdrag
 - `write{op:"intake_submit"}`: ta emot kandidater (möte, mejl, formulär); fetch läser brevlådan utan att skriva
