@@ -1,0 +1,339 @@
+{
+  "_generated": "scripts/gen-local-allow.mjs; do not edit",
+  "allow": [
+    {
+      "kind": "script",
+      "surface": "ad",
+      "call": "ad.call.build_ad_creative",
+      "argv0": "node",
+      "argv": [
+        "node",
+        "dist/atoms/annons/bygg.js",
+        "{uppdrag}",
+        "{ut}"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "ad",
+      "call": "ad.call.render_social_post",
+      "argv0": "node",
+      "argv": [
+        "node",
+        "dist/atoms/some/kor.js",
+        "--uppdrag",
+        "{job}"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "bank",
+      "call": "bank.call.ingest_directory",
+      "argv0": "node",
+      "argv": [
+        "node",
+        "scripts/bank.mjs",
+        "inlas",
+        "{kund}",
+        "--commit"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "bank",
+      "call": "bank.call.put_file",
+      "argv0": "node",
+      "argv": [
+        "node",
+        "scripts/bank.mjs",
+        "fil",
+        "{kund}",
+        "{fil}",
+        "--plats",
+        "{plats}",
+        "--commit"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "blogg",
+      "call": "blogg.call.optimize_image",
+      "argv0": "python3",
+      "argv": [
+        "python3",
+        "blogg.py",
+        "bild",
+        "{fil}"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "doc",
+      "call": "doc.call.render_campaign_pdf",
+      "argv0": "node",
+      "argv": [
+        "node",
+        "dist/atoms/render/pdf.js",
+        "{katalog}",
+        "{dokument}",
+        "{ut}",
+        "--min-sidor",
+        "2",
+        "--sök",
+        "{fraga}"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "doc",
+      "call": "doc.call.render_pdf",
+      "argv0": "node",
+      "argv": [
+        "node",
+        "dist/atoms/render/pdf.js",
+        "{katalog}",
+        "{dokument}",
+        "{ut}",
+        "--min-sidor",
+        "2"
+      ]
+    },
+    {
+      "kind": "pending",
+      "surface": "doc",
+      "call": "doc.call.write_ad_delivery_data"
+    },
+    {
+      "kind": "script",
+      "surface": "gmail",
+      "call": "gmail.call.extract_attachments",
+      "argv0": "node",
+      "argv": [
+        "node",
+        "scripts/gmail-las.mjs",
+        "bilagor",
+        "{mejl}"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "hubspot",
+      "call": "hubspot.call.upload_file",
+      "argv0": "python3",
+      "argv": [
+        "python3",
+        "files_upload.py",
+        "{path}",
+        "{folder}"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "print",
+      "call": "print.call.add_to_mailbox_flyers",
+      "argv0": "/usr/bin/python3",
+      "argv": [
+        "/usr/bin/python3",
+        "print_onboarding/add_to_brevladelappar.py",
+        "{namn}"
+      ]
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.check_order"
+    },
+    {
+      "kind": "script",
+      "surface": "print",
+      "call": "print.call.clone_idml_pair",
+      "argv0": "/usr/bin/python3",
+      "argv": [
+        "/usr/bin/python3",
+        "print_onboarding/clone_idml.py",
+        "{idml}",
+        "{donor}"
+      ]
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.cut_out_portrait"
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.deliver_to_printer"
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.do_order"
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.export_print_pdf"
+    },
+    {
+      "kind": "script",
+      "surface": "print",
+      "call": "print.call.fetch_originals",
+      "argv0": "/usr/bin/python3",
+      "argv": [
+        "/usr/bin/python3",
+        "print_onboarding/hamta_original.py",
+        "{namn}"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "print",
+      "call": "print.call.generate_ads_svg",
+      "argv0": "/usr/bin/python3",
+      "argv": [
+        "/usr/bin/python3",
+        "print_onboarding/generate_ads.py",
+        "{namn}"
+      ]
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.order_one_off_print"
+    },
+    {
+      "kind": "script",
+      "surface": "print",
+      "call": "print.call.price_list",
+      "argv0": "/usr/bin/python3",
+      "argv": [
+        "/usr/bin/python3",
+        "print_onboarding/prislista.py",
+        "--lista",
+        "{prislista}",
+        "--overlag",
+        "{underlag}",
+        "--fixtur",
+        "{fixtur?}"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "print",
+      "call": "print.call.product_sheet_apply",
+      "argv0": "/usr/bin/python3",
+      "argv": [
+        "/usr/bin/python3",
+        "print_onboarding/produktblad.py",
+        "apply",
+        "{template_json}"
+      ]
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.product_sheet_export_pdf"
+    },
+    {
+      "kind": "script",
+      "surface": "print",
+      "call": "print.call.product_sheet_extract",
+      "argv0": "/usr/bin/python3",
+      "argv": [
+        "/usr/bin/python3",
+        "print_onboarding/produktblad.py",
+        "extract",
+        "{idml}",
+        "--pages",
+        "{pages}",
+        "-o",
+        "{out}"
+      ]
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.product_sheet_visual_check"
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.receive_portraits"
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.register_campaign_link"
+    },
+    {
+      "kind": "script",
+      "surface": "print",
+      "call": "print.call.render_ads",
+      "argv0": "/usr/bin/python3",
+      "argv": [
+        "/usr/bin/python3",
+        "print_onboarding/render_ads_png.py",
+        "{namn}"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "print",
+      "call": "print.call.render_image_ad",
+      "argv0": "/usr/bin/python3",
+      "argv": [
+        "/usr/bin/python3",
+        "print_onboarding/render_bildannons_png.py",
+        "--mall",
+        "{mall}",
+        "--rubrik",
+        "{rubrik}",
+        "--underrubrik",
+        "{underrubrik}",
+        "--namn",
+        "{namn}"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "print",
+      "call": "print.call.salesperson_package",
+      "argv0": "/usr/bin/python3",
+      "argv": [
+        "/usr/bin/python3",
+        "print_onboarding/saljar_paket.py",
+        "{namn}",
+        "--no-pull",
+        "--no-push"
+      ]
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.stage_portrait_files"
+    },
+    {
+      "kind": "script",
+      "surface": "print",
+      "call": "print.call.street_sign",
+      "argv0": "/usr/bin/python3",
+      "argv": [
+        "/usr/bin/python3",
+        "print_onboarding/gatupratare.py",
+        "{namn}",
+        "--ingen-hubspot"
+      ]
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.tell_customer"
+    },
+    {
+      "kind": "pending",
+      "surface": "print",
+      "call": "print.call.upload_to_storefront"
+    }
+  ]
+}
