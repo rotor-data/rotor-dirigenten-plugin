@@ -57,6 +57,17 @@
     {
       "kind": "script",
       "surface": "blogg",
+      "call": "blogg.call.list_ctas",
+      "argv0": "python3",
+      "argv": [
+        "python3",
+        "blogg.py",
+        "ctas"
+      ]
+    },
+    {
+      "kind": "script",
+      "surface": "blogg",
       "call": "blogg.call.optimize_image",
       "argv0": "python3",
       "argv": [
