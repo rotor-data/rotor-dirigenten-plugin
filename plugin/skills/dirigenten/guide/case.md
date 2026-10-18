@@ -10,14 +10,14 @@ Missing facts do not stop a draft: write it with (?) where a fact is missing, sa
 5. Tell the user what happened from `say`. To take it back: `act` with action `undo` takes back the last action (or send the action named as `inverse`).
 
 Actions
-- `classify` — Klassa. Means: Du bestämmer vad ärendet gäller. Not for: Inte för att lösa ärendet. Severity: ● do directly. Inverse: classify. From: new, classified.
+- `classify` — Bedöm. Means: Du bestämmer vad ärendet gäller. Not for: Inte för att lösa ärendet. Severity: ● do directly. Inverse: classify. From: new, classified.
 - `to_task` — Gör till uppdrag. Means: Ärendet blir ett uppdrag som kan göras. Not for: Inte för ärenden som inte är klassade. Severity: ● do directly. Inverse: none by design. From: classified.
 - `resolve` — Markera löst. Means: Ärendet är löst. Not for: Inte för ärenden som väntar på svar. Severity: ● do directly. Inverse: reopen. From: new, classified, in_task.
 - `reopen` — Öppna igen. Means: Ärendet tas fram igen, det var inte löst ändå. Not for: Inte för nya ärenden. Severity: ● do directly. Inverse: resolve. From: resolved, archived.
 - `archive` — Arkivera. Means: Ärendet flyttas till arkivet men finns kvar. Not for: Inte för ärenden som inte är lösta. Severity: ● do directly. Inverse: unarchive. From: resolved.
 - `unarchive` — Ta fram ur arkivet. Means: Ärendet tas fram ur arkivet och är löst som förut. Not for: Inte för att öppna ärendet igen. Severity: ● do directly. Inverse: archive. From: archived.
 
-Example 1: `act{on:{kind:"case",id:"<id>"}, action:"classify", rev:"<rev>"}` — Klassa: Du bestämmer vad ärendet gäller.
-Example 2: `act{on:{kind:"case",id:"<id>"}, action:"classify", rev:"<rev>"}` (Klassa, inverse `classify`) followed by `act{…, action:"undo", rev:"<new rev>"}` when the user changes their mind.
+Example 1: `act{on:{kind:"case",id:"<id>"}, action:"classify", rev:"<rev>"}` — Bedöm: Du bestämmer vad ärendet gäller.
+Example 2: `act{on:{kind:"case",id:"<id>"}, action:"classify", rev:"<rev>"}` (Bedöm, inverse `classify`) followed by `act{…, action:"undo", rev:"<new rev>"}` when the user changes their mind.
 Counterexample: `classify` while the case is "in_task" is refused (Går inte nu: ärendet är i ett uppdrag. Det som går nu: Markera löst.). Do not retry it; read and take what `available` offers.
 Edge case: two people act on the same `rev`: one is written, the other gets `written:false` with the new `rev`. Read, then decide again. The `unavailable` list gives `why` and what unlocks it.
