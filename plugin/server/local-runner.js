@@ -22538,7 +22538,7 @@ async function sendMessage(d, i) {
     throw new Error(`delivery \xE4r send eller draft, fick "${String(delivery)}"`);
   const to = (i.to ?? "").trim();
   const cc = (i.cc ?? []).map((a) => a.trim());
-  for (const a of [to, ...cc]) if (!EMAIL_ADDRESS.test(a.toLowerCase())) throw new Error(`"${a}" \xE4r ingen ren adress`);
+  for (const a of [...to.split(",").map((x) => x.trim()), ...cc]) if (!EMAIL_ADDRESS.test(a.toLowerCase())) throw new Error(`"${a}" \xE4r ingen ren adress`);
   if (!i.subject?.trim()) throw new Error("mejlet saknar \xE4mnesrad");
   const no = mailProblem(d.view, i.party, delivery, d.scopes);
   if (no) throw new Error(no);
@@ -22711,6 +22711,14 @@ var fixtures5 = [
     body: "Hej"
   } },
   // data-i-koden: påhittad provadress
+  { name: "flera adresser i Till och en i kopia", ...RUNNER2, args: {
+    party: "@runner",
+    to: "a@example.se, b@example.se",
+    cc: ["c@example.se"],
+    subject: "L\xE4nken",
+    body: "Hej"
+  } },
+  // data-i-koden: påhittade provadresser
   { name: "en s\xF6kv\xE4g som bilaga avvisas", ...RUNNER2, args: {
     party: "@runner",
     to: "kund@example.se",
@@ -27441,6 +27449,38 @@ var items = {
   }
 };
 
+// src/present/blocks/lead_rows.ts
+var rowsOf3 = (d) => Array.isArray(d?.rows) ? d.rows : [];
+var https = (u) => {
+  try {
+    return u && new URL(u).protocol === "https:" ? u : null;
+  } catch {
+    return null;
+  }
+};
+var BADGES = ["deal", "meeting"];
+var leadRows = {
+  type: "lead_rows",
+  accepts: "en rad per lead: namn, ort, status och l\xE4nk (\xF6gonblicksbild)",
+  omitWhenEmpty: true,
+  hasContent: (b) => rowsOf3(b.data).length > 0,
+  render: (b) => section("lead_rows", head({ ...b, title: b.title ?? "Leadsen och var de st\xE5r" }) + `<ul class="rows">${rowsOf3(b.data).map((r) => {
+    const url = https(r.url);
+    const badge = BADGES.includes(r.badge ?? "") ? r.badge : "";
+    return `<li class="row"><span class="who"><strong>${esc(r.name ?? "")}</strong>${r.place ? `<span class="place"> ${esc(r.place)}</span>` : ""}</span><span class="badge${badge ? ` ${badge}` : ""}"><i></i>${esc(r.status ?? "")}</span>` + (r.note ? `<span class="note">${esc(r.note)}</span>` : "") + (url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">\xD6ppna posten</a>` : "") + `</li>`;
+  }).join("")}</ul>`)
+};
+
+// src/present/blocks/findings.ts
+var pointsOf = (d) => Array.isArray(d?.points) ? d.points : [];
+var findings = {
+  type: "findings",
+  accepts: "punkter med ett huvudp\xE5st\xE5ende i fetstil och en f\xF6rklaring",
+  omitWhenEmpty: true,
+  hasContent: (b) => pointsOf(b.data).length > 0,
+  render: (b) => section("findings", head({ ...b, title: b.title ?? "Vad vi ser" }) + `<ul class="points">${pointsOf(b.data).map((p) => `<li><strong>${esc(p.claim ?? "")}</strong> ${esc(p.text ?? "")}</li>`).join("")}</ul>`)
+};
+
 // src/present/blocks/index.ts
 var BLOCKS = new Map([
   cover,
@@ -27458,7 +27498,9 @@ var BLOCKS = new Map([
   reportText,
   proposal,
   socialPost,
-  items
+  items,
+  leadRows,
+  findings
 ].map((k) => [k.type, k]));
 var BLOCK_TYPES = [...BLOCKS.keys()];
 
@@ -27486,8 +27528,9 @@ var campaign = {
 var results = {
   id: "results",
   label: "Resultat",
-  summary: "Nyckeltal, diagram och kommentar f\xF6r en period eller kampanj.",
-  blocks: ["cover", "section_intro", "metrics", "chart", "commentary", "other_material"]
+  summary: "Nyckeltal, leadsen och var de st\xE5r, vad vi ser, diagram och kommentar f\xF6r en period eller kampanj; en presentation per kampanj d\xE4r varje period l\xE4ggs \xF6verst.",
+  blocks: ["cover", "section_intro", "metrics", "lead_rows", "findings", "chart", "commentary", "other_material"],
+  stack: { head: ["cover"] }
 };
 
 // src/present/templates/report.ts
@@ -27680,6 +27723,14 @@ label{display:block;font-size:13px;font-weight:600;margin:0 0 6px}
 .unit{font-size:15px;font-weight:600;color:var(--muted)}
 .change{display:inline-block;margin-top:6px;font-size:13px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-text)}
 .change.down{background:var(--bg);color:var(--muted)}
+.rows,.points{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;border:1px solid var(--line);border-radius:10px;padding:14px 18px}
+.row .who{flex:1 1 220px}.row .place{color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted)}
+.badge i{width:8px;height:8px;border-radius:50%;background:var(--line);display:inline-block}
+.badge.deal{color:var(--accent-text)}.badge.deal i{background:var(--accent)}
+.badge.meeting i{background:var(--muted)}
+.points li{border-left:3px solid var(--accent);padding:4px 0 4px 16px}
 .bars{display:grid;gap:10px}
 .bar-row{display:grid;grid-template-columns:minmax(80px,180px) 1fr auto;gap:12px;align-items:center;font-size:14px}
 .bar-track{background:var(--bg);border-radius:6px;height:14px;overflow:hidden}
@@ -27783,6 +27834,18 @@ function presentationHtml(v, o) {
   return shell(v.title, brand, body, mode, v.fonts);
 }
 
+// src/present/stack.ts
+function stackSection(template, previous, added) {
+  const stack = template.stack;
+  if (!stack) return [...added];
+  const isHead = (b) => stack.head.includes(b.type);
+  const lead = previous.findIndex((b) => !isHead(b));
+  const oldHead = lead === -1 ? [...previous] : previous.slice(0, lead);
+  const oldSections = lead === -1 ? [] : previous.slice(lead);
+  const newHead = added.filter(isHead), section2 = added.filter((b) => !isHead(b));
+  return [...newHead.length > 0 ? newHead : oldHead, ...section2, ...oldSections];
+}
+
 // src/present/numbers.ts
 function parseNumber(s2) {
   const t = (s2 ?? "").replace(/[\s  %]/g, "").replace(/kr$/i, "").replace("\u2212", "-").replace(",", ".");
@@ -27852,6 +27915,7 @@ function planPublish(view, given, draft = false) {
   const same = all2.get(id);
   if (same && same.customer !== i.customer) throw new Error("presentationen h\xF6r till en annan kund");
   const version2 = nextVersion(all2, id);
+  const blocks = i.add_section && same ? stackSection(TEMPLATES.get(i.template), latest(same).blocks, i.blocks) : i.blocks;
   const { label, brand, fonts } = brandOf(view, i.customer);
   const payload = {
     presentation: id,
@@ -27860,7 +27924,7 @@ function planPublish(view, given, draft = false) {
     customer: i.customer,
     ...i.delivery ? { delivery: i.delivery } : {},
     title: i.title.trim(),
-    blocks: i.blocks,
+    blocks,
     recipients: [...new Set(i.recipients.map((r) => r.trim().toLowerCase()))],
     sender: i.sender,
     customer_label: label,
@@ -27876,7 +27940,7 @@ function planPublish(view, given, draft = false) {
     would_change: {
       what: same ? `Ny version (${version2}) av \xAB${i.title}\xBB` : `Ny presentation \xAB${i.title}\xBB`,
       template: TEMPLATES.get(i.template)?.label ?? i.template,
-      blocks: i.blocks.map((b) => `${b.type}${b.items?.length ? ` (${b.items.length})` : ""}`),
+      blocks: blocks.map((b) => `${b.type}${b.items?.length ? ` (${b.items.length})` : ""}`),
       recipients: payload["recipients"],
       sender: i.sender,
       note: "Mottagarna loggar in med en eng\xE5ngskod som mejlas fr\xE5n avs\xE4ndarens egen Gmail."
@@ -27912,10 +27976,11 @@ var spec28 = {
     "title",
     "blocks",
     "recipients",
+    "add_section",
     "reason",
     "preview_id"
   ],
-  "optional_input": ["presentation", "template", "customer", "delivery", "title", "blocks", "recipients", "reason", "preview_id"],
+  "optional_input": ["presentation", "template", "customer", "delivery", "title", "blocks", "recipients", "add_section", "reason", "preview_id"],
   "output": [
     "proposal",
     "would_change",
@@ -28018,6 +28083,7 @@ async function run28(args, ctx) {
     ...i.delivery ? { delivery: i.delivery } : {},
     title: i.title ?? "",
     blocks: i.blocks ?? [],
+    ...i.add_section === true ? { add_section: true } : {},
     recipients: i.recipients ?? [],
     sender: i.party
   });

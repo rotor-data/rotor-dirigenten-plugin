@@ -12,6 +12,7 @@ Missing facts do not stop a draft: write it with (?) where a fact is missing, sa
 Actions
 - `close` — Stäng leveransen. Means: Leveransen är klar och stängs. Not for: Inte för leveranser som har uppdrag kvar. Severity: ● do directly. Inverse: reopen. From: open.
 - `reopen` — Öppna leveransen igen. Means: Leveransen behöver arbetas vidare på. Not for: Inte för att ändra något i den som är levererad. Severity: ● do directly. Inverse: close. From: closed.
+- `add_task` — Lägg till en uppgift. Means: En ny uppgift läggs till i leveransen, som en beställning: avtalet och kvoten räknas, och du ser dem före ja:et. Not for: Inte för ett delmål i en uppgift; det är Lägg till ett delmål. Severity: ◐ one yes per task and day. Inverse: none by design. From: open.
 
 Example 1: `act{on:{kind:"delivery",id:"<id>"}, action:"close", rev:"<rev>"}` — Stäng leveransen: Leveransen är klar och stängs.
 Example 2: `act{on:{kind:"delivery",id:"<id>"}, action:"close", rev:"<rev>"}` (Stäng leveransen, inverse `reopen`) followed by `act{…, action:"undo", rev:"<new rev>"}` when the user changes their mind.
