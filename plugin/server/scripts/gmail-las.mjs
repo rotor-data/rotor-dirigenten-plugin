@@ -5358,6 +5358,20 @@ var methodVariant = z.object({
    */
   prompt_addition: z.record(z.string().min(1).max(4e3)).optional(),
   /**
+   * Kundens tillägg till stegets instruktion, som står på egen hand (vyprov
+   * runda 23): bara de delar kunden har, även när metoden saknar instruktion
+   * för steget. Listor läggs till metodens; syfte och svarets form ersätter.
+   * `instruktion` ovan ersätter en hel instruktion och kräver alla delar.
+   */
+  instruction_addition: z.record(z.object({
+    purpose: z.string().min(1).optional(),
+    read_first: z.array(z.string().min(1)).optional(),
+    how_to: z.array(z.string().min(1)).optional(),
+    must_not: z.array(z.string().min(1)).optional(),
+    answer_format: z.string().min(1).optional(),
+    ask_when: z.array(z.string().min(1)).optional()
+  }).strict()).optional(),
+  /**
    * Kundens regler som inte hör till ett enda steg (blindprov 5): utan
    * `fields` gäller regeln hela kundflödet, med `fields` varje steg som
    * lämnar eller läser fälten (t.ex. bildrubrik och bildunderrubrik). Regeln
