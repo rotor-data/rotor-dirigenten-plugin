@@ -37,6 +37,8 @@ Anta inte att något fortfarande inte fungerar för att det inte fungerade tidig
 ## 3. Målet först, sedan valen
 
 1. Skriv målet: det som ska vara sant när uppdraget är klart, mätbart där det går. Delmålen och ordningen mellan dem räknas av dirigenten baklänges från målet.
+   Är arbetsordningen redan känd (underlaget eller användaren säger vad som kommer först, med datum, vem som ansvarar eller vad en del ska åstadkomma): lämna den med målet i samma skrivning, så räknas bara resten baklänges. Fälten står i `guide{phase: "planning"}`, med ett exempel; ett avslag säger vilket fält som inte finns och ger mallen att skriva efter. Ett nytt datum ersätter det gamla.
+   Exempel: «avtalet först, synopsis före mallen, svenska före engelska» blir delmål i den ordningen, med datum och ansvarig. Motexempel: bara målet, och ordningen gissas fram baklänges.
 2. Planens öppna val tas ett i taget, högst tre per varv, vart och ett med ditt förslag och vad svaret ändrar.
 3. Det som saknas beskrivs med exakt vad (filen, siffran, inloggningen, beslutet), varför (vilket moment det stoppar), exakt hur (en länk, en färdig prompt, en stegvis instruktion med Vad behövs, Så gör du och Kontrollera, eller ett färdigt meddelande som skickas först efter ja) och vem som troligen har det och när.
 4. Saknar dirigenten en förmåga: skriv atomförslaget själv och säg till användaren bara «det här kan dirigenten inte än, det byggs», plus hur det görs för hand under tiden.
@@ -75,6 +77,7 @@ Svaret på en skrivning varnar med momentets namn för fler än tre förbud i en
 2. Det som ändrar ett pågående uppdrag följer allvaret i svaret: ● görs direkt, ◐ kräver ett ja per uppdrag och dag, ■ visas först och görs efter användarens ordagranna ja, ensamt och aldrig i en bunt.
 3. Ett pågående uppdrag planeras om från kartan: det som redan är gjort står kvar oförändrat, och planen utgår från det. Ett moment som någon annan gör eller redan har gjort markeras med `act{on, action: "done_outside", rev}`; ett som inte behövs med `act{on, action: "skip", rev}` efter ja.
 4. Byter uppdraget metod: `act{on, action: "change_method", rev}` efter ja.
+5. Rätta ett pågående uppdrag med act: lägg till ett delmål (med ansvarig och syfte) eller ett beroende på uppdraget, och byt vem eller flytta i tiden på momentet. Fälten per handling står i `guide{phase}` med `task` och `moment`; ett avslag ger mallen.
 
 ## Svaret till användaren
 

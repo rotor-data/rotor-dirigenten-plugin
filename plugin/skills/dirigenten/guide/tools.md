@@ -18,7 +18,7 @@ Example 2: `plan_state{agenda:true}` for what is due, ordered by urgency, then e
 Counterexample: calling a customer's system through another connector when this server has the capability.
 Edge case: a legacy call shape (`asset_register`, `{tool,args}` wrapper) is translated while the adapter window is open; `say.now` shows the new form.
 
-v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields (a wrong call lists them); severity from the policy, ■ needs `user_approval`:
+v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{phase:"verktyg:<op>"}` gives an op's fields from the schema the write is checked against, and a field it does not have is refused with a template. Severity from the policy, ■ needs `user_approval`:
 - `write{op:"time_report"}`: rapportera verklig tid på ett steg eller ärende
 - `write{op:"message"}`: meddelande till en kollega; read, resolve
 - `write{op:"message_mark"}`: markera meddelanden
@@ -68,10 +68,11 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"step_edit"}`: ändra ett steg: task + step, layer here|customer|method, skip + reason, calendar {…}
 - `read|write{op:"batch_actions"}`: handlingstabellen: varje handling med allvar och om den går i en batch
 - `read|write{op:"material"}`: materialet per moment: task + node (momentets grupper), task (hela leveransen), task + ref (en saks innehåll)
+- `read|write{op:"files"}`: filbanken att bläddra i: customer, folder, q, order new|old|name, cursor; ref (en fils innehåll, thumb för miniatyren), ref + task (uppdragets moment att knyta till)
 - `read|write{op:"project_brief_save"}`: spara projektets brief: project (uppdraget), brief { goal, recipient, scope, due, internal_due }
 - `read|write{op:"intake_submit"}`: ta emot kandidater: candidates [...]; undo: kandidaten drar tillbaka den; release: släpper fram en som hålls; fetch läser brevlådan
 - `read|write{op:"intake_order"}`: lägg in en beställning: customer, deliverable_type, due, ordered_by, note, description; preview: true visar den utan att skriva
-- `read|write{op:"quick_run"}`: kör en snabbhandling: task (uppdraget) eller values.delivery ger act run_quick på uppdraget; utan dem blir det först ett uppdrag (customer, deliverable_type ur förmågans yta, due)
+- `read|write{op:"quick_run"}`: kör en snabbhandling: task (uppdraget) eller values.delivery ger act run_quick på uppdraget; utan dem läses en förmåga som bara läser direkt för customer (även execute_step { call, customer, values }, utan steg), och annars blir det först ett uppdrag (customer, deliverable_type ur förmågans yta, due)
 - `read|write{op:"image_fetch"}`: bild ur en extern källa: for_task, for_node (momentet), provenance { source, source_id }, filename, asset_type; Adobe Stock är ■
 - `read|write{op:"note_link"}`: notera en koppling i kundens system: task, customer, from, relation, to, why
 - `read|write{op:"time_report"}`: rapportera verklig tid: task + step (momentet) eller task, hours, phase, date, party; corrects rättar en rapport
