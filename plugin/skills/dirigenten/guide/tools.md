@@ -1,6 +1,6 @@
 # Guide: tools
 - `search`: find tasks, moments and deliveries; each hit has an `on` for `read`.
-- `read`: one subject's envelope with `rev`; `view:"net"` adds the map.
+- `read`: one subject's envelope with `rev`; `view:"net"` adds the map; `on:{kind:"file",id}` gives a bank file's text in pages (`guide{phase:"verktyg:read"}`).
 - `guide`: this text, by `phase`.
 - `plan_state`: the overview of deliveries (`agenda`, `include`).
 - `act`: the only way to do an action: `on`, `action`, `rev`, `params`, `preview_id`, `user_approval`, `batch`; action `undo` takes the last action back.
