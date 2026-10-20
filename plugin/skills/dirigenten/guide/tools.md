@@ -45,6 +45,7 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields (a wrong
 - `read{op:"measure_debt"}`: mät skuld
 - `read{op:"classify_propose"}`: förslag på klassning
 - `read{op:"intake_status"}`: beställningens läge
+- `read{op:"settings"}`: inställningarna: kopplingar, arbetsdag och för en superadmin vem som har vilka rättigheter
 - `read{op:"messages"}`: meddelandena som trådar med läget i ord och antal per flik; since
 - `read{op:"inbox_sheet"}`: Inkommet: kön och varje tråds öde, utan ämne och avsändare; days
 - `write{op:"classify_accept"}`: flytta inkommet dit det hör: thread, classification.route.to
@@ -76,5 +77,6 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"time_report"}`: rapportera verklig tid: task + step (momentet) eller task, hours, phase, date, party; corrects rättar en rapport
 - `read|write{op:"presentation_text"}`: spara presentationens texter: delivery, texts [{ key, field title|lead|caption, ref?, text, source? }]
 - `read|write{op:"content_published"}`: markera publicerat: task + step/node (momentet), channel, channel_id, url, id (texten); ■ med förhandsvisning
+- `read|write{op:"delivery_sheet"}`: leveransens sida: tasks (uppdragen), räknad i servern
 - `read|write{op:"step_card"}`: stegets ark: task, step (momentets nyckel)
 - `read|write{op:"batch_apply"}`: en handling på flera: action, items [{ task, step|node }], params; ■ en i taget efter förhandsvisning

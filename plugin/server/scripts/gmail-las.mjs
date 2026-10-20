@@ -6652,7 +6652,9 @@ function toRawMessage(m, body, domains) {
     ...m.internalDate ? { at: new Date(Number(m.internalDate)).toISOString() } : {},
     attachments: m.payload?.parts?.filter((p) => p.filename).length ?? 0,
     ...to.length ? { to } : {},
-    ...cc.length ? { cc } : {}
+    ...cc.length ? { cc } : {},
+    ...header(h, "Message-ID").trim() ? { message_id: header(h, "Message-ID").trim() } : {},
+    ...header(h, "References").trim() ? { references: header(h, "References").trim().split(/\s+/) } : {}
   };
 }
 

@@ -22941,7 +22941,9 @@ function toRawMessage(m, body, domains) {
     ...m.internalDate ? { at: new Date(Number(m.internalDate)).toISOString() } : {},
     attachments: m.payload?.parts?.filter((p) => p.filename).length ?? 0,
     ...to.length ? { to } : {},
-    ...cc.length ? { cc } : {}
+    ...cc.length ? { cc } : {},
+    ...header2(h, "Message-ID").trim() ? { message_id: header2(h, "Message-ID").trim() } : {},
+    ...header2(h, "References").trim() ? { references: header2(h, "References").trim().split(/\s+/) } : {}
   };
 }
 
@@ -22978,8 +22980,8 @@ var spec7 = {
   performer: "code",
   requires: "read",
   idempotent: true,
-  input: ["party", "address", "fran", "till", "interna", "labels", "never_labels"],
-  optional_input: ["labels", "never_labels"],
+  input: ["party", "address", "fran", "till", "interna", "labels", "never_labels", "thread"],
+  optional_input: ["labels", "never_labels", "thread"],
   output: ["mailbox", "query", "messages", "broken", "bodies"],
   label: "L\xE4s inkommande e-post",
   summary: "L\xE4ser posten som levererats till en bevakad adress inom ett f\xF6nster, med personens egen Google-koppling (gmail.readonly). Huvuden f\xF6rst; kroppen bara f\xF6r vidarebefordringar och tr\xE5dens sista post utifr\xE5n.",
@@ -23002,24 +23004,25 @@ var spec7 = {
   lead_days: 0
 };
 var API = "https://gmail.googleapis.com/gmail/v1/users/me/";
-var HEADERS = ["From", "Subject", "To", "Date", "Delivered-To"];
+var HEADERS = ["From", "Subject", "To", "Date", "Delivered-To", "Message-ID", "References"];
 var DATE2 = /^\d{4}-\d{2}-\d{2}$/;
 var MAX_PAGES = 20;
 var list = (v) => (Array.isArray(v) ? v.map(String) : String(v ?? "").split(",")).map((x) => x.trim()).filter(Boolean);
 async function run7(args, ctx) {
   const party2 = String(args["party"] ?? "").trim();
   if (!party2) throw new Error("party saknas \u2014 personen vars Google-koppling l\xE4ser posten");
+  const only = String(args["thread"] ?? "").trim();
   const address = String(args["address"] ?? "").trim().toLowerCase();
   const from = String(args["fran"] ?? "").trim();
   const to = String(args["till"] ?? "").trim();
   const domains = new Set(list(args["interna"]).map((d) => d.toLowerCase()));
-  if (!address || !from || !to) throw new Error("address, fran och till beh\xF6vs \u2014 adressen och f\xF6nstret");
-  if (!domains.size) throw new Error("inga interna dom\xE4ner \u2014 utan dem g\xE5r uppackningen inte att avg\xF6ra");
+  if (!only && (!address || !from || !to)) throw new Error("address, fran och till beh\xF6vs \u2014 adressen och f\xF6nstret");
+  if (!only && !domains.size) throw new Error("inga interna dom\xE4ner \u2014 utan dem g\xE5r uppackningen inte att avg\xF6ra");
   const link = ctx.connection ? await ctx.connection("google", party2) : null;
   if (!link) throw new Error("personen har ingen Google-koppling i dirigenten \u2014 koppla Google Gmail under Inst\xE4llningar");
   if (!link.scopes.includes(GMAIL_SCOPE)) throw new Error("Google-kopplingen saknar Gmail (gmail.readonly) \u2014 koppla om med Gmail p\xE5slaget");
   const mailbox = (link.account ?? "").trim().toLowerCase();
-  let query = DATE2.test(from) && DATE2.test(to) ? inflowQueryRange(address, from, to, mailbox) : inflowQueryBetween(address, from, to, mailbox);
+  let query = only ? `thread:${only}` : DATE2.test(from) && DATE2.test(to) ? inflowQueryRange(address, from, to, mailbox) : inflowQueryBetween(address, from, to, mailbox);
   const labels = list(args["labels"]);
   const never = list(args["never_labels"]);
   const pick3 = labels.length > 1 ? `{${labels.map((l) => labelTerm(l, false)).join(" ")}}` : labels.length ? labelTerm(labels[0], false) : "";
@@ -23038,9 +23041,9 @@ async function run7(args, ctx) {
       throw new Error("Gmails kvot per minut \xE4r slut \u2014 f\xF6rs\xF6k igen om en minut");
     throw new Error(`Gmail ${r.status}: ${text7.slice(0, 200)}`);
   };
-  const threads = /* @__PURE__ */ new Set();
+  const threads = new Set(only ? [only] : []);
   let page;
-  for (let i = 0; i < MAX_PAGES; i++) {
+  for (let i = 0; i < (only ? 0 : MAX_PAGES); i++) {
     const r = await api("messages", { q: query, maxResults: "500", ...page ? { pageToken: page } : {} });
     for (const m of r["messages"] ?? []) threads.add(m.threadId ?? m.id);
     page = typeof r["nextPageToken"] === "string" ? r["nextPageToken"] : void 0;
@@ -23081,7 +23084,7 @@ async function run7(args, ctx) {
     const f = last.get(k);
     if (!f || Date.parse(m.at ?? "0") >= Date.parse(f.at ?? "0")) last.set(k, m);
   }
-  for (const m of last.values()) {
+  for (const m of only ? [] : last.values()) {
     if (m.internal || m.body_chars !== void 0) continue;
     try {
       messages[messages.indexOf(m)] = toRawMessage(raw2.get(m.id), await bodyOf(m.id), domains);
@@ -23267,7 +23270,7 @@ var spec8 = {
   optional_input: ["urls", "items", "checks", "concurrency", "timeout_ms", "max", "budget_ms"],
   output: ["pages", "checked", "not_checked"],
   label: "H\xE4mta webbsidor och kontrollera dem",
-  summary: "H\xE4mtar publika adresser och l\xE4mnar per adress statuskod, omdirigeringskedja, canonical, noindex och vilka m\xE4tskript som finns (GA4, Tag Manager, Meta-pixeln, HubSpot).",
+  summary: "H\xE4mtar publika adresser och l\xE4mnar per adress statuskod, vart adressen skickas vidare, vilken adress sidan anger som sin egen, om den \xE4r st\xE4ngd f\xF6r s\xF6kmotorer och vilka m\xE4tskript som finns (GA4, Tag Manager, Meta-pixeln, HubSpot).",
   keywords: ["statuskod", "omdirigering", "canonical", "noindex", "m\xE4tskript", "sp\xE5rningskod", "redirect chain", "tracking pixel"],
   test_target: "l\xE4ser bara publika sidor; torrk\xF6rning n\xE5r inte n\xE4tet; prov mot fejkad fetch i test/fetch-pages.test.ts",
   leaves: {
@@ -25802,7 +25805,7 @@ var spec19 = {
   optional_input: ["properties", "associations", "id_property"],
   output: ["product", "object"],
   label: "L\xE4s en post i HubSpot",
-  summary: "L\xE4ser en post av en typ i HubSpot med dess id (eller ett unikt f\xE4lt, id_property): f\xE4lten (properties) och vilka poster den \xE4r kopplad till (associations, med kopplingens etiketter). Produkter, CRM-poster och kundens egna objekt. L\xE4ser bara.",
+  summary: "L\xE4ser en post av en typ i HubSpot med dess nummer eller ett unikt f\xE4lt: postens f\xE4lt och vilka poster den \xE4r kopplad till, med kopplingens etiketter. Produkter, CRM-poster och kundens egna objekt. L\xE4ser bara.",
   keywords: ["l\xE4s en post av en typ", "read object", "kopplingar", "associations", "l\xE4s tillbaka", "kopplad till"],
   test_target: "l\xE4ser bara",
   leaves: { schema: { product: "produkten (object_type products)", object: "posten: id, properties och associations per typ ({ id, labels }[])" }, done_when: [], where: "" },
