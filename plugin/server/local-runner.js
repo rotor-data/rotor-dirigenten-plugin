@@ -14657,6 +14657,9 @@ __export(change_bank_atom_exports, {
   spec: () => spec
 });
 
+// src/v2/domain/moment-standard.ts
+var STANDARD_IDS = ["approval_send", "approval_yes", "approval_co_yes", "collect", "deliver", "walkthrough", "check_in_use"];
+
 // node_modules/zod/lib/index.mjs
 var util;
 (function(util3) {
@@ -19716,6 +19719,12 @@ var templateMoment = z.object({
   /** Receptet när en människa gör momentet (runda D3). */
   recipe: momentRecipe.optional(),
   /**
+   * Standardmomentets mall i det centrala biblioteket (src/v2/domain/moment-standard.ts, Daniel P 2026-10-20: «en
+   * central text som är på många»): syfte, följd, recept eller instruktion läses därifrån med momentets värden.
+   * Momentet bär bara referensen, aldrig en kopia av texten.
+   */
+  standard: z.enum(STANDARD_IDS).optional(),
+  /**
    * Förmågan momentet behöver när kod eller Claude gör det (etapp 2): ytan
    * (systemet, får vara en hållare som `{system}`), effektens verb och
    * objektet. Det sparade målet eller kundens sätt binder momentet till en
@@ -23004,7 +23013,7 @@ var spec7 = {
   lead_days: 0
 };
 var API = "https://gmail.googleapis.com/gmail/v1/users/me/";
-var HEADERS = ["From", "Subject", "To", "Date", "Delivered-To", "Message-ID", "References"];
+var HEADERS = ["From", "Subject", "To", "Cc", "Date", "Delivered-To", "Message-ID", "References"];
 var DATE2 = /^\d{4}-\d{2}-\d{2}$/;
 var MAX_PAGES = 20;
 var list = (v) => (Array.isArray(v) ? v.map(String) : String(v ?? "").split(",")).map((x) => x.trim()).filter(Boolean);

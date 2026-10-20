@@ -4,6 +4,9 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+// dist/src/v2/domain/moment-standard.js
+var STANDARD_IDS = ["approval_send", "approval_yes", "approval_co_yes", "collect", "deliver", "walkthrough", "check_in_use"];
+
 // node_modules/zod/lib/index.mjs
 var util;
 (function(util2) {
@@ -5062,6 +5065,12 @@ var templateMoment = z.object({
   only_without_order: z.literal(true).optional(),
   /** Receptet när en människa gör momentet (runda D3). */
   recipe: momentRecipe.optional(),
+  /**
+   * Standardmomentets mall i det centrala biblioteket (src/v2/domain/moment-standard.ts, Daniel P 2026-10-20: «en
+   * central text som är på många»): syfte, följd, recept eller instruktion läses därifrån med momentets värden.
+   * Momentet bär bara referensen, aldrig en kopia av texten.
+   */
+  standard: z.enum(STANDARD_IDS).optional(),
   /**
    * Förmågan momentet behöver när kod eller Claude gör det (etapp 2): ytan
    * (systemet, får vara en hållare som `{system}`), effektens verb och

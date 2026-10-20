@@ -50,6 +50,7 @@ Instruktionerna skrivs i planeringen, så fullständigt som underlaget räcker, 
 1. Varje instruktion har sex delar: syfte och sammanhang; vad som ska läsas först, med exakta källor; så gör du, i numrerade steg; får inte; svarsformat med minst två exempel, varav ett motexempel eller gränsfall; när man ska fråga. Detaljerna står i `guide{phase}` med `promptstandard`.
 2. Skriv in med `write{op: "define", entry, task}`. Svaret säger vad som saknas och ger en färdig rättelse per sak; skicka alla rättelser i ett enda anrop med `fixes`. Ett tillägg till något som finns görs med `write{op: "append", entry}`.
 3. Skriv instruktionen komplett första gången (Daniel P: «det bästa vore om prompter och instruktioner från början blev kompletta och inte behövde revideras»). Följ reglerna nedan.
+4. Varje moment ska vara fullständigt: purpose (en hel mening) och done_when; människa och kund: recipe { needs, how, check } med numrerade steg; Claude: instruction { purpose, read_first, how_to, must_not, answer_format, ask_when } med minst ett «Exempel:»; kod: capability, en förmåga som finns, görs av kod och lämnar momentets resultat. Ett verktyg allmänt («Smyra», «Chrome») räcker inte. Kontrollera dirigentens förslag på förmåga: ett förslag märkt «passar inte» används inte. Standardmomenten (godkännande, ja, samla, leverera, kontrollera) ärver ur biblioteket. Grinden avgör: ett utkast sparas med varningar, inskrivningen stoppas, och avslaget har en mall per moment att skicka tillbaka i ett anrop.
 
 ### Regler för instruktioner (planeringslärdomarna 26–30)
 
