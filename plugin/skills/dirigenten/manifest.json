@@ -1,6 +1,6 @@
 {
  "title": "Dirigenten",
- "version": "44d3e6d8",
+ "version": "d3f2570b",
  "file": "https://rotor-dirigenten.netlify.app/vy/fil",
  "capabilities": {
   "mcp": {
@@ -8,11 +8,10 @@
     {
      "server": "rotor-dirigenten",
      "tools": [
-      "asset_register",
-      "execute_step",
-      "guide",
+      "act",
       "plan_state",
       "read",
+      "search",
       "write"
      ]
     }

@@ -49,6 +49,7 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 - `read{op:"messages"}`: meddelandena som trådar med läget i ord och antal per flik; since
 - `read{op:"inbox_sheet"}`: Inkommet: kön och varje tråds öde, utan ämne och avsändare; days
 - `write{op:"classify_accept"}`: flytta inkommet dit det hör: thread, classification.route.to
+- `read{op:"view_start"}`: startsidan för en egen vy (några kB) och förmågorna den läggs ut med; vyns egen html ges aldrig
 - `read{op:"view_file"}`: vyns ark: sheet delivery|calendar|how|library|method|order …
 - `write{op:"how_customer"}`: kundens sätt: patch { variant, step, set { responsible | values } }
 - `read{op:"quick_actions"}`: snabbhandlingarna per kund; med ref: uppdragen filen kan kopplas till

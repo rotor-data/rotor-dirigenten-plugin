@@ -11,7 +11,7 @@ Dirigenten håller ordning på vad som är lovat till kunder, vad som ska göras
 
 **Förklara det du hänvisar till.** Nämn aldrig ett recept, en metod, ett steg eller ett registerord bara med namnet; säg vad det är: vem gör vad, när och vad det ger. Namnet sist, vid behov.
 
-Den här skillen bär samtalet. Vad varje slags sak kan göras med, och hur, står i guiden: `guide{phase}` med en av `moment`, `task`, `delivery`, `case`, `idea`, `envelope`, `severity`, `promptstandard`, `tools`. Hämta guiden för en fas första gången den behövs i samtalet, inte i förväg.
+Den här skillen bär samtalet. Vad varje slags sak kan göras med, och hur, står i guiden: `guide{phase}` med en av `moment`, `task`, `delivery`, `case`, `idea`, `envelope`, `severity`, `promptstandard`, `tools`, `view`. Hämta guiden för en fas första gången den behövs i samtalet, inte i förväg.
 
 ## Verktygen
 
@@ -75,7 +75,7 @@ Poster i registret — förmågor, metoder, steg, kundens sätt — hittas med `
 
 ## Vyn
 
-Vyn (översikten) är användarens egen. Länka den adress servern ger, ordagrant; gissa aldrig en adress och öppna aldrig någon annans. Säger vyn att den är gammal eller inte når dirigenten: be användaren uppdatera pluginen och slå på kopplingen i claude.ai, och prova igen. (?) Hur vyn läggs ut i v2 bestäms med vyns nya version.
+Vyn är personens egen: länka `views_url`, gissa inte. Finns den: öppna. **Läs aldrig vyns html**; «uppdatera vyn» gör vyn själv med «Uppdatera nu». Saknas den (● och kan ångras): `guide{phase:"view"}`. Annans vy uppdaterar du inte; den är alltid aktuell på https://rotor-dirigenten.netlify.app/vy; säg det, gör inget mer.
 
 ### Exempel 1: ett vanligt svar
 
