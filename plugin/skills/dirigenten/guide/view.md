@@ -2,7 +2,7 @@
 The view (overview) is the user's own artifact. Never read the view's html (half a megabyte): not with `read`, not from a file. «Update the view» is done by the view itself («Uppdatera nu» in it), never by you.
 
 Steps
-1. The user has `views_url` (the guide's first line, or `read{op:"settings"}`): open it; that is all.
+1. Open `views_url` first. The user has it when `read{op:"view_file"}` answers «Öppna din vy: <views_url>» (or the guide's first line, or `read{op:"settings"}`): open it with Artifact `open` (the answer's `next`); that is all.
 2. No own view (● and can be undone): in Cowork and the app, `cp` the plugin's `skills/dirigenten/dirigenten.html` to the working folder (do not open it), read the small `skills/dirigenten/manifest.json`, and publish the file with Artifact, `capabilities` from the manifest.
 3. On claude.ai on the web, where plugin files do not exist: `read{op:"view_start"}` gives a start page of a few kB and its `capabilities`; write `html` to a file and publish it. The page fetches the view itself.
 4. Save the address: `write{op:"registry_define", change:true, node:{id:<the person's id>, views_url}}`.
