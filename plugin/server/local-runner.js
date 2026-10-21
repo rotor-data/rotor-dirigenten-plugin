@@ -12961,7 +12961,7 @@ var require_headers = __commonJS({
       }
       return result;
     };
-    exports.encode = function encode(opts) {
+    exports.encode = function encode2(opts) {
       const buf = b4a.alloc(512);
       let name = opts.name;
       let prefix = "";
@@ -26259,12 +26259,12 @@ __export(ui_settings_register_atom_exports, {
 // atoms/browser/recipe.ts
 var IF_BLOCKED = 'Stoppar klienten handgreppet (t.ex. Claude Codes auto mode) \xE4r det klientens egen s\xE4kerhetsregel, och den kringg\xE5s inte. S\xE4g det till anv\xE4ndaren, citera anv\xE4ndarens ja ordagrant som user_approval, och be anv\xE4ndaren till\xE5ta handlingen i klienten och f\xF6rs\xF6ka igen. G\xE5r det \xE4nd\xE5 inte: skicka write { op: "bug_report" } med var det stoppade.';
 var RUNTIME = /* @__PURE__ */ new Set(["result", "evidence", "user_approval"]);
-function browserRun(spec32) {
+function browserRun(spec33) {
   return async (args, ctx) => {
-    const r = spec32.browser;
-    const optional = new Set(spec32.optional_input ?? []);
+    const r = spec33.browser;
+    const optional = new Set(spec33.optional_input ?? []);
     const values = {};
-    for (const k of spec32.input) {
+    for (const k of spec33.input) {
       if (RUNTIME.has(k)) continue;
       const v = args[k];
       if ((v === void 0 || v === "") && !optional.has(k)) throw new Error(`${k} saknas`);
@@ -26278,12 +26278,12 @@ function browserRun(spec32) {
       steps = [...r.path, ...p];
     }
     const approval = r.severity === "\u25CF" ? "\u25CF g\xF6rs direkt, g\xE5r att \xE5ngra" : r.severity === "\u25D0" ? "\u25D0 visa vad som ska g\xF6ras och v\xE4nta p\xE5 ja innan handgreppet" : "\u25A0 fr\xE5ga alltid, och visa vad som h\xE4nger p\xE5 det innan handgreppet";
-    const recipe = { ...r, steps, values, approval, ...spec32.effect.verb !== "reads" ? { if_blocked: IF_BLOCKED } : {} };
+    const recipe = { ...r, steps, values, approval, ...spec33.effect.verb !== "reads" ? { if_blocked: IF_BLOCKED } : {} };
     const evidence = typeof args["evidence"] === "string" ? args["evidence"].trim() : "";
     const result = typeof args["result"] === "string" ? args["result"].trim() : "";
     if (ctx.dry_run || !evidence) return { recipe, awaiting: true, result: "", evidence: "", done: false };
     const yes2 = typeof args["user_approval"] === "string" ? args["user_approval"].trim() : "";
-    if (spec32.effect.verb !== "reads" && r.severity !== "\u25CF" && !yes2)
+    if (spec33.effect.verb !== "reads" && r.severity !== "\u25CF" && !yes2)
       throw new Error("user_approval saknas \u2014 ett \u25D0/\u25A0-handgrepp tas emot f\xF6rst med m\xE4nniskans ja");
     if (!result) throw new Error("result saknas: vad blev gjort (id, namn eller avl\xE4sningen)");
     return { recipe, awaiting: false, result, evidence, done: true };
@@ -27249,12 +27249,353 @@ var fixtures28 = [
   }
 ];
 
-// atoms/presentation/write.atom.ts
-var write_atom_exports = {};
-__export(write_atom_exports, {
+// atoms/meta/manage_access.atom.ts
+var manage_access_atom_exports = {};
+__export(manage_access_atom_exports, {
+  ACTIONS: () => ACTIONS4,
+  ROLES: () => ROLES,
+  TASKS: () => TASKS,
   fixtures: () => fixtures29,
   run: () => run29,
   spec: () => spec29
+});
+
+// atoms/meta/graph.ts
+import { createHmac } from "node:crypto";
+var HOST3 = "https://graph.facebook.com";
+var GRAPH_VERSION = "v23.0";
+var appSecretProof = (c) => createHmac("sha256", c.appSecret).update(c.token).digest("hex");
+var MetaError = class extends Error {
+  constructor(message, status, transient, code = null, type = null, subcode = null) {
+    super(message);
+    this.status = status;
+    this.transient = transient;
+    this.code = code;
+    this.type = type;
+    this.subcode = subcode;
+  }
+  status;
+  transient;
+  code;
+  type;
+  subcode;
+  name = "MetaError";
+};
+var RATE_LIMIT_CODES = /* @__PURE__ */ new Set([4, 17, 613, 80004]);
+var isTransient2 = (status, code, flagged = false) => status >= 500 || status === 429 || flagged || code !== null && RATE_LIMIT_CODES.has(code);
+function toMetaError(status, body, writing) {
+  const e = body?.error ?? {};
+  const code = typeof e["code"] === "number" ? e["code"] : null;
+  const subcode = typeof e["error_subcode"] === "number" ? e["error_subcode"] : null;
+  const type = typeof e["type"] === "string" ? e["type"] : null;
+  const raw2 = typeof e["message"] === "string" ? e["message"] : JSON.stringify(body ?? null).slice(0, 200);
+  const user = [e["error_user_title"], e["error_user_msg"]].filter((x) => typeof x === "string" && x.trim() !== "").join(": ");
+  const transient = isTransient2(status, code, e["is_transient"] === true);
+  const tail = ` (Meta ${status}${code !== null ? `, kod ${code}` : ""}${subcode !== null ? `/${subcode}` : ""}${type ? `, ${type}` : ""}: ${raw2}${user ? ` \u2014 ${user}` : ""})`;
+  let text7;
+  if (/ads_management/i.test(raw2) || writing && code !== null && [3, 10, 200].includes(code))
+    text7 = "nyckeln saknar ads_management \u2014 skapa en ny i Business Manager (systemanv\xE4ndare med ads_management, ads_read och read_insights) och l\xE4gg den i META_ADS_TOKEN";
+  else if (/page access token/i.test(raw2))
+    text7 = "anropet kr\xE4ver sidans egen nyckel, inte systemanv\xE4ndarens \u2014 kontrollera att systemanv\xE4ndaren har sidan tilldelad (Business Manager \u2192 Systemanv\xE4ndare \u2192 Tilldelade tillg\xE5ngar \u2192 Sidor); nyckeln i META_ADS_TOKEN \xE4r inte fel";
+  else if (code === 190)
+    text7 = "nyckeln g\xE4ller inte l\xE4ngre (utg\xE5ngen eller \xE5terkallad) \u2014 skapa en ny i Business Manager och l\xE4gg den i META_ADS_TOKEN";
+  else if (/appsecret_proof/i.test(raw2))
+    text7 = "signaturen godtogs inte \u2014 META_APP_SECRET h\xF6r inte ihop med nyckeln";
+  else if (code !== null && [10, 200].includes(code))
+    text7 = "nyckeln n\xE5r inte det h\xE4r kontot eller objektet \u2014 kontrollera att systemanv\xE4ndaren har kontot tilldelat";
+  else if (SPECIAL_CATEGORY.test(`${raw2} ${user}`))
+    text7 = "m\xE5lgruppen g\xE5r inte ihop med kampanjens s\xE4rskilda annonskategori (t.ex. FINANCIAL_PRODUCTS_SERVICES): \xE5lder 18\u201365, alla k\xF6n, inga postnummer, radie minst 15 miles (?) och inga undantag i den detaljerade inriktningen \u2014 se docs/system/meta-ads.md, S\xE4rskilda annonskategorier";
+  else if (transient)
+    text7 = "Meta stryper eller svarar inte just nu \u2014 f\xF6rs\xF6k igen om en stund";
+  else
+    text7 = "Meta avvisade anropet";
+  return new MetaError(text7 + tail, status, transient, code, type, subcode);
+}
+var SPECIAL_CATEGORY = /special[ _]ad[ _]categor|special ad audience|financial[ _]products[ _]|housing, employment/i;
+function encode(params) {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === void 0 || v === null) continue;
+    p.append(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+  }
+  return p.toString();
+}
+async function request2(get, cred, method2, path2, params = {}) {
+  if (!cred.token || !cred.appSecret)
+    throw new MetaError("nyckel eller appens hemlighet saknas (META_ADS_TOKEN, META_APP_SECRET)", 0, false);
+  const p = path2.replace(/^\/+/, "");
+  const auth = { access_token: cred.token, appsecret_proof: appSecretProof(cred) };
+  const url = `${HOST3}/${GRAPH_VERSION}/${p}`;
+  const response = method2 === "GET" ? await get(`${url}?${encode({ ...params, ...auth })}`, { method: "GET", headers: { accept: "application/json" } }) : await get(url, {
+    method: "POST",
+    headers: { accept: "application/json", "content-type": "application/x-www-form-urlencoded" },
+    body: encode({ ...params, ...auth })
+  });
+  const text7 = await response.text();
+  let parsed = null;
+  try {
+    parsed = text7 ? JSON.parse(text7) : null;
+  } catch {
+    parsed = { raw: text7.slice(0, 200) };
+  }
+  if (response.status >= 400 || parsed && typeof parsed === "object" && "error" in parsed)
+    throw toMetaError(response.status, parsed, method2 === "POST");
+  return parsed;
+}
+async function allPages2(get, cred, path2, params = {}, { max, maxPages = 50 } = {}) {
+  const out = [];
+  let after;
+  for (let i = 0; i < maxPages; i++) {
+    const d = await request2(get, cred, "GET", path2, { ...params, ...after ? { after } : {} });
+    out.push(...d.data ?? []);
+    if (max !== void 0 && out.length >= max) return out.slice(0, max);
+    after = d.paging?.cursors?.after;
+    if (!after || !d.paging?.next) return out;
+  }
+  throw new MetaError(`${path2}: fler \xE4n ${maxPages} sidor \u2014 avbryter hellre \xE4n snurrar. Sn\xE4va in perioden eller niv\xE5n.`, 0, false);
+}
+function accountPath(v) {
+  const s2 = String(v ?? "").trim().replace(/^act_/, "");
+  if (!s2) throw new MetaError("annonskontot saknas \u2014 ange ad_account_id (kundens konto, t.ex. act_123\u2026)", 400, false);
+  if (!/^\d+$/.test(s2)) throw new MetaError(`ad_account_id ska vara siffror, med eller utan act_, fick \xAB${String(v)}\xBB`, 400, false);
+  return `act_${s2}`;
+}
+function objectId(v, what) {
+  const s2 = String(v ?? "").trim();
+  if (!/^\d+$/.test(s2)) throw new MetaError(`${what} ska vara ett id med siffror, fick \xAB${String(v ?? "")}\xBB`, 400, false);
+  return s2;
+}
+function jsonValue(v) {
+  if (typeof v !== "string") return v;
+  const t = v.trim();
+  if (!t || !/^[[{]/.test(t)) return v;
+  try {
+    return JSON.parse(t);
+  } catch {
+    return v;
+  }
+}
+function listOf(v) {
+  const j = jsonValue(v);
+  if (Array.isArray(j)) return j.map(String).map((s2) => s2.trim()).filter(Boolean);
+  if (typeof j === "string") return j.split(",").map((s2) => s2.trim()).filter(Boolean);
+  return [];
+}
+
+// atoms/meta/manage_access.atom.ts
+var spec29 = {
+  "id": "c_meta_manage_access",
+  "name": "meta.call.manage_access",
+  "grounding": "observed",
+  "found_in": "atomf\xF6rslag meta.atom_proposal.manage_access \u2014 Att ge kunder och kolleger l\xE4sbeh\xF6righet p\xE5 annonskonton g\xF6rs i dag f\xF6r hand i Business Manager; ingen f\xF6rm\xE5ga i dirigenten g\xF6r det, och inget steg kan bindas till det.",
+  "scope": "shared",
+  "surface": "meta",
+  "input": [
+    "action",
+    "business_id",
+    "person",
+    "role",
+    "accounts",
+    "tasks"
+  ],
+  "optional_input": [
+    "person",
+    "role",
+    "accounts",
+    "tasks"
+  ],
+  "needs_env": [
+    "META_ADS_TOKEN",
+    "META_APP_SECRET"
+  ],
+  "output": [
+    "action",
+    "business_id",
+    "users",
+    "accounts",
+    "planned",
+    "done"
+  ],
+  "idempotent": false,
+  "atom": "meta.access.update",
+  "effect": {
+    "verb": "updates",
+    "object": "meta.business_access"
+  },
+  "performer": "code",
+  "built_from": "p_meta_manage_access",
+  "label": "Hantera \xE5tkomst i Meta",
+  "summary": "Hanterar vem som har \xE5tkomst i en business manager hos Meta. action s\xE4ger vad: list (vem har \xE5tkomst, och till vilka annonskonton), invite (bjud in en person med e-post och roll), grant (ge en person en beh\xF6righet p\xE5 annonskonton, en lista eller \xABalla\xBB) eller revoke (ta bort personens beh\xF6righet p\xE5 kontona). Inbjudan och tilldelning fr\xE5gar alltid.",
+  "keywords": [
+    "\xE5tkomst",
+    "beh\xF6righet",
+    "bjuda in",
+    "business manager",
+    "annonskonto",
+    "access",
+    "permissions",
+    "business users"
+  ],
+  "test_target": "Torrt visar vilka anrop som skulle g\xF6ras mot Meta, och inget skickas. list l\xE4ser bara. Skarpt prov i en business manager f\xF6r test, med en testperson.",
+  "leaves": {
+    "schema": {
+      "action": "det som gjordes: list, invite, grant eller revoke",
+      "business_id": "business managerns id",
+      "users": "personerna med \xE5tkomst: id, namn, e-post och roll (list), eller den inbjudna (invite)",
+      "accounts": "annonskontona med personernas beh\xF6righeter (list), eller kontona som \xE4ndrades (grant, revoke)",
+      "planned": "anropen som skulle g\xF6ras, vid torrk\xF6rning",
+      "done": "sant n\xE4r Meta tagit emot \xE4ndringen"
+    },
+    "done_when": [
+      "personen finns i business managern eller har f\xE5tt inbjudan, och beh\xF6righeten syns p\xE5 kontona (list)"
+    ],
+    "where": "kundens business manager hos Meta"
+  },
+  "structure": { "objects": ["account"], "actions": ["reads", "sends", "deletes"], "risk": "reaches_outside", "leads_to": ["c_meta_read_structure"], "fields": { "action": { "type": "string", "example": "grant", "note": "list, invite, grant eller revoke" }, "business_id": { "type": "id", "example": "100000000000001", "note": "business managerns id" }, "person": { "type": "string", "example": "200000000000002", "note": "personens e-post eller id i business managern; invite kr\xE4ver e-post" }, "role": { "type": "string", "example": "EMPLOYEE", "note": "rollen vid inbjudan" }, "accounts": { "type": "list", "example": ["act_300000000000003"], "note": "annonskontona, eller \xABalla\xBB" }, "tasks": { "type": "list", "example": ["ANALYZE"], "note": "ANALYZE = bara l\xE4sa; ADVERTISE, MANAGE, DRAFT" } }, "choices": { "action": { "from": "list", "values": ["list", "invite", "grant", "revoke"] }, "role": { "from": "list", "values": ["EMPLOYEE", "ADMIN", "FINANCE_EDITOR", "FINANCE_ANALYST", "DEVELOPER"] }, "tasks": { "from": "list", "values": ["ANALYZE", "ADVERTISE", "MANAGE", "DRAFT"] }, "accounts": { "from": "account", "call": "c_meta_read_structure" } } },
+  "requires": "draft",
+  "stage": "draft",
+  "module": "n0101",
+  "operation_id": "o_meta_manage_access",
+  "step_id": "s_meta_manage_access",
+  "guards": {
+    "object_types": [
+      "business_user",
+      "ad_account_permission"
+    ],
+    "severity": {
+      "business_user": "\u25A0",
+      "ad_account_permission": "\u25A0"
+    },
+    "removes": "deletes",
+    "note": ["Nyckeln beh\xF6ver business_management. person \xE4r e-post eller id; e-post sl\xE5s upp bland business managerns personer (grant, revoke)."]
+  }
+};
+var ACTIONS4 = ["list", "invite", "grant", "revoke"];
+var ROLES = ["EMPLOYEE", "ADMIN", "FINANCE_EDITOR", "FINANCE_ANALYST", "DEVELOPER"];
+var TASKS = ["ANALYZE", "ADVERTISE", "MANAGE", "DRAFT"];
+var EMAIL2 = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+function oneOf(v, allowed, what) {
+  const s2 = String(v ?? "").trim().toUpperCase();
+  const hit = allowed.find((a) => a.toUpperCase() === s2);
+  if (!hit) throw new Error(`${what} ska vara ${allowed.join(", ")}, fick ${String(v ?? "inget")}`);
+  return hit;
+}
+async function credentials(ctx) {
+  const link = ctx.connection ? await ctx.connection("meta", "") : null;
+  const token = link?.keys?.["META_ADS_TOKEN"] ?? "";
+  const appSecret = link?.keys?.["META_APP_SECRET"] ?? "";
+  if (!token || !appSecret) throw new Error("Meta-kopplingen saknar META_ADS_TOKEN eller META_APP_SECRET \u2014 l\xE4gg in nyckeln i serverns milj\xF6");
+  return { token, appSecret };
+}
+function accountList(v) {
+  if (typeof v === "string" && /^(alla|all)$/i.test(v.trim())) return "all";
+  const list4 = listOf(v).map(accountPath);
+  if (!list4.length) throw new Error("accounts saknas: ange annonskontons id, eller \xABalla\xBB");
+  return list4;
+}
+async function businessAccounts(get, cred, business) {
+  const owned = await allPages2(get, cred, `${business}/owned_ad_accounts`, { fields: "id,name" });
+  const client = await allPages2(get, cred, `${business}/client_ad_accounts`, { fields: "id,name" });
+  const seen = /* @__PURE__ */ new Set();
+  return [...owned, ...client].filter((a) => !seen.has(String(a["id"])) && seen.add(String(a["id"])));
+}
+async function personId(get, cred, business, person2) {
+  if (!EMAIL2.test(person2)) return objectId(person2, "person");
+  const users = await allPages2(get, cred, `${business}/business_users`, { fields: "id,email" });
+  const hit = users.find((u) => String(u["email"] ?? "").toLowerCase() === person2.toLowerCase());
+  if (!hit) throw new Error("personen finns inte i business managern \u2014 bjud in med action: invite f\xF6rst, och v\xE4nta tills inbjudan \xE4r antagen");
+  return String(hit["id"]);
+}
+async function run29(args, ctx) {
+  const action = oneOf(args["action"], ACTIONS4, "action").toLowerCase();
+  const business = objectId(args["business_id"], "business_id");
+  const person2 = String(args["person"] ?? "").trim();
+  if (action !== "list" && !person2) throw new Error("person saknas: e-post eller id");
+  if (action === "invite" && !EMAIL2.test(person2)) throw new Error("en inbjudan g\xE5r till en e-postadress");
+  const role = action === "invite" ? oneOf(args["role"] ?? "EMPLOYEE", ROLES, "role") : null;
+  const tasks = action === "grant" ? listOf(args["tasks"] ?? "ANALYZE").map((t) => oneOf(t, TASKS, "tasks")) : [];
+  const accounts = action === "grant" || action === "revoke" ? accountList(args["accounts"]) : null;
+  const cred = await credentials(ctx);
+  const get = ctx.fetch;
+  if (ctx.dry_run) {
+    const on = accounts === "all" ? "alla annonskonton i business managern" : accounts;
+    const planned = {
+      list: [`GET ${business}/business_users`, `GET ${business}/pending_users`, `GET ${business}/owned_ad_accounts + client_ad_accounts`, "GET act_\u2026/assigned_users per konto"],
+      invite: [`POST ${business}/business_users { email, role: ${role} }`],
+      grant: [`POST act_\u2026/assigned_users { user, tasks: ${tasks.join(",")} } p\xE5 ${String(on)}`],
+      revoke: [`DELETE act_\u2026/assigned_users { user } p\xE5 ${String(on)}`]
+    }[action];
+    return { action, business_id: business, planned, done: false };
+  }
+  if (action === "list") {
+    const users = await allPages2(get, cred, `${business}/business_users`, { fields: "id,name,email,role" });
+    const pending = await allPages2(get, cred, `${business}/pending_users`, { fields: "id,email,role,status" });
+    const list4 = await businessAccounts(get, cred, business);
+    const withUsers = [];
+    for (const a of list4) {
+      const assigned = await allPages2(get, cred, `${String(a["id"])}/assigned_users`, { business, fields: "id,name,tasks" });
+      withUsers.push({ id: a["id"], name: a["name"], users: assigned });
+    }
+    return { action, business_id: business, users: [...users, ...pending.map((p) => ({ ...p, pending: true }))], accounts: withUsers, done: true };
+  }
+  if (action === "invite") {
+    const res = await request2(get, cred, "POST", `${business}/business_users`, { email: person2, role });
+    return { action, business_id: business, users: [{ id: res["id"], email: person2, role, pending: true }], done: true };
+  }
+  const user = await personId(get, cred, business, person2);
+  const targets = accounts === "all" ? (await businessAccounts(get, cred, business)).map((a) => String(a["id"])) : accounts;
+  const changed = [];
+  for (const account of targets) {
+    try {
+      if (action === "grant") await request2(get, cred, "POST", `${account}/assigned_users`, { user, tasks: JSON.stringify(tasks) });
+      else await request2(get, cred, "POST", `${account}/assigned_users`, { user, method: "delete" });
+      changed.push({ id: account, ok: true, ...action === "grant" ? { tasks } : {} });
+    } catch (e) {
+      changed.push({ id: account, ok: false, error: e instanceof MetaError || e instanceof Error ? e.message : String(e) });
+    }
+  }
+  return { action, business_id: business, accounts: changed, done: changed.every((c) => c["ok"]) };
+}
+var KEYS = { META_ADS_TOKEN: "prov", META_APP_SECRET: "prov" };
+var fixtures29 = [
+  { name: "lista \xE5tkomst", args: { action: "list", business_id: "100000000000001" }, keys: KEYS, expect_fields: ["planned"] },
+  {
+    name: "ge l\xE4sbeh\xF6righet p\xE5 alla konton",
+    args: { action: "grant", business_id: "100000000000001", person: "200000000000002", accounts: "alla", tasks: ["ANALYZE"] },
+    keys: KEYS,
+    expect_fields: ["planned"]
+  },
+  {
+    name: "ta bort beh\xF6righet p\xE5 ett konto",
+    args: { action: "revoke", business_id: "100000000000001", person: "200000000000002", accounts: ["act_300000000000003"] },
+    keys: KEYS,
+    expect_fields: ["planned"]
+  },
+  {
+    name: "ok\xE4nd \xE5tg\xE4rd avvisas",
+    args: { action: "delete", business_id: "100000000000001" },
+    keys: KEYS,
+    expect_error: "action ska vara list, invite, grant, revoke"
+  },
+  {
+    name: "inbjudan utan e-post avvisas",
+    args: { action: "invite", business_id: "100000000000001", person: "200000000000002" },
+    keys: KEYS,
+    expect_error: "en inbjudan g\xE5r till en e-postadress"
+  },
+  {
+    name: "utan nyckel avvisas",
+    args: { action: "list", business_id: "100000000000001" },
+    expect_error: "Meta-kopplingen saknar"
+  }
+];
+
+// atoms/presentation/write.atom.ts
+var write_atom_exports = {};
+__export(write_atom_exports, {
+  fixtures: () => fixtures30,
+  run: () => run30,
+  spec: () => spec30
 });
 import { createHash as createHash12 } from "node:crypto";
 
@@ -27321,7 +27662,7 @@ function presentations(events2) {
   return out;
 }
 var latest = (p) => p.versions[p.versions.length - 1];
-var EMAIL2 = /^[^\s@<>"]+@[^\s@<>"]+\.[a-z]{2,}$/i;
+var EMAIL3 = /^[^\s@<>"]+@[^\s@<>"]+\.[a-z]{2,}$/i;
 function publishProblems(i, knownBlocks, knownTemplates, draft = false) {
   const bad = [];
   if (i.presentation !== void 0 && !PRESENTATION_ID.test(i.presentation)) bad.push("presentationens id har fel form (pr_\u2026)");
@@ -27335,7 +27676,7 @@ function publishProblems(i, knownBlocks, knownTemplates, draft = false) {
   }
   if (draft) return bad;
   if (!Array.isArray(i.recipients) || i.recipients.length === 0) bad.push("mottagare saknas");
-  for (const r of i.recipients ?? []) if (!EMAIL2.test(r)) bad.push(`"${r}" \xE4r ingen e-postadress`);
+  for (const r of i.recipients ?? []) if (!EMAIL3.test(r)) bad.push(`"${r}" \xE4r ingen e-postadress`);
   if (!i.sender) bad.push("avs\xE4ndaren saknas");
   return bad;
 }
@@ -28151,7 +28492,7 @@ function planWithdraw(view, id) {
 }
 
 // atoms/presentation/write.atom.ts
-var spec29 = {
+var spec30 = {
   "id": "c_presentation_write",
   "name": "presentation.call.write",
   "grounding": "observed",
@@ -28238,7 +28579,7 @@ var spec29 = {
     "note": []
   }
 };
-async function run29(args, ctx) {
+async function run30(args, ctx) {
   if (!ctx.view) throw new Error("presentationen kan bara publiceras i ett steg \u2014 registret saknas");
   const i = args;
   const action = i.action ?? "publish";
@@ -28308,7 +28649,7 @@ var BLOCKS2 = [
   { type: "cover", title: "Provkampanj" },
   { type: "copy_angles", items: [{ ref: `bank://rotor/${SHA}`, label: "Vinkel A", mime: "text/markdown" }] }
 ];
-var fixtures29 = [
+var fixtures30 = [
   { name: "f\xF6rhandsvisning av en ny presentation", ...RUNNER4, args: {
     action: "publish",
     party: "@runner",
@@ -28354,9 +28695,9 @@ var fixtures29 = [
 // atoms/render/html_pdf.atom.ts
 var html_pdf_atom_exports = {};
 __export(html_pdf_atom_exports, {
-  fixtures: () => fixtures30,
-  run: () => run30,
-  spec: () => spec30
+  fixtures: () => fixtures31,
+  run: () => run31,
+  spec: () => spec31
 });
 
 // atoms/render/html-pdf.ts
@@ -28550,7 +28891,7 @@ async function htmlToPdf(source, timeoutMs = 24e3) {
 }
 
 // atoms/render/html_pdf.atom.ts
-var spec30 = {
+var spec31 = {
   "id": "c_render_html_pdf",
   "name": "render.call.html_pdf",
   "grounding": "observed",
@@ -28623,7 +28964,7 @@ var spec30 = {
   }
 };
 var PAGE = /^(A[3-5]|letter|legal)( (portrait|landscape))?$/i;
-async function run30(args, ctx) {
+async function run31(args, ctx) {
   const i = args;
   const html = typeof i.html === "string" && i.html.trim() ? i.html : null;
   const url = typeof i.url === "string" && i.url.trim() ? i.url.trim() : null;
@@ -28659,7 +29000,7 @@ async function run30(args, ctx) {
   });
   return { proposal: false, file_name, pages: pageCount(Buffer.from(pdf)), ref: kept.ref, done: true };
 }
-var fixtures30 = [
+var fixtures31 = [
   { name: "en sida som HTML: f\xF6rhandsvisningen", args: { html: '<!doctype html><title>Prov</title><section>Sida 1</section><section style="break-before:page">Sida 2</section>', file_name: "prov", folder: "Prov", page_size: "A4" } },
   { name: "en sida som adress: f\xF6rhandsvisningen", args: { url: "https://example.com/sida", file_name: "sida.pdf" } },
   { name: "b\xE5de html och url avvisas", args: { html: "<p>x</p>", url: "https://example.com", file_name: "x" }, expect_error: "inte b\xE5da" },
@@ -28669,9 +29010,9 @@ var fixtures30 = [
 // atoms/render/qr_code.atom.ts
 var qr_code_atom_exports = {};
 __export(qr_code_atom_exports, {
-  fixtures: () => fixtures31,
-  run: () => run31,
-  spec: () => spec31
+  fixtures: () => fixtures32,
+  run: () => run32,
+  spec: () => spec32
 });
 
 // atoms/render/qr.ts
@@ -28876,7 +29217,7 @@ function penalty(m) {
   const n2 = m.length;
   let r = 0;
   const line2 = (get) => {
-    let run32 = 0, color2 = false;
+    let run33 = 0, color2 = false;
     const hist = [0, 0, 0, 0, 0, 0, 0];
     const addHist = (len) => {
       if (hist[0] === 0) len += n2;
@@ -28890,22 +29231,22 @@ function penalty(m) {
     };
     for (let i = 0; i < n2; i++) {
       if (get(i) === color2) {
-        run32++;
-        if (run32 === 5) r += 3;
-        else if (run32 > 5) r++;
+        run33++;
+        if (run33 === 5) r += 3;
+        else if (run33 > 5) r++;
       } else {
-        addHist(run32);
+        addHist(run33);
         if (!color2) r += count() * 40;
         color2 = get(i);
-        run32 = 1;
+        run33 = 1;
       }
     }
     if (color2) {
-      addHist(run32);
-      run32 = 0;
+      addHist(run33);
+      run33 = 0;
     }
-    run32 += n2;
-    addHist(run32);
+    run33 += n2;
+    addHist(run33);
     r += count() * 40;
   };
   for (let y = 0; y < n2; y++) line2((x) => m[y][x]);
@@ -28975,7 +29316,7 @@ function withUtm(url, utm) {
 }
 
 // atoms/render/qr_code.atom.ts
-var spec31 = {
+var spec32 = {
   "id": "c_render_qr_code",
   "name": "render.call.qr_code",
   "grounding": "observed",
@@ -29047,7 +29388,7 @@ var spec31 = {
   }
 };
 var PX_PER_MODULE = 24;
-async function run31(args, ctx) {
+async function run32(args, ctx) {
   const i = args;
   if (typeof i.url !== "string" || !i.url.trim()) throw new Error("ange url: adressen koden ska leda till");
   if (typeof i.file_name !== "string" || !i.file_name.trim()) throw new Error("ange file_name: filens namn");
@@ -29083,7 +29424,7 @@ async function run31(args, ctx) {
   const p = await keep2({ ...common, bytes: png3, mime: "image/png", name: `${base}.png` });
   return { proposal: false, url_with_utm, refs: { png: p.ref, svg: s2.ref }, code, done: true };
 }
-var fixtures31 = [
+var fixtures32 = [
   { name: "en kod med UTM och runda prickar: f\xF6rhandsvisningen", args: {
     url: "https://example.com/meetings/prov-person",
     utm: '{"medium":"fysisk","source":"brevlada_kanal","campaign":"prov_person"}',
@@ -29097,7 +29438,7 @@ var fixtures31 = [
 ];
 
 // atoms/index.generated.ts
-var ATOMS = [change_bank_atom_exports, pack_files_atom_exports, read_bank_atom_exports, create_event_atom_exports, save_version_atom_exports, create_draft_atom_exports, list_inflow_atom_exports, send_mail_atom_exports, pagespeed_atom_exports, search_console_atom_exports, change_atom_exports, read_atom_exports, archive_record_atom_exports, cms_content_publish_atom_exports, cms_content_write_atom_exports, find_objects_atom_exports, list_content_atom_exports, read_menus_atom_exports, read_object_atom_exports, read_source_atom_exports, ui_settings_register_atom_exports, ui_template_edit_atom_exports, user_write_atom_exports, write_record_atom_exports, write_source_atom_exports, change_ad_object_atom_exports, create_ad_creative_atom_exports, write_atom_exports, html_pdf_atom_exports, qr_code_atom_exports, fetch_pages_atom_exports];
+var ATOMS = [change_bank_atom_exports, pack_files_atom_exports, read_bank_atom_exports, create_event_atom_exports, save_version_atom_exports, create_draft_atom_exports, list_inflow_atom_exports, send_mail_atom_exports, pagespeed_atom_exports, search_console_atom_exports, change_atom_exports, read_atom_exports, archive_record_atom_exports, cms_content_publish_atom_exports, cms_content_write_atom_exports, find_objects_atom_exports, list_content_atom_exports, read_menus_atom_exports, read_object_atom_exports, read_source_atom_exports, ui_settings_register_atom_exports, ui_template_edit_atom_exports, user_write_atom_exports, write_record_atom_exports, write_source_atom_exports, change_ad_object_atom_exports, create_ad_creative_atom_exports, manage_access_atom_exports, write_atom_exports, html_pdf_atom_exports, qr_code_atom_exports, fetch_pages_atom_exports];
 
 // src/local-runner/server.ts
 import { homedir } from "node:os";
@@ -29280,7 +29621,7 @@ function fillOptional(template, params) {
 }
 var LOCAL_TIMEOUT_MS = 12e4;
 var MAX_OUTPUT = 32 * 1024 * 1024;
-var KEYS = ["hubspot_cli", "freebo_root", "freebo_out", "bank_root"];
+var KEYS2 = ["hubspot_cli", "freebo_root", "freebo_out", "bank_root"];
 var CWD_OF = {
   hubspot: "hubspot_cli",
   cms: "hubspot_cli",
@@ -29309,14 +29650,14 @@ function readHomes(env, home) {
         const cwd = file[surface]?.cwd;
         if (typeof cwd === "string" && typeof file[k] !== "string") file[k] = cwd;
       }
-      if (!KEYS.some((k) => typeof file[k] === "string")) problem = LOCAL_TEXT.ytor_unreadable;
+      if (!KEYS2.some((k) => typeof file[k] === "string")) problem = LOCAL_TEXT.ytor_unreadable;
     } catch {
       file = {};
       problem = LOCAL_TEXT.ytor_unreadable;
     }
   }
   const out = {};
-  for (const k of KEYS) {
+  for (const k of KEYS2) {
     const v = env[optionName(k)] ?? (typeof file[k] === "string" ? file[k] : void 0);
     if (v) out[k] = v;
   }
@@ -29391,7 +29732,7 @@ async function runLocal(order, homes, allow, deps = {}) {
       Object.keys(order.params).map((k) => `{${k}}`),
       order.params,
       base,
-      [base, ...KEYS.map((k) => homes[k]).filter((x) => !!x)]
+      [base, ...KEYS2.map((k) => homes[k]).filter((x) => !!x)]
     );
     if (bad2) return fail(bad2, t0, clock);
     try {
@@ -29408,7 +29749,7 @@ async function runLocal(order, homes, allow, deps = {}) {
   if (!where) return fail(LOCAL_TEXT.unknown_surface.replace("{surface}", order.surface), t0, clock);
   const cwd = where === "own" ? deps.ownDir : homes[where];
   if (!cwd) return fail(LOCAL_TEXT.setting_missing.replace("{setting}", where === "own" ? "ownDir" : settingName(where)), t0, clock);
-  const roots = [cwd, ...KEYS.map((k) => homes[k]).filter((x) => !!x)];
+  const roots = [cwd, ...KEYS2.map((k) => homes[k]).filter((x) => !!x)];
   const bad = checkParams(template, order.params, cwd, roots);
   if (bad) return fail(bad, t0, clock);
   let argv;

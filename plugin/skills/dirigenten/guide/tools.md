@@ -17,6 +17,7 @@ Example 1: `search{q:["offer","quote"]}` then `read{on:hit.on}`.
 Example 2: `plan_state{agenda:true}` for what is due, ordered by urgency, then end date.
 Counterexample: calling a customer's system through another connector when this server has the capability.
 Edge case: a legacy call shape (`asset_register`, `{tool,args}` wrapper) is translated while the adapter window is open; `say.now` shows the new form.
+A file into the customer's file bank: `write` with `op` `file_add` and `name`, `text` or `base64` (+`mime`), `customer`, optionally `folder` and `asset_type`; with `task` and `moment` it is also tied to that moment. Without a task it is the customer's alone. v1's `asset_register` with `text` or `base64` becomes this call.
 
 v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{phase:"verktyg:<op>"}` gives an op's fields from the schema the write is checked against, and a field it does not have is refused with a template. Severity from the policy, ■ needs `user_approval`:
 - `write{op:"time_report"}`: rapportera verklig tid på ett steg eller ärende
