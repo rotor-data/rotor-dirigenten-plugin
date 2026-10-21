@@ -8075,10 +8075,10 @@ function ENUM(value, list4) {
   }
   throw new TypeError(`invalid enum value ("${value}"; expected ${list4.join(", ")})`);
 }
-function allocateUTF8(str3) {
-  var size = libmupdf.lengthBytesUTF8(str3) + 1;
+function allocateUTF8(str4) {
+  var size = libmupdf.lengthBytesUTF8(str4) + 1;
   var pointer = Malloc(size);
-  libmupdf.stringToUTF8(str3, pointer, size);
+  libmupdf.stringToUTF8(str4, pointer, size);
   return pointer;
 }
 function STRING_N(s2, i) {
@@ -8220,9 +8220,9 @@ function fromString(ptr) {
   return libmupdf.UTF8ToString(ptr);
 }
 function fromStringFree(ptr) {
-  let str3 = libmupdf.UTF8ToString(ptr);
+  let str4 = libmupdf.UTF8ToString(ptr);
   Free(ptr);
-  return str3;
+  return str4;
 }
 function fromPoint(ptr) {
   let addr = ptr >> 2;
@@ -8880,11 +8880,11 @@ var init_mupdf = __esm({
         checkType(uni, "number");
         libmupdf._wasm_show_glyph(this.pointer, font.pointer, MATRIX(trm), gid, uni, wmode);
       }
-      showString(font, trm, str3, wmode = 0) {
+      showString(font, trm, str4, wmode = 0) {
         checkType(font, Font);
         checkMatrix(trm);
-        checkType(str3, "string");
-        return fromMatrix(libmupdf._wasm_show_string(this.pointer, font.pointer, MATRIX(trm), STRING(str3), wmode));
+        checkType(str4, "string");
+        return fromMatrix(libmupdf._wasm_show_string(this.pointer, font.pointer, MATRIX(trm), STRING(str4), wmode));
       }
       walk(walker) {
         let id = $libmupdf_text_id++;
@@ -10158,15 +10158,15 @@ var init_mupdf = __esm({
         checkRect(rect);
         libmupdf._wasm_pdf_set_page_box(this.pointer, box_ix, RECT(rect));
       }
-      toPixmap(matrix, colorspace, alpha = false, showExtras = true, usage = "View", box = "CropBox") {
+      toPixmap(matrix, colorspace, alpha = false, showExtras = true, usage2 = "View", box = "CropBox") {
         checkMatrix(matrix);
         checkType(colorspace, ColorSpace);
         let box_ix = ENUM(box, Page.BOXES);
         let result;
         if (showExtras)
-          result = libmupdf._wasm_pdf_new_pixmap_from_page_with_usage(this.pointer, MATRIX(matrix), colorspace.pointer, alpha, STRING(usage), box_ix);
+          result = libmupdf._wasm_pdf_new_pixmap_from_page_with_usage(this.pointer, MATRIX(matrix), colorspace.pointer, alpha, STRING(usage2), box_ix);
         else
-          result = libmupdf._wasm_pdf_new_pixmap_from_page_contents_with_usage(this.pointer, MATRIX(matrix), colorspace.pointer, alpha, STRING(usage), box_ix);
+          result = libmupdf._wasm_pdf_new_pixmap_from_page_contents_with_usage(this.pointer, MATRIX(matrix), colorspace.pointer, alpha, STRING(usage2), box_ix);
         return new Pixmap(result);
       }
       getWidgets() {
@@ -13170,11 +13170,11 @@ var require_headers = __commonJS({
     function decodeStr(val, offset, length, encoding) {
       return b4a.toString(val.subarray(offset, indexOf(val, 0, offset, offset + length)), encoding);
     }
-    function addLength(str3) {
-      const len = b4a.byteLength(str3);
+    function addLength(str4) {
+      const len = b4a.byteLength(str4);
       let digits2 = Math.floor(Math.log(len) / Math.log(10)) + 1;
       if (len + digits2 >= Math.pow(10, digits2)) digits2++;
-      return len + digits2 + str3;
+      return len + digits2 + str4;
     }
   }
 });
@@ -19187,6 +19187,12 @@ var call = z.object({
    */
   command: z.array(z.string().min(1)).optional(),
   /**
+   * Fler namn på kundens mappar i skriptets miljö: `{ NAMN: "customer_root" | "customer_out" }`. Lokala
+   * köraren sätter alltid CUSTOMER_ROOT och CUSTOMER_OUT; ett skript som läser andra namn får dem härifrån,
+   * så att inget kundnamn behöver stå i köraren (data-i-kod, punkt 18).
+   */
+  env: z.record(z.string().regex(/^[A-Z][A-Z0-9_]*$/), z.enum(["customer_root", "customer_out"])).optional(),
+  /**
    * Miljövariabler anropet inte kan köras utan.
    *
    * Grinden prövar INTE den här listan mot miljön, och ska inte göra det:
@@ -20610,7 +20616,7 @@ var coverage = z.object({
   /** Veckodag för en rytm per vecka (weekly, eller period week): förekomsterna hamnar den dagen. */
   weekday: z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]).optional(),
   /**
-   * `true`: de `quantity` exemplaren per period görs tillsammans (Freebos
+   * `true`: de `quantity` exemplaren per period görs tillsammans (kundens
    * SoMe-poster: sex poster som görs på en gång). Då räknas EN uppgift fram
    * per period, med antalet på uppgiften, och stegen görs en gång. Utelämnad
    * eller `false`: en uppgift per exemplar, som förut.
@@ -20657,7 +20663,7 @@ var commitment = z.object({
    * En retainer tar aldrig slut, och så länge varje åtagande var en retainer
    * behövdes fältet inte. Ett projektåtagande har ett slut, och utan det här
    * fältet fortsatte kalenderraderna att förgenerera uppgifter i evighet:
-   * Indexos Build slutar 29 november, men veckorapporten planerades till
+   * En kunds Build slutar 29 november, men veckorapporten planerades till
    * 18 december och hade fortsatt lika långt som horisonten räckte.
    *
    * Dagen är INKLUSIVE — en uppgift som förfaller på `until` hör till
@@ -20738,7 +20744,7 @@ var rule = z.object({
   applies_to: z.enum(["mail"]),
   /** Villkoren. Alla som står med måste stämma; de som utelämnas prövas inte. */
   when: z.object({
-    /** Avsändarens adress eller domän. `@freebo.se` matchar hela domänen. */
+    /** Avsändarens adress eller domän. `@kunden.se` matchar hela domänen. */
     from: z.string().min(1).optional(),
     /** Ord i ämnesraden, skiftlägesokänsligt. */
     subject_contains: z.string().min(1).optional(),
@@ -20773,7 +20779,7 @@ var captureRoute = z.object({
   label: z.string().min(1),
   /**
    * Vad som brukar komma hit, med de ord det brukar handla om (B-255). Daniel
-   * P 2026-09-24: hubspot@ är support för HubSpot, freebo@ beställningar av
+   * P 2026-09-24: hubspot@ är support för HubSpot, kunden@ beställningar av
    * material och marknadsföringsfrågor — "i stora drag", och frågor om
    * mätning kan komma till båda. Sökningen väger in det, filtrerar aldrig.
    */
@@ -21051,14 +21057,14 @@ var deliveryTemplate = z.object({
   /**
    * Den första perioden mallen samlar (förslaget för leveransmallarna
    * 2026-09-27): `2026-09`, `2026-W40` eller `2026-Q4`, i mallens form.
-   * Utelämnad: bakåtblicken tar fram två perioder bakåt, och «Freebo månad»
+   * Utelämnad: bakåtblicken tar fram två perioder bakåt, och «Kunden månad»
    * fick juli och augusti med sena uppgifter. Samma idé som åtagandets
    * `starts`: det som ligger före finns inte i mallens leveranser.
    */
   first_period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2]|W(0[1-9]|[1-4]\d|5[0-3])|Q[1-4])$/).optional(),
   /**
    * Leveransernas namn, när det inte är mallens (samma förslag): mallen
-   * «Freebo månad» ger «Freebo september» med `delivery_label: "Freebo"`.
+   * «Kunden månad» ger «Kunden september» med `delivery_label: "Kunden"`.
    * Utelämnat: mallens namn, som förut.
    */
   delivery_label: z.string().min(1).max(100).optional(),
@@ -24568,14 +24574,14 @@ function sorted(v) {
 }
 function row(raw2) {
   const r = raw2 ?? {};
-  const str3 = (k) => r[k] === void 0 || r[k] === null ? null : String(r[k]);
+  const str4 = (k) => r[k] === void 0 || r[k] === null ? null : String(r[k]);
   return {
     id: String(r["id"] ?? ""),
-    state: str3("state") ?? str3("currentState"),
-    url: str3("url"),
-    updated: str3("updated"),
-    publish_date: str3("publishDate"),
-    name: str3("name")
+    state: str4("state") ?? str4("currentState"),
+    url: str4("url"),
+    updated: str4("updated"),
+    publish_date: str4("publishDate"),
+    name: str4("name")
   };
 }
 async function readContentFull(get, token, t, id) {
@@ -29446,8 +29452,22 @@ import { dirname as dirname3, join as join8 } from "node:path";
 import { fileURLToPath as fileURLToPath2 } from "node:url";
 import { createInterface } from "node:readline";
 
+// src/v2/domain/registry-texts.ts
+var DEFAULTS = /* @__PURE__ */ new Map();
+var held = /* @__PURE__ */ new Map();
+var textOf3 = (key) => held.get(key) ?? DEFAULTS.get(key) ?? key;
+function registryTexts(group, defaults) {
+  for (const [k, v] of Object.entries(defaults)) if (typeof v === "string") DEFAULTS.set(`${group}.${k}`, v);
+  return new Proxy(defaults, {
+    get(target, prop, recv) {
+      const v = Reflect.get(target, prop, recv);
+      return typeof prop === "string" && typeof v === "string" ? textOf3(`${group}.${prop}`) : v;
+    }
+  });
+}
+
 // src/v2/mcp/local-text.ts
-var LOCAL_TEXT = {
+var LOCAL_TEXT = registryTexts("local-text.local_text", {
   waiting: "Det h\xE4r g\xF6rs p\xE5 din Mac. Be Claude p\xE5 din Mac att k\xF6ra uppdrag {order_id}. Det m\xE5ste g\xF6ras inom tio minuter.",
   no_runner: "Det h\xE4r g\xF6rs p\xE5 en Mac med dirigentens lokala del ig\xE5ng, och den svarar inte h\xE4r. \xD6ppna samtalet i Claude Code eller Claude Desktop p\xE5 Macen d\xE4r Freebo-mappen finns, eller be Daniel P k\xF6ra det. Inget \xE4r gjort.",
   // data-i-koden: ordagrann text för Daniels ja (P9d)
@@ -29472,7 +29492,7 @@ var LOCAL_TEXT = {
   path_outside: "S\xF6kv\xE4gen i {param} ligger utanf\xF6r mapparna i pluginens inst\xE4llningar och k\xF6rs inte. Inget \xE4r gjort.",
   too_much_output: "Skriptet skrev mer \xE4n den lokala delen tar emot och stoppades. Det blev inte klart.",
   ytor_unreadable: "Inst\xE4llningarna f\xF6r vilka system dirigenten kan n\xE5 p\xE5 den h\xE4r datorn gick inte att l\xE4sa. Be Daniel P titta p\xE5 dem."
-};
+});
 
 // src/local-runner/allow.ts
 import { existsSync as existsSync3, readFileSync } from "node:fs";
@@ -29529,6 +29549,831 @@ function buildArgv(mall, args) {
   });
 }
 
+// src/types/event.ts
+var eventType = z.enum([
+  /** En post infördes eller rättades. Nodmängden härleds ur dessa. */
+  "node_defined",
+  /**
+   * En post togs ur registret (B-071). Raderar ingenting: definitionen står
+   * kvar i loggen, och den senaste av defined/retired avgör om posten finns.
+   */
+  "node_retired",
+  /**
+   * Ett atomförslag blev en atom (B-107): `{ call, by }`.
+   *
+   * Övergången är en händelse, inte en överskrivning. Förslaget står kvar som
+   * det skrevs — med varför det behövdes och vilket steg som bad om det — och
+   * händelsen säger vilken molekyl som byggdes ur det. Skrivs först när koden
+   * finns och provet passerar; det är vad som gör en atom verklig.
+   */
+  "atom_proposal_built",
+  "candidate_captured",
+  "candidate_classified",
+  /**
+   * En mejltråd är bedömd (B-110): `{ thread, outcome, module?,
+   * deliverable_type?, customer?, responsible?, rank?, reason?, uncertain? }`,
+   * med trådens id i `subject_ref`.
+   *
+   * Tråden KOPIERAS inte. Bedömningen är en händelse om den, och kön räknas
+   * fortfarande fram ur posten — den här händelsen säger bara vad vi beslutat
+   * om det vi såg. Den senaste bedömningen för en tråd gäller; att ändra sig
+   * är en ny händelse, aldrig en rättelse av en gammal.
+   */
+  "thread_triaged",
+  /**
+   * Två ärenden hänger ihop (2026-10-03): `{ threads: [a, b], relation:
+   * related|same_cause|standalone, reason? }`. Skrivs efter ett ja; den
+   * senaste kopplingen mellan två trådar gäller (src/intake/related.ts).
+   */
+  "threads_related",
+  /**
+   * Vad trådens bilder visar, i ord (2026-10-06): `{ thread, image_notes,
+   * images? }`. Skrivs när bilderna lästs i ett steg, utan att ärendet bedöms
+   * om. Den senaste anteckningen, här eller i `thread_triaged`, gäller.
+   */
+  "thread_images_noted",
+  /**
+   * Ärendets beskrivning för ett ärende som bedömdes innan bedömningen krävde den (P22, 2026-10-18):
+   * `{ thread, summary }`, våra egna ord ur bedömningens åtgärd och kund. Skrivs bara av omräkningen mot kopian.
+   */
+  "case_summary_noted",
+  /**
+   * Vart ett mejl tog vägen, när någon flyttade det (v6 del 1, 2026-10-06):
+   * `{ thread, outcome: case|order|possibility|nothing|inbox|…, source?, way?,
+   * target?, customer?, label?, undo? }`. Den senaste per tråd gäller; `undo`
+   * tar bort flytten så att vägen ur källan gäller igen (src/intake/routing.ts).
+   */
+  "mail_routed",
+  /**
+   * Facit för ett ärende i en provkörning (2026-10-06, src/intake/trial.ts):
+   * `{ trial, thread, as_of, accepts, links?, changes_customer?, control? }`.
+   * Det senaste facit per ärende gäller.
+   */
+  "trial_key_set",
+  /**
+   * Ett svar i en provkörning: `{ trial, thread, run, model, outcome, links?,
+   * changes_customer?, invented? }`. Claude svarade; dirigenten anropade
+   * ingen modell. Påverkar inget ärende.
+   */
+  "trial_answer_recorded",
+  /**
+   * Ärendets ursprung ifyllt i efterhand (2026-10-02): `{ thread, source }`,
+   * för ärenden bedömda innan bedömningen sparade det. Skrivs av
+   * scripts/backfill-case-source.mjs; en bedömning med eget `source` vinner.
+   */
+  "thread_source_recorded",
+  "confirmation_sent",
+  "confirmation_answered",
+  "commitment_created",
+  "task_generated",
+  /**
+   * Låsningen av en uppgift (B-087): `{ commitment, deliverable_type, method,
+   * reason?, replaces? }`, där `method` är den färdiga metoden med steg,
+   * värden, ansvarig, krav och versioner. Uppgiften följer den senaste
+   * låsningen även när grund eller variant ändras. Ett byte är en ny
+   * låsning med skäl, och bara en människa byter.
+   */
+  "task_planned",
+  /**
+   * Uppgiften avbröts (B-093): `{ task, reason, party? }`. Planen utelämnar
+   * den. Åtagandet den föll ur står kvar.
+   */
+  "task_cancelled",
+  /** Avbrytandet ångrades (B-093): `{ task, party? }`. Den senaste av de två gäller. */
+  "task_cancel_undone",
+  /**
+   * Uppgiftens datum flyttades (punkt 36 i kvar.md): `{ task, from, to,
+   * reason, party?, user_approval? }`, med uppgiftens id i `subject_ref`.
+   *
+   * Ett nytt löfte, som en sen senareläggning av ett steg (B-080): planen
+   * räknar mot `to`, och `external_due` står kvar på det datum uppgiften hade
+   * innan, så att skillnaden syns. Den senaste flytten gäller; att ändra sig
+   * är en ny flytt. Skälet är ett krav — ett datum som flyttats utan skäl är
+   * glömska som ser ut som beslut.
+   */
+  "task_postponed",
+  /**
+   * Kundens löfte flyttades (blindprovet 2026-09-27, F08): `{ task, from, to,
+   * reason, promised_by, history?, party, user_approval? }`, med uppgiftens id
+   * i `subject_ref`.
+   *
+   * Skillnaden mot `task_postponed`: där står kundens datum kvar och uppgiften
+   * visas som flyttad från det. Här HAR kunden fått ett nytt datum — Henrik på
+   * Infometric flyttade mötet och fick offerten dagen efter — och sen räknas
+   * mot det. `from` är kundens datum före, så att kedjan av löften går att
+   * läsa; det första löftet står kvar i loggen och i `Task.promise.first`.
+   * `promised_by` (vem som gav eller godtog datumet) och skälet är krav.
+   * `history: true` betyder att datumet gällde redan: ett förflutet `to` går
+   * bara då (grinden).
+   */
+  "task_promise_changed",
+  /**
+   * Uppgiftens tillfälle — det som skiljer den från andra av samma typ och
+   * står i dess namn — ändrades (omprovet 2026-09-28, F08, F09): `{ task,
+   * from, to, reason, party, user_approval? }`, med uppgiftens id i
+   * `subject_ref`. «Genomgång med Henrik 1 okt» blev fel när mötet flyttades,
+   * och oktoberbloggen skulle heta efter sitt ämne. Den senaste ändringen
+   * gäller; den första står kvar i loggen. Skälet är ett krav.
+   */
+  "task_occasion_changed",
+  /** Uppgiftens mejltråd, kopplad i efterhand (2026-10-02): `{ task, thread }`. Den senaste gäller. */
+  "task_thread_linked",
+  /**
+   * Godkännarens svar i uppgiftens tråd, läst (Daniel P 2026-10-02: «i
+   * godkännandet – visst kan det fyllas i av sig själv ändå»): `{ task, step,
+   * kind: yes | change | unclear, quote, source: { thread, message, at, from } }`.
+   * Ett ja är ett förslag som en människa stänger med «Stämmer»; en ändring är
+   * en notering på steget; oklart är en fråga. Skrivs en gång per meddelande
+   * (src/plan/thread-approval.ts).
+   */
+  "approval_reply_read",
+  /**
+   * Ändring efter leverans (Daniel P 2026-09-26: "det bör ligga i planeringen
+   * … så att den lägger till det som ny slutpunkt och det är klart och tydligt
+   * vad som händer"): `{ task, from_step, due, reason, what, requested_by?,
+   * steps, party?, user_approval? }`, med uppgiftens id i `subject_ref`.
+   *
+   * En revision är uppgiftens NYA SLUTPUNKT, inte ett steg i metoden, och
+   * gäller vilken metod som helst: planen räknar mot `due` och visar vad som
+   * ska göras. Stegen från `from_step` och framåt (`steps`) öppnas igen i samma
+   * skrivning som en ny omgång (step_reopened); den första omgången står kvar
+   * som levererad, och leveransen skrivs aldrig om. Den senaste revisionen
+   * gäller. Skäl, datum och vad som ska göras är krav (grinden).
+   *
+   * I en målmodell (etapp 1b) bär den `node` (`<delmål>/<moment>`), momentet
+   * ändringen börjar i, med `steps: []` och `reopened`/`flagged` som kvitto;
+   * uppspelningen räknar om framstegen med `revise` (src/plan/goal-runtime.ts).
+   */
+  "task_revised",
+  /**
+   * Leveransen gjordes utanför systemet (B-134): `{ task, at, how, party? }`.
+   *
+   * Det vanliga fallet är en återkommande leverans som gick ut innan metoden
+   * fanns i registret: posten ÄR publicerad, men inget steg finns att bocka
+   * av, och planen räknar den som allt senare för varje dag. Utan den här
+   * händelsen är det enda som går att göra att avbryta uppgiften — och
+   * avbruten är inte levererad. Då ljuger registret om vad vi gjort, och
+   * ingen kan i efterhand mäta vad kunden faktiskt fått.
+   *
+   * `how` är ett KRAV (grinden `task.delivered_how`): utan den vet ingen om
+   * posten gick ut på LinkedIn, om kunden fick den i ett mejl, eller om någon
+   * bara antog det. `at` är dagen den lämnade huset, inte dagen den
+   * registrerades — de är sällan samma, och det är den första som räknas.
+   *
+   * Uppgiften står KVAR i planen, till skillnad från en avbruten. Den är
+   * klar, och en klar leverans ska synas: kvoten "5 SoMe-poster i september"
+   * går inte att läsa om de levererade försvinner.
+   */
+  "task_delivered_externally",
+  /**
+   * Samma sak skriven av v2 (src/v2/state/task.ts, `deliver_outside`): `{ action, from }`,
+   * uppdraget bara i `subject_ref`. v1 läser den som `task_delivered_externally`, så att
+   * «levererat utanför» står kvar efter en återgång till v1.
+   */
+  "task_delivered_outside",
+  /** Registreringen ångrades (B-134): `{ task, party? }`. Den senaste av de två gäller. */
+  "task_delivery_undone",
+  /**
+   * En leverans öppnades (B-274, docs/plan-leveransen.md avsnitt 1):
+   * `{ delivery, customer, label, due, internal_target?, party, user_approval? }`,
+   * med leveransens id (`deliveryId`) i `subject_ref`.
+   *
+   * Leveransen är det kunden får, med ett datum, och kan spänna över flera
+   * uppgifter, metoder och åtaganden. Den är drift och inte en definition: den
+   * härleds ur händelserna (src/plan/delivery.ts), som uppgifterna. `due` är
+   * det kunden fick och skrivs aldrig om; ett nytt datum är `delivery_updated`.
+   */
+  "delivery_opened",
+  /**
+   * Leveransen ändrades: `{ delivery, label?, due?, internal_target?, reason, party,
+   * user_approval? }`. Ett nytt datum kräver skäl. Den senaste ändringen gäller.
+   */
+  "delivery_updated",
+  /**
+   * En uppgift lades i en leverans, eller togs ur den: `{ task, delivery | null,
+   * after?: [task], reason?, party, user_approval? }`, med uppgiftens id i
+   * `subject_ref`. Den senaste gäller per uppgift. `after` är ordningen för
+   * hand, för uppgifter vars steg inte deklarerar vad de lämnar och behöver.
+   */
+  "task_delivery_set",
+  /** Leveransen avslutades: `{ delivery, reason?, party, user_approval? }`. Stängda läses inte av spegeln. */
+  "delivery_closed",
+  /**
+   * Ändring efter leverans på leveransnivå (B-274, docs/plan-leveransen.md
+   * avsnitt 2): `{ delivery, due, reason, what, requested_by?, parts: [{ task,
+   * from_step, steps, skipped: [{ step, reason }], extra: [label] }], party,
+   * user_approval? }`, med leveransens id i `subject_ref`.
+   *
+   * En skrivning, en gemensam slutpunkt. Varje del är en revision av sin
+   * uppgift (src/plan/change-round.ts): `steps` görs om som omgången `rev<n>`,
+   * `skipped` hoppas över med skäl och ingår inte i rundan, och `extra` är
+   * namnen på steg som lades till i uppgiften för rundan (deras id står i
+   * `steps`). Leveransens datum kunden fick skrivs aldrig om.
+   */
+  "delivery_revised",
+  /**
+   * Ett steg lades till i EN uppgift, inte i metoden: `{ task, step, after,
+   * label, responsible, performer?, note?, estimate_minutes?, lead_days?,
+   * party }`, med uppgiftens id i `subject_ref`.
+   *
+   * Daniel P 2026-09-25: "Jag vill inte att man ska behöva bygga om en hel
+   * metod för att sätta in ett steg i en kedja - det är ju ett specifikt flow
+   * från kunden." Metoden och kundens flöde rörs inte; planen viker in steget
+   * i just den här uppgiften, efter `after` (null = först). `step` är ett id
+   * servern ger (`addedStepId`). Görs steget av någon utanför huset står den
+   * i `performer`, och steget blir en väntan som andra externa steg.
+   */
+  "task_step_added",
+  /** Det tillagda steget togs bort ur uppgiften: `{ task, step, reason?, party }`. */
+  "task_step_removed",
+  /**
+   * Ett steg flyttades i EN uppgift (B-275, etapp 4, dra och släpp):
+   * `{ task, step, after: <steg> | null, reason?, party }`. Steget står
+   * direkt efter `after` (null = först); metoden rörs inte. Planen viker in
+   * flytten i `withAddedOrder`.
+   */
+  "task_step_moved",
+  /**
+   * Ett steg ändrat bara i EN uppgift (v6, BESLUT 4, src/plan/step-edits.ts):
+   * `{ task, step, label?, checklist?, prompt?, level?, party }`. Varje fält
+   * som står ersätter det förra; `null` tar bort ändringen (Ångra). Metoden
+   * och kundens sätt rörs inte.
+   */
+  "task_step_edited",
+  /**
+   * v2:s «Bara det här uppdraget» på ett moment (P8f grupp b): `{ step, action, label?, checklist?, prompt?,
+   * level?, ticked?, reads?, before }`, uppdraget och momentet i subject_ref. Med `action: "change_how_here"`
+   * läses den som `task_step_edited`; kundens sätt (`change_how_customer`) läses inte här.
+   */
+  "moment_how_changed",
+  /**
+   * v2:s «Byt vem» på ett moment (P8f grupp b): `{ step, party, before }`. Steget är `party`:s direkt, som en
+   * överlämning som tagits emot; `party: null` (ett ångrat byte) lämnar steget till den ansvarige igen.
+   */
+  "moment_assignee_changed",
+  /**
+   * Ett beroende mellan två steg i EN uppgift (Freebos research 2026-10-01):
+   * `{ task, step, on, wait: boolean, reason?, party }`. `wait: true` — steget
+   * väntar på `on`, utan att ordningen i övrigt flyttas; `wait: false` — steget
+   * slutar vänta på `on`, också när metoden sa det. Den senaste per steg och
+   * `on` gäller. Metoden rörs inte.
+   */
+  "task_step_after_set",
+  /**
+   * «I samma veva» (Tid, docs/design/v6/tid, Daniel P 2026-10-07):
+   * `{ task, step, batch: string | null, party }`. Steg med samma `batch` i
+   * samma leverans flyttas tillsammans, lika många dagar, utan att vänta på
+   * varandra. `null` tar steget ur gruppen. Den senaste per uppgift och steg
+   * gäller. Metoden rörs inte.
+   */
+  "task_step_batch_set",
+  /**
+   * Väntan på ett externt besked (Daniel P 2026-09-27, src/plan/waits.ts):
+   * `{ task, step: <steg> | null, on: <part>[/<person>] | null, on_label?,
+   * question, remind, last_day?, if_silent?, party }`. Gäller hela uppgiften
+   * när `step` är null. En ny väntan på samma uppgift och steg ersätter den förra.
+   */
+  "task_wait_set",
+  /** Beskedet kom: `{ task, step, answer: yes|no|other, source, note?, party }`. Nej stänger grenen. */
+  "task_wait_answered",
+  /** Väntan togs bort utan besked: `{ task, step, reason, party }`. */
+  "task_wait_cleared",
+  "step_started",
+  /**
+   * Ett enskilt anrop lyckades.
+   *
+   * NYTT begrepp, infört som beslut och inte som glidning. Skälet: anropsnyckeln
+   * ska kontrolleras mot loggen FÖRE utförande, och utan en post per anrop finns
+   * inget att kontrollera mot när processen dör mitt i ett steg. `step_failed`
+   * bär vilka som lyckats, men skrivs bara om vi hann skriva den.
+   */
+  "call_completed",
+  /**
+   * Ett steg är klart: `{ task, how?, party?, note?, node? }`. Utan `how` kördes steget
+   * (execute_step); `how: "marked"` betyder att en människa markerade det klart
+   * utan att det kördes (B-093). `node` (`<delmål>/<moment>`) säger vilket
+   * moment i en målmodell det gäller (docs/plan-malstyrd.md, etapp 1b): ett
+   * steg kan stå i flera moment, och då avgör noden. `how: "auto"` för ett
+   * moment som gick av sig självt efter klicket (src/plan/goal-runtime.ts).
+   */
+  "step_completed",
+  /**
+   * Ett klart steg öppnas igen (B-093, B-106): `{ task, reason, party?, note?,
+   * requested_by? }`. Den senaste av step_completed och step_reopened för
+   * uppgift och steg gäller.
+   *
+   * Skälet är ett KRAV (B-106, grinden `step.reopen_reason`): omgången som
+   * öppnas ska gå att förstå i efterhand. `requested_by` är den som bad om
+   * ändringen när öppningen kom ur en begäran efter leverans — kunden eller
+   * någon hos oss.
+   *
+   * Den gamla omgången står kvar. Händelsen tar inte tillbaka något; den lägger
+   * till en ny omgång på steget (src/plan/rounds.ts).
+   *
+   * `node` (`<delmål>/<moment>`) gäller ett moment i en målmodell, som i
+   * `step_completed`.
+   */
+  "step_reopened",
+  /**
+   * Överlämning av ett steg (B-093): `{ task, step, to, party, note? }`. Den
+   * ansvarige eller den som beslutar i registret föreslår; ett nytt förslag
+   * ersätter det öppna.
+   */
+  "step_handover_proposed",
+  /**
+   * Ett förslag i registret bekräftades av en människa (felrapport 2026-09-25):
+   * `{ node, party, user_approval }`. Posten skrivs därefter som beslutad, med
+   * parten som aktör; ja-texten står här, ordagrant.
+   */
+  "node_confirmed",
+  /** Mottagaren tog över steget (B-093): `{ task, step, party }`. Mottagaren blir ansvarig. */
+  "step_handover_accepted",
+  /** Mottagaren avböjde (B-093): `{ task, step, party, reason? }`. Den ansvarige står kvar. */
+  "step_handover_declined",
+  /**
+   * Den som föreslog en överlämning drog tillbaka den innan mottagaren svarat
+   * (felrapport 2026-09-29): `{ task, step, party }`. Bara föreslagaren; steget
+   * står kvar hos den ansvarige.
+   */
+  "step_handover_withdrawn",
+  /**
+   * Ett steg senarelades (B-093): `{ task, step, from, to, reason, late_by, party? }`.
+   * Planen räknar om ur den: steget får sin nya start, efterföljande steg
+   * skjuts med och marginalen minskar. `late_by` större än noll betyder att
+   * flytten accepterades som sen — ett nytt löfte (B-080), och först då
+   * flyttas uppgiftens leveransdatum.
+   */
+  "step_postponed",
+  /**
+   * Ett steg detaljplanerades (Daniel P 2026-09-30): `{ task, step, window?:
+   * { start, end }, hours?, work?: { start, end }, people?: [{ party, hours? }],
+   * clear?, same_sitting?: true | false | null, late_by, party, reason? }`.
+   * `same_sitting`: samma pass som steget före (src/plan/sittings.ts). Senaste per (uppgift, steg) gäller fält
+   * för fält; `clear: true` återställer. `work` visas, läggs inte i kalendern.
+   * Se src/plan/detail.ts.
+   */
+  "step_planned",
+  /**
+   * Ett arbetspass lades på ett steg (B-097): `{ task, step, session, start,
+   * minutes, estimate_minutes?, party?, user_approval? }`. `session` är passets identitet — en
+   * ny händelse med samma id ERSÄTTER passet, som allt annat här: loggen
+   * rättas med en ny rad, aldrig genom ändring. `estimate_minutes` sätts av
+   * den första schemaläggningen av steget och gäller sedan för hela steget.
+   *
+   * `pinned: true` gör passet till en BOKAD TID, till exempel ett möte (punkt
+   * 35 i kvar.md). Ett låst pass prövas inte mot stegets fönster — planen
+   * följer det: steget ligger på passets dag, stegen före ska sluta före och
+   * stegen efter börjar efter. Ett borttaget pass släpper låsningen.
+   */
+  "step_scheduled",
+  /** Ett arbetspass togs bort (B-097): `{ task, step, session, party?, user_approval? }`. */
+  "step_unscheduled",
+  /**
+   * Streckade pass blev fasta (v6 BESLUT 3, ◐ "Lägg in i kalendern"):
+   * `{ party, sessions: [{ task, step, session, part? }], revoked?, undoes?,
+   * user_approval? }`. Ett pass skrivet med `tentative: true` är ett förslag
+   * tills det nämns här. `revoked: true` gör dem streckade igen (Ångra).
+   * Se src/plan/calendar-sessions.ts.
+   */
+  "step_schedule_confirmed",
+  // `step_started` står en gång, högre upp (B-236): två gånger gjorde
+  // verktygslistans schema ogiltigt, och claude.ai kunde inte läsa om den.
+  // Den bär både utförandets start och "någon har påbörjat" (fas 2):
+  // `{ task, party, note? }` med stegets id i `subject_ref`; ett nytt
+  // ersätter det förra, och ett klart steg är inte påbörjat längre.
+  /** Steget släpptes utan att vara klart: `{ task, party, note? }`. */
+  "step_released",
+  /**
+   * Igång (v6, FAS1 1.2): `{ party, task, step }`, med stegets id i
+   * `subject_ref`. Personens egen lista över steg den håller i just nu —
+   * syns bara för den, till skillnad från `step_started`. Den senaste av
+   * added/removed för samma person, uppgift och steg gäller
+   * (src/views/running.ts).
+   */
+  "focus_added",
+  /** Steget togs ur personens Igång: `{ party, task, step }`. */
+  "focus_removed",
+  /**
+   * Mängden ett steg gäller blev känd (B-106): `{ task, step, parts: [{ key,
+   * label }], party? }`. Skrivs av det steg som tog fram mängden, aldrig av
+   * planeringen — planeringen vet inte vilka delarna är.
+   *
+   * Den SENASTE händelsen för uppgift och steg gäller. Blir delarna fler
+   * skrivs hela mängden om, med de gamla nycklarna kvar: en omgång som redan
+   * är klar känns igen på sin nyckel och blir inte ogjord av att mängden växte.
+   */
+  "step_fanned_out",
+  "step_failed",
+  /**
+   * Ett steg slutade på ett av sina uppräknade utfall (B-084, B-106):
+   * `{ task, step, outcome, reason, closed, round?, returns_to?, party? }`.
+   *
+   * Utfallet är en händelse, inte ett fält: `closed` bär de vägar som INTE
+   * togs, så att de står kvar som stängda med samma skäl i stället för att
+   * försvinna. Går vägen bakåt bär `returns_to` steget som ska göras om och
+   * `round` vilket varv det blev. Ett ändrat utfall är en ny händelse; den
+   * senaste gäller.
+   *
+   * I en målmodell (etapp 1b) är det beslutet i ett beslutsdelmål:
+   * `{ task, node, step, outcomes: [id], outcome, by, at, reason?, closed }`,
+   * där `node` är valmomentet (`<delmål>/<moment>`), `outcomes` utfallen (fler
+   * än ett i ett `multi`-beslut) och `outcome` dem sammanfogade med +. Beslutet
+   * spelas upp ur loggen med `applyDecision` (src/plan/goal-runtime.ts); den
+   * senaste per delmål gäller, och ett nytt val är en ny händelse.
+   */
+  "step_outcome_recorded",
+  /**
+   * «Gör ändå» förbi ett hårt beroende i en målmodell (etapp 1b):
+   * `{ task, node, by, at, reason, note?, approved_by?, party, user_approval?,
+   * withdrawn? }`. `node` är delmålet eller momentet (`<delmål>/<moment>`),
+   * `reason` ett av OVERRIDE_REASONS (src/plan/goal-plan.ts). Den senaste per
+   * uppgift och nod gäller; `withdrawn: true` tar tillbaka den.
+   */
+  "goal_override",
+  /**
+   * Trädet växte (eller krympte) i ett uppdrag (etapp 1b): `{ task, party,
+   * retired, patch? , via? }`. Med `patch` (en `GrowthPatch`) är det en
+   * ändring i uppdraget, och uppspelningen tillämpar den med `grow`. Med `via:
+   * { node, outcomes }` kom tillväxten ur ett beslut (`step_outcome_recorded`),
+   * som spelas upp med `applyDecision`; händelsen är då kvittot. `retired` är
+   * det gjorda arbetet som pensionerades (inget får försvinna).
+   */
+  "goal_grown",
+  /**
+   * Ett moment gjordes före något det helst kommer efter (mjukt beroende, eller
+   * hårt med «gör ändå»): `{ task, node, before, at }`. Läses av `revise`, som
+   * flaggar momentet om `before` ändras.
+   */
+  "goal_done_early",
+  /**
+   * «Hoppa över» (Daniel P 2026-10-13: «ett sätt att säga "hoppa över detta
+   * steg" på ett enkelt sätt i vyn»): `{ task, node, by, at, party, reason?,
+   * withdrawn? }`. `node` är ett moment eller ett delmål. Uppspelningen visar
+   * det som «behövs inte» (not_needed) i uppdraget, och det som läser det
+   * räknar läsningen som uppfylld. Den senaste per uppgift och nod gäller;
+   * `withdrawn: true` ångrar.
+   */
+  "goal_skipped",
+  /**
+   * Formatet kunden får materialet i (Daniel P 2026-10-14, del H3b, src/plan/present-as.ts):
+   * `{ task, node, format, by, at, party, withdrawn? }`. `node` är ett moment eller ett delmål;
+   * `format` ett av PRESENT_FORMATS. Den senaste per uppgift och nod gäller; `withdrawn: true`
+   * tar valet tillbaka till kundens sätt eller husets förval (presentationssidan).
+   */
+  "goal_present_as",
+  /**
+   * Ditt ja på ett moment med effekt som Claude eller kod gör (etapp 1b):
+   * `{ task, node, by, at, party, user_approval? }`. Skrivs med momentets
+   * `step_completed`; ett ja gäller den körning det gavs för.
+   */
+  "goal_yes",
+  /**
+   * Material från ett tidigare arbetsflöde, lagt in vid ett metodbyte (etapp
+   * 1d, src/plan/goal-migrate.ts): `{ task, origin: "previous_workflow", kind:
+   * "asset" | "content" | "decision" | "step", ref, type?, from_step?, label?, node?,
+   * at, party }`. Med `node` hör materialet till det momentet; utan (eller när
+   * momentet inte finns i modellen) står det i uppgiftens förråd
+   * (`inventory_from_old`), syns och kan användas. Inget kopieras: `ref` pekar
+   * på filen (`asset_produced`), texten (`content_version_saved`) eller
+   * beslutet (`step_outcome_recorded`) som det står i loggen; `step` är ett
+   * steg som markerats klart i det tidigare arbetsflödet och som bytet inte
+   * kunde räkna på ett moment (Daniel P 2026-10-14). Det senaste per material gäller.
+   */
+  "goal_inventory_added",
+  "question_asked",
+  "question_answered",
+  /** v2:s «Senare» på en fråga på momentet (h2, P41): `{ question, state, before }`. Läses av v2. */
+  "question_deferred",
+  /** v2:s «Skicka vidare» på en fråga på momentet (h2, P41): `{ question, state, person, before }`. Läses av v2. */
+  "question_forwarded",
+  "assumption_made",
+  "asset_produced",
+  /**
+   * En fil togs bort ur filbanken (Daniel P 2026-09-25: "kan vi se till så vi
+   * kan ta bort också"): `{ ref, sha256, customer, reason, by, name?,
+   * asset_type?, user_approval? }`, med filens sha256 i `subject_ref`. Tar
+   * inte bort något: bytesen står kvar i banken, och filen syns inte i
+   * listor, sökning, uppgifternas filer eller "Välj ur filbanken" förrän den
+   * läggs tillbaka. Den senaste av removed/restored gäller.
+   */
+  "asset_removed",
+  /** Filen lades tillbaka i filbanken: `{ ref, sha256, customer, by, reason? }`. */
+  "asset_restored",
+  /**
+   * Material kopplades loss från ett uppdrag (asset_register { action: "detach" }):
+   * `{ ref, sha256, for_task, by, reason? }`. Filen ligger kvar i banken; registreringen
+   * för uppgiften före lossningen syns inte i vyn (src/registry/view.ts, `withoutDetached`).
+   * Ångras genom att koppla filen igen.
+   */
+  "asset_detached",
+  /**
+   * Filens bytes raderades för gott ur banken, efter en begäran om radering
+   * (sidan /integritet): `{ ref, sha256, customer, reason, by }`. Bara en
+   * människa som beslutar, och bara för en fil som redan är borttagen.
+   * Loggen bär referensen och skälet, aldrig innehållet. Går inte att ångra.
+   */
+  "asset_purged",
+  "capacity_exceeded",
+  "deviation_logged",
+  "third_instance_reached",
+  /**
+   * Kundrelationen upphörde. Status lagras aldrig: om en kund är nuvarande
+   * HÄRLEDS ur den senaste relationshändelsen för parten (`subject_ref`).
+   */
+  "relationship_ended",
+  /** Relationen återupptogs. Den senaste av ended/resumed gäller. */
+  "relationship_resumed",
+  /**
+   * Innehåll (B-073). En ny version finns i banken; loggen bär referensen,
+   * aldrig texten. Status härleds i src/views/content.ts.
+   */
+  "content_version_saved",
+  /** En människa godkände en viss version. */
+  "content_approved",
+  /**
+   * «Godkänn inte → Gör om» (v6): `{ task, step?, of?, version?, feedback,
+   * redo: "claude" | <part>, withdrawn? }`. Gäller ett utkast (`of` är
+   * textens id) eller ett godkännandesteg (`step`). Feedbacken är en mening
+   * från den som inte godkände; `redo` är den som gör om. Ett Ångra är en ny
+   * post med `withdrawn: <händelse-id>`. Godkännandet är fortfarande den
+   * ursprunglige godkännarens.
+   */
+  "approval_declined",
+  /** En version ligger ute i en kanal, med kanalens id och länk. */
+  "content_published",
+  /**
+   * Verklig tid på ett steg, per person och del (B-076):
+   * `{ task?, step, party, phase, hours, date }`.
+   *
+   * Införs nu, före jämförelsen den ska mata, eftersom loggen är append-only:
+   * tid som inte rapporterades när den lades kan aldrig skrivas in i efterhand
+   * med rätt datum, och utan den blir nästa bedömning inte bättre.
+   */
+  "time_reported",
+  /**
+   * Ett meddelande till en eller flera kollegor (B-220): `{ from, to: [part],
+   * sha256, size, about? }`. Texten ligger i innehållsbanken under hashen —
+   * loggen bär referensen, aldrig innehållet. `about` pekar på det meddelandet
+   * gäller — `{ task?, step?, open?, thread? }`. Varje mottagare ser det under
+   * Till dig tills mottagaren markerat det läst. Bara mellan personer i huset.
+   */
+  "message_sent",
+  /** En mottagare har läst meddelandet: `{ sent, by }`, där sent är meddelandets händelse-id. */
+  "message_read",
+  /**
+   * Mottagaren har markerat meddelanden lösta: `{ sent: [id], by, note? }`, där
+   * sent är meddelandenas händelse-id (ett, eller trådens till mottagaren).
+   * Valfritt — ett löst meddelande räknas inte längre bland det som kräver
+   * något, men ligger kvar i historiken. Ångra är en ny post `{ by, withdrawn }`.
+   */
+  "message_resolved",
+  /**
+   * Personen arkiverade meddelanden (ordning, del 2): `{ sent: [id], by, archived }`.
+   * Gäller bara den som arkiverade; `archived: false` tar tillbaka. Raderar inget.
+   */
+  "message_archived",
+  /**
+   * Ett ärende i kön märktes (ordning, del 1): `{ task, by, resolved?, note?,
+   * archived?, merged_into? }`. Löst och arkiverat döljer ärendet ur de öppna
+   * men raderar ingenting; `merged_into` slår ihop det med ett annat ärende
+   * (svar 4). Den senaste gäller per fält. Se src/views/case-marks.ts.
+   */
+  "case_marked",
+  /**
+   * Någon rapporterade att något inte fungerar: `{ by, where, sha256, size }`.
+   * Beskrivningen och det vyn samlade in (fel, senaste anrop, version) ligger
+   * i innehållsbanken under hashen — loggen bär referensen.
+   */
+  /**
+   * Kopplingarna i en del av kundens system, sedda när någon läste den
+   * (B-242): `{ customer, subject: { kind, ref, label? }, links: [{ relation,
+   * to: { kind, ref }, detail? }], via }`. Nästa observation av samma sak
+   * ersätter den; det som föll bort är borta sedan dess.
+   */
+  "system_links_observed",
+  /** En koppling Claude eller en människa slutit sig till: `{ customer, from, relation, to, why, task? }`. */
+  "system_link_noted",
+  /**
+   * Personuppgifter om kundens kunder rensades ur loggen (Daniel P 2026-10-19, princip 7:s undantag):
+   * `{ count, reason }`. Bär aldrig texten; de rensade fälten står som «[borttaget]» (scripts/v2-rensa.mjs).
+   */
+  "redacted",
+  /**
+   * Ett projekts förteckning och brief ändrades (docs/plan-projektstart.md,
+   * etapp 2–6): `{ project, customer?, label?, brief?, inventory?, assumptions?,
+   * missing?, parts? }`, med projektets id i `subject_ref`. Listorna slås ihop
+   * per id; projektet är summan av händelserna (src/plan/project-brief.ts).
+   * `customer` null: Rotors eget projekt (internt eller möjligt).
+   */
+  "project_brief_saved",
+  /**
+   * v2:s brief på ett uppdrag (set_brief ●, v2-paritet e1): `{ project, customer?, label?, brief, before }`, uppdraget i
+   * `subject_ref`. Läses som `project_brief_saved` med samma `brief`; Ångra är en ny `brief_set` med den förra briefen.
+   */
+  "brief_set",
+  /**
+   * v2:s tid på ett uppdrag (husets väg för löftet): `{ task, kind, due, reason, from?, group?, undo_of? }`, uppdraget i
+   * `subject_ref`. Leveransens «Flytta» skriver kind moved, som v1 läser som en flytt till `due` (taskMoves); Ångra är
+   * en ny med `undo_of` och datumet före. Leveransens egen rad om flytten saknar kind och läses inte.
+   */
+  "task_time_set",
+  /**
+   * v2:s «Ta tillbaka publiceringen» (unpublish ●, v2-paritet grupp d): `{ channel, channel_id, url, task, content_id?, node }`,
+   * textens id i `subject_ref` som content_published. Publiceringen med samma channel_id står inte längre som ute.
+   */
+  "content_unpublished",
+  /**
+   * v2:s kandidat på kunden (e2): `{ candidate, source, capture_kind, party, confidence, source_segment_ids, confirmed,
+   * source_ref?, part?, of_parts?, attachments?, held?, withdrawn? }`, utan avsändare, ledtråd och bilagornas namn.
+   * Läses som `candidate_captured` när den inte hålls, och som klassad till inget när den dragits tillbaka.
+   */
+  "intake_candidate",
+  "bug_reported",
+  /** En felrapport är åtgärdad: `{ report, by, note? }`, där report är rapportens händelse-id. */
+  "bug_resolved",
+  /**
+   * En tidsbegränsad nedladdningslänk till en fil i innehållsbanken lämnades ut
+   * (asset_get): `{ ref, sha256, expires_at }`, aktören är den som bad om den.
+   * Länken bär sin behörighet själv, så varje utlämning måste gå att se i efterhand.
+   * Själva länken loggas aldrig.
+   */
+  "asset_link_issued",
+  /**
+   * En person kopplade sitt eget Google-konto till dirigenten:
+   * `{ email, scopes }`, `subject_ref` är parten. Loggen får veta ATT
+   * kopplingen finns, vem den gäller och vad den omfattar — aldrig token.
+   * Hemligheten bor krypterad i butiken `rotor-hemligheter`, för loggen är
+   * append-only och kan inte ta tillbaka något.
+   */
+  "google_linked",
+  /** Kopplingen togs bort: `{ email, scopes }`. Token raderas ur butiken. */
+  "google_unlinked",
+  /**
+   * En brevlåda lästes till och med en tidpunkt (B-101):
+   * `{ mailbox, through, explicit? }`.
+   *
+   * Vattenmärket. Utan det skulle varje körning behöva gissa hur långt bakåt
+   * den ska läsa, och en gissning åt fel håll hämtar hem gammal post som
+   * ingen bett om. Lagras som en HÄNDELSE och inte som ett fält på
+   * fångstvägen: en flyttande gräns som skrivs över är en sanning utan
+   * historia, och då går det inte att se varför en körning hämtade det den
+   * hämtade.
+   *
+   * `explicit: true` betyder att någon uttryckligen bett om ett äldre
+   * intervall. En sådan läsning flyttar ALDRIG vattenmärket bakåt.
+   */
+  "inbox_read",
+  /**
+   * En presentation för kund lades ut (2026-10-07, src/present/model.ts):
+   * `{ presentation, version, template, customer, delivery?, title, blocks,
+   * recipients, sender }`, `subject_ref` är presentationen. Blocken pekar på
+   * bankens fingeravtryck (`bank://<tenant>/<sha256>`), aldrig på «senaste
+   * versionen», så det kunden ser är låst. En ny publicering är en ny version;
+   * de gamla står kvar.
+   */
+  "presentation_published",
+  /** Presentationen drogs tillbaka: `{ presentation, reason? }`. Ingen mottagare ser den längre. */
+  "presentation_withdrawn",
+  /** En mottagare öppnade presentationen: `{ presentation, version, email }`. */
+  "presentation_viewed",
+  /**
+   * En engångskod skickades: `{ email, code_hash, expires_at }`. Koden står
+   * bara som hash (src/web/visa-session.ts).
+   */
+  "presentation_code_sent",
+  /** Ett försök med engångskoden: `{ email, ok }`. Räknas för spärren efter fem fel. */
+  "presentation_code_tried",
+  /**
+   * Kundens svar på en presentation (2026-10-08): `{ presentation, version,
+   * email, answer: approve|comment, text? }`. Ett förslag i dirigenten, inget
+   * mer: ett godkännande kan bli det kundens ja ett steg väntar på, men först
+   * när någon i huset markerar steget (src/views/customer-sheet.ts).
+   */
+  "presentation_response",
+  /**
+   * En text i presentationen sparad som ny version (Daniel P 2026-10-14, del H3b,
+   * src/present/texts.ts): `{ delivery, key, field: title|lead|caption, ref?, text, source:
+   * self|claude, by, party }`, `subject_ref` är leveransen. Skrivs själv eller tas fram med
+   * Claude; alla versioner står kvar, den senaste per plats gäller i urvalet och förhandsvisningen.
+   */
+  "presentation_text_saved"
+]);
+var usage = z.object({
+  provider: z.string().min(1),
+  model: z.string().min(1),
+  unit: z.enum(["token", "second", "request"]),
+  input: z.number().min(0),
+  output: z.number().min(0),
+  cached_input: z.number().min(0).optional(),
+  duration_ms: z.number().min(0).optional(),
+  price_version: z.string().min(1)
+}).strict();
+var eventInput = z.object({
+  /**
+   * Vem händelsen tillhör. Obligatorisk från början: loggen är append-only, så
+   * ett fält som saknas i gamla händelser kan aldrig fyllas i efteråt.
+   */
+  tenant: tenantId,
+  /** ISO-8601. Skickas in — kärnan har ingen egen klocka i skrivvägen. */
+  ts: z.string().min(1),
+  actor,
+  type: eventType,
+  /** Vad händelsen handlar om: ett id eller ett härlett uppgifts-id. */
+  subject_ref: z.string().min(1),
+  /** Referens, aldrig nyttolast. Bevakas av `event-no-payload`-regeln. */
+  payload: z.record(z.unknown()).default({}),
+  /** Idempotensnyckel. Samma nyckel två gånger ger en effekt, inte två. */
+  call_key: z.string().min(1).optional(),
+  usage: usage.optional()
+}).strict();
+function isSchema2Definition(e) {
+  return e.type === "node_defined" && e.payload?.["schema"] === 2;
+}
+
+// src/v2/domain/capability.ts
+function hasCode(n2) {
+  return n2.performer !== "code" || typeof n2.call === "string" && n2.call.trim() !== "" || n2.request !== null && typeof n2.request === "object";
+}
+
+// src/registry/v2-capabilities.ts
+var rec = (v) => v !== null && typeof v === "object" && !Array.isArray(v) ? v : {};
+var str3 = (v) => typeof v === "string" && v.trim() !== "" ? v.trim() : null;
+function v2Capabilities(view) {
+  const latest2 = /* @__PURE__ */ new Map();
+  for (const e of view.events) {
+    if (!isSchema2Definition(e)) continue;
+    const entry = rec(rec(e.payload)["entry"]);
+    if (entry["kind"] !== "capability" && entry["kind"] !== "call" || typeof entry["id"] !== "string") continue;
+    const id = entry["id"];
+    const before = latest2.get(id);
+    if (before && before.tenant !== SHARED_TENANT && e.tenant === SHARED_TENANT) continue;
+    if (before && before.tenant === e.tenant && before.seq > e.seq) continue;
+    latest2.set(id, { tenant: e.tenant, node: rec(entry["node"]), seq: e.seq, kind: String(entry["kind"]) });
+  }
+  const out = [];
+  const v1Calls = new Set(view.find("call").map((c) => c.name).filter((x) => typeof x === "string"));
+  for (const [id, { node: n2, kind }] of latest2) {
+    if (view.get(id)) continue;
+    if (kind === "call") {
+      out.push(callOf(id, n2, v1Calls));
+      continue;
+    }
+    const performer2 = n2["performer"] === "llm" || n2["performer"] === "human" ? n2["performer"] : "code";
+    const stage0 = n2["stage"] === "live" || n2["stage"] === "tested" ? n2["stage"] : "proposed";
+    const effect2 = rec(n2["effect"]);
+    out.push({
+      id,
+      label: str3(n2["label"]) ?? id,
+      call: str3(n2["call"]),
+      surface: str3(n2["surface"]),
+      performer: performer2,
+      stage: hasCode({ performer: performer2, call: n2["call"], request: n2["request"] }) ? stage0 : "proposed",
+      verb: str3(effect2["verb"]),
+      reach: str3(effect2["reach"]),
+      leaves: str3(n2["leaves"]) ?? "",
+      test_target: str3(n2["test_target"]),
+      atom: str3(n2["atom"]) ?? ""
+    });
+  }
+  return out.sort((a, b) => a.id.localeCompare(b.id));
+}
+var strs = (v) => Array.isArray(v) ? v.filter((x) => typeof x === "string") : [];
+function callOf(id, n2, v1Calls) {
+  const name = str3(n2["name"]) ?? str3(n2["call"]);
+  const performer2 = n2["performer"] === "llm" || n2["performer"] === "human" ? n2["performer"] : "code";
+  const runs = performer2 !== "code" || name !== null && v1Calls.has(name);
+  const effect2 = rec(n2["effect"]);
+  const leaves2 = rec(n2["leaves"]);
+  return {
+    id,
+    label: str3(n2["label"]) ?? name ?? id,
+    call: name,
+    surface: str3(n2["surface"]),
+    performer: performer2,
+    stage: runs ? n2["stage"] === "tested" ? "tested" : "live" : "proposed",
+    verb: str3(effect2["verb"]),
+    reach: str3(effect2["reach"]),
+    leaves: str3(n2["leaves"]) ?? str3(leaves2["where"]) ?? str3(n2["summary"]) ?? "",
+    test_target: str3(n2["test_target"]),
+    atom: str3(n2["atom"]) ?? name ?? "",
+    ...str3(n2["summary"]) ? { summary: str3(n2["summary"]) } : {},
+    input: strs(n2["input"]),
+    output: strs(n2["output"])
+  };
+}
+
+// src/registry/atom-stage.ts
+function atomStage(view, callName, fallback) {
+  if (!view) return fallback;
+  const cap = v2Capabilities(view).find((c) => c.call === callName);
+  if (cap) return cap.stage === "proposed" ? "draft" : "published";
+  const calls = view.find("call").filter((c) => c.name === callName);
+  const ids = /* @__PURE__ */ new Set([callName, ...calls.map((c) => c.id)]);
+  if (view.events.some((e) => e.type === "atom_proposal_built" && typeof e.payload["call"] === "string" && ids.has(e.payload["call"]) && typeof e.payload["test_passed"] === "string")) return "published";
+  const own = calls.map((c) => c.stage).find((s2) => s2 === "draft" || s2 === "published");
+  return own ?? fallback;
+}
+
 // src/execute/surfaces/atoms.ts
 var AtomSurface = class {
   constructor(name, atoms, deps, fallback, options = {}) {
@@ -29565,7 +30410,7 @@ var AtomSurface = class {
     const reads = atom.spec.effect?.verb === "reads";
     if (this.options.readOnly && !reads)
       throw new SurfaceError(`${callName} \xE4ndrar n\xE5got och k\xF6rs inte h\xE4r \u2014 k\xF6r det i ett steg med execute_step, som visar vad som \xE4ndras innan det g\xF6rs`, false);
-    const draft = atom.spec.stage === "draft";
+    const draft = atomStage(ctx?.registry?.view, callName, atom.spec.stage) === "draft";
     if (draft && args["dry_run"] === false)
       throw new SurfaceError(`${callName} \xE4r ett utkast och k\xF6rs bara som torrk\xF6rning \u2014 publicera atomen f\xF6rst`, false);
     const dry = draft || (reads ? args["dry_run"] === true : args["dry_run"] !== false);
@@ -29621,7 +30466,7 @@ function fillOptional(template, params) {
 }
 var LOCAL_TIMEOUT_MS = 12e4;
 var MAX_OUTPUT = 32 * 1024 * 1024;
-var KEYS2 = ["hubspot_cli", "freebo_root", "freebo_out", "bank_root"];
+var KEYS2 = ["hubspot_cli", "customer_root", "customer_out", "bank_root"];
 var CWD_OF = {
   hubspot: "hubspot_cli",
   cms: "hubspot_cli",
@@ -29719,7 +30564,7 @@ var filesOf = (v) => {
 async function runLocal(order, homes, allow, deps = {}) {
   const clock = deps.clock ?? Date.now;
   const t0 = clock();
-  const entry = findAllow(allow, order.surface, order.call);
+  const entry = findAllow(order.allow ? [{ ...order.allow, surface: order.surface, call: order.call }] : allow, order.surface, order.call);
   if (!entry) return fail(LOCAL_TEXT.plugin_old, t0, clock);
   if (entry.kind === "pending") return fail(LOCAL_TEXT.not_local_yet, t0, clock);
   if (Object.hasOwn(order.params, "target") || Object.hasOwn(order.params, "test_run")) return fail(LOCAL_TEXT.no_test_local, t0, clock);
@@ -29763,8 +30608,10 @@ async function runLocal(order, homes, allow, deps = {}) {
   const env = {
     ...fromFile,
     ...process.env,
-    ...homes.freebo_root ? { FREEBO_ROOT: homes.freebo_root } : {},
-    ...homes.freebo_out ? { FREEBO_OUT: homes.freebo_out } : {}
+    ...homes.customer_root ? { CUSTOMER_ROOT: homes.customer_root } : {},
+    ...homes.customer_out ? { CUSTOMER_OUT: homes.customer_out } : {},
+    // Other names a script reads its customer's folders under, from the registry (the order), never from here.
+    ...Object.fromEntries(Object.entries(order.allow?.kind === "script" ? order.allow.env ?? {} : {}).flatMap(([name, k]) => homes[k] ? [[name, homes[k]]] : []))
   };
   const out = await (deps.run ?? timedRun(deps.timeoutMs ?? LOCAL_TIMEOUT_MS))(argv, cwd, env);
   if (out.code === TIMED_OUT) return fail(LOCAL_TEXT.timeout, t0, clock);

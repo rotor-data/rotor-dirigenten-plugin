@@ -4534,6 +4534,12 @@ var call = z.object({
    */
   command: z.array(z.string().min(1)).optional(),
   /**
+   * Fler namn på kundens mappar i skriptets miljö: `{ NAMN: "customer_root" | "customer_out" }`. Lokala
+   * köraren sätter alltid CUSTOMER_ROOT och CUSTOMER_OUT; ett skript som läser andra namn får dem härifrån,
+   * så att inget kundnamn behöver stå i köraren (data-i-kod, punkt 18).
+   */
+  env: z.record(z.string().regex(/^[A-Z][A-Z0-9_]*$/), z.enum(["customer_root", "customer_out"])).optional(),
+  /**
    * Miljövariabler anropet inte kan köras utan.
    *
    * Grinden prövar INTE den här listan mot miljön, och ska inte göra det:
@@ -5954,7 +5960,7 @@ var coverage = z.object({
   /** Veckodag för en rytm per vecka (weekly, eller period week): förekomsterna hamnar den dagen. */
   weekday: z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]).optional(),
   /**
-   * `true`: de `quantity` exemplaren per period görs tillsammans (Freebos
+   * `true`: de `quantity` exemplaren per period görs tillsammans (kundens
    * SoMe-poster: sex poster som görs på en gång). Då räknas EN uppgift fram
    * per period, med antalet på uppgiften, och stegen görs en gång. Utelämnad
    * eller `false`: en uppgift per exemplar, som förut.
@@ -6001,7 +6007,7 @@ var commitment = z.object({
    * En retainer tar aldrig slut, och så länge varje åtagande var en retainer
    * behövdes fältet inte. Ett projektåtagande har ett slut, och utan det här
    * fältet fortsatte kalenderraderna att förgenerera uppgifter i evighet:
-   * Indexos Build slutar 29 november, men veckorapporten planerades till
+   * En kunds Build slutar 29 november, men veckorapporten planerades till
    * 18 december och hade fortsatt lika långt som horisonten räckte.
    *
    * Dagen är INKLUSIVE — en uppgift som förfaller på `until` hör till
@@ -6082,7 +6088,7 @@ var rule = z.object({
   applies_to: z.enum(["mail"]),
   /** Villkoren. Alla som står med måste stämma; de som utelämnas prövas inte. */
   when: z.object({
-    /** Avsändarens adress eller domän. `@freebo.se` matchar hela domänen. */
+    /** Avsändarens adress eller domän. `@kunden.se` matchar hela domänen. */
     from: z.string().min(1).optional(),
     /** Ord i ämnesraden, skiftlägesokänsligt. */
     subject_contains: z.string().min(1).optional(),
@@ -6117,7 +6123,7 @@ var captureRoute = z.object({
   label: z.string().min(1),
   /**
    * Vad som brukar komma hit, med de ord det brukar handla om (B-255). Daniel
-   * P 2026-09-24: hubspot@ är support för HubSpot, freebo@ beställningar av
+   * P 2026-09-24: hubspot@ är support för HubSpot, kunden@ beställningar av
    * material och marknadsföringsfrågor — "i stora drag", och frågor om
    * mätning kan komma till båda. Sökningen väger in det, filtrerar aldrig.
    */
@@ -6395,14 +6401,14 @@ var deliveryTemplate = z.object({
   /**
    * Den första perioden mallen samlar (förslaget för leveransmallarna
    * 2026-09-27): `2026-09`, `2026-W40` eller `2026-Q4`, i mallens form.
-   * Utelämnad: bakåtblicken tar fram två perioder bakåt, och «Freebo månad»
+   * Utelämnad: bakåtblicken tar fram två perioder bakåt, och «Kunden månad»
    * fick juli och augusti med sena uppgifter. Samma idé som åtagandets
    * `starts`: det som ligger före finns inte i mallens leveranser.
    */
   first_period: z.string().regex(/^\d{4}-(0[1-9]|1[0-2]|W(0[1-9]|[1-4]\d|5[0-3])|Q[1-4])$/).optional(),
   /**
    * Leveransernas namn, när det inte är mallens (samma förslag): mallen
-   * «Freebo månad» ger «Freebo september» med `delivery_label: "Freebo"`.
+   * «Kunden månad» ger «Kunden september» med `delivery_label: "Kunden"`.
    * Utelämnat: mallens namn, som förut.
    */
   delivery_label: z.string().min(1).max(100).optional(),
