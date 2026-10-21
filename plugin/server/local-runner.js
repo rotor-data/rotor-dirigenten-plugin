@@ -27453,7 +27453,7 @@ var spec29 = {
   },
   "structure": { "objects": ["account"], "actions": ["reads", "sends", "deletes"], "risk": "reaches_outside", "leads_to": ["c_meta_read_structure"], "fields": { "action": { "type": "string", "example": "grant", "note": "list, invite, grant eller revoke" }, "business_id": { "type": "id", "example": "100000000000001", "note": "business managerns id" }, "person": { "type": "string", "example": "200000000000002", "note": "personens e-post eller id i business managern; invite kr\xE4ver e-post" }, "role": { "type": "string", "example": "EMPLOYEE", "note": "rollen vid inbjudan" }, "accounts": { "type": "list", "example": ["act_300000000000003"], "note": "annonskontona, eller \xABalla\xBB" }, "tasks": { "type": "list", "example": ["ANALYZE"], "note": "ANALYZE = bara l\xE4sa; ADVERTISE, MANAGE, DRAFT" } }, "choices": { "action": { "from": "list", "values": ["list", "invite", "grant", "revoke"] }, "role": { "from": "list", "values": ["EMPLOYEE", "ADMIN", "FINANCE_EDITOR", "FINANCE_ANALYST", "DEVELOPER"] }, "tasks": { "from": "list", "values": ["ANALYZE", "ADVERTISE", "MANAGE", "DRAFT"] }, "accounts": { "from": "account", "call": "c_meta_read_structure" } } },
   "requires": "draft",
-  "stage": "draft",
+  "stage": "published",
   "module": "n0101",
   "operation_id": "o_meta_manage_access",
   "step_id": "s_meta_manage_access",
