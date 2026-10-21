@@ -14658,7 +14658,7 @@ __export(change_bank_atom_exports, {
 });
 
 // src/v2/domain/moment-standard.ts
-var STANDARD_IDS = ["approval_send", "approval_yes", "approval_co_yes", "collect", "deliver", "walkthrough", "check_in_use"];
+var STANDARD_KEY = /^[a-z][a-z0-9_]*$/;
 
 // node_modules/zod/lib/index.mjs
 var util;
@@ -19719,11 +19719,11 @@ var templateMoment = z.object({
   /** Receptet när en människa gör momentet (runda D3). */
   recipe: momentRecipe.optional(),
   /**
-   * Standardmomentets mall i det centrala biblioteket (src/v2/domain/moment-standard.ts, Daniel P 2026-10-20: «en
+   * Standardmomentets mall, en post `moment_template` i registret (src/v2/domain/moment-standard.ts, Daniel P 2026-10-20: «en
    * central text som är på många»): syfte, följd, recept eller instruktion läses därifrån med momentets värden.
    * Momentet bär bara referensen, aldrig en kopia av texten.
    */
-  standard: z.enum(STANDARD_IDS).optional(),
+  standard: z.string().regex(STANDARD_KEY).optional(),
   /**
    * Förmågan momentet behöver när kod eller Claude gör det (etapp 2): ytan
    * (systemet, får vara en hållare som `{system}`), effektens verb och

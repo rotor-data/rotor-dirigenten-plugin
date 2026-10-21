@@ -18,6 +18,7 @@ Example 2: `plan_state{agenda:true}` for what is due, ordered by urgency, then e
 Counterexample: calling a customer's system through another connector when this server has the capability.
 Edge case: a legacy call shape (`asset_register`, `{tool,args}` wrapper) is translated while the adapter window is open; `say.now` shows the new form.
 A file into the customer's file bank: `write` with `op` `file_add` and `name`, `text` or `base64` (+`mime`), `customer`, optionally `folder` and `asset_type`; with `task` and `moment` it is also tied to that moment. Without a task it is the customer's alone. v1's `asset_register` with `text` or `base64` becomes this call.
+Upload app: `read{op:"upload_link", customer, for_task?, for_node?}` gives a page where the user drops one or more files; they go straight to the file bank (never base64). Then offer «Ska jag föreslå var filerna hör hemma?» and, after a yes to the shown proposal, tie each with `act attach_file` (from_ref).
 
 v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{phase:"verktyg:<op>"}` gives an op's fields from the schema the write is checked against, and a field it does not have is refused with a template. Severity from the policy, ■ needs `user_approval`:
 - `write{op:"time_report"}`: rapportera verklig tid på ett steg eller ärende
@@ -25,12 +26,14 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 - `write{op:"message_mark"}`: markera meddelanden
 - `read{op:"image_picker"}`: bildväljaren: sources, search, prompt
 - `read{op:"image_target"}`: bildväljarens mål: pick_image { task, ref }
+- `read{op:"upload_link"}`: uppladdningssidan för en kund: customer, valfritt for_task och for_node (momentet), folder; fler filer på en gång
 - `write{op:"image_fetch"}`: bild ur en extern källa: register + filename och provenance { source, source_id }
 - `write{op:"bug_report"}`: felrapport: text, where, screenshot (png som base64) sparas av v2 (●); resolve, eller utan båda listan
 - `write{op:"note_link"}`: anteckning med länk
 - `read{op:"plan_estimate"}`: uppskatta en plan
 - `read{op:"content_search"}`: sök i innehållsbanken
 - `read{op:"content_list"}`: lista innehåll
+- `write{op:"content_save"}`: spara text
 - `write{op:"content_published"}`: markera publicerat
 - `read{op:"presentation_draft"}`: presentationens utkast
 - `read{op:"delivery_material"}`: leveransens material och saker: task (whole: true för hela leveransen) eller delivery
@@ -80,6 +83,9 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"time_report"}`: rapportera verklig tid: task + step (momentet) eller task, hours, phase, date, party; corrects rättar en rapport
 - `read|write{op:"presentation_text"}`: spara presentationens texter: delivery, texts [{ key, field title|lead|caption, ref?, text, source? }]
 - `read|write{op:"content_published"}`: markera publicerat: task + step/node (momentet), channel, channel_id, url, id (texten); ■ med förhandsvisning
+- `read|write{op:"content_get"}`: en text eller fil ur banken: ref, id eller name (namnet räcker)
+- `read|write{op:"asset_get"}`: en fil ur banken: ref, id eller name (namnet räcker); thumb för miniatyren
+- `read|write{op:"content_save"}`: spara text; utan for_step väljer servern plats
 - `read|write{op:"delivery_sheet"}`: leveransens sida: tasks (uppdragen), räknad i servern
 - `read|write{op:"step_card"}`: stegets ark: task, step (momentets nyckel)
 - `read|write{op:"batch_apply"}`: en handling på flera: action, items [{ task, step|node }], params; ■ en i taget efter förhandsvisning
