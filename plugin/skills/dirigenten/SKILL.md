@@ -24,6 +24,7 @@ Allt går genom kopplingen rotor-dirigenten. Sju verktyg:
 - `act` — det enda sättet att göra något: `on`, `action`, `rev` och ibland `params`, `preview_id`, `user_approval`.
 - `execute_step` — kör en förmåga för ett moment, också som provkörning (`test`). Resultatet sparas alltid.
 - `write` — skriv in eller ändra en post i registret (`op`: define, append, draft). Grinden säger vad som saknas.
+- `upload` — uppladdningsrutan för en kund, bara när någon vill ladda upp.
 
 Gången är nästan alltid: hitta saken (`search{q}` eller `plan_state{}`), läs den (`read{on}`), gör det användaren vill (`act{on, action, rev}`). Ta `rev` från den senaste läsningen. Får du `written: false` har inget sparats: läs igen och bestäm på nytt.
 

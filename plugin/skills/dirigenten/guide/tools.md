@@ -6,6 +6,7 @@
 - `act`: the only way to do an action: `on`, `action`, `rev`, `params`, `preview_id`, `user_approval`, `batch`; action `undo` takes the last action back.
 - `execute_step`: run a capability for a moment (`on`, `rev`, `params`, `test`); the result is always logged.
 - `write`: define, append or draft a registry entry (`op`, `entry`, `fixes`); the gate lists what is missing.
+- `upload`: the upload app for a customer (`customer`, `for_task`, `for_node`); only when the user wants to upload.
 
 Steps
 1. `search{q:[…]}` (one to five phrasings) or `plan_state{}` to find the subject.
@@ -18,7 +19,7 @@ Example 2: `plan_state{agenda:true}` for what is due, ordered by urgency, then e
 Counterexample: calling a customer's system through another connector when this server has the capability.
 Edge case: a legacy call shape (`asset_register`, `{tool,args}` wrapper) is translated while the adapter window is open; `say.now` shows the new form.
 A file into the customer's file bank: `write` with `op` `file_add` and `name`, `text` or `base64` (+`mime`), `customer`, optionally `folder` and `asset_type`; with `task` and `moment` it is also tied to that moment. Without a task it is the customer's alone. v1's `asset_register` with `text` or `base64` becomes this call.
-Upload app: `read{op:"upload_link", customer, for_task?, for_node?}` gives a page where the user drops one or more files; they go straight to the file bank (never base64). Then offer «Ska jag föreslå var filerna hör hemma?» and, after a yes to the shown proposal, tie each with `act attach_file` (from_ref).
+Upload app: `upload{customer, for_task?, for_node?}` (only when the user wants to upload; `read{op:"upload_link"}` gives the link alone) gives a page where the user drops one or more files; they go straight to the file bank (never base64). Then offer «Ska jag föreslå var filerna hör hemma?» and, after a yes to the shown proposal, tie each with `act attach_file` (from_ref).
 
 v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{phase:"verktyg:<op>"}` gives an op's fields from the schema the write is checked against, and a field it does not have is refused with a template. Severity from the policy, ■ needs `user_approval`:
 - `write{op:"time_report"}`: rapportera verklig tid på ett steg eller ärende
