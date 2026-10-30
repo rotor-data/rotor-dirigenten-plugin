@@ -6521,6 +6521,23 @@ var registered = z.discriminatedUnion("kind", [
   promptBlock
 ]);
 
+// dist/src/google/scopes.js
+var CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+var GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
+var GMAIL_SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send";
+var CALENDAR_EVENTS_SCOPE = "https://www.googleapis.com/auth/calendar.events";
+var GMAIL_COMPOSE_SCOPE = "https://www.googleapis.com/auth/gmail.compose";
+var SEARCH_CONSOLE_SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
+var SCOPE_NAMN = {
+  [CALENDAR_SCOPE]: "din kalender (bara l\xE4sa upptagen tid)",
+  [GMAIL_SCOPE]: "din e-post (bara l\xE4sa)",
+  [GMAIL_SEND_SCOPE]: "din e-post (skicka i ditt namn)",
+  [CALENDAR_EVENTS_SCOPE]: "din kalender (l\xE4gga in dina arbetspass)",
+  [GMAIL_COMPOSE_SCOPE]: "din e-post (skriva utkast i ditt namn)",
+  [SEARCH_CONSOLE_SCOPE]: "Search Console (bara l\xE4sa s\xF6kdata och indexering)"
+};
+var GOOGLE_ADMIN_TAIL = "Det h\xE4r beh\xF6ver en administrat\xF6r st\xE4lla in en g\xE5ng f\xF6r alla. Be en administrat\xF6r om det; du beh\xF6ver inte g\xF6ra n\xE5got annat. Vill du att jag visar dig steg f\xF6r steg i webbl\xE4saren?";
+
 // dist/src/intake/gmail.js
 var BODY_HEAD_CHARS = 1500;
 var MAX_DAYS = 365;
@@ -6581,8 +6598,17 @@ async function accessToken(auth2, fetchFn) {
       grant_type: "refresh_token"
     }).toString()
   });
-  if (!r.ok)
-    throw new Error(`kunde inte f\xF6rnya \xE5tkomsten (${r.status})`);
+  if (!r.ok) {
+    const b = await r.json().catch(() => null);
+    const code = typeof b?.error === "string" && /^[\w.-]{1,64}$/.test(b.error) ? b.error : null;
+    if (code === "admin_policy_enforced" || code === "org_internal")
+      throw new Error(`GOOGLE_ADMIN: Google stoppade mejlet, eftersom en inst\xE4llning saknas hos Google (${code}). ${GOOGLE_ADMIN_TAIL}`);
+    if (code === "invalid_client" || code === "unauthorized_client")
+      throw new Error(`GOOGLE_ADMIN: Google stoppade mejlet, eftersom en inst\xE4llning saknas hos Google (${code}). ${GOOGLE_ADMIN_TAIL}`);
+    if (code === "invalid_grant")
+      throw new Error("GOOGLE_TOKEN: Google-kopplingen har g\xE5tt ut (invalid_grant). Koppla Google igen under Inst\xE4llningar \u2192 Kopplingar, s\xE5 forts\xE4tter jag.");
+    throw new Error(`kunde inte f\xF6rnya \xE5tkomsten (${r.status}${code ? `, ${code}` : ""})`);
+  }
   const t = await r.json().catch(() => ({}));
   if (!t.access_token)
     throw new Error("inget access_token i svaret");

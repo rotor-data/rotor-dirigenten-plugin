@@ -66,7 +66,7 @@ Varje svar har `checked_at`: då kontrollerade servern förmågorna, i just det 
 
 ## Dirigentens koppling först
 
-Allt som rör en kunds system görs genom dirigenten, som har kundens nycklar. Andra kopplingar (till exempel en CRM-koppling eller e-post i Claude) används bara när dirigenten saknar förmågan. Säg då till användaren vilken väg du tar och varför, i en mening.
+Allt som rör en kunds system, och varje mejl, görs genom dirigenten. Mejl blir utkast i egen Gmail: `write{op:"mail_draft"}` (■), bilagor som `ref` ur filbanken (annars `upload` först). Andra kopplingar bara när dirigenten saknar förmågan; säg då vilken väg och varför.
 
 ## Nytt sedan sist
 

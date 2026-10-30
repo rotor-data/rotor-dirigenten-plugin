@@ -25,8 +25,9 @@ Anta inte att något fortfarande inte fungerar för att det inte fungerade tidig
 1. Spara det som klistrats in, bifogats eller länkats oförändrat som material innan något annat görs. Filer kopplas till momentet de hör till med `act{on, action: "attach_file", rev}`.
 2. Gör en förteckning: en rad per påstående i underlaget (krav, önskemål, fakta, ton, förbud, öppen fråga) med var det står. Kundens egna ord citeras ordagrant.
 3. Läs in det som redan finns hos kunden: pågående och tidigare uppdrag, utkast och filer, med datum och vem. Det som finns återanvänds eller hänvisas till och blir inte nya moment som gör om det.
-4. Bedöm utkast ärligt: ett utkast som inte är godkänt är inte klart och räknas aldrig som gjort arbete; bygger något på det får det ett moment som rättar det och får det godkänt.
-5. Säg bara «Jag har sparat underlaget» till användaren.
+4. Fråga användaren «Har ni redan gjort något av det här?» och föreslå själv det du ser: research tidigare i samtalet, snabbhandlingar som körts för kunden och filer i banken. Det användaren säger ja till skrivs med målet som `goal.existing` [{ result, source, kind: "quick" | "file" | "text", ref, text }]: result är resultatet i planen det levererar, source varifrån i ord, ref snabbhandlingens uppgift eller filens id, text samtalets research ordagrant. Momentet räknas då som «fanns redan» och planeras inte igen; det som inte passar något moment står kvar med skälet. Efter inskrivningen kopplas filerna till sina moment med `act{on, action: "attach_file", rev}`.
+5. Bedöm utkast ärligt: ett utkast som inte är godkänt är inte klart och räknas aldrig som gjort arbete; bygger något på det får det ett moment som rättar det och får det godkänt.
+6. Säg bara «Jag har sparat underlaget» till användaren.
 
 ## 2. Förstå och föreslå, i varv med användaren
 

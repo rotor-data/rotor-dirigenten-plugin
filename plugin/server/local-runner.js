@@ -20154,6 +20154,7 @@ var sourceRoute = z.object({
   persistent: z.boolean()
 }).strict();
 var partyRole = z.enum(["customer", "supplier", "internal", "prospect", "superadmin"]);
+var SUPERADMIN_ROLE = "superadmin";
 var PERSON_ID = /^[a-z][a-z0-9_]*$/;
 var person = z.object({
   id: z.string().regex(PERSON_ID),
@@ -22063,6 +22064,7 @@ var SCOPE_NAMN = {
   [GMAIL_COMPOSE_SCOPE]: "din e-post (skriva utkast i ditt namn)",
   [SEARCH_CONSOLE_SCOPE]: "Search Console (bara l\xE4sa s\xF6kdata och indexering)"
 };
+var GOOGLE_ADMIN_TAIL = "Det h\xE4r beh\xF6ver en administrat\xF6r st\xE4lla in en g\xE5ng f\xF6r alla. Be en administrat\xF6r om det; du beh\xF6ver inte g\xF6ra n\xE5got annat. Vill du att jag visar dig steg f\xF6r steg i webbl\xE4saren?";
 
 // src/google/events.ts
 var CALENDAR_EVENTS_NAMN = SCOPE_NAMN[CALENDAR_EVENTS_SCOPE];
@@ -22632,6 +22634,28 @@ var URLS = {
     upload: `${GMAIL}/upload/gmail/v1/users/me/drafts?uploadType=multipart`
   }
 };
+async function reasonOf(r) {
+  const b = await r.json().catch(() => null);
+  const e = b?.error;
+  const code = e?.errors?.[0]?.reason ?? e?.details?.find((x) => typeof x.reason === "string")?.reason ?? e?.status;
+  return typeof code === "string" && /^[\w.-]{1,64}$/.test(code) ? code : null;
+}
+function gmailRefusal(status, reason, delivery) {
+  const what = delivery === "draft" ? "Utkastet" : "Utskicket";
+  const right = delivery === "draft" ? `r\xE4tten att skriva utkast (${GMAIL_COMPOSE_SCOPE})` : `r\xE4tten att skicka (${GMAIL_SEND_SCOPE})`;
+  const r = reason ?? "";
+  if (status === 401)
+    return `GOOGLE_TOKEN: ${what} nekades av Google (401): kopplingen g\xE4ller inte l\xE4ngre. Koppla Google igen under Inst\xE4llningar \u2192 Kopplingar, s\xE5 forts\xE4tter jag.`;
+  if (status === 403 && /accessNotConfigured|SERVICE_DISABLED/i.test(r))
+    return `GOOGLE_ADMIN: Google stoppade mejlet, eftersom en inst\xE4llning saknas hos Google (Gmail API, 403, ${r}). ${GOOGLE_ADMIN_TAIL}`;
+  if (status === 403 && /insufficientPermissions|ACCESS_TOKEN_SCOPE_INSUFFICIENT|insufficient/i.test(r))
+    return `GOOGLE_SCOPE: Dirigenten f\xE5r inte ${delivery === "draft" ? "skriva utkast i" : "skicka fr\xE5n"} din Gmail \xE4n (403, ${right}). Koppla Google igen med \xAButkast\xBB p\xE5slaget under Inst\xE4llningar \u2192 Kopplingar.`;
+  if (status === 403 && /domainPolicy|admin|forbidden/i.test(r))
+    return `GOOGLE_ADMIN: Google stoppade mejlet, eftersom en inst\xE4llning saknas hos Google (Workspace, 403, ${r}). ${GOOGLE_ADMIN_TAIL}`;
+  if (status === 413 || status === 400 && /tooLarge|size/i.test(r))
+    return `GOOGLE_SIZE: Mejlet blev f\xF6r stort (${status}). Ta bort en bilaga, eller s\xE4g till s\xE5 skickar jag den som l\xE4nk.`;
+  return `${delivery === "draft" ? "utkastet" : "utskicket"} gick inte igenom (${status}${r ? `, ${r}` : ""})`;
+}
 async function deliver(d, m, files, delivery) {
   const mime = buildMime(m, files);
   const thread = m.thread_id ? { threadId: m.thread_id } : {};
@@ -22667,7 +22691,7 @@ async function deliver(d, m, files, delivery) {
       ].join("\r\n")
     });
   }
-  if (!r.ok) throw new Error(`${delivery === "draft" ? "utkastet" : "utskicket"} gick inte igenom (${r.status})`);
+  if (!r.ok) throw new Error(gmailRefusal(r.status, await reasonOf(r), delivery));
   const reply = await r.json();
   if (typeof reply.id !== "string") throw new Error("inget id i svaret");
   const threadId = reply.threadId ?? reply.message?.threadId;
@@ -22714,7 +22738,7 @@ function mailProblem(view, party2, delivery, scopes) {
   if (p?.kind !== "party" || !p.roles.includes("internal")) return `${party2} \xE4r ingen intern part`;
   const part = p;
   if (delivery === "draft") {
-    if (part.mail?.draft?.enabled !== true)
+    if (part.mail?.draft?.enabled !== true && !scopes.includes(GMAIL_COMPOSE_SCOPE))
       return `${part.label} har inte slagit p\xE5 utkast i sin egen Gmail`;
     if (!scopes.includes(GMAIL_COMPOSE_SCOPE))
       return `${part.label}s koppling saknar r\xE4tten att skriva utkast \u2014 sl\xE5 p\xE5 \xAButkast\xBB i inst\xE4llningarna och koppla om Google`;
@@ -23312,14 +23336,130 @@ var fixtures8 = [
   }
 ];
 
+// atoms/google/connection_check.atom.ts
+var connection_check_atom_exports = {};
+__export(connection_check_atom_exports, {
+  CHECK_TEXT: () => CHECK_TEXT,
+  fixtures: () => fixtures9,
+  run: () => run9,
+  spec: () => spec9
+});
+
+// src/registry/admin.ts
+function isSuperadmin(view, partyId) {
+  const p = partyId ? view.get(partyId) : void 0;
+  return p?.kind === "party" && p.roles.includes("internal") && p.roles.includes(SUPERADMIN_ROLE);
+}
+
+// atoms/google/connection_check.atom.ts
+var CHECK_TEXT = {
+  connection: "Kopplingen till Google",
+  compose: "Dirigenten f\xE5r skriva utkast i din Gmail",
+  gmail_api: "Gmail API i dirigentens Google-projekt",
+  workspace: "Google Workspace sl\xE4pper in dirigentens app",
+  fix_person: "Klicka p\xE5 l\xE4nken under Inst\xE4llningar \u2192 Kopplingar och godk\xE4nn hos Google.",
+  fix_admin: "Det h\xE4r beh\xF6ver en administrat\xF6r st\xE4lla in en g\xE5ng f\xF6r alla. Be en administrat\xF6r om det; du beh\xF6ver inte g\xF6ra n\xE5got annat."
+};
+async function reasonOf2(r) {
+  const b = await r.json().catch(() => null);
+  const c = b?.error?.errors?.[0]?.reason ?? b?.error?.status;
+  return typeof c === "string" ? c : "";
+}
+async function run9(args, ctx) {
+  const party2 = ctx.call.runner ?? (typeof args["party"] === "string" ? args["party"] : "");
+  const view = ctx.view;
+  const admins = view ? view.find("party").filter((p2) => isSuperadmin(view, p2.id)).map((p2) => p2.label ?? p2.id) : [];
+  const runnerIsAdmin = view ? isSuperadmin(view, party2) : false;
+  const row2 = (key, ok, fixer) => ({ key, ok, label: CHECK_TEXT[key], fixer, fix: ok === true ? null : fixer === "person" ? CHECK_TEXT.fix_person : CHECK_TEXT.fix_admin });
+  const out = (rows4, dry = false) => ({
+    ready: rows4.every((r) => r.ok === true),
+    rows: rows4,
+    admin_needed: rows4.some((r) => r.ok === false && r.fixer === "admin"),
+    runner_is_admin: runnerIsAdmin,
+    admins,
+    dry_run: dry
+  });
+  let link = null;
+  try {
+    link = ctx.connection ? await ctx.connection("google", party2) : null;
+  } catch (e) {
+    const m = e.message;
+    if (/^GOOGLE_ADMIN: /.test(m)) return out([row2("connection", true, "person"), row2("workspace", false, "admin")]);
+    return out([row2("connection", false, "person")]);
+  }
+  if (!link?.token) return out([row2("connection", false, "person")]);
+  if (ctx.dry_run) return out([row2("connection", true, "person"), row2("compose", link.scopes.includes(GMAIL_COMPOSE_SCOPE), "person")], true);
+  const f = ctx.fetch;
+  const info = await f("https://oauth2.googleapis.com/tokeninfo", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ access_token: link.token }).toString()
+  });
+  const granted = info.ok ? String((await info.json().catch(() => ({}))).scope ?? "").split(/\s+/) : [...link.scopes];
+  const compose = granted.includes(GMAIL_COMPOSE_SCOPE);
+  const rows3 = [row2("connection", true, "person"), row2("workspace", true, "admin"), row2("compose", compose, "person")];
+  if (!compose) return out([...rows3, row2("gmail_api", null, "admin")]);
+  const p = await f("https://gmail.googleapis.com/gmail/v1/users/me/profile", { headers: { authorization: `Bearer ${link.token}` } });
+  const reason = p.ok ? "" : await reasonOf2(p);
+  const apiOff = !p.ok && /accessNotConfigured|SERVICE_DISABLED/i.test(reason);
+  const blocked = !p.ok && !apiOff && p.status === 403;
+  return out([
+    row2("connection", true, "person"),
+    row2("workspace", !blocked, "admin"),
+    row2("compose", true, "person"),
+    row2("gmail_api", p.ok ? true : apiOff ? false : null, "admin")
+  ]);
+}
+var spec9 = {
+  id: "c_google_connection_check",
+  name: "google.call.connection_check",
+  grounding: "observed",
+  found_in: "Daniel P 2026-10-30: \xABdirigenten m\xE5ste hj\xE4lpa till att st\xE4lla in detta ocks\xE5\xBB",
+  scope: "shared",
+  stage: "published",
+  surface: "google",
+  atom: "google.connection.check",
+  effect: { verb: "reads", object: "google_connection" },
+  performer: "code",
+  requires: "read",
+  idempotent: true,
+  input: ["party"],
+  optional_input: [],
+  output: ["ready", "rows", "admin_needed", "runner_is_admin", "admins", "dry_run"],
+  label: "Kontrollera kopplingen f\xF6r mejl",
+  summary: "Vad som saknas f\xF6r mejl med bilagor, och vem som \xE5tg\xE4rdar.",
+  keywords: ["mejl fungerar inte", "bilaga", "google-koppling", "gmail compose", "beh\xF6righet", "diagnos mejl"],
+  test_target: "fejkad Google i atomens provdata; ingen riktig Gmail",
+  leaves: {
+    schema: {
+      ready: "sant n\xE4r allt f\xF6r utkast med bilagor \xE4r p\xE5 plats",
+      rows: "en rad per sak: ok (\u2713/\u2717/ok\xE4nt), vem som \xE5tg\xE4rdar, hur",
+      admin_needed: "sant n\xE4r n\xE5got bara administrat\xF6ren kan ordna",
+      runner_is_admin: "sant n\xE4r den som k\xF6r sj\xE4lv \xE4r administrat\xF6r",
+      admins: "administrat\xF6rerna ur registret",
+      dry_run: "sant vid torrk\xF6rning"
+    },
+    done_when: ["varje rad har ett l\xE4ge och en som \xE5tg\xE4rdar"],
+    where: "Svaret; inget sparas"
+  },
+  module: "n8002",
+  operation_id: "o_google_connection_check",
+  step_id: "s_google_connection_check",
+  lead_days: 0
+};
+var fixtures9 = [
+  { name: "kopplad med utkast", scopes: [GMAIL_COMPOSE_SCOPE], args: { party: "@runner" }, expect_fields: ["ready", "rows"] },
+  { name: "utan koppling s\xE4gs det, med personen som \xE5tg\xE4rdar", args: { party: "@runner" }, expect_fields: ["rows"] }
+];
+
 // atoms/google/pagespeed.atom.ts
 var pagespeed_atom_exports = {};
 __export(pagespeed_atom_exports, {
   STRATEGIES: () => STRATEGIES,
-  fixtures: () => fixtures10,
+  fixtures: () => fixtures11,
   pagespeedRow: () => pagespeedRow,
-  run: () => run10,
-  spec: () => spec10
+  run: () => run11,
+  spec: () => spec11
 });
 
 // atoms/webb/fetch_pages.atom.ts
@@ -23331,10 +23471,10 @@ __export(fetch_pages_atom_exports, {
   findCanonical: () => findCanonical,
   findNoindex: () => findNoindex,
   findScripts: () => findScripts,
-  fixtures: () => fixtures9,
+  fixtures: () => fixtures10,
   pool: () => pool,
-  run: () => run9,
-  spec: () => spec9,
+  run: () => run10,
+  spec: () => spec10,
   urlsOf: () => urlsOf
 });
 var CHECKS = ["status", "redirect_chain", "canonical", "noindex", "scripts"];
@@ -23448,7 +23588,7 @@ var int = (v, name, def, lo, hi) => {
   if (!Number.isInteger(n2) || n2 < lo || n2 > hi) throw new Error(`${name} \xE4r ett heltal ${lo}\u2013${hi}, fick ${String(v)}`);
   return n2;
 };
-var spec9 = {
+var spec10 = {
   id: "c_web_fetch_pages",
   name: "web.call.fetch_pages",
   grounding: "decided",
@@ -23484,7 +23624,7 @@ var spec9 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["fetched_pages"]
 };
-async function run9(args, ctx) {
+async function run10(args, ctx) {
   const checks = checksOf(args["checks"]);
   const max = int(args["max"], "max", 500, 1, 2e3);
   const concurrency2 = int(args["concurrency"], "concurrency", 4, 1, 8);
@@ -23503,7 +23643,7 @@ async function run9(args, ctx) {
   );
   return { pages: done, checked: checks, not_checked: skipped, dry_run: false };
 }
-var fixtures9 = [
+var fixtures10 = [
   { name: "status och kedja ur sidlistan", args: { items: [{ url: "https://exempel.se/", published: true }] } },
   // data-i-koden: påhittad provadress
   { name: "m\xE4tskript p\xE5 tv\xE5 adresser", args: { urls: ["https://exempel.se/", "https://exempel.se/om"], checks: ["scripts"], concurrency: 2 } },
@@ -23547,7 +23687,7 @@ function pagespeedRow(url, strategy2, d) {
     field: metrics2 ? Object.fromEntries(Object.entries(metrics2).map(([k, v]) => [k.toLowerCase(), String(v.category ?? "")])) : null
   };
 }
-var spec10 = {
+var spec11 = {
   id: "c_google_pagespeed",
   name: "google.call.pagespeed",
   grounding: "decided",
@@ -23582,7 +23722,7 @@ var spec10 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["pagespeed_report"]
 };
-async function run10(args, ctx) {
+async function run11(args, ctx) {
   const strategy2 = String(args["strategy"] ?? "mobile");
   if (!STRATEGIES.includes(strategy2)) throw new Error(`strategy \xE4r ${STRATEGIES.join(", ")}, fick ${strategy2}`);
   const max = args["max"] === void 0 || args["max"] === null ? 10 : Number(args["max"]);
@@ -23617,7 +23757,7 @@ async function run10(args, ctx) {
   }, deadline - 3e3);
   return { pagespeed: done, not_checked: skipped.map(([u, s2]) => `${s2} ${u}`), dry_run: false };
 }
-var fixtures10 = [
+var fixtures11 = [
   { name: "mobil ur sidlistan", args: { items: [{ url: "https://exempel.se/", published: true }] } },
   // data-i-koden: påhittad provadress
   { name: "b\xE5da strategierna", args: { urls: ["https://exempel.se/"], strategy: "both" } },
@@ -23631,11 +23771,11 @@ var fixtures10 = [
 var search_console_atom_exports = {};
 __export(search_console_atom_exports, {
   QUERIES: () => QUERIES,
-  fixtures: () => fixtures11,
+  fixtures: () => fixtures12,
   periodOf: () => periodOf,
-  run: () => run11,
+  run: () => run12,
   siteOf: () => siteOf,
-  spec: () => spec11,
+  spec: () => spec12,
   urlsOf: () => urlsOf3
 });
 var QUERIES = ["search_analytics", "url_inspection"];
@@ -23692,7 +23832,7 @@ async function call2(get, token, url, body, site) {
     throw new Error(`Search Console ${res.status}: ${String(data["error"]?.message ?? text7.slice(0, 200))}`);
   return data;
 }
-var spec11 = {
+var spec12 = {
   id: "c_google_search_console",
   name: "google.call.search_console",
   grounding: "decided",
@@ -23730,7 +23870,7 @@ var spec11 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["search_console_data"]
 };
-async function run11(args, ctx) {
+async function run12(args, ctx) {
   const query = String(args["query"] ?? "").trim();
   if (!QUERIES.includes(query)) throw new Error(`query \xE4r ${QUERIES.join(" eller ")}, fick ${String(args["query"])}`);
   const urls = urlsOf3(args["urls"], args["items"]);
@@ -23822,7 +23962,7 @@ async function run11(args, ctx) {
   return { site_url: site, index_status, remaining: queue2, dry_run: false };
 }
 var CONNECTED = { scopes: ["https://www.googleapis.com/auth/webmasters.readonly"] };
-var fixtures11 = [
+var fixtures12 = [
   {
     name: "s\xF6kdata per sida, egendomen ur sidlistan",
     ...CONNECTED,
@@ -23853,9 +23993,9 @@ var fixtures11 = [
 // atoms/googleads/change.atom.ts
 var change_atom_exports = {};
 __export(change_atom_exports, {
-  fixtures: () => fixtures12,
-  run: () => run12,
-  spec: () => spec12
+  fixtures: () => fixtures13,
+  run: () => run13,
+  spec: () => spec13
 });
 
 // src/v2/gate/allow.ts
@@ -23972,7 +24112,7 @@ var PROV_KEYS = { GOOGLE_ADS_CLIENT_ID: "prov", GOOGLE_ADS_CLIENT_SECRET: "prov"
 
 // atoms/googleads/change.atom.ts
 var STATUSES = ["ENABLED", "PAUSED"];
-var spec12 = {
+var spec13 = {
   id: "c_googleads_change",
   name: "googleads.call.change",
   grounding: "decided",
@@ -24012,7 +24152,7 @@ var spec12 = {
   step_id: "s_googleads_change",
   lead_days: 0
 };
-async function run12(args, ctx) {
+async function run13(args, ctx) {
   if (args["customer_id"] === void 0 || args["customer_id"] === "")
     throw new Error("customer_id saknas \u2014 ge kundkontots id uttryckligen; en \xE4ndring g\xE5r aldrig mot f\xF6rvaltarkontot av sig sj\xE4lv");
   const customer = digits(args["customer_id"], "customer_id");
@@ -24032,7 +24172,7 @@ async function run12(args, ctx) {
   const got = d["results"]?.[0]?.resourceName ?? resource;
   return { customer_id: customer, campaign: { id: campaignId, status, resource_name: got }, dry_run: false };
 }
-var fixtures12 = [
+var fixtures13 = [
   { name: "pausa en kampanj (torrt)", keys: PROV_KEYS, args: { customer_id: "1000000001", campaign_id: "2000000001", status: "PAUSED" } },
   { name: "utan kundkonto avvisas", keys: PROV_KEYS, args: { campaign_id: "2000000001", status: "PAUSED" }, expect_error: "customer_id saknas" },
   { name: "ok\xE4nd status avvisas", keys: PROV_KEYS, args: { customer_id: "1000000001", campaign_id: "2000000001", status: "REMOVED" }, expect_error: "status \xE4r" }
@@ -24043,15 +24183,15 @@ var read_atom_exports = {};
 __export(read_atom_exports, {
   ACTIONS: () => ACTIONS3,
   campaignQuery: () => campaignQuery,
-  fixtures: () => fixtures13,
-  run: () => run13,
-  spec: () => spec13
+  fixtures: () => fixtures14,
+  run: () => run14,
+  spec: () => spec14
 });
 var ACTIONS3 = ["accounts", "campaigns", "report"];
 var PERIODS = ["LAST_7_DAYS", "LAST_14_DAYS", "LAST_30_DAYS", "THIS_MONTH", "LAST_MONTH"];
 var MAX_PAGES2 = 20;
 var campaignQuery = (period) => `SELECT campaign.id, campaign.name, campaign.status, metrics.clicks, metrics.impressions, metrics.cost_micros, metrics.conversions, metrics.ctr, metrics.average_cpc FROM campaign WHERE segments.date DURING ${period}`;
-var spec13 = {
+var spec14 = {
   id: "c_googleads_read",
   name: "googleads.call.read",
   grounding: "decided",
@@ -24088,7 +24228,7 @@ var spec13 = {
   step_id: "s_googleads_read",
   lead_days: 0
 };
-async function run13(args, ctx) {
+async function run14(args, ctx) {
   const action = String(args["action"] ?? "").trim();
   if (!ACTIONS3.includes(action)) throw new Error(`action \xE4r ${ACTIONS3.join(", ")}, fick ${String(args["action"] ?? "inget")}`);
   const keys = await keysOf(ctx);
@@ -24127,7 +24267,7 @@ async function run13(args, ctx) {
   }
   return { action, customer_id: customer, rows: rows3, dry_run: false };
 }
-var fixtures13 = [
+var fixtures14 = [
   { name: "kontona kopplingen n\xE5r", keys: PROV_KEYS, args: { action: "accounts" }, expect_fields: ["action", "accounts"] },
   { name: "kampanjernas nyckeltal", keys: PROV_KEYS, args: { action: "campaigns", customer_id: "100-000-0001", period: "LAST_7_DAYS" }, expect_fields: ["action", "customer_id", "rows"] },
   { name: "egen GAQL-rapport", keys: PROV_KEYS, args: { action: "report", customer_id: "1000000001", query: "SELECT campaign.id FROM campaign" }, expect_fields: ["rows"] },
@@ -24140,10 +24280,10 @@ var fixtures13 = [
 var archive_record_atom_exports = {};
 __export(archive_record_atom_exports, {
   archivePreviewId: () => archivePreviewId,
-  fixtures: () => fixtures14,
+  fixtures: () => fixtures15,
   idsOf: () => idsOf,
-  run: () => run14,
-  spec: () => spec14
+  run: () => run15,
+  spec: () => spec15
 });
 import { createHash as createHash7 } from "node:crypto";
 
@@ -24341,7 +24481,7 @@ function severity(objectType2, verb) {
 }
 
 // atoms/hubspot/archive_record.atom.ts
-var spec14 = {
+var spec15 = {
   id: "c_hs_archive_object",
   name: "hubspot.call.archive_object",
   grounding: "decided",
@@ -24418,7 +24558,7 @@ async function attachedTo(get, token, type, ids) {
   return out;
 }
 var show = (r) => `${r.type} ${r.id}${r.name ? ` (${r.name})` : ""}`;
-async function run14(args, ctx) {
+async function run15(args, ctx) {
   const objectType2 = String(args["object_type"] ?? "").trim();
   if (!objectType2) throw new Error("object_type saknas, t.ex. quotes eller line_items");
   const path2 = guardType(objectType2, "archive");
@@ -24451,7 +24591,7 @@ async function run14(args, ctx) {
   return { ...base, proposal: false, archived: ids, done: true };
 }
 var CONNECTED2 = { scopes: ["crm"] };
-var fixtures14 = [
+var fixtures15 = [
   { name: "testofferten", ...CONNECTED2, args: { object_type: "quotes", ids: ["1"] } },
   { name: "offertraderna som text", ...CONNECTED2, args: { object_type: "line_items", ids: "2, 3" } },
   { name: "anv\xE4ndarobjektet avvisas", ...CONNECTED2, args: { object_type: "users", ids: ["1"] }, expect_error: "anv\xE4ndare och beh\xF6righeter" },
@@ -24464,9 +24604,9 @@ var fixtures14 = [
 // atoms/hubspot/cms_content_publish.atom.ts
 var cms_content_publish_atom_exports = {};
 __export(cms_content_publish_atom_exports, {
-  fixtures: () => fixtures15,
-  run: () => run15,
-  spec: () => spec15
+  fixtures: () => fixtures16,
+  run: () => run16,
+  spec: () => spec16
 });
 
 // atoms/hubspot/cms_content.ts
@@ -24643,7 +24783,7 @@ async function importImage(get, token, url, folder, wait2) {
 }
 
 // atoms/hubspot/cms_content_publish.atom.ts
-var spec15 = {
+var spec16 = {
   "id": "c_hubspot_cms_content_publish",
   "name": "hubspot.call.cms_content_publish",
   "grounding": "decided",
@@ -24731,7 +24871,7 @@ function when(v, now) {
   if (t <= now) throw new Error("publish_at har redan varit; utel\xE4mna den f\xF6r att publicera nu");
   return new Date(t).toISOString();
 }
-async function run15(args, ctx) {
+async function run16(args, ctx) {
   const type = contentType(args["content_type"]);
   const id = typeof args["content_id"] === "string" ? args["content_id"].trim() : String(args["content_id"] ?? "").trim();
   if (!id) throw new Error("content_id \xE4r utkastets id i HubSpot");
@@ -24764,7 +24904,7 @@ async function run15(args, ctx) {
   return { ...base, proposal: false, state: after.state, url: after.url, published_at: at ?? after.publish_date, done: true };
 }
 var CONNECTED3 = { scopes: ["content"] };
-var fixtures15 = [
+var fixtures16 = [
   { name: "publicera ett utkast nu", ...CONNECTED3, args: { content_type: "blog_post", content_id: "789" } },
   { name: "schemal\xE4gga ett utkast", ...CONNECTED3, args: { content_type: "blog_post", content_id: "789", publish_at: "2099-01-01T07:00:00Z" } },
   { name: "en tid som varit avvisas", ...CONNECTED3, args: { content_id: "789", publish_at: "2020-01-01T07:00:00Z" }, expect_error: "redan varit" },
@@ -24775,11 +24915,11 @@ var fixtures15 = [
 // atoms/hubspot/cms_content_write.atom.ts
 var cms_content_write_atom_exports = {};
 __export(cms_content_write_atom_exports, {
-  fixtures: () => fixtures16,
-  run: () => run16,
-  spec: () => spec16
+  fixtures: () => fixtures17,
+  run: () => run17,
+  spec: () => spec17
 });
-var spec16 = {
+var spec17 = {
   "id": "c_hubspot_cms_content_write",
   "name": "hubspot.call.cms_content_write",
   "grounding": "decided",
@@ -24868,7 +25008,7 @@ var spec16 = {
   }
 };
 var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function run16(args, ctx) {
+async function run17(args, ctx) {
   const type = contentType(args["content_type"]);
   const fields = contentFields(args["fields"]);
   const id = typeof args["content_id"] === "string" && args["content_id"].trim() ? args["content_id"].trim() : null;
@@ -24936,7 +25076,7 @@ var POST = {
   featured_image_alt_text: "hus med solceller",
   widgets: { text: { body: { text: "<p>Minuspriser p\xE5 el uppst\xE5r n\xE4r \u2026</p>" } } }
 };
-var fixtures16 = [
+var fixtures17 = [
   {
     name: "ett nytt blogginl\xE4gg som utkast",
     ...CONNECTED4,
@@ -24980,10 +25120,10 @@ __export(find_objects_atom_exports, {
   LIST_PRODUCTS: () => LIST_PRODUCTS,
   SEARCH_OBJECTS: () => SEARCH_OBJECTS,
   SEARCH_PRODUCTS: () => SEARCH_PRODUCTS,
-  fixtures: () => fixtures17,
+  fixtures: () => fixtures18,
   route: () => route,
-  run: () => run17,
-  spec: () => spec17
+  run: () => run18,
+  spec: () => spec18
 });
 
 // atoms/merged.ts
@@ -25218,7 +25358,7 @@ function route(args) {
     return args["text"] !== void 0 ? { call: SEARCH_PRODUCTS, args: without(args, "object_type") } : { call: LIST_PRODUCTS, args: without(args, "object_type") };
   return { call: SEARCH_OBJECTS, args };
 }
-var spec17 = {
+var spec18 = {
   id: "c_hs_find_objects",
   name: "hubspot.call.find_objects",
   grounding: "observed",
@@ -25249,7 +25389,7 @@ var spec17 = {
   step_id: "s_hs_find_objects",
   lead_days: 0
 };
-async function run17(args, ctx) {
+async function run18(args, ctx) {
   const type = typeof args["object_type"] === "string" ? args["object_type"].trim() : "";
   if (isAccountObjectType(type)) return readAccount(type, args, ctx);
   if (args["status"] !== void 0 && args["status"] !== null && args["status"] !== "")
@@ -25272,7 +25412,7 @@ async function readAccount(type, args, ctx) {
   );
   return { objects, object_type: type, count: objects.length, filter: { text: text7 ?? null, status }, dry_run: false };
 }
-var fixtures17 = [
+var fixtures18 = [
   { name: "produkter med text", args: { object_type: "products", text: "panel" }, expect_fields: ["call", "args"] },
   { name: "produkter utan text", args: { object_type: "products" }, expect_fields: ["call", "args"] },
   { name: "kontakter med filter", args: { object_type: "contacts", filter_groups: [] }, expect_fields: ["call", "args"] },
@@ -25291,11 +25431,11 @@ __export(list_content_atom_exports, {
   CONTENT_TYPES: () => CONTENT_TYPES2,
   PAGE_TYPES: () => PAGE_TYPES,
   contentTypes: () => contentTypes,
-  fixtures: () => fixtures18,
+  fixtures: () => fixtures19,
   listContent: () => listContent,
   listObjects: () => listObjects,
-  run: () => run18,
-  spec: () => spec18
+  run: () => run19,
+  spec: () => spec19
 });
 
 // atoms/hubspot/cms_pages.ts
@@ -25673,7 +25813,7 @@ var rootOf = (v) => {
   return list4.length ? list4 : null;
 };
 var itemsOf = (v) => Array.isArray(v) ? v.filter((x) => !!x && typeof x === "object") : void 0;
-var spec18 = {
+var spec19 = {
   id: "c_hubspot_list_content",
   name: "hubspot.call.list_content",
   grounding: "observed",
@@ -25713,7 +25853,7 @@ var spec18 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["cms_content_listing"]
 };
-async function run18(args, ctx) {
+async function run19(args, ctx) {
   const types = contentTypes(args["content_types"]);
   const one = typeof args["content_id"] === "string" && args["content_id"].trim() ? args["content_id"].trim() : null;
   if (one) return readOne(one, types, ctx);
@@ -25775,7 +25915,7 @@ async function readOne(id, types, ctx) {
   return { item, counts: { [t]: 1 }, dry_run: false };
 }
 var CONNECTED5 = { scopes: ["content"] };
-var fixtures18 = [
+var fixtures19 = [
   { name: "sidtyperna", ...CONNECTED5, args: {}, expect_fields: ["items", "blogs", "counts"] },
   {
     name: "mallar, moduler, HubDB, formul\xE4r, omdirigeringar",
@@ -25802,9 +25942,9 @@ var fixtures18 = [
 // atoms/hubspot/read_menus.atom.ts
 var read_menus_atom_exports = {};
 __export(read_menus_atom_exports, {
-  fixtures: () => fixtures19,
-  run: () => run19,
-  spec: () => spec19
+  fixtures: () => fixtures20,
+  run: () => run20,
+  spec: () => spec20
 });
 
 // atoms/hubspot/cms_menus.ts
@@ -25912,7 +26052,7 @@ var pageList = (v) => {
   if (!Array.isArray(v)) throw new Error("items \xE4r en lista med sidor (id och url)");
   return v.filter((p) => !!p && typeof p === "object" && p["page_type"] !== "blog_post").map((p) => ({ ...p, id: String(p["id"] ?? ""), url: typeof p["url"] === "string" ? p["url"] : "" }));
 };
-var spec19 = {
+var spec20 = {
   id: "c_hubspot_read_menus",
   name: "hubspot.call.read_menus",
   grounding: "observed",
@@ -25947,7 +26087,7 @@ var spec19 = {
   step_id: "s_hubspot_read_menus",
   lead_days: 0
 };
-async function run19(args, ctx) {
+async function run20(args, ctx) {
   const pages = pageList(args["items"]);
   const link = ctx.connection ? await ctx.connection("hubspot", "") : null;
   if (!link?.token) throw new Error("ingen koppling till HubSpot h\xE4r \u2014 HUBSPOT_TOKEN saknas");
@@ -25962,7 +26102,7 @@ async function run19(args, ctx) {
   };
 }
 var CONNECTED6 = { scopes: ["content"] };
-var fixtures19 = [
+var fixtures20 = [
   { name: "menyerna utan sidor", ...CONNECTED6, args: {} },
   { name: "med sidor att j\xE4mf\xF6ra", ...CONNECTED6, args: { items: [
     { id: "1", url: "https://www.example.com/om-oss", page_type: "site_page" },
@@ -25977,12 +26117,12 @@ var fixtures19 = [
 var read_object_atom_exports = {};
 __export(read_object_atom_exports, {
   CALL_BY_TYPE: () => CALL_BY_TYPE,
-  fixtures: () => fixtures20,
-  run: () => run20,
-  spec: () => spec20
+  fixtures: () => fixtures21,
+  run: () => run21,
+  spec: () => spec21
 });
 var CALL_BY_TYPE = { products: "hubspot.call.get_product" };
-var spec20 = {
+var spec21 = {
   id: "c_hs_read_object",
   name: "hubspot.call.read_object",
   grounding: "observed",
@@ -26010,7 +26150,7 @@ var spec20 = {
   lead_days: 0
 };
 var list2 = (v) => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : []).map((x) => String(x).trim()).filter(Boolean);
-async function run20(args, ctx) {
+async function run21(args, ctx) {
   const type = typeof args["object_type"] === "string" ? args["object_type"].trim() : "";
   if (!type) throw new Error("object_type saknas (t.ex. products, contacts, deals eller kundens 2-\u2026)");
   const id = args["object_id"] === void 0 || args["object_id"] === null ? "" : String(args["object_id"]).trim();
@@ -26048,7 +26188,7 @@ async function run20(args, ctx) {
   }
   return { object: { id: String(d["id"]), properties: d["properties"] ?? {}, associations: assoc }, asked, dry_run: false };
 }
-var fixtures20 = [
+var fixtures21 = [
   { name: "en produkt", args: { object_type: "products", object_id: "123" }, expect_fields: ["call", "args"] },
   { name: "en post med kopplingar", args: { object_type: "2-1", object_id: "1", associations: "2-2" }, expect_fields: ["object", "asked"] },
   { name: "utan id avvisas", args: { object_type: "contacts" }, expect_error: "object_id saknas" }
@@ -26057,9 +26197,9 @@ var fixtures20 = [
 // atoms/hubspot/read_source.atom.ts
 var read_source_atom_exports = {};
 __export(read_source_atom_exports, {
-  fixtures: () => fixtures21,
-  run: () => run21,
-  spec: () => spec21
+  fixtures: () => fixtures22,
+  run: () => run22,
+  spec: () => spec22
 });
 
 // atoms/hubspot/cms_source.ts
@@ -26199,7 +26339,7 @@ ${text7}\r
 }
 
 // atoms/hubspot/read_source.atom.ts
-var spec21 = {
+var spec22 = {
   id: "c_hubspot_read_source",
   name: "hubspot.call.read_source",
   grounding: "decided",
@@ -26237,7 +26377,7 @@ var spec21 = {
   step_id: "s_hubspot_read_source",
   lead_days: 0
 };
-async function run21(args, ctx) {
+async function run22(args, ctx) {
   const path2 = sourcePath(args["path"]);
   const env = environment(args["environment"]);
   const link = ctx.connection ? await ctx.connection("hubspot", "") : null;
@@ -26246,7 +26386,7 @@ async function run21(args, ctx) {
   return { ...await readSource(ctx.fetch, link.token, env, path2), dry_run: false };
 }
 var CONNECTED7 = { scopes: ["content"] };
-var fixtures21 = [
+var fixtures22 = [
   { name: "en modul", ...CONNECTED7, args: { path: "Tema/modules/Sammanstallning.module" } },
   { name: "en mall som utkast", ...CONNECTED7, args: { path: "Tema/templates/avtal.html", environment: "draft" } },
   { name: "ok\xE4nd milj\xF6 avvisas", ...CONNECTED7, args: { path: "a.html", environment: "live" }, expect_error: "draft eller published" },
@@ -26257,20 +26397,20 @@ var fixtures21 = [
 // atoms/hubspot/ui_settings_register.atom.ts
 var ui_settings_register_atom_exports = {};
 __export(ui_settings_register_atom_exports, {
-  fixtures: () => fixtures22,
-  run: () => run22,
-  spec: () => spec22
+  fixtures: () => fixtures23,
+  run: () => run23,
+  spec: () => spec23
 });
 
 // atoms/browser/recipe.ts
 var IF_BLOCKED = 'Stoppar klienten handgreppet (t.ex. Claude Codes auto mode) \xE4r det klientens egen s\xE4kerhetsregel, och den kringg\xE5s inte. S\xE4g det till anv\xE4ndaren, citera anv\xE4ndarens ja ordagrant som user_approval, och be anv\xE4ndaren till\xE5ta handlingen i klienten och f\xF6rs\xF6ka igen. G\xE5r det \xE4nd\xE5 inte: skicka write { op: "bug_report" } med var det stoppade.';
 var RUNTIME = /* @__PURE__ */ new Set(["result", "evidence", "user_approval"]);
-function browserRun(spec33) {
+function browserRun(spec34) {
   return async (args, ctx) => {
-    const r = spec33.browser;
-    const optional = new Set(spec33.optional_input ?? []);
+    const r = spec34.browser;
+    const optional = new Set(spec34.optional_input ?? []);
     const values = {};
-    for (const k of spec33.input) {
+    for (const k of spec34.input) {
       if (RUNTIME.has(k)) continue;
       const v = args[k];
       if ((v === void 0 || v === "") && !optional.has(k)) throw new Error(`${k} saknas`);
@@ -26284,12 +26424,12 @@ function browserRun(spec33) {
       steps = [...r.path, ...p];
     }
     const approval = r.severity === "\u25CF" ? "\u25CF g\xF6rs direkt, g\xE5r att \xE5ngra" : r.severity === "\u25D0" ? "\u25D0 visa vad som ska g\xF6ras och v\xE4nta p\xE5 ja innan handgreppet" : "\u25A0 fr\xE5ga alltid, och visa vad som h\xE4nger p\xE5 det innan handgreppet";
-    const recipe = { ...r, steps, values, approval, ...spec33.effect.verb !== "reads" ? { if_blocked: IF_BLOCKED } : {} };
+    const recipe = { ...r, steps, values, approval, ...spec34.effect.verb !== "reads" ? { if_blocked: IF_BLOCKED } : {} };
     const evidence = typeof args["evidence"] === "string" ? args["evidence"].trim() : "";
     const result = typeof args["result"] === "string" ? args["result"].trim() : "";
     if (ctx.dry_run || !evidence) return { recipe, awaiting: true, result: "", evidence: "", done: false };
     const yes2 = typeof args["user_approval"] === "string" ? args["user_approval"].trim() : "";
-    if (spec33.effect.verb !== "reads" && r.severity !== "\u25CF" && !yes2)
+    if (spec34.effect.verb !== "reads" && r.severity !== "\u25CF" && !yes2)
       throw new Error("user_approval saknas \u2014 ett \u25D0/\u25A0-handgrepp tas emot f\xF6rst med m\xE4nniskans ja");
     if (!result) throw new Error("result saknas: vad blev gjort (id, namn eller avl\xE4sningen)");
     return { recipe, awaiting: false, result, evidence, done: true };
@@ -26297,7 +26437,7 @@ function browserRun(spec33) {
 }
 
 // atoms/hubspot/ui_settings_register.atom.ts
-var spec22 = {
+var spec23 = {
   "id": "c_hubspot_ui_settings_register",
   "name": "hubspot.call.ui_settings_register",
   "grounding": "observed",
@@ -26395,8 +26535,8 @@ var spec22 = {
     "note": []
   }
 };
-var run22 = browserRun(spec22);
-var fixtures22 = [
+var run23 = browserRun(spec23);
+var fixtures23 = [
   { name: "receptet f\xF6r offertmallen", args: { setting: "quote_template", source: "TEST offertmall.html", display_name: "TEST offertmall" } },
   { name: "ok\xE4nd inst\xE4llning s\xE4gs", args: { setting: "pipelines", source: "x", display_name: "x" }, expect_error: "har inget recept" }
 ];
@@ -26404,11 +26544,11 @@ var fixtures22 = [
 // atoms/hubspot/ui_template_edit.atom.ts
 var ui_template_edit_atom_exports = {};
 __export(ui_template_edit_atom_exports, {
-  fixtures: () => fixtures23,
-  run: () => run23,
-  spec: () => spec23
+  fixtures: () => fixtures24,
+  run: () => run24,
+  spec: () => spec24
 });
-var spec23 = {
+var spec24 = {
   "id": "c_hubspot_ui_template_edit",
   "name": "hubspot.call.ui_template_edit",
   "grounding": "observed",
@@ -26532,9 +26672,9 @@ var spec23 = {
     "note": []
   }
 };
-var run23 = browserRun(spec23);
+var run24 = browserRun(spec24);
 var BASE2 = { action: "insert_token", template_kind: "sales_email", template: "TEST mall", token: "contact.firstname" };
-var fixtures23 = [
+var fixtures24 = [
   { name: "receptet f\xF6r att infoga ett f\xE4lt", args: BASE2 },
   { name: "receptet f\xF6r att klona", args: { ...BASE2, action: "clone", new_name: "TEST klon" } },
   { name: "ok\xE4nd action s\xE4gs", args: { ...BASE2, action: "delete" }, expect_error: "har inget recept" },
@@ -26544,12 +26684,12 @@ var fixtures23 = [
 // atoms/hubspot/user_write.atom.ts
 var user_write_atom_exports = {};
 __export(user_write_atom_exports, {
-  fixtures: () => fixtures24,
-  run: () => run24,
-  spec: () => spec24
+  fixtures: () => fixtures25,
+  run: () => run25,
+  spec: () => spec25
 });
 import { createHash as createHash10 } from "node:crypto";
-var spec24 = {
+var spec25 = {
   "id": "c_hubspot_user_write",
   "name": "hubspot.call.user_write",
   "grounding": "decided",
@@ -26642,7 +26782,7 @@ function pick2(what, ref, all2) {
   const near = all2.filter((x) => (x.name ?? "").toLowerCase().includes(ref.toLowerCase())).map((x) => `${x.name} (${x.id})`).slice(0, 5);
   throw new Error(named.length > 1 ? `${what} \xAB${ref}\xBB finns ${named.length} g\xE5nger \u2014 ange id:t` : `${what} \xAB${ref}\xBB finns inte i portalen${near.length ? ` (n\xE4rmast: ${near.join(", ")})` : ""}`);
 }
-async function run24(args, ctx) {
+async function run25(args, ctx) {
   const email = text5(args["email"]).toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("email \xE4r anv\xE4ndarens e-postadress");
   const first = text5(args["first_name"]), last = text5(args["last_name"]);
@@ -26696,7 +26836,7 @@ async function run24(args, ctx) {
 }
 var CONNECTED8 = { scopes: ["settings.users.write", "settings.users.teams.read"] };
 var TEST_MAIL = (who) => `${who}@example.com`;
-var fixtures24 = [
+var fixtures25 = [
   {
     name: "en ny s\xE4ljare med huvudteam, utan v\xE4lkomstmejl",
     ...CONNECTED8,
@@ -26716,11 +26856,11 @@ var fixtures24 = [
 var write_record_atom_exports = {};
 __export(write_record_atom_exports, {
   changeStateKey: () => changeStateKey,
-  fixtures: () => fixtures25,
-  run: () => run25,
-  spec: () => spec25
+  fixtures: () => fixtures26,
+  run: () => run26,
+  spec: () => spec26
 });
-var spec25 = {
+var spec26 = {
   id: "c_hs_write_object",
   name: "hubspot.call.write_object",
   grounding: "decided",
@@ -26773,7 +26913,7 @@ var rowsOf2 = (v) => {
   })() : v;
   return Array.isArray(x) ? x : [];
 };
-async function run25(args, ctx) {
+async function run26(args, ctx) {
   const objectType2 = guardType(String(args["object_type"] ?? ""), "write");
   if (args["require_expected"] === true || args["require_expected"] === "true")
     for (const [i, r] of rowsOf2(args["updates"]).entries()) {
@@ -26815,7 +26955,7 @@ async function run25(args, ctx) {
     })), "application/json");
   return result;
 }
-var fixtures25 = [
+var fixtures26 = [
   { name: "en ny produkt", args: {
     object_type: "products",
     unique_property: "name",
@@ -26859,11 +26999,11 @@ var fixtures25 = [
 // atoms/hubspot/write_source.atom.ts
 var write_source_atom_exports = {};
 __export(write_source_atom_exports, {
-  fixtures: () => fixtures26,
-  run: () => run26,
-  spec: () => spec26
+  fixtures: () => fixtures27,
+  run: () => run27,
+  spec: () => spec27
 });
-var spec26 = {
+var spec27 = {
   id: "c_hubspot_write_source",
   name: "hubspot.call.write_source",
   grounding: "decided",
@@ -26906,7 +27046,7 @@ var spec26 = {
   step_id: "s_hubspot_write_source",
   lead_days: 0
 };
-async function run26(args, ctx) {
+async function run27(args, ctx) {
   const path2 = sourcePath(args["path"]);
   const env = environment(args["environment"]);
   const text7 = args["content"];
@@ -26934,7 +27074,7 @@ async function run26(args, ctx) {
   return { ...base, proposal: false, done: true };
 }
 var CONNECTED9 = { scopes: ["content"] };
-var fixtures26 = [
+var fixtures27 = [
   { name: "en ny modulfil", ...CONNECTED9, args: { path: "Tema/modules/Ny TEST.module/module.html", content: "<p>hej</p>" } },
   {
     name: "skriva \xF6ver ett utkast",
@@ -26949,10 +27089,10 @@ var fixtures26 = [
 var change_ad_object_atom_exports = {};
 __export(change_ad_object_atom_exports, {
   CALL_BY_CHANGE: () => CALL_BY_CHANGE,
-  fixtures: () => fixtures27,
+  fixtures: () => fixtures28,
   previews: () => previews,
-  run: () => run27,
-  spec: () => spec27
+  run: () => run28,
+  spec: () => spec28
 });
 var CALL_BY_CHANGE = {
   status: "meta.call.set_status",
@@ -26960,7 +27100,7 @@ var CALL_BY_CHANGE = {
   targeting: "meta.call.update_targeting",
   details: "meta.call.update_object"
 };
-var spec27 = {
+var spec28 = {
   id: "c_meta_change_ad_object",
   name: "meta.call.change_ad_object",
   grounding: "observed",
@@ -27043,10 +27183,10 @@ var spec27 = {
   lead_days: 0
 };
 var previews = true;
-async function run27(args, ctx) {
+async function run28(args, ctx) {
   return delegate(ctx, pick(CALL_BY_CHANGE, "change", args["change"]), without(args, "change"));
 }
-var fixtures27 = [
+var fixtures28 = [
   ...Object.keys(CALL_BY_CHANGE).map((change) => ({
     name: `change ${change}`,
     args: { change, object_id: "1", level: "adset" },
@@ -27063,10 +27203,10 @@ var fixtures27 = [
 var create_ad_creative_atom_exports = {};
 __export(create_ad_creative_atom_exports, {
   CALL_BY_FORMAT: () => CALL_BY_FORMAT,
-  fixtures: () => fixtures28,
+  fixtures: () => fixtures29,
   previews: () => previews2,
-  run: () => run28,
-  spec: () => spec28
+  run: () => run29,
+  spec: () => spec29
 });
 var CALL_BY_FORMAT = {
   image: "meta.call.create_creative",
@@ -27076,7 +27216,7 @@ var CALL_BY_FORMAT = {
   // Leadformuläret hos sidan (provet 2026-10-08): det annonsmaterialet öppnar med lead_gen_form_id.
   lead_form: "meta.call.create_lead_form"
 };
-var spec28 = {
+var spec29 = {
   id: "c_meta_create_ad_creative",
   name: "meta.call.create_ad_creative",
   grounding: "observed",
@@ -27232,10 +27372,10 @@ var spec28 = {
   lead_days: 0
 };
 var previews2 = true;
-async function run28(args, ctx) {
+async function run29(args, ctx) {
   return delegate(ctx, pick(CALL_BY_FORMAT, "format", args["format"]), without(args, "format"));
 }
-var fixtures28 = [
+var fixtures29 = [
   ...Object.entries(CALL_BY_FORMAT).map(([format2]) => ({
     name: `format ${format2}`,
     args: { format: format2, ad_account_id: "act_1", name: "TEST-creative", page_id: "1" },
@@ -27261,9 +27401,9 @@ __export(manage_access_atom_exports, {
   ACTIONS: () => ACTIONS4,
   ROLES: () => ROLES,
   TASKS: () => TASKS,
-  fixtures: () => fixtures29,
-  run: () => run29,
-  spec: () => spec29
+  fixtures: () => fixtures30,
+  run: () => run30,
+  spec: () => spec30
 });
 
 // atoms/meta/graph.ts
@@ -27389,7 +27529,7 @@ function listOf(v) {
 }
 
 // atoms/meta/manage_access.atom.ts
-var spec29 = {
+var spec30 = {
   "id": "c_meta_manage_access",
   "name": "meta.call.manage_access",
   "grounding": "observed",
@@ -27512,7 +27652,7 @@ async function personId(get, cred, business, person2) {
   if (!hit) throw new Error("personen finns inte i business managern \u2014 bjud in med action: invite f\xF6rst, och v\xE4nta tills inbjudan \xE4r antagen");
   return String(hit["id"]);
 }
-async function run29(args, ctx) {
+async function run30(args, ctx) {
   const action = oneOf(args["action"], ACTIONS4, "action").toLowerCase();
   const business = objectId(args["business_id"], "business_id");
   const person2 = String(args["person"] ?? "").trim();
@@ -27563,7 +27703,7 @@ async function run29(args, ctx) {
   return { action, business_id: business, accounts: changed, done: changed.every((c) => c["ok"]) };
 }
 var KEYS = { META_ADS_TOKEN: "prov", META_APP_SECRET: "prov" };
-var fixtures29 = [
+var fixtures30 = [
   { name: "lista \xE5tkomst", args: { action: "list", business_id: "100000000000001" }, keys: KEYS, expect_fields: ["planned"] },
   {
     name: "ge l\xE4sbeh\xF6righet p\xE5 alla konton",
@@ -27599,9 +27739,9 @@ var fixtures29 = [
 // atoms/presentation/write.atom.ts
 var write_atom_exports = {};
 __export(write_atom_exports, {
-  fixtures: () => fixtures30,
-  run: () => run30,
-  spec: () => spec30
+  fixtures: () => fixtures31,
+  run: () => run31,
+  spec: () => spec31
 });
 import { createHash as createHash12 } from "node:crypto";
 
@@ -28498,7 +28638,7 @@ function planWithdraw(view, id) {
 }
 
 // atoms/presentation/write.atom.ts
-var spec30 = {
+var spec31 = {
   "id": "c_presentation_write",
   "name": "presentation.call.write",
   "grounding": "observed",
@@ -28585,7 +28725,7 @@ var spec30 = {
     "note": []
   }
 };
-async function run30(args, ctx) {
+async function run31(args, ctx) {
   if (!ctx.view) throw new Error("presentationen kan bara publiceras i ett steg \u2014 registret saknas");
   const i = args;
   const action = i.action ?? "publish";
@@ -28655,7 +28795,7 @@ var BLOCKS2 = [
   { type: "cover", title: "Provkampanj" },
   { type: "copy_angles", items: [{ ref: `bank://rotor/${SHA}`, label: "Vinkel A", mime: "text/markdown" }] }
 ];
-var fixtures30 = [
+var fixtures31 = [
   { name: "f\xF6rhandsvisning av en ny presentation", ...RUNNER4, args: {
     action: "publish",
     party: "@runner",
@@ -28701,9 +28841,9 @@ var fixtures30 = [
 // atoms/render/html_pdf.atom.ts
 var html_pdf_atom_exports = {};
 __export(html_pdf_atom_exports, {
-  fixtures: () => fixtures31,
-  run: () => run31,
-  spec: () => spec31
+  fixtures: () => fixtures32,
+  run: () => run32,
+  spec: () => spec32
 });
 
 // atoms/render/html-pdf.ts
@@ -28897,7 +29037,7 @@ async function htmlToPdf(source, timeoutMs = 24e3) {
 }
 
 // atoms/render/html_pdf.atom.ts
-var spec31 = {
+var spec32 = {
   "id": "c_render_html_pdf",
   "name": "render.call.html_pdf",
   "grounding": "observed",
@@ -28970,7 +29110,7 @@ var spec31 = {
   }
 };
 var PAGE = /^(A[3-5]|letter|legal)( (portrait|landscape))?$/i;
-async function run31(args, ctx) {
+async function run32(args, ctx) {
   const i = args;
   const html = typeof i.html === "string" && i.html.trim() ? i.html : null;
   const url = typeof i.url === "string" && i.url.trim() ? i.url.trim() : null;
@@ -29006,7 +29146,7 @@ async function run31(args, ctx) {
   });
   return { proposal: false, file_name, pages: pageCount(Buffer.from(pdf)), ref: kept.ref, done: true };
 }
-var fixtures31 = [
+var fixtures32 = [
   { name: "en sida som HTML: f\xF6rhandsvisningen", args: { html: '<!doctype html><title>Prov</title><section>Sida 1</section><section style="break-before:page">Sida 2</section>', file_name: "prov", folder: "Prov", page_size: "A4" } },
   { name: "en sida som adress: f\xF6rhandsvisningen", args: { url: "https://example.com/sida", file_name: "sida.pdf" } },
   { name: "b\xE5de html och url avvisas", args: { html: "<p>x</p>", url: "https://example.com", file_name: "x" }, expect_error: "inte b\xE5da" },
@@ -29016,9 +29156,9 @@ var fixtures31 = [
 // atoms/render/qr_code.atom.ts
 var qr_code_atom_exports = {};
 __export(qr_code_atom_exports, {
-  fixtures: () => fixtures32,
-  run: () => run32,
-  spec: () => spec32
+  fixtures: () => fixtures33,
+  run: () => run33,
+  spec: () => spec33
 });
 
 // atoms/render/qr.ts
@@ -29223,7 +29363,7 @@ function penalty(m) {
   const n2 = m.length;
   let r = 0;
   const line2 = (get) => {
-    let run33 = 0, color2 = false;
+    let run34 = 0, color2 = false;
     const hist = [0, 0, 0, 0, 0, 0, 0];
     const addHist = (len) => {
       if (hist[0] === 0) len += n2;
@@ -29237,22 +29377,22 @@ function penalty(m) {
     };
     for (let i = 0; i < n2; i++) {
       if (get(i) === color2) {
-        run33++;
-        if (run33 === 5) r += 3;
-        else if (run33 > 5) r++;
+        run34++;
+        if (run34 === 5) r += 3;
+        else if (run34 > 5) r++;
       } else {
-        addHist(run33);
+        addHist(run34);
         if (!color2) r += count() * 40;
         color2 = get(i);
-        run33 = 1;
+        run34 = 1;
       }
     }
     if (color2) {
-      addHist(run33);
-      run33 = 0;
+      addHist(run34);
+      run34 = 0;
     }
-    run33 += n2;
-    addHist(run33);
+    run34 += n2;
+    addHist(run34);
     r += count() * 40;
   };
   for (let y = 0; y < n2; y++) line2((x) => m[y][x]);
@@ -29322,7 +29462,7 @@ function withUtm(url, utm) {
 }
 
 // atoms/render/qr_code.atom.ts
-var spec32 = {
+var spec33 = {
   "id": "c_render_qr_code",
   "name": "render.call.qr_code",
   "grounding": "observed",
@@ -29394,7 +29534,7 @@ var spec32 = {
   }
 };
 var PX_PER_MODULE = 24;
-async function run32(args, ctx) {
+async function run33(args, ctx) {
   const i = args;
   if (typeof i.url !== "string" || !i.url.trim()) throw new Error("ange url: adressen koden ska leda till");
   if (typeof i.file_name !== "string" || !i.file_name.trim()) throw new Error("ange file_name: filens namn");
@@ -29430,7 +29570,7 @@ async function run32(args, ctx) {
   const p = await keep2({ ...common, bytes: png3, mime: "image/png", name: `${base}.png` });
   return { proposal: false, url_with_utm, refs: { png: p.ref, svg: s2.ref }, code, done: true };
 }
-var fixtures32 = [
+var fixtures33 = [
   { name: "en kod med UTM och runda prickar: f\xF6rhandsvisningen", args: {
     url: "https://example.com/meetings/prov-person",
     utm: '{"medium":"fysisk","source":"brevlada_kanal","campaign":"prov_person"}',
@@ -29444,7 +29584,7 @@ var fixtures32 = [
 ];
 
 // atoms/index.generated.ts
-var ATOMS = [change_bank_atom_exports, pack_files_atom_exports, read_bank_atom_exports, create_event_atom_exports, save_version_atom_exports, create_draft_atom_exports, list_inflow_atom_exports, send_mail_atom_exports, pagespeed_atom_exports, search_console_atom_exports, change_atom_exports, read_atom_exports, archive_record_atom_exports, cms_content_publish_atom_exports, cms_content_write_atom_exports, find_objects_atom_exports, list_content_atom_exports, read_menus_atom_exports, read_object_atom_exports, read_source_atom_exports, ui_settings_register_atom_exports, ui_template_edit_atom_exports, user_write_atom_exports, write_record_atom_exports, write_source_atom_exports, change_ad_object_atom_exports, create_ad_creative_atom_exports, manage_access_atom_exports, write_atom_exports, html_pdf_atom_exports, qr_code_atom_exports, fetch_pages_atom_exports];
+var ATOMS = [change_bank_atom_exports, pack_files_atom_exports, read_bank_atom_exports, create_event_atom_exports, save_version_atom_exports, create_draft_atom_exports, list_inflow_atom_exports, send_mail_atom_exports, connection_check_atom_exports, pagespeed_atom_exports, search_console_atom_exports, change_atom_exports, read_atom_exports, archive_record_atom_exports, cms_content_publish_atom_exports, cms_content_write_atom_exports, find_objects_atom_exports, list_content_atom_exports, read_menus_atom_exports, read_object_atom_exports, read_source_atom_exports, ui_settings_register_atom_exports, ui_template_edit_atom_exports, user_write_atom_exports, write_record_atom_exports, write_source_atom_exports, change_ad_object_atom_exports, create_ad_creative_atom_exports, manage_access_atom_exports, write_atom_exports, html_pdf_atom_exports, qr_code_atom_exports, fetch_pages_atom_exports];
 
 // src/local-runner/server.ts
 import { homedir } from "node:os";

@@ -59,6 +59,7 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 - `write{op:"how_customer"}`: kundens sätt: patch { variant, step, set { responsible | values } }
 - `read{op:"quick_actions"}`: snabbhandlingarna per kund; med ref: uppdragen filen kan kopplas till
 - `write{op:"quick_run"}`: kör en snabbhandling för en kund: call, customer, values; förhandsvisning först
+- `write{op:"mail_draft"}`: mejl som utkast i din egen e-post, bilagor som ref ur filbanken: values { to, subject, body, cc?, attachments: [ref] }; förhandsvisning först (■), sedan användarens ja ordagrant; personen skickar själv från sin e-post. Aldrig mejlet bara i chatten eller via en annan e-postkoppling i Claude (den bifogar inga filer). Saknas en rätt: säg vilken och vem som ordnar den, med svarets ord, och erbjud guidning i Chrome. Kontroll: search { q: ["Kontrollera kopplingen för mejl"] } och kör den med read { op: "read_call" }
 - `read{op:"handovers"}`: överlämningar och väntan per leverans: agenda true, format oversikt
 - `read{op:"order_preview"}`: förhandsvisa en beställning: samma fält som när den läggs in, inget skrivs
 - `write{op:"method_build"}`: ny version av ett arbetssätt (metodbyggaren)
@@ -66,6 +67,7 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 - `write{op:"intake_order"}`: lägg in en beställning: kund, leveranstyp, datum, vem som beställt; blir ett uppdrag
 - `write{op:"intake_submit"}`: ta emot kandidater (möte, mejl, formulär); fetch läser brevlådan utan att skriva
 v1's step tools, with v1's fields, done on v2's moments through read, act or plan_state (severity and yes as there):
+- `read|write{op:"mail_draft"}`: mejl som utkast i din egen e-post, bilagor som ref ur filbanken: values { to, subject, body, cc?, attachments: [ref] }; förhandsvisning först (■), sedan användarens ja ordagrant; personen skickar själv från sin e-post. Aldrig mejlet bara i chatten eller via en annan e-postkoppling i Claude (den bifogar inga filer). Saknas en rätt: säg vilken och vem som ordnar den, med svarets ord, och erbjud guidning i Chrome. Kontroll: search { q: ["Kontrollera kopplingen för mejl"] } och kör den med read { op: "read_call" }
 - `read|write{op:"context"}`: lägesbilden: task + step/node, eller thread
 - `read|write{op:"step_sheet"}`: stegets ark: task + step/node
 - `read|write{op:"delivery_results"}`: leveransens resultat: delivery eller task
@@ -77,7 +79,7 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"files"}`: filbanken att bläddra i: customer, folder, q, order new|old|name, cursor; ref (en fils innehåll, thumb för miniatyren), ref + task (uppdragets moment att knyta till)
 - `read|write{op:"project_brief_save"}`: spara projektets brief: project (uppdraget), brief { goal, recipient, scope, due, internal_due }
 - `read|write{op:"intake_submit"}`: ta emot kandidater: candidates [...]; undo: kandidaten drar tillbaka den; release: släpper fram en som hålls; fetch läser brevlådan
-- `read|write{op:"intake_order"}`: lägg in en beställning: customer, deliverable_type, due, ordered_by, note, description; preview: true visar den utan att skriva
+- `read|write{op:"intake_order"}`: lägg in en beställning: customer, deliverable_type, due, ordered_by, note, description; preview: true visar den utan att skriva; finns en likadan öppen i dag används den, create_new: true lägger in en ny
 - `read|write{op:"quick_run"}`: kör en snabbhandling: task (uppdraget) eller values.delivery ger act run_quick på uppdraget; utan dem läses en förmåga som bara läser direkt för customer (även execute_step { call, customer, values }, utan steg), och annars blir det först ett uppdrag (customer, deliverable_type ur förmågans yta, due)
 - `read|write{op:"image_fetch"}`: bild ur en extern källa: for_task, for_node (momentet), provenance { source, source_id }, filename, asset_type; Adobe Stock är ■
 - `read|write{op:"note_link"}`: notera en koppling i kundens system: task, customer, from, relation, to, why
