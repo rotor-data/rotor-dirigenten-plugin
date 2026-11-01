@@ -29,6 +29,7 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 - `read{op:"image_target"}`: bildväljarens mål: pick_image { task, ref }
 - `read{op:"upload_link"}`: uppladdningssidan för en kund: customer, valfritt for_task och for_node (momentet), folder; fler filer på en gång
 - `write{op:"image_fetch"}`: bild ur en extern källa: register + filename och provenance { source, source_id }
+- `write{op:"asset_copy"}`: kopiera en fil i filbanken till en annan mapp: from_ref, folder, valfritt filename, customer; originalet ligger kvar
 - `write{op:"bug_report"}`: felrapport: text, where, screenshot (png som base64) sparas av v2 (●); resolve, eller utan båda listan
 - `write{op:"note_link"}`: anteckning med länk
 - `read{op:"plan_estimate"}`: uppskatta en plan
