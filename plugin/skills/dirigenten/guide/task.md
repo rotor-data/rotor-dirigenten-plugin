@@ -45,7 +45,7 @@ Actions
 - `note_link` — Notera en koppling. Means: Du noterar att två saker i kundens system hänger ihop, och varför. Exempel: «Flödet skickar välkomstmejlet.» Not for: Inte för att ändra något i kundens system. Severity: ● do directly. Inverse: note_link. From: open, closed, delivered_outside, no_method, cancelled.
 - `set_brief` — Spara briefen. Means: Uppdragets brief sparas: målet, mottagaren, omfattningen och datumen. Not for: Inte för att planera om uppdraget. Params: brief. Severity: ● do directly. Inverse: set_brief. From: open, closed, delivered_outside, no_method, cancelled.
 - `run_quick` — Gör snabbt. Means: En snabbhandling körs för uppdraget, med förmågan och dess värden. Not for: Inte för att publicera; det görs på leveransens moment. Severity: ● do directly. Inverse: none by design. From: open, no_method.
-- `change_method` — Byt metod. Means: Uppdraget följer en annan metod från nu. Not for: Inte för att ändra metoden för alla uppdrag. Severity: ◐ one yes per task and day. Inverse: none by design. From: open, no_method.
+- `change_method` — Byt metod. Means: Uppdraget följer en annan metod från nu. Not for: Inte för att ändra metoden för alla uppdrag. Params: to. Severity: ◐ one yes per task and day. Inverse: none by design. From: open, no_method.
 
 Example 1: `act{on:{kind:"task",id:"<id>"}, action:"start_task", rev:"<rev>"}` — Starta uppdraget: Uppdraget sätts i gång. Saknas något om kunden blir det frågor först.
 Example 2: `act{on:{kind:"task",id:"<id>"}, action:"close", rev:"<rev>"}` (Stäng, inverse `reopen`) followed by `act{…, action:"undo", rev:"<new rev>"}` when the user changes their mind.

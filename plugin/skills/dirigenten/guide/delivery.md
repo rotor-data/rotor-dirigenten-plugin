@@ -18,6 +18,7 @@ Actions
 - `reopen` — Öppna leveransen igen. Means: Leveransen behöver arbetas vidare på. Not for: Inte för att ändra något i den som är levererad. Severity: ● do directly. Inverse: close. From: closed.
 - `add_task` — Lägg till en uppgift. Means: En ny uppgift läggs till i leveransen, som en beställning: avtalet och kvoten räknas, och du ser dem före ja:et. Not for: Inte för ett delmål i en uppgift; det är Lägg till ett delmål. Severity: ◐ one yes per task and day. Inverse: none by design. From: open.
 - `move_delivery` — Flytta leveransen. Means: Alla uppdragens löften i leveransen flyttas lika många dagar. Du ser varje uppdrags datum före och efter ja:et. Not for: Inte för ett enda moment; flytta det i Tid. Severity: ◐ one yes per task and day. Inverse: move_delivery. From: open.
+- `order_tasks` — Ordna uppdragen. Means: Uppdragen i leveransen läggs i den ordning de behöver varandra, och de som ska vara klara först får tidigare datum. Du ser ordningen och datumen före ja:et. Not for: Inte för att flytta hela leveransen; det är Flytta leveransen. Severity: ◐ one yes per task and day. Inverse: order_tasks. From: open.
 - `change_responsible` — Byt ansvarig. Means: Den du väljer blir ansvarig för allt som inte är gjort i leveransens uppdrag. Exempel: «Låt Kim ta leveransen.» Not for: Inte för ett enda moment; det är Byt vem. Params: party. Severity: ● do directly. Inverse: change_responsible. From: open.
 
 Example 1: `act{on:{kind:"delivery",id:"<id>"}, action:"close", rev:"<rev>"}` — Stäng leveransen: Leveransen är klar och stängs.
