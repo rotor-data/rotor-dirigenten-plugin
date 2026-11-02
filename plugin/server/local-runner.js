@@ -30317,6 +30317,8 @@ var eventType = z.enum([
    * en ny med `undo_of` och datumet före. Leveransens egen rad om flytten saknar kind och läses inte.
    */
   "task_time_set",
+  /** v2's reversible task-plan edit: `{ change, action, target, before, after, reason, by, origin }`. */
+  "task_change",
   /**
    * v2:s «Ta tillbaka publiceringen» (unpublish ●, v2-paritet grupp d): `{ channel, channel_id, url, task, content_id?, node }`,
    * textens id i `subject_ref` som content_published. Publiceringen med samma channel_id står inte längre som ute.

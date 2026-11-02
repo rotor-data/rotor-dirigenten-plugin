@@ -14,6 +14,8 @@ An unknown field in `params` (one the action does not list below) is refused bef
 5. Tell the user what happened from `say`. To take it back: `act` with action `undo` takes back the last action (or send the action named as `inverse`).
 
 Actions
+- `change` — Ändra. Means: Ett värde eller ordningen för det här momentet ändras i uppdragets plan. Not for: Inte för att byta arbetssätt för alla uppdrag. Params: value?, values?, name?. Severity: ● do directly. Inverse: change. From: blocked, not_yet, unknown, doable, doable_with_gap, needs_yes, waiting, ended_without_yes, done, done_outside, skipped.
+- `remove` — Ta bort. Means: Momentet döljs i den här uppgiftens plan och dess material ligger kvar. Not for: Inte för ett moment som bara ska hoppas över. Params: target?. Severity: ● do directly. Inverse: remove. From: blocked, not_yet, unknown, doable, doable_with_gap, needs_yes, waiting, ended_without_yes, done, done_outside, skipped.
 - `do_self` — Markera gjort. Means: Du har själv gjort momentet nu. Exempel: «Jag har precis skrivit klart texten.» Not for: Gjordes det av någon annan eller någon annanstans, välj Gjort utanför. Severity: ● do directly. Inverse: reopen. From: doable, doable_with_gap.
 - `run` — Låt Claude göra det. Means: Claude gör momentet åt dig, efter beskrivningen av vad momentet ska ge. Not for: Inte när underlaget saknas. Severity: ● do directly. Inverse: none by design. From: doable, doable_with_gap, needs_yes.
 - `yes` — Säg ja. Means: Du godkänner det som ska gå ut. Not for: Inte för att godkänna något du inte har läst. Severity: ■ preview, then the user's verbatim yes, alone. Inverse: withdraw_yes. From: needs_yes, waiting.
@@ -62,7 +64,7 @@ Actions
 - `override` — Gör ändå. Means: Gör momentet fast det som ska komma före inte är klart. Not for: Inte för det som redan går. Severity: ◐ one yes per task and day. Inverse: withdraw_override. From: blocked, not_yet, unknown.
 - `withdraw_override` — Vänta på det som ska komma före. Means: Momentet får vänta igen tills det som ska komma före är klart. Not for: Inte för gjorda moment. Severity: ● do directly. Inverse: override. From: doable.
 
-Example 1: `act{on:{kind:"moment",id:"<id>"}, action:"do_self", rev:"<rev>"}` — Markera gjort: Du har själv gjort momentet nu. Exempel: «Jag har precis skrivit klart texten.»
-Example 2: `act{on:{kind:"moment",id:"<id>"}, action:"do_self", rev:"<rev>"}` (Markera gjort, inverse `reopen`) followed by `act{…, action:"undo", rev:"<new rev>"}` when the user changes their mind.
+Example 1: `act{on:{kind:"moment",id:"<id>"}, action:"change", rev:"<rev>"}` — Ändra: Ett värde eller ordningen för det här momentet ändras i uppdragets plan.
+Example 2: `act{on:{kind:"moment",id:"<id>"}, action:"change", rev:"<rev>"}` (Ändra, inverse `change`) followed by `act{…, action:"undo", rev:"<new rev>"}` when the user changes their mind.
 Counterexample: `do_self` while the moment is "blocked" is refused (Går inte nu: momentet är blockerat. Det som går nu: Skriv själv, Peka på fil, Gjort utanför, Hoppa över, Godkänn alla, Gör på annat sätt här, Gör på annat sätt för kunden, Byt vem, Ta bort koppling, Ta över, Gör ändå, Släpp.). Do not retry it; read and take what `available` offers.
 Edge case: two people act on the same `rev`: one is written, the other gets `written:false` with the new `rev`. Read, then decide again. The `unavailable` list gives `why` and what unlocks it.

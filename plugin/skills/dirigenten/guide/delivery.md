@@ -14,6 +14,7 @@ An unknown field in `params` (one the action does not list below) is refused bef
 5. Tell the user what happened from `say`. To take it back: `act` with action `undo` takes back the last action (or send the action named as `inverse`).
 
 Actions
+- `change` — Ändra namn. Means: Leveransens namn ändras. Uppdragens namn ändras inte. Not for: Inte för att ändra ett uppdrags namn. Params: value?, values?, name?. Severity: ● do directly. Inverse: change. From: open, closed.
 - `close` — Stäng leveransen. Means: Leveransen är klar och stängs. Not for: Inte för leveranser som har uppdrag kvar. Severity: ● do directly. Inverse: reopen. From: open.
 - `reopen` — Öppna leveransen igen. Means: Leveransen behöver arbetas vidare på. Not for: Inte för att ändra något i den som är levererad. Severity: ● do directly. Inverse: close. From: closed.
 - `add_task` — Lägg till en uppgift. Means: En ny uppgift läggs till i leveransen, som en beställning: avtalet och kvoten räknas, och du ser dem före ja:et. Not for: Inte för ett delmål i en uppgift; det är Lägg till ett delmål. Severity: ◐ one yes per task and day. Inverse: none by design. From: open.
@@ -21,7 +22,7 @@ Actions
 - `order_tasks` — Ordna uppdragen. Means: Uppdragen i leveransen läggs i den ordning de behöver varandra, och de som ska vara klara först får tidigare datum. Du ser ordningen och datumen före ja:et. Not for: Inte för att flytta hela leveransen; det är Flytta leveransen. Severity: ◐ one yes per task and day. Inverse: order_tasks. From: open.
 - `change_responsible` — Byt ansvarig. Means: Den du väljer blir ansvarig för allt som inte är gjort i leveransens uppdrag. Exempel: «Låt Kim ta leveransen.» Not for: Inte för ett enda moment; det är Byt vem. Params: party. Severity: ● do directly. Inverse: change_responsible. From: open.
 
-Example 1: `act{on:{kind:"delivery",id:"<id>"}, action:"close", rev:"<rev>"}` — Stäng leveransen: Leveransen är klar och stängs.
-Example 2: `act{on:{kind:"delivery",id:"<id>"}, action:"close", rev:"<rev>"}` (Stäng leveransen, inverse `reopen`) followed by `act{…, action:"undo", rev:"<new rev>"}` when the user changes their mind.
-Counterexample: `close` while the delivery is "closed" is refused (Går inte nu: leveransen är stängd. Det som går nu: Öppna leveransen igen.). Do not retry it; read and take what `available` offers.
+Example 1: `act{on:{kind:"delivery",id:"<id>"}, action:"change", rev:"<rev>"}` — Ändra namn: Leveransens namn ändras. Uppdragens namn ändras inte.
+Example 2: `act{on:{kind:"delivery",id:"<id>"}, action:"change", rev:"<rev>"}` (Ändra namn, inverse `change`) followed by `act{…, action:"undo", rev:"<new rev>"}` when the user changes their mind.
+Counterexample: `close` while the delivery is "closed" is refused (Går inte nu: leveransen är stängd. Det som går nu: Ändra namn, Öppna leveransen igen.). Do not retry it; read and take what `available` offers.
 Edge case: two people act on the same `rev`: one is written, the other gets `written:false` with the new `rev`. Read, then decide again. The `unavailable` list gives `why` and what unlocks it.
