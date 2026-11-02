@@ -21188,6 +21188,9 @@ function customerIdOf(view, raw2) {
   const tr\u00E4ffar = view.find("party").filter((p) => lika(p.label ?? "") === lika(r) || lika(p.name.split(".").pop() ?? "") === lika(r));
   return tr\u00E4ffar.length === 1 ? tr\u00E4ffar[0].id : r;
 }
+function sameImages(a, b) {
+  return a.length === b.length && a.every((x, n2) => x.ref === b[n2].ref && (x.role ?? null) === (b[n2].role ?? null));
+}
 function contentStates(view) {
   const alla = /* @__PURE__ */ new Map();
   for (const e of view.events) {
@@ -21204,6 +21207,11 @@ function contentStates(view) {
         f\u00F6re.item = item;
         f\u00F6re.item_kind = item_kind;
         if (p["name"] !== void 0) f\u00F6re.name = String(p["name"]);
+        const images = p["images"];
+        if (images && !sameImages(images, f\u00F6re.images)) {
+          f\u00F6re.images = images;
+          if (f\u00F6re.status === "godk\xE4nd") f\u00F6re.status = "utkast";
+        }
         continue;
       }
       const nu = {
