@@ -14,7 +14,7 @@ An unknown field in `params` (one the action does not list below) is refused bef
 5. Tell the user what happened from `say`. To take it back: `act` with action `undo` takes back the last action (or send the action named as `inverse`).
 
 Actions
-- `change` — Ändra namn. Means: Leveransens namn ändras. Uppdragens namn ändras inte. Not for: Inte för att ändra ett uppdrags namn. Params: value?, values?, name?. Severity: ● do directly. Inverse: change. From: open, closed.
+- `change` — Ändra namn. Means: Leveransens namn ändras. Uppdragens namn ändras inte. Not for: Inte för att ändra ett uppdrags namn. Params: value?, values?, name?, terminal?. Severity: ● do directly. Inverse: change. From: open, closed.
 - `close` — Stäng leveransen. Means: Leveransen är klar och stängs. Not for: Inte för leveranser som har uppdrag kvar. Severity: ● do directly. Inverse: reopen. From: open.
 - `reopen` — Öppna leveransen igen. Means: Leveransen behöver arbetas vidare på. Not for: Inte för att ändra något i den som är levererad. Severity: ● do directly. Inverse: close. From: closed.
 - `add_task` — Lägg till en uppgift. Means: En ny uppgift läggs till i leveransen, som en beställning: avtalet och kvoten räknas, och du ser dem före ja:et. Not for: Inte för ett delmål i en uppgift; det är Lägg till ett delmål. Severity: ◐ one yes per task and day. Inverse: none by design. From: open.

@@ -21191,10 +21191,13 @@ function customerIdOf(view, raw2) {
 function sameImages(a, b) {
   return a.length === b.length && a.every((x, n2) => x.ref === b[n2].ref && (x.role ?? null) === (b[n2].role ?? null));
 }
+var contentIdOf = (subject, p) => subject.includes("#") && typeof p["content_id"] === "string" && p["content_id"] !== "" ? p["content_id"] : subject;
 function contentStates(view) {
   const alla = /* @__PURE__ */ new Map();
-  for (const e of view.events) {
-    const p = e.payload;
+  for (const e0 of view.events) {
+    const p = e0.payload;
+    const e = { ...e0, subject_ref: contentIdOf(e0.subject_ref, p) };
+    const onTask = e0.subject_ref.includes("#") ? e0.subject_ref.slice(0, e0.subject_ref.indexOf("#")) : null;
     if (e.type === "content_version_saved") {
       const version2 = p["version"];
       if (!version2 || typeof version2.sha256 !== "string") continue;
@@ -21227,7 +21230,7 @@ function contentStates(view) {
         approved: f\u00F6re?.approved ?? null,
         published: f\u00F6re?.published ?? null,
         based_on: p["based_on"] ?? f\u00F6re?.based_on ?? null,
-        for_task: p["for"]?.task ?? f\u00F6re?.for_task ?? null,
+        for_task: p["for"]?.task ?? f\u00F6re?.for_task ?? onTask,
         item,
         item_kind
       };
@@ -21235,7 +21238,8 @@ function contentStates(view) {
     } else if (e.type === "content_approved") {
       const c = alla.get(e.subject_ref);
       if (!c) continue;
-      c.approved = { sha256: String(p["version"]), at: e.ts, by: e.actor.id };
+      const v = p["version"];
+      c.approved = { sha256: typeof v === "object" && v !== null ? String(v.sha256) : String(v), at: e.ts, by: e.actor.id };
       if (c.approved.sha256 === c.latest.sha256 && c.status === "utkast") c.status = "godk\xE4nd";
     } else if (e.type === "content_published") {
       const c = alla.get(e.subject_ref);

@@ -36,6 +36,7 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 - `read{op:"content_search"}`: sök i innehållsbanken
 - `read{op:"content_list"}`: lista innehåll
 - `write{op:"content_save"}`: spara text
+- `write{op:"content_approve"}`: godkänn senaste versionen av en text i banken: id, user_approval (personens ord)
 - `write{op:"content_published"}`: markera publicerat
 - `read{op:"presentation_draft"}`: presentationens utkast
 - `read{op:"delivery_material"}`: leveransens material och saker: task (whole: true för hela leveransen) eller delivery
