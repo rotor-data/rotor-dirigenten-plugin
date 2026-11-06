@@ -16,7 +16,7 @@ Solved in practice: when `next` is `close_resolved`, that action carries `hint` 
 
 Actions
 - `classify` — Bedöm. Means: Du bestämmer vad ärendet gäller. Not for: Inte för att lösa ärendet. Severity: ● do directly. Inverse: classify. From: new, classified.
-- `to_task` — Gör till uppdrag. Means: Ärendet blir ett uppdrag som kan göras. Not for: Inte för ärenden som inte är klassade. Params: method, action, summary, customer?. Severity: ● do directly. Inverse: none by design. From: classified.
+- `to_task` — Gör till uppdrag. Means: Ärendet blir ett uppdrag som kan göras. Not for: Inte för ärenden som inte är klassade. Params: method, action, summary, customer?, code_plan?. Severity: ● do directly. Inverse: none by design. From: classified.
 - `resolve` — Markera löst. Means: Ärendet är löst. Not for: Inte för ärenden som väntar på svar. Severity: ● do directly. Inverse: reopen. From: new, classified, in_task.
 - `close_resolved` — Stäng som löst. Means: Ärendet stängs som löst, och dess uppdrag med det. Det som står kvar markeras «behövdes inte»; inget skickas till kunden. Not for: Inte för ärenden där kunden väntar på något från oss. Severity: ● do directly. Inverse: reopen. From: new, classified, in_task.
 - `reopen` — Öppna igen. Means: Ärendet tas fram igen, det var inte löst ändå. Not for: Inte för nya ärenden. Severity: ● do directly. Inverse: resolve. From: resolved, archived.

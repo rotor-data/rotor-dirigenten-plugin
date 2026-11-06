@@ -164,7 +164,7 @@ var require_filesystem = __commonJS({
     var LDD_PATH = "/usr/bin/ldd";
     var SELF_PATH = "/proc/self/exe";
     var MAX_LENGTH = 2048;
-    var readFileSync3 = (path2) => {
+    var readFileSync4 = (path2) => {
       const fd = fs.openSync(path2, "r");
       const buffer2 = Buffer.alloc(MAX_LENGTH);
       const bytesRead = fs.readSync(fd, buffer2, 0, MAX_LENGTH, 0);
@@ -172,10 +172,10 @@ var require_filesystem = __commonJS({
       });
       return buffer2.subarray(0, bytesRead);
     };
-    var readFile = (path2) => new Promise((resolve3, reject) => {
+    var readFile = (path2) => new Promise((resolve3, reject2) => {
       fs.open(path2, "r", (err, fd) => {
         if (err) {
-          reject(err);
+          reject2(err);
         } else {
           const buffer2 = Buffer.alloc(MAX_LENGTH);
           fs.read(fd, buffer2, 0, MAX_LENGTH, 0, (_2, bytesRead) => {
@@ -189,7 +189,7 @@ var require_filesystem = __commonJS({
     module.exports = {
       LDD_PATH,
       SELF_PATH,
-      readFileSync: readFileSync3,
+      readFileSync: readFileSync4,
       readFile
     };
   }
@@ -238,7 +238,7 @@ var require_detect_libc = __commonJS({
     "use strict";
     var childProcess = __require("child_process");
     var { isLinux, getReport } = require_process();
-    var { LDD_PATH, SELF_PATH, readFile, readFileSync: readFileSync3 } = require_filesystem();
+    var { LDD_PATH, SELF_PATH, readFile, readFileSync: readFileSync4 } = require_filesystem();
     var { interpreterPath } = require_elf();
     var cachedFamilyInterpreter;
     var cachedFamilyFilesystem;
@@ -330,7 +330,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyFilesystem = null;
       try {
-        const lddContent = readFileSync3(LDD_PATH);
+        const lddContent = readFileSync4(LDD_PATH);
         cachedFamilyFilesystem = getFamilyFromLddContent(lddContent);
       } catch (e) {
       }
@@ -355,7 +355,7 @@ var require_detect_libc = __commonJS({
       }
       cachedFamilyInterpreter = null;
       try {
-        const selfContent = readFileSync3(SELF_PATH);
+        const selfContent = readFileSync4(SELF_PATH);
         const path2 = interpreterPath(selfContent);
         cachedFamilyInterpreter = familyFromInterpreterPath(path2);
       } catch (e) {
@@ -419,7 +419,7 @@ var require_detect_libc = __commonJS({
       }
       cachedVersionFilesystem = null;
       try {
-        const lddContent = readFileSync3(LDD_PATH);
+        const lddContent = readFileSync4(LDD_PATH);
         const versionMatch = lddContent.match(RE_GLIBC_VERSION);
         if (versionMatch) {
           cachedVersionFilesystem = versionMatch[1];
@@ -725,9 +725,9 @@ var require_semver = __commonJS({
         } else {
           this.prerelease = m[4].split(".").map((id) => {
             if (/^[0-9]+$/.test(id)) {
-              const num3 = +id;
-              if (num3 >= 0 && num3 < MAX_SAFE_INTEGER) {
-                return num3;
+              const num5 = +id;
+              if (num5 >= 0 && num5 < MAX_SAFE_INTEGER) {
+                return num5;
               }
             }
             return id;
@@ -993,11 +993,11 @@ var require_clean = __commonJS({
   "node_modules/semver/functions/clean.js"(exports, module) {
     "use strict";
     var parse = require_parse();
-    var clean = (version2, options) => {
+    var clean2 = (version2, options) => {
       const s2 = parse(version2.trim().replace(/^[=v]+/, ""), options);
       return s2 ? s2.version : null;
     };
-    module.exports = clean;
+    module.exports = clean2;
   }
 });
 
@@ -1030,7 +1030,7 @@ var require_diff = __commonJS({
   "node_modules/semver/functions/diff.js"(exports, module) {
     "use strict";
     var parse = require_parse();
-    var diff = (version1, version2) => {
+    var diff2 = (version1, version2) => {
       const v1 = parse(version1, null, true);
       const v2 = parse(version2, null, true);
       const comparison = v1.compare(v2);
@@ -1065,7 +1065,7 @@ var require_diff = __commonJS({
       }
       return "prerelease";
     };
-    module.exports = diff;
+    module.exports = diff2;
   }
 });
 
@@ -2394,9 +2394,9 @@ var require_semver2 = __commonJS({
     var identifiers = require_identifiers();
     var parse = require_parse();
     var valid2 = require_valid();
-    var clean = require_clean();
+    var clean2 = require_clean();
     var inc = require_inc();
-    var diff = require_diff();
+    var diff2 = require_diff();
     var major = require_major();
     var minor = require_minor();
     var patch = require_patch();
@@ -2433,9 +2433,9 @@ var require_semver2 = __commonJS({
     module.exports = {
       parse,
       valid: valid2,
-      clean,
+      clean: clean2,
       inc,
-      diff,
+      diff: diff2,
       major,
       minor,
       patch,
@@ -3798,12 +3798,12 @@ function metadata(callback) {
     return this;
   } else {
     if (this._isStreamInput()) {
-      return new Promise((resolve3, reject) => {
+      return new Promise((resolve3, reject2) => {
         this._whenStreamInFinished(() => {
           this._flattenBufferIn();
           sharp_default.metadata(this.options, (err, metadata3) => {
             if (err) {
-              reject(is_default.nativeError(err, stack));
+              reject2(is_default.nativeError(err, stack));
             } else {
               resolve3(metadata3);
             }
@@ -3811,10 +3811,10 @@ function metadata(callback) {
         });
       });
     } else {
-      return new Promise((resolve3, reject) => {
+      return new Promise((resolve3, reject2) => {
         sharp_default.metadata(this.options, (err, metadata3) => {
           if (err) {
-            reject(is_default.nativeError(err, stack));
+            reject2(is_default.nativeError(err, stack));
           } else {
             resolve3(metadata3);
           }
@@ -3849,12 +3849,12 @@ function stats(callback) {
     return this;
   } else {
     if (this._isStreamInput()) {
-      return new Promise((resolve3, reject) => {
+      return new Promise((resolve3, reject2) => {
         this._whenStreamInFinished(() => {
           this._flattenBufferIn();
           sharp_default.stats(this.options, (err, stats2) => {
             if (err) {
-              reject(is_default.nativeError(err, stack));
+              reject2(is_default.nativeError(err, stack));
             } else {
               resolve3(stats2);
             }
@@ -3862,10 +3862,10 @@ function stats(callback) {
         });
       });
     } else {
-      return new Promise((resolve3, reject) => {
+      return new Promise((resolve3, reject2) => {
         sharp_default.stats(this.options, (err, stats2) => {
           if (err) {
-            reject(is_default.nativeError(err, stack));
+            reject2(is_default.nativeError(err, stack));
           } else {
             resolve3(stats2);
           }
@@ -5215,15 +5215,15 @@ var require_color = __commonJS({
       const g = rgb[1] / 255;
       const b = rgb[2] / 255;
       const v = Math.max(r, g, b);
-      const diff = v - Math.min(r, g, b);
+      const diff2 = v - Math.min(r, g, b);
       const diffc = function(c) {
-        return (v - c) / 6 / diff + 1 / 2;
+        return (v - c) / 6 / diff2 + 1 / 2;
       };
-      if (diff === 0) {
+      if (diff2 === 0) {
         h = 0;
         s2 = 0;
       } else {
-        s2 = diff / v;
+        s2 = diff2 / v;
         rdif = diffc(r);
         gdif = diffc(g);
         bdif = diffc(b);
@@ -7338,12 +7338,12 @@ function _pipeline(callback, stack) {
     return this;
   } else {
     if (this._isStreamInput()) {
-      return new Promise((resolve3, reject) => {
+      return new Promise((resolve3, reject2) => {
         this._whenStreamInFinished(() => {
           this._flattenBufferIn();
           sharp_default.pipeline(this.options, (err, data, info) => {
             if (err) {
-              reject(is_default.nativeError(err, stack));
+              reject2(is_default.nativeError(err, stack));
             } else {
               if (this.options.resolveWithObject) {
                 resolve3({ data, info });
@@ -7355,10 +7355,10 @@ function _pipeline(callback, stack) {
         });
       });
     } else {
-      return new Promise((resolve3, reject) => {
+      return new Promise((resolve3, reject2) => {
         sharp_default.pipeline(this.options, (err, data, info) => {
           if (err) {
-            reject(is_default.nativeError(err, stack));
+            reject2(is_default.nativeError(err, stack));
           } else {
             if (this.options.resolveWithObject) {
               resolve3({ data, info });
@@ -8075,10 +8075,10 @@ function ENUM(value, list4) {
   }
   throw new TypeError(`invalid enum value ("${value}"; expected ${list4.join(", ")})`);
 }
-function allocateUTF8(str4) {
-  var size = libmupdf.lengthBytesUTF8(str4) + 1;
+function allocateUTF8(str5) {
+  var size = libmupdf.lengthBytesUTF8(str5) + 1;
   var pointer = Malloc(size);
-  libmupdf.stringToUTF8(str4, pointer, size);
+  libmupdf.stringToUTF8(str5, pointer, size);
   return pointer;
 }
 function STRING_N(s2, i) {
@@ -8220,9 +8220,9 @@ function fromString(ptr) {
   return libmupdf.UTF8ToString(ptr);
 }
 function fromStringFree(ptr) {
-  let str4 = libmupdf.UTF8ToString(ptr);
+  let str5 = libmupdf.UTF8ToString(ptr);
   Free(ptr);
-  return str4;
+  return str5;
 }
 function fromPoint(ptr) {
   let addr = ptr >> 2;
@@ -8497,9 +8497,9 @@ var init_mupdf = __esm({
       getLength() {
         return libmupdf._wasm_buffer_get_len(this.pointer);
       }
-      readByte(at) {
+      readByte(at3) {
         let data = libmupdf._wasm_buffer_get_data(this.pointer);
-        return libmupdf.HEAPU8[data + at];
+        return libmupdf.HEAPU8[data + at3];
       }
       write(s2) {
         libmupdf._wasm_append_string(this.pointer, STRING(s2));
@@ -8880,11 +8880,11 @@ var init_mupdf = __esm({
         checkType(uni, "number");
         libmupdf._wasm_show_glyph(this.pointer, font.pointer, MATRIX(trm), gid, uni, wmode);
       }
-      showString(font, trm, str4, wmode = 0) {
+      showString(font, trm, str5, wmode = 0) {
         checkType(font, Font);
         checkMatrix(trm);
-        checkType(str4, "string");
-        return fromMatrix(libmupdf._wasm_show_string(this.pointer, font.pointer, MATRIX(trm), STRING(str4), wmode));
+        checkType(str5, "string");
+        return fromMatrix(libmupdf._wasm_show_string(this.pointer, font.pointer, MATRIX(trm), STRING(str5), wmode));
       }
       walk(walker) {
         let id = $libmupdf_text_id++;
@@ -9797,8 +9797,8 @@ var init_mupdf = __esm({
         return new PDFObject(this, libmupdf._wasm_pdf_trailer(this.pointer));
       }
       createObject() {
-        let num3 = libmupdf._wasm_pdf_create_object(this.pointer);
-        return this._fromPDFObjectNew(libmupdf._wasm_pdf_new_indirect(this.pointer, num3));
+        let num5 = libmupdf._wasm_pdf_create_object(this.pointer);
+        return this._fromPDFObjectNew(libmupdf._wasm_pdf_new_indirect(this.pointer, num5));
       }
       newNull() {
         return PDFObject.Null;
@@ -9840,12 +9840,12 @@ var init_mupdf = __esm({
       newDictionary() {
         return this._fromPDFObjectNew(libmupdf._wasm_pdf_new_dict(this.pointer));
       }
-      deleteObject(num3) {
-        if (num3 instanceof PDFObject)
-          num3 = num3.asIndirect();
+      deleteObject(num5) {
+        if (num5 instanceof PDFObject)
+          num5 = num5.asIndirect();
         else
-          checkType(num3, "number");
-        libmupdf._wasm_pdf_delete_object(this.pointer, num3);
+          checkType(num5, "number");
+        libmupdf._wasm_pdf_delete_object(this.pointer, num5);
       }
       addObject(obj2) {
         return this._fromPDFObjectNew(libmupdf._wasm_pdf_add_object(this.pointer, this._PDFOBJ(obj2)));
@@ -9905,13 +9905,13 @@ var init_mupdf = __esm({
         checkType(rotate2, "number");
         return this._fromPDFObjectNew(libmupdf._wasm_pdf_add_page(this.pointer, RECT(mediabox), rotate2, this._PDFOBJ(resources), BUFFER(contents)));
       }
-      insertPage(at, obj2) {
-        checkType(at, "number");
-        libmupdf._wasm_pdf_insert_page(this.pointer, at, this._PDFOBJ(obj2));
+      insertPage(at3, obj2) {
+        checkType(at3, "number");
+        libmupdf._wasm_pdf_insert_page(this.pointer, at3, this._PDFOBJ(obj2));
       }
-      deletePage(at) {
-        checkType(at, "number");
-        libmupdf._wasm_pdf_delete_page(this.pointer, at);
+      deletePage(at3) {
+        checkType(at3, "number");
+        libmupdf._wasm_pdf_delete_page(this.pointer, at3);
       }
       isEmbeddedFile(ref) {
         checkType(ref, PDFObject);
@@ -11462,8 +11462,8 @@ var require_b4a = __commonJS({
     function isEncoding(encoding) {
       return Buffer.isEncoding(encoding);
     }
-    function alloc(size, fill2, encoding) {
-      return Buffer.alloc(size, fill2, encoding);
+    function alloc(size, fill4, encoding) {
+      return Buffer.alloc(size, fill4, encoding);
     }
     function allocUnsafe(size) {
       return Buffer.allocUnsafe(size);
@@ -11486,7 +11486,7 @@ var require_b4a = __commonJS({
     function equals(a, b) {
       return toBuffer2(a).equals(b);
     }
-    function fill(buffer2, value, offset, end, encoding) {
+    function fill3(buffer2, value, offset, end, encoding) {
       return toBuffer2(buffer2).fill(value, offset, end, encoding);
     }
     function from(value, encodingOrOffset, length) {
@@ -11582,7 +11582,7 @@ var require_b4a = __commonJS({
       concat,
       copy,
       equals,
-      fill,
+      fill: fill3,
       from,
       includes,
       indexOf,
@@ -12603,9 +12603,9 @@ var require_streamx = __commonJS({
             return this;
           },
           next() {
-            return new Promise(function(resolve3, reject) {
+            return new Promise(function(resolve3, reject2) {
               promiseResolve = resolve3;
-              promiseReject = reject;
+              promiseReject = reject2;
               const data = stream2.read();
               if (data !== null) ondata(data);
               else if ((stream2._duplexState & DESTROYED) !== 0) ondata(null);
@@ -12637,10 +12637,10 @@ var require_streamx = __commonJS({
         }
         function destroy(err) {
           stream2.destroy(err);
-          return new Promise((resolve3, reject) => {
+          return new Promise((resolve3, reject2) => {
             if (stream2._duplexState & DESTROYED) return resolve3({ value: void 0, done: true });
             stream2.once("close", function() {
-              if (err) reject(err);
+              if (err) reject2(err);
               else resolve3({ value: void 0, done: true });
             });
           });
@@ -12791,9 +12791,9 @@ var require_streamx = __commonJS({
       cb(null);
     }
     function pipelinePromise(...streams) {
-      return new Promise((resolve3, reject) => {
+      return new Promise((resolve3, reject2) => {
         return pipeline2(...streams, (err) => {
-          if (err) return reject(err);
+          if (err) return reject2(err);
           resolve3();
         });
       });
@@ -13104,9 +13104,9 @@ var require_headers = __commonJS({
       }
       return 0;
     }
-    function indexOf(block2, num3, offset, end) {
+    function indexOf(block2, num5, offset, end) {
       for (; offset < end; offset++) {
-        if (block2[offset] === num3) return offset;
+        if (block2[offset] === num5) return offset;
       }
       return end;
     }
@@ -13121,18 +13121,18 @@ var require_headers = __commonJS({
       if (val.length > n2) return SEVENS.slice(0, n2) + " ";
       return ZEROS.slice(0, n2 - val.length) + val + " ";
     }
-    function encodeSizeBin(num3, buf, off) {
+    function encodeSizeBin(num5, buf, off) {
       buf[off] = 128;
       for (let i = 11; i > 0; i--) {
-        buf[off + i] = num3 & 255;
-        num3 = Math.floor(num3 / 256);
+        buf[off + i] = num5 & 255;
+        num5 = Math.floor(num5 / 256);
       }
     }
-    function encodeSize(num3, buf, off) {
-      if (num3.toString(8).length > 11) {
-        encodeSizeBin(num3, buf, off);
+    function encodeSize(num5, buf, off) {
+      if (num5.toString(8).length > 11) {
+        encodeSizeBin(num5, buf, off);
       } else {
-        b4a.write(buf, encodeOct(num3, 11), off);
+        b4a.write(buf, encodeOct(num5, 11), off);
       }
     }
     function parse256(buf) {
@@ -13170,11 +13170,11 @@ var require_headers = __commonJS({
     function decodeStr(val, offset, length, encoding) {
       return b4a.toString(val.subarray(offset, indexOf(val, 0, offset, offset + length)), encoding);
     }
-    function addLength(str4) {
-      const len = b4a.byteLength(str4);
-      let digits2 = Math.floor(Math.log(len) / Math.log(10)) + 1;
-      if (len + digits2 >= Math.pow(10, digits2)) digits2++;
-      return len + digits2 + str4;
+    function addLength(str5) {
+      const len = b4a.byteLength(str5);
+      let digits3 = Math.floor(Math.log(len) / Math.log(10)) + 1;
+      if (len + digits3 >= Math.pow(10, digits3)) digits3++;
+      return len + digits3 + str5;
     }
   }
 });
@@ -13464,9 +13464,9 @@ var require_extract = __commonJS({
           entryCallback = null;
           cb(err);
         }
-        function onnext(resolve3, reject) {
+        function onnext(resolve3, reject2) {
           if (error) {
-            return reject(error);
+            return reject2(error);
           }
           if (entryStream) {
             resolve3({ value: entryStream, done: false });
@@ -13474,7 +13474,7 @@ var require_extract = __commonJS({
             return;
           }
           promiseResolve = resolve3;
-          promiseReject = reject;
+          promiseReject = reject2;
           consumeCallback(null);
           if (extract4._finished && promiseResolve) {
             promiseResolve({ value: void 0, done: true });
@@ -13501,10 +13501,10 @@ var require_extract = __commonJS({
         function destroy(err) {
           extract4.destroy(err);
           consumeCallback(err);
-          return new Promise((resolve3, reject) => {
+          return new Promise((resolve3, reject2) => {
             if (extract4.destroyed) return resolve3({ value: void 0, done: true });
             extract4.once("close", function() {
-              if (err) reject(err);
+              if (err) reject2(err);
               else resolve3({ value: void 0, done: true });
             });
           });
@@ -14337,12 +14337,12 @@ var require_tar_fs = __commonJS({
         });
       };
     }
-    function strip(map, level) {
+    function strip(map, level2) {
       return function(header3) {
-        header3.name = header3.name.split("/").slice(level).join("/");
+        header3.name = header3.name.split("/").slice(level2).join("/");
         const linkname = header3.linkname;
         if (linkname && (header3.type === "link" || path2.isAbsolute(linkname))) {
-          header3.linkname = linkname.split("/").slice(level).join("/");
+          header3.linkname = linkname.split("/").slice(level2).join("/");
         }
         return map(header3);
       };
@@ -14439,7 +14439,7 @@ var init_lambdafs = __esm({
     GZIP_EXTENSION_REGEX = /gz$/i;
     inflate = (filePath) => {
       const output = filePath.includes("swiftshader") ? tmpdir3() : join3(tmpdir3(), basename3(filePath).replace(ARCHIVE_EXTENSION_REGEX, ""));
-      return new Promise((resolve3, reject) => {
+      return new Promise((resolve3, reject2) => {
         if (filePath.includes("swiftshader")) {
           if (existsSync(`${output}/libGLESv2.so`)) {
             resolve3(output);
@@ -14456,7 +14456,7 @@ var init_lambdafs = __esm({
         const source = createReadStream(filePath, { highWaterMark });
         let target;
         const handleError = (error) => {
-          reject(error);
+          reject2(error);
         };
         source.once("error", handleError);
         if (isTar) {
@@ -14648,13 +14648,425 @@ var init_build = __esm({
   }
 });
 
+// atoms/api/request.atom.ts
+var request_atom_exports = {};
+__export(request_atom_exports, {
+  METHODS: () => METHODS,
+  fixtures: () => fixtures,
+  kindOf: () => kindOf,
+  queryFor: () => queryFor,
+  run: () => run,
+  spec: () => spec
+});
+
+// atoms/meta/graph.ts
+import { createHmac } from "node:crypto";
+var HOST = "https://graph.facebook.com";
+var GRAPH_VERSION = "v23.0";
+var appSecretProof = (c) => createHmac("sha256", c.appSecret).update(c.token).digest("hex");
+var MetaError = class extends Error {
+  constructor(message, status, transient, code = null, type = null, subcode = null) {
+    super(message);
+    this.status = status;
+    this.transient = transient;
+    this.code = code;
+    this.type = type;
+    this.subcode = subcode;
+  }
+  status;
+  transient;
+  code;
+  type;
+  subcode;
+  name = "MetaError";
+};
+var RATE_LIMIT_CODES = /* @__PURE__ */ new Set([4, 17, 613, 80004]);
+var isTransient = (status, code, flagged = false) => status >= 500 || status === 429 || flagged || code !== null && RATE_LIMIT_CODES.has(code);
+function toMetaError(status, body, writing) {
+  const e = body?.error ?? {};
+  const code = typeof e["code"] === "number" ? e["code"] : null;
+  const subcode = typeof e["error_subcode"] === "number" ? e["error_subcode"] : null;
+  const type = typeof e["type"] === "string" ? e["type"] : null;
+  const raw2 = typeof e["message"] === "string" ? e["message"] : JSON.stringify(body ?? null).slice(0, 200);
+  const user = [e["error_user_title"], e["error_user_msg"]].filter((x) => typeof x === "string" && x.trim() !== "").join(": ");
+  const transient = isTransient(status, code, e["is_transient"] === true);
+  const tail = ` (Meta ${status}${code !== null ? `, kod ${code}` : ""}${subcode !== null ? `/${subcode}` : ""}${type ? `, ${type}` : ""}: ${raw2}${user ? ` \u2014 ${user}` : ""})`;
+  let text7;
+  if (/ads_management/i.test(raw2) || writing && code !== null && [3, 10, 200].includes(code))
+    text7 = "nyckeln saknar ads_management \u2014 skapa en ny i Business Manager (systemanv\xE4ndare med ads_management, ads_read och read_insights) och l\xE4gg den i META_ADS_TOKEN";
+  else if (/page access token/i.test(raw2))
+    text7 = "anropet kr\xE4ver sidans egen nyckel, inte systemanv\xE4ndarens \u2014 kontrollera att systemanv\xE4ndaren har sidan tilldelad (Business Manager \u2192 Systemanv\xE4ndare \u2192 Tilldelade tillg\xE5ngar \u2192 Sidor); nyckeln i META_ADS_TOKEN \xE4r inte fel";
+  else if (code === 190)
+    text7 = "nyckeln g\xE4ller inte l\xE4ngre (utg\xE5ngen eller \xE5terkallad) \u2014 skapa en ny i Business Manager och l\xE4gg den i META_ADS_TOKEN";
+  else if (/appsecret_proof/i.test(raw2))
+    text7 = "signaturen godtogs inte \u2014 META_APP_SECRET h\xF6r inte ihop med nyckeln";
+  else if (code !== null && [10, 200].includes(code))
+    text7 = "nyckeln n\xE5r inte det h\xE4r kontot eller objektet \u2014 kontrollera att systemanv\xE4ndaren har kontot tilldelat";
+  else if (SPECIAL_CATEGORY.test(`${raw2} ${user}`))
+    text7 = "m\xE5lgruppen g\xE5r inte ihop med kampanjens s\xE4rskilda annonskategori (t.ex. FINANCIAL_PRODUCTS_SERVICES): \xE5lder 18\u201365, alla k\xF6n, inga postnummer, radie minst 15 miles (?) och inga undantag i den detaljerade inriktningen \u2014 se docs/system/meta-ads.md, S\xE4rskilda annonskategorier";
+  else if (transient)
+    text7 = "Meta stryper eller svarar inte just nu \u2014 f\xF6rs\xF6k igen om en stund";
+  else
+    text7 = "Meta avvisade anropet";
+  return new MetaError(text7 + tail, status, transient, code, type, subcode);
+}
+var SPECIAL_CATEGORY = /special[ _]ad[ _]categor|special ad audience|financial[ _]products[ _]|housing, employment/i;
+function encode(params) {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === void 0 || v === null) continue;
+    p.append(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+  }
+  return p.toString();
+}
+async function request(get, cred, method2, path2, params = {}) {
+  if (!cred.token || !cred.appSecret)
+    throw new MetaError("nyckel eller appens hemlighet saknas (META_ADS_TOKEN, META_APP_SECRET)", 0, false);
+  const p = path2.replace(/^\/+/, "");
+  const auth = { access_token: cred.token, appsecret_proof: appSecretProof(cred) };
+  const url = `${HOST}/${GRAPH_VERSION}/${p}`;
+  const response = method2 === "GET" ? await get(`${url}?${encode({ ...params, ...auth })}`, { method: "GET", headers: { accept: "application/json" } }) : await get(url, {
+    method: "POST",
+    headers: { accept: "application/json", "content-type": "application/x-www-form-urlencoded" },
+    body: encode({ ...params, ...auth })
+  });
+  const text7 = await response.text();
+  let parsed = null;
+  try {
+    parsed = text7 ? JSON.parse(text7) : null;
+  } catch {
+    parsed = { raw: text7.slice(0, 200) };
+  }
+  if (response.status >= 400 || parsed && typeof parsed === "object" && "error" in parsed)
+    throw toMetaError(response.status, parsed, method2 === "POST");
+  return parsed;
+}
+async function allPages(get, cred, path2, params = {}, { max, maxPages = 50 } = {}) {
+  const out = [];
+  let after;
+  for (let i = 0; i < maxPages; i++) {
+    const d = await request(get, cred, "GET", path2, { ...params, ...after ? { after } : {} });
+    out.push(...d.data ?? []);
+    if (max !== void 0 && out.length >= max) return out.slice(0, max);
+    after = d.paging?.cursors?.after;
+    if (!after || !d.paging?.next) return out;
+  }
+  throw new MetaError(`${path2}: fler \xE4n ${maxPages} sidor \u2014 avbryter hellre \xE4n snurrar. Sn\xE4va in perioden eller niv\xE5n.`, 0, false);
+}
+function accountPath(v) {
+  const s2 = String(v ?? "").trim().replace(/^act_/, "");
+  if (!s2) throw new MetaError("annonskontot saknas \u2014 ange ad_account_id (kundens konto, t.ex. act_123\u2026)", 400, false);
+  if (!/^\d+$/.test(s2)) throw new MetaError(`ad_account_id ska vara siffror, med eller utan act_, fick \xAB${String(v)}\xBB`, 400, false);
+  return `act_${s2}`;
+}
+function objectId(v, what) {
+  const s2 = String(v ?? "").trim();
+  if (!/^\d+$/.test(s2)) throw new MetaError(`${what} ska vara ett id med siffror, fick \xAB${String(v ?? "")}\xBB`, 400, false);
+  return s2;
+}
+function jsonValue(v) {
+  if (typeof v !== "string") return v;
+  const t = v.trim();
+  if (!t || !/^[[{]/.test(t)) return v;
+  try {
+    return JSON.parse(t);
+  } catch {
+    return v;
+  }
+}
+function listOf(v) {
+  const j = jsonValue(v);
+  if (Array.isArray(j)) return j.map(String).map((s2) => s2.trim()).filter(Boolean);
+  if (typeof j === "string") return j.split(",").map((s2) => s2.trim()).filter(Boolean);
+  return [];
+}
+
+// src/v2/gate/allow.ts
+var rule = (system, methods, path_prefix, capability) => ({ system, methods, path_prefix, ...capability ? { capability } : {} });
+var readAtom = (system, capability, path2) => rule(system, R, path2, capability);
+var GOOGLE_ADS_API_VERSION = "v26";
+var R = ["GET"];
+var RW = ["GET", "POST", "PATCH", "PUT"];
+var RENDER_CAPABILITIES = [
+  ["print", "c_print_pdf", "/render/print_pdf"],
+  ["ad", "n0581", "/render/social_post"],
+  ["ad", "c_ad_build", "/render/ad_creative"]
+];
+var CORE_ALLOW = [
+  // atoms/hubspot (docs/system/hubspot.md)
+  rule("hubspot", RW, "/crm/v3/objects/"),
+  rule("hubspot", RW, "/crm/v4/objects/"),
+  rule("hubspot", ["GET", "POST", "PUT"], "/crm/v3/lists"),
+  rule("hubspot", R, "/crm/v3/properties/"),
+  rule("hubspot", R, "/crm/v3/owners"),
+  rule("hubspot", RW, "/cms/v3/pages/"),
+  rule("hubspot", RW, "/cms/v3/blogs/"),
+  // P9d: hubspot.cms.content.write reads the blog's settings before a new post (atoms/hubspot/cms_content.ts, blogExists)
+  rule("hubspot", R, "/cms/v3/blog-settings/"),
+  rule("hubspot", ["GET", "PUT"], "/cms/v3/source-code/"),
+  rule("hubspot", R, "/cms/v3/hubdb/"),
+  rule("hubspot", R, "/cms/v3/url-redirects"),
+  rule("hubspot", R, "/cms/v3/domains"),
+  rule("hubspot", ["GET", "POST", "PUT"], "/automation/v4/flows"),
+  rule("hubspot", ["GET", "POST", "PUT"], "/settings/v3/users"),
+  rule("hubspot", ["GET", "POST", "PATCH"], "/marketing/v3/emails"),
+  rule("hubspot", R, "/marketing/v3/forms"),
+  rule("hubspot", ["GET", "POST"], "/files/v3/files/"),
+  rule("hubspot", R, "/conversations/v3/conversations/"),
+  // atoms/gmail, atoms/post (docs/system/gmail.md)
+  rule("gmail", R, "/gmail/v1/users/me/"),
+  rule("gmail", ["POST"], "/gmail/v1/users/me/drafts"),
+  rule("gmail", ["POST"], "/gmail/v1/users/me/messages/send"),
+  rule("gmail", ["POST"], "/upload/gmail/v1/users/me/drafts"),
+  rule("gmail", ["POST"], "/upload/gmail/v1/users/me/messages/send"),
+  // atoms/calendar, atoms/kalender (docs/system/google-calendar.md)
+  rule("calendar", ["GET", "POST"], "/calendar/v3/calendars/"),
+  // atoms/google (docs/system/google-search.md)
+  rule("google", R, "/pagespeedonline/v5/runPagespeed"),
+  rule("google", R, "/webmasters/v3/sites/"),
+  rule("google", ["POST"], "/v1/urlInspection/index"),
+  // atoms/meta (docs/system/meta-ads.md): the ad account's own edges
+  rule("meta", ["GET", "POST"], "/act_"),
+  // P9d: Google Ads in the function (docs/system/google-ads.md): search/searchStream and campaign status only
+  rule("googleads", ["POST"], `/${GOOGLE_ADS_API_VERSION}/customers/*/googleAds:search`),
+  rule("googleads", ["POST"], `/${GOOGLE_ADS_API_VERSION}/customers/*/campaigns:mutate`),
+  rule("googleads", R, `/${GOOGLE_ADS_API_VERSION}/customers:listAccessibleCustomers`),
+  // P9d task 5: the content bank (Netlify Blobs rotor-innehall, registrations through the gate) and the mirror's
+  // latest readings (rotor-mirror). Internal stores, named by their store; no DELETE.
+  rule("bank", ["GET", "POST"], "/rotor-innehall/"),
+  rule("mirror", R, "/rotor-mirror/"),
+  // In-process read atoms have no customer request, so authorize their exact registry capability.
+  readAtom("notes", "c_notes_read_meeting_transcript", "/notes_meetings/transcript"),
+  readAtom("notes", "c_notes_call_read_meeting_transcript_by_cl", "/notes_meetings/transcript-by-client"),
+  readAtom("notes", "c_notes_read_meeting_analysis", "/notes_meetings/analysis"),
+  readAtom("cms", "c_cms_pick_page", "/pages/pick"),
+  readAtom("corpus", "c_corpus_read_state", "/state/read"),
+  readAtom("knowledge", "c_knowledge_search_coverage", "/coverage/search"),
+  readAtom("web", "c_web_fetch_pages", "/pages/fetch"),
+  ...["n9404", "n9405", "n9408"].map((id) => readAtom("content", id, `/content/${id}`)),
+  readAtom("adobe", "n9406", "/stock/images/n9406"),
+  readAtom("registry", "n0662", "/candidates/n0662"),
+  readAtom("web", "n7103", "/pages/n7103"),
+  readAtom("registry", "n0635", "/candidates/n0635"),
+  readAtom("content", "c_qt_screenshot_quote", "/content/screenshot-quote"),
+  readAtom("content", "c_qt_verify_live", "/content/verify-live"),
+  readAtom("content", "c_set_check", "/content/check"),
+  readAtom("content", "c_support_case_assess", "/content/support-case-assess"),
+  readAtom("content", "c_content_call_create_las_av_licensnivan_i", "/content/create-license-level"),
+  readAtom("content", "n7720", "/content/n7720"),
+  readAtom("blogg", "c_blogg_pick_cta", "/read/pick-cta"),
+  readAtom("blogg", "c_blogg_review", "/read/review"),
+  readAtom("blogg", "c_blogg_seo", "/read/seo"),
+  readAtom("blogg", "c_blogg_underlag", "/read/source"),
+  // B5, the runs moved from v1: the house's own systems that v1 ran as quick actions in the function (no customer
+  // request), each bound to its exact registry capability, so the move takes nothing away and opens no system wider.
+  // Print stays local (LOCAL_ALLOW on the Mac): v1's function had no print surface either.
+  readAtom("usage", "c_usage_read_calls", "/usage/calls"),
+  ...[
+    ["content", "c_content_save_version"],
+    ["corpus", "c_corpus_add_part"],
+    ["presentation", "c_presentation_write"],
+    ["render", "c_render_html_pdf"],
+    ["research", "c_research_import_report"],
+    ["smyra", "c_smyra_fetch_rendered_pdf"]
+  ].map(([system, capability]) => rule(system, ["POST"], `/house/${capability}`, capability)),
+  // No CTA rule: docs/system/hubspot.md says nothing about a CTA API (?); c_blogg_ctas stays a reading of the customer's way.
+  // The renderers the function runs itself (netlify/renderers, FUNCTION_CALLS): they write the house's own bank, no
+  // customer system. One rule per capability, so the rest of print and ad stays out.
+  ...RENDER_CAPABILITIES.map(([system, capability, path2]) => rule(system, ["POST"], path2, capability))
+  // No other rule for print, ad, doc: local capabilities are checked against LOCAL_ALLOW on the Mac, never here.
+];
+
+// atoms/googleads/client.ts
+var REQUIRED_KEYS = ["GOOGLE_ADS_CLIENT_ID", "GOOGLE_ADS_CLIENT_SECRET", "GOOGLE_ADS_REFRESH_TOKEN"];
+var OPTIONAL_KEYS = ["GOOGLE_ADS_DEVELOPER_TOKEN", "GOOGLE_ADS_LOGIN_CUSTOMER_ID"];
+var ALL_KEYS = [...REQUIRED_KEYS, ...OPTIONAL_KEYS];
+var API = `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}`;
+var digits = (v, what) => {
+  const s2 = String(v ?? "").replace(/-/g, "").trim();
+  if (!/^\d{6,12}$/.test(s2)) throw new Error(`${what} \xE4r siffror (t.ex. 123-456-7890), fick ${String(v ?? "inget")}`);
+  return s2;
+};
+async function keysOf(ctx) {
+  const link = ctx.connection ? await ctx.connection("googleads", "") : null;
+  if (!link) throw new Error("ingen Google Ads-koppling i servern \u2014 l\xE4gg in nycklarna " + REQUIRED_KEYS.join(", "));
+  const keys = link.keys ?? {};
+  const missing = REQUIRED_KEYS.filter((k) => !keys[k]);
+  if (missing.length) throw new Error(`Google Ads-kopplingen saknar ${missing.join(", ")} \u2014 l\xE4gg in nyckeln i serverns milj\xF6`);
+  return keys;
+}
+async function send(fetch2, url, init) {
+  const res = await fetch2(url, init);
+  const text7 = await res.text();
+  let data = {};
+  try {
+    data = text7 ? JSON.parse(text7) : {};
+  } catch {
+    data = { raw: text7 };
+  }
+  if (res.status === 401 || res.status === 403)
+    throw new Error(`Google Ads nekar \xE5tkomst (${res.status}) \u2014 kontrollera att kopplingens konto n\xE5r kundkontot och att Cloud-projektet har minst Explorer-niv\xE5`);
+  if (res.status === 429) throw new Error("Google Ads kvot \xE4r slut f\xF6r i dag (RESOURCE_EXHAUSTED) \u2014 f\xF6rs\xF6k igen i morgon");
+  if (res.status >= 400) {
+    const msg = data["error"]?.message ?? (typeof data["error_description"] === "string" ? data["error_description"] : text7.slice(0, 200));
+    throw new Error(`Google Ads ${res.status}: ${String(msg)}`);
+  }
+  return data;
+}
+async function headersFor(fetch2, keys) {
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    client_id: keys["GOOGLE_ADS_CLIENT_ID"],
+    client_secret: keys["GOOGLE_ADS_CLIENT_SECRET"],
+    refresh_token: keys["GOOGLE_ADS_REFRESH_TOKEN"]
+  }).toString();
+  const d = await send(
+    fetch2,
+    "https://oauth2.googleapis.com/token",
+    { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body }
+  );
+  if (typeof d["access_token"] !== "string") throw new Error("Google gav ingen \xE5tkomsttoken f\xF6r GOOGLE_ADS_REFRESH_TOKEN \u2014 koppla Google Ads p\xE5 nytt");
+  const login = keys["GOOGLE_ADS_LOGIN_CUSTOMER_ID"] ? digits(keys["GOOGLE_ADS_LOGIN_CUSTOMER_ID"], "GOOGLE_ADS_LOGIN_CUSTOMER_ID") : null;
+  const dev = keys["GOOGLE_ADS_DEVELOPER_TOKEN"];
+  return {
+    authorization: `Bearer ${d["access_token"]}`,
+    "content-type": "application/json",
+    ...dev ? { "developer-token": dev } : {},
+    ...login ? { "login-customer-id": login } : {}
+  };
+}
+var PROV_KEYS = { GOOGLE_ADS_CLIENT_ID: "prov", GOOGLE_ADS_CLIENT_SECRET: "prov", GOOGLE_ADS_REFRESH_TOKEN: "prov" };
+
+// atoms/api/request.atom.ts
+var METHODS = ["GET", "POST", "PATCH", "PUT", "DELETE"];
+var spec = {
+  id: "c_api_request",
+  name: "api.call.request",
+  grounding: "decided",
+  found_in: "Daniel P 2026-11-06: hj\xE4lp n\xE4r dirigenten inte har ett f\xE4rdigt s\xE4tt, med en allm\xE4n API-v\xE4g per system",
+  built_from: "kvar.md: hj\xE4lp utan exakt f\xF6rm\xE5ga (claude/hjalp-utan-formaga)",
+  scope: "shared",
+  stage: "published",
+  surface: "api",
+  atom: "api.request.send",
+  effect: { verb: "updates", object: "api.request" },
+  performer: "code",
+  requires: "write",
+  idempotent: false,
+  input: ["system", "http_method", "path", "body", "query"],
+  optional_input: ["body", "query"],
+  output: ["system", "http_method", "path", "http_status", "data"],
+  label: "G\xF6r ett API-anrop mot ett system",
+  summary: "G\xF6r ett anrop mot ett system med kundens nycklar, n\xE4r dirigenten inte har ett f\xE4rdigt s\xE4tt: systemet, om det l\xE4ser, skriver eller tar bort, s\xF6kv\xE4gen och inneh\xE5llet ges i anropet. Systemets regler hos oss s\xE4ger vad som f\xE5r n\xE5s. L\xE4sning g\xF6rs direkt, skrivning och borttagning efter ja.",
+  keywords: ["api-anrop", "allm\xE4n v\xE4g", "utan f\xF6rm\xE5ga", "rest", "graph api", "REST call", "generic request", "fallback"],
+  test_target: "Torrk\xF6rning visar anropet utan att n\xE5 n\xE4tet. Skarpt prov med en l\xE4sning (GET) mot systemets testkonto.",
+  leaves: {
+    schema: {
+      system: "systemet anropet gick till, som det \xE4r inlagt hos oss",
+      http_method: "GET, POST, PATCH, PUT eller DELETE",
+      path: "s\xF6kv\xE4gen, som systemets API skriver den",
+      http_status: "svarets statuskod, eller tomt vid torrk\xF6rning",
+      data: "svaret som systemet l\xE4mnar det"
+    },
+    done_when: ["anropet \xE4r gjort och svaret \xE4r l\xE4st tillbaka"],
+    where: "Svaret p\xE5 steget; det som \xE4ndrats st\xE5r i kundens system"
+  },
+  guards: {
+    object_types: ["read", "write", "delete"],
+    severity: { read: "\u25CF", write: "\u25A0", delete: "\u25A0" },
+    removes: "deletes",
+    note: ["L\xE4sning g\xF6rs direkt. Skrivning visas f\xF6rst och g\xF6rs efter ja. Borttagning \xE4r \u25A0 med ett eget ja; Twenty tar bara bort mjukt."]
+  },
+  module: "n0101",
+  operation_id: "o_api_request",
+  step_id: "s_api_request",
+  lead_days: 0
+};
+var kindOf = (method2) => method2 === "GET" ? "read" : method2 === "DELETE" ? "delete" : "write";
+function methodOf(v) {
+  const m = String(v ?? "").trim().toUpperCase();
+  if (!METHODS.includes(m)) throw new Error(`anropets typ \xE4r ${METHODS.join(", ")}, fick ${String(v ?? "inget")}`);
+  return m;
+}
+function pathOf(v) {
+  const p = String(v ?? "").trim();
+  if (!p.startsWith("/") || p.includes("..") || /^\/\//.test(p) || /\s/.test(p)) throw new Error("path \xE4r en s\xF6kv\xE4g som b\xF6rjar med / (utan .. och utan v\xE4rd)");
+  return p;
+}
+var recordOf = (v) => {
+  if (typeof v === "string" && v.trim().startsWith("{")) {
+    try {
+      return JSON.parse(v);
+    } catch {
+    }
+  }
+  return v && typeof v === "object" && !Array.isArray(v) ? v : {};
+};
+function queryFor(system, method2, query) {
+  const q = Object.fromEntries(Object.entries(query).map(([k, v]) => [k, typeof v === "string" ? v : JSON.stringify(v)]));
+  return system === "twenty" && method2 === "DELETE" ? { ...q, soft_delete: "true" } : q;
+}
+async function run(args, ctx) {
+  const system = String(args["system"] ?? "").trim();
+  if (!system) throw new Error("system saknas \u2014 ge systemet (twenty, meta, googleads \u2026) som det \xE4r inlagt hos oss");
+  const method2 = methodOf(args["http_method"]);
+  const path2 = pathOf(args["path"]);
+  const body = args["body"] === void 0 ? null : recordOf(args["body"]);
+  const query = queryFor(system, method2, recordOf(args["query"]));
+  const post = ctx.call?.systemProfile?.(system);
+  if (!post) throw new Error(`\xAB${system}\xBB \xE4r inte inlagt som system hos oss \u2014 l\xE4gg in det f\xF6rst`);
+  const transport = String(post.transport ?? "");
+  if (!["bearer_rest", "meta_graph", "google_ads"].includes(transport)) throw new Error(`inloggningss\xE4ttet ${transport || "(inget)"} f\xF6r ${system} finns inte \xE4n`);
+  if (transport === "meta_graph" && method2 !== "GET" && method2 !== "POST") throw new Error("Meta tar GET och POST h\xE4r; \xE4ndra status med POST i st\xE4llet f\xF6r DELETE");
+  const link = transport === "google_ads" ? null : ctx.connection ? await ctx.connection(transport === "meta_graph" ? "meta" : system, "") : null;
+  const gkeys = transport === "google_ads" ? await keysOf(ctx) : null;
+  const keyName = post.keys?.[0] ?? "";
+  const token = transport === "bearer_rest" ? link?.token || (keyName ? link?.keys?.[keyName] : "") || "" : "";
+  if (transport === "bearer_rest" && !token) throw new Error(`kopplingen till ${system} saknar nyckeln${keyName ? ` (${keyName})` : ""}`);
+  const cred = { token: link?.keys?.["META_ADS_TOKEN"] ?? "", appSecret: link?.keys?.["META_APP_SECRET"] ?? "" };
+  if (transport === "meta_graph" && (!cred.token || !cred.appSecret)) throw new Error("Meta-kopplingen saknar nyckeln eller appens hemlighet");
+  if (ctx.dry_run) return { system, http_method: method2, path: path2, http_status: null, data: { would_send: { method: method2, path: path2, query, body } }, dry_run: true };
+  if (transport === "meta_graph") {
+    const data2 = await request(ctx.fetch, cred, method2, path2, { ...query, ...body ?? {} });
+    return { system, http_method: method2, path: path2, http_status: 200, data: data2, dry_run: false };
+  }
+  const qs = Object.keys(query).length ? `?${new URLSearchParams(query).toString()}` : "";
+  if (transport === "google_ads") {
+    const fetch2 = ctx.fetch;
+    const headers = await headersFor(fetch2, gkeys);
+    const data2 = await send(fetch2, `${String(post.host ?? "").replace(/\/+$/, "")}${path2}${qs}`, { method: method2, headers, ...body ? { body: JSON.stringify(body) } : {} });
+    return { system, http_method: method2, path: path2, http_status: 200, data: data2, dry_run: false };
+  }
+  const res = await ctx.fetch(`${String(post.host ?? "").replace(/\/+$/, "")}${path2}${qs}`, {
+    method: method2,
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    ...body ? { body: JSON.stringify(body) } : {}
+  });
+  const text7 = await res.text();
+  let data = null;
+  try {
+    data = text7 ? JSON.parse(text7) : null;
+  } catch {
+    data = { raw: text7.slice(0, 2e3) };
+  }
+  if (res.status === 401 || res.status === 403) throw new Error(`${system} nekar \xE5tkomst (${res.status}) \u2014 kontrollera nyckelns roll i ${system}`);
+  if (res.status >= 400) throw new Error(`${system} svarade ${res.status}: ${JSON.stringify(data).slice(0, 300)}`);
+  return { system, http_method: method2, path: path2, http_status: res.status, data, dry_run: false };
+}
+var fixtures = [
+  { name: "ok\xE4nd metod avvisas", keys: { TWENTY_API_KEY: "prov" }, args: { system: "twenty", http_method: "TRACE", path: "/rest/x" }, expect_error: "anropets typ \xE4r" },
+  { name: "s\xF6kv\xE4g med .. avvisas", keys: { TWENTY_API_KEY: "prov" }, args: { system: "twenty", http_method: "GET", path: "/rest/../x" }, expect_error: "path \xE4r" },
+  { name: "system saknas", keys: { TWENTY_API_KEY: "prov" }, args: { system: "", http_method: "GET", path: "/x" }, expect_error: "system saknas" },
+  { name: "utan systemposten k\xF6rs inget", keys: { TWENTY_API_KEY: "prov" }, args: { system: "twenty", http_method: "GET", path: "/rest/companies" }, expect_error: "inte inlagt som system" }
+];
+
 // atoms/bank/change_bank.atom.ts
 var change_bank_atom_exports = {};
 __export(change_bank_atom_exports, {
   ACTIONS: () => ACTIONS,
-  fixtures: () => fixtures,
-  run: () => run,
-  spec: () => spec
+  fixtures: () => fixtures2,
+  run: () => run2,
+  spec: () => spec2
 });
 
 // src/v2/domain/moment-standard.ts
@@ -18828,6 +19240,19 @@ var HARD_REASONS = [
 var EFFECTS = ["internal", "leaves_house", "customer_system", "money_or_contract", "rights_or_consent"];
 var GOAL_CLARITY = ["clear", "vague"];
 var PARAM_TYPES = ["number", "text", "list", "date", "ref"];
+var ROLE_LABELS = {
+  customer: "Kunden",
+  customer_decider: "Kundens beslutsfattare",
+  owner: "Ansvarig hos oss",
+  reviewer: "Granskare hos oss",
+  // Den som skriver texten hos oss (husets roll «Copy»): godkänner texten (Daniel P 2026-10-19).
+  copy: "Skribent hos oss",
+  // Husets roller (register/tenants/rotor/roller.json) i text, när metoden skriver rollen och inte namnet.
+  customer_contact: "Kundkontakten hos oss",
+  contract: "Den som har avtal hos oss",
+  structure: "Den som har beslut och struktur hos oss",
+  ir: "Den som har IR hos oss"
+};
 var MOMENT_DEFAULT_HOURS = {
   human: STANDARD_STEP_HOURS.human,
   claude: STANDARD_STEP_HOURS.llm,
@@ -19858,7 +20283,9 @@ var goalSpec = z.object({
   /** Recept per moment i målet (runda D3): `<objekt>/<moment>` till receptet; går före bibliotekets. */
   recipes: z.record(recipeKey, momentRecipe).optional(),
   /** Molekylerna per moment (etapp 2): `<objekt>/<moment>` till molekylen eller atomförslaget som gör det. */
-  molecules: moleculeBindings.optional()
+  molecules: moleculeBindings.optional(),
+  /** Extra körbara alternativ per moment, utan att ersätta dess huvudsakliga molekyl. */
+  molecule_alternatives: z.record(z.array(z.string().min(1))).optional()
 }).strict().refine((g) => (g.needs?.length ?? 0) > 0 || (g.results?.length ?? 0) > 0 || g.clarity === "vague", {
   message: "m\xE5let beh\xF6ver needs (delm\xE5len), results (det sparade m\xE5let) eller clarity: vague"
 });
@@ -20736,7 +21163,7 @@ var vocabulary = z.object({
   words: z.array(z.string().min(1)).optional(),
   terms: z.array(vocabularyTerm).min(1)
 }).strict();
-var rule = z.object({
+var rule2 = z.object({
   ...nodeHead,
   kind: z.literal("rule"),
   label: z.string().min(1),
@@ -21170,7 +21597,7 @@ var registered = z.discriminatedUnion("kind", [
   calendar,
   corpus,
   corpusPart,
-  rule,
+  rule2,
   vocabulary,
   deliveryTemplate,
   milestone,
@@ -21185,8 +21612,8 @@ function customerIdOf(view, raw2) {
   const n2 = view.get(r) ?? view.byName(r);
   if (n2?.kind === "party") return n2.id;
   const lika = (a) => a.trim().toLocaleLowerCase("sv");
-  const tr\u00E4ffar = view.find("party").filter((p) => lika(p.label ?? "") === lika(r) || lika(p.name.split(".").pop() ?? "") === lika(r));
-  return tr\u00E4ffar.length === 1 ? tr\u00E4ffar[0].id : r;
+  const tr\u00E4ffar2 = view.find("party").filter((p) => lika(p.label ?? "") === lika(r) || lika(p.name.split(".").pop() ?? "") === lika(r));
+  return tr\u00E4ffar2.length === 1 ? tr\u00E4ffar2[0].id : r;
 }
 function sameImages(a, b) {
   return a.length === b.length && a.every((x, n2) => x.ref === b[n2].ref && (x.role ?? null) === (b[n2].role ?? null));
@@ -21410,9 +21837,9 @@ function rollF\u00F6rM\u00E5tt(bredd, h\u00F6jd) {
 }
 var regexText = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 function rollF\u00F6rFil(namn, standard, koder = STANDARD_FORMATKODER) {
-  const stam = basename(namn).replace(/\.[^.]+$/, "");
+  const stam2 = basename(namn).replace(/\.[^.]+$/, "");
   for (const kod of Object.keys(koder).sort((a, b) => b.length - a.length))
-    if (new RegExp(`(^|[-_ ])${regexText(kod)}($|[-_ ])`).test(stam)) return koder[kod];
+    if (new RegExp(`(^|[-_ ])${regexText(kod)}($|[-_ ])`).test(stam2)) return koder[kod];
   return standardRoll(standard, koder);
 }
 function bed\u00F6mRoll(namn, standard, m\u00E5tt, koder = STANDARD_FORMATKODER) {
@@ -21587,7 +22014,7 @@ function formatCodes(v) {
 
 // atoms/bank/change_bank.atom.ts
 var ACTIONS = ["repoint", "link_images", "thumbnails"];
-var spec = {
+var spec2 = {
   id: "c_bank_change",
   name: "bank.call.change",
   grounding: "decided",
@@ -21640,7 +22067,7 @@ var line = (h) => {
     found_in: p["found_in"] ?? null
   } : { type: h.type, content: h.subject_ref, images: p["images"] };
 };
-async function run(args, ctx) {
+async function run2(args, ctx) {
   const action = String(args["action"] ?? "").trim();
   if (!ACTIONS.includes(action)) throw new Error(`action \xE4r ${ACTIONS.join(", ")}, fick ${String(args["action"] ?? "inget")}`);
   const bank = bankOf(ctx);
@@ -21725,7 +22152,7 @@ async function run(args, ctx) {
     without_bytes: wanted.length - todo.length
   };
 }
-var fixtures = [
+var fixtures2 = [
   { name: "ok\xE4nd action avvisas", args: { action: "ingest", customer: "p1" }, expect_error: "action \xE4r" },
   { name: "utan bank s\xE4ger atomen det", args: { action: "repoint", customer: "p1" }, expect_error: "inte kopplad" }
 ];
@@ -21733,9 +22160,9 @@ var fixtures = [
 // atoms/bank/pack_files.atom.ts
 var pack_files_atom_exports = {};
 __export(pack_files_atom_exports, {
-  fixtures: () => fixtures2,
-  run: () => run2,
-  spec: () => spec2
+  fixtures: () => fixtures3,
+  run: () => run3,
+  spec: () => spec3
 });
 
 // atoms/bank/zip.ts
@@ -21754,7 +22181,7 @@ function dosTime(d) {
 }
 function makeZip(entries, when2 = /* @__PURE__ */ new Date()) {
   const seen = /* @__PURE__ */ new Set();
-  const { time: time4, date } = dosTime(when2);
+  const { time: time5, date } = dosTime(when2);
   const local = [], central = [];
   let offset = 0;
   for (const e of entries) {
@@ -21773,7 +22200,7 @@ function makeZip(entries, when2 = /* @__PURE__ */ new Date()) {
     h.writeUInt16LE(20, 4);
     h.writeUInt16LE(2048, 6);
     h.writeUInt16LE(store ? 0 : 8, 8);
-    h.writeUInt16LE(time4, 10);
+    h.writeUInt16LE(time5, 10);
     h.writeUInt16LE(date, 12);
     h.writeUInt32LE(crc, 14);
     h.writeUInt32LE(data.length, 18);
@@ -21787,7 +22214,7 @@ function makeZip(entries, when2 = /* @__PURE__ */ new Date()) {
     c.writeUInt16LE(20, 6);
     c.writeUInt16LE(2048, 8);
     c.writeUInt16LE(store ? 0 : 8, 10);
-    c.writeUInt16LE(time4, 12);
+    c.writeUInt16LE(time5, 12);
     c.writeUInt16LE(date, 14);
     c.writeUInt32LE(crc, 16);
     c.writeUInt32LE(data.length, 20);
@@ -21809,7 +22236,7 @@ function makeZip(entries, when2 = /* @__PURE__ */ new Date()) {
 }
 
 // atoms/bank/pack_files.atom.ts
-var spec2 = {
+var spec3 = {
   "id": "c_bank_pack_files",
   "name": "bank.call.pack_files",
   "grounding": "observed",
@@ -21895,7 +22322,7 @@ function fileList(v) {
     return { ref: f.ref.trim(), ...f.path ? { path: zipPath(f.path) } : {} };
   });
 }
-async function run2(args, ctx) {
+async function run3(args, ctx) {
   const i = args;
   if (typeof i.file_name !== "string" || !i.file_name.trim()) throw new Error("ange file_name: zipens namn");
   const file_name = /\.zip$/i.test(i.file_name.trim()) ? i.file_name.trim() : `${i.file_name.trim()}.zip`;
@@ -21932,7 +22359,7 @@ async function run2(args, ctx) {
   });
   return { proposal: false, file_name, entries: read.map((r) => ({ path: r.path, ref: r.ref, size: r.bytes.length })), ref: kept.ref, done: true };
 }
-var fixtures2 = [
+var fixtures3 = [
   { name: "tv\xE5 filer i var sin mapp: f\xF6rhandsvisningen", args: {
     files: '[{"ref":"bank://prov/' + "a".repeat(64) + '","path":"tryck/lapp.pdf"},{"ref":"' + "b".repeat(64) + '","path":"qr/kod.svg"}]',
     file_name: "paket",
@@ -21948,14 +22375,14 @@ var fixtures2 = [
 var read_bank_atom_exports = {};
 __export(read_bank_atom_exports, {
   ACTIONS: () => ACTIONS2,
-  fixtures: () => fixtures3,
-  run: () => run3,
-  spec: () => spec3
+  fixtures: () => fixtures4,
+  run: () => run4,
+  spec: () => spec4
 });
 import { basename as basename2 } from "node:path";
 init_butik();
 var ACTIONS2 = ["legacy_roles", "get_file"];
-var spec3 = {
+var spec4 = {
   id: "c_bank_read",
   name: "bank.call.read",
   grounding: "decided",
@@ -21992,7 +22419,7 @@ var spec3 = {
   step_id: "s_bank_read",
   lead_days: 0
 };
-async function run3(args, ctx) {
+async function run4(args, ctx) {
   const action = String(args["action"] ?? "").trim();
   if (!ACTIONS2.includes(action)) throw new Error(`action \xE4r ${ACTIONS2.join(", ")}, fick ${String(args["action"] ?? "inget")}`);
   const bank = bankOf(ctx);
@@ -22007,10 +22434,10 @@ async function run3(args, ctx) {
     const inBank = hits.filter((r) => \u00E4rBankUri(r.uri));
     if (!inBank.length) throw new Error(`${String(args["name"])} finns bara som extern referens (${hits.at(-1).uri}) \u2014 peka om den till banken f\xF6rst`);
     const last = inBank.at(-1);
-    const same = inBank.filter((r) => r.sha256 === last.sha256);
-    const width = same.map((r) => r.width).filter(Boolean).at(-1);
-    const height = same.map((r) => r.height).filter(Boolean).at(-1);
-    const thumbnail = same.map((r) => r.thumbnail).filter(Boolean).at(-1);
+    const same2 = inBank.filter((r) => r.sha256 === last.sha256);
+    const width = same2.map((r) => r.width).filter(Boolean).at(-1);
+    const height = same2.map((r) => r.height).filter(Boolean).at(-1);
+    const thumbnail = same2.map((r) => r.thumbnail).filter(Boolean).at(-1);
     return {
       action,
       customer: party2,
@@ -22041,7 +22468,7 @@ async function run3(args, ctx) {
   const changes = planeraRollbyte(contents, regs, formatCodes(args["format_codes"]) ?? STANDARD_FORMATKODER);
   return { action, customer: party2, contents: contents.length, changes, dry_run: true };
 }
-var fixtures3 = [
+var fixtures4 = [
   { name: "ok\xE4nd action avvisas", args: { action: "delete", customer: "p1" }, expect_error: "action \xE4r" },
   { name: "utan bank s\xE4ger atomen det", args: { action: "legacy_roles", customer: "p1" }, expect_error: "inte kopplad" }
 ];
@@ -22055,9 +22482,9 @@ __export(create_event_atom_exports, {
   MEETING_MARK: () => MEETING_MARK,
   createCalendarEvent: () => createCalendarEvent,
   eventIdFor: () => eventIdFor,
-  fixtures: () => fixtures4,
-  run: () => run4,
-  spec: () => spec4
+  fixtures: () => fixtures5,
+  run: () => run5,
+  spec: () => spec5
 });
 import { createHash as createHash3 } from "node:crypto";
 
@@ -22209,7 +22636,7 @@ async function createCalendarEvent(d, i) {
     e = await uppslag();
   return utdata(e, { ...base, created: true, invited: sendUpdates === "all" && attendees.length > 0, dry: false });
 }
-var spec4 = {
+var spec5 = {
   id: "c_calendar_create_event",
   name: "calendar.call.create_event",
   grounding: "observed",
@@ -22269,7 +22696,7 @@ var spec4 = {
   step_id: "s_calendar_create_event",
   lead_days: 0
 };
-async function run4(args, ctx) {
+async function run5(args, ctx) {
   if (!ctx.view) throw new Error("m\xF6tet kan bara bokas i ett steg \u2014 registret saknas");
   const party2 = typeof args["party"] === "string" ? args["party"] : "";
   const link = ctx.connection ? await ctx.connection("google", party2) : null;
@@ -22282,7 +22709,7 @@ var RUNNER = {
   runner: { calendar: { write: { enabled: true } } },
   scopes: ["https://www.googleapis.com/auth/calendar.events"]
 };
-var fixtures4 = [
+var fixtures5 = [
   { name: "ett m\xF6te med en deltagare", ...RUNNER, args: {
     party: "@runner",
     title: "Kund \xB7 F\xF6rsta m\xF6tet",
@@ -22318,9 +22745,9 @@ var fixtures4 = [
 // atoms/content/save_version.atom.ts
 var save_version_atom_exports = {};
 __export(save_version_atom_exports, {
-  fixtures: () => fixtures5,
-  run: () => run5,
-  spec: () => spec5
+  fixtures: () => fixtures6,
+  run: () => run6,
+  spec: () => spec6
 });
 import { randomUUID } from "node:crypto";
 
@@ -22346,7 +22773,7 @@ var docHash = (doc) => createHash4("sha256").update(canonicalJson(normalizeDoc(d
 var textUri = (tenant, hash) => `text://${tenant}/${hash}`;
 
 // atoms/content/save_version.atom.ts
-var spec5 = {
+var spec6 = {
   "id": "c_content_save_version",
   "name": "content.call.save_version",
   "grounding": "observed",
@@ -22443,7 +22870,7 @@ function fieldsOf(v) {
   if (!o || typeof o !== "object" || Array.isArray(o)) throw new Error("fields ska vara ett objekt med texter");
   return Object.fromEntries(Object.entries(o).map(([k, x]) => [k, typeof x === "string" ? x : JSON.stringify(x)]));
 }
-async function run5(args, ctx) {
+async function run6(args, ctx) {
   const bank = bankOf(ctx);
   const view = await bank.view();
   const customer = partyOf(view, args["customer"]);
@@ -22490,7 +22917,7 @@ async function run5(args, ctx) {
   await bank.append([event]);
   return { id, version: ref.sha256, uri: ref.uri, dry_run: false, planned: { type: event.type, subject_ref: id, payload: event.payload }, done: true };
 }
-var fixtures5 = [
+var fixtures6 = [
   { name: "utan bank s\xE4ger atomen det", args: { customer: "p1", kind: "dokument", name: "Prov", markdown: "Text." }, expect_error: "inte kopplad" },
   { name: "utan text nekas den", args: { customer: "p1", kind: "dokument", name: "Prov" }, expect_error: "inte kopplad|markdown saknas" }
 ];
@@ -22498,9 +22925,9 @@ var fixtures5 = [
 // atoms/gmail/create_draft.atom.ts
 var create_draft_atom_exports = {};
 __export(create_draft_atom_exports, {
-  fixtures: () => fixtures7,
-  run: () => run7,
-  spec: () => spec7
+  fixtures: () => fixtures8,
+  run: () => run8,
+  spec: () => spec8
 });
 
 // src/google/send.ts
@@ -22738,12 +23165,12 @@ __export(send_mail_atom_exports, {
   SEND_INPUT: () => SEND_INPUT,
   SEND_OPTIONAL: () => SEND_OPTIONAL,
   SEND_OUTPUT: () => SEND_OUTPUT,
-  fixtures: () => fixtures6,
+  fixtures: () => fixtures7,
   mailProblem: () => mailProblem,
-  run: () => run6,
+  run: () => run7,
   runAs: () => runAs,
   sendMessage: () => sendMessage,
-  spec: () => spec6
+  spec: () => spec7
 });
 function mailProblem(view, party2, delivery, scopes) {
   const p = view.get(party2);
@@ -22877,7 +23304,7 @@ async function runAs(delivery, args, ctx) {
     confirmed: args["confirmed"] === true
   });
 }
-var spec6 = {
+var spec7 = {
   id: "c_gmail_send_mail",
   name: "gmail.call.send_mail",
   grounding: "observed",
@@ -22927,14 +23354,14 @@ var spec6 = {
   step_id: "s_gmail_send_mail",
   lead_days: 0
 };
-async function run6(args, ctx) {
+async function run7(args, ctx) {
   return runAs("send", args, ctx);
 }
 var RUNNER2 = {
   runner: { mail: { send: { enabled: true }, draft: { enabled: true } } },
   scopes: [GMAIL_SEND_SCOPE, GMAIL_COMPOSE_SCOPE]
 };
-var fixtures6 = [
+var fixtures7 = [
   { name: "f\xF6rhandsvisning av ett mejl", ...RUNNER2, args: {
     party: "@runner",
     to: "kund@example.se",
@@ -22973,7 +23400,7 @@ var fixtures6 = [
 ];
 
 // atoms/gmail/create_draft.atom.ts
-var spec7 = {
+var spec8 = {
   id: "c_gmail_create_draft",
   name: "gmail.call.create_draft",
   grounding: "observed",
@@ -23020,11 +23447,11 @@ var spec7 = {
   step_id: "s_gmail_create_draft",
   lead_days: 0
 };
-async function run7(args, ctx) {
+async function run8(args, ctx) {
   return runAs("draft", args, ctx);
 }
 var RUNNER3 = { runner: { mail: { draft: { enabled: true } } }, scopes: [GMAIL_COMPOSE_SCOPE] };
-var fixtures7 = [
+var fixtures8 = [
   { name: "utkast f\xF6rhandsvisas", ...RUNNER3, args: {
     party: "@runner",
     to: "kund@example.se",
@@ -23050,9 +23477,9 @@ var fixtures7 = [
 // atoms/gmail/list_inflow.atom.ts
 var list_inflow_atom_exports = {};
 __export(list_inflow_atom_exports, {
-  fixtures: () => fixtures8,
-  run: () => run8,
-  spec: () => spec8
+  fixtures: () => fixtures9,
+  run: () => run9,
+  spec: () => spec9
 });
 
 // src/intake/gmail.ts
@@ -23098,8 +23525,8 @@ function inflowQueryBetween(address, from, to, mailbox) {
   return `${addressTerm(address)} after:${Math.floor(f / 1e3)} before:${Math.ceil(t / 1e3) + 1}`;
 }
 function isInternal(address, domains) {
-  const at = address.lastIndexOf("@");
-  return at > 0 && domains.has(address.slice(at + 1));
+  const at3 = address.lastIndexOf("@");
+  return at3 > 0 && domains.has(address.slice(at3 + 1));
 }
 var header2 = (h, name) => h.find((x) => x.name.toLowerCase() === name.toLowerCase())?.value ?? "";
 var bareAddress = (address) => (/<([^>]+)>/.exec(address)?.[1] ?? address).trim().toLowerCase();
@@ -23195,7 +23622,7 @@ function labelTerm(label, exclude) {
 }
 
 // atoms/gmail/list_inflow.atom.ts
-var spec8 = {
+var spec9 = {
   id: "c_gmail_read_inflow",
   name: "gmail.call.read_inflow",
   grounding: "decided",
@@ -23234,12 +23661,12 @@ var spec8 = {
   step_id: "s_gmail_read_inflow",
   lead_days: 0
 };
-var API = "https://gmail.googleapis.com/gmail/v1/users/me/";
+var API2 = "https://gmail.googleapis.com/gmail/v1/users/me/";
 var HEADERS = ["From", "Subject", "To", "Cc", "Date", "Delivered-To", "Message-ID", "References"];
 var DATE2 = /^\d{4}-\d{2}-\d{2}$/;
 var MAX_PAGES = 20;
 var list = (v) => (Array.isArray(v) ? v.map(String) : String(v ?? "").split(",")).map((x) => x.trim()).filter(Boolean);
-async function run8(args, ctx) {
+async function run9(args, ctx) {
   const party2 = String(args["party"] ?? "").trim();
   if (!party2) throw new Error("party saknas \u2014 personen vars Google-koppling l\xE4ser posten");
   const only = String(args["thread"] ?? "").trim();
@@ -23261,7 +23688,7 @@ async function run8(args, ctx) {
   if (extra) query = `${query} ${extra}`;
   if (ctx.dry_run) return { mailbox, query, messages: [], broken: [], bodies: 0, dry_run: true };
   const api = async (path2, params = {}) => {
-    const u = new URL(path2, API);
+    const u = new URL(path2, API2);
     for (const [k, v] of Object.entries(params))
       if (Array.isArray(v)) for (const x of v) u.searchParams.append(k, x);
       else u.searchParams.set(k, v);
@@ -23326,7 +23753,7 @@ async function run8(args, ctx) {
   }
   return { mailbox, query, messages, broken, bodies };
 }
-var fixtures8 = [
+var fixtures9 = [
   {
     name: "utan koppling",
     args: { party: "@runner", address: "in@example.se", fran: "2026-09-20", till: "2026-09-21", interna: "example.se" },
@@ -23352,9 +23779,9 @@ var fixtures8 = [
 var connection_check_atom_exports = {};
 __export(connection_check_atom_exports, {
   CHECK_TEXT: () => CHECK_TEXT,
-  fixtures: () => fixtures9,
-  run: () => run9,
-  spec: () => spec9
+  fixtures: () => fixtures10,
+  run: () => run10,
+  spec: () => spec10
 });
 
 // src/registry/admin.ts
@@ -23377,7 +23804,7 @@ async function reasonOf2(r) {
   const c = b?.error?.errors?.[0]?.reason ?? b?.error?.status;
   return typeof c === "string" ? c : "";
 }
-async function run9(args, ctx) {
+async function run10(args, ctx) {
   const party2 = ctx.call.runner ?? (typeof args["party"] === "string" ? args["party"] : "");
   const view = ctx.view;
   const admins = view ? view.find("party").filter((p2) => isSuperadmin(view, p2.id)).map((p2) => p2.label ?? p2.id) : [];
@@ -23414,15 +23841,15 @@ async function run9(args, ctx) {
   const p = await f("https://gmail.googleapis.com/gmail/v1/users/me/profile", { headers: { authorization: `Bearer ${link.token}` } });
   const reason = p.ok ? "" : await reasonOf2(p);
   const apiOff = !p.ok && /accessNotConfigured|SERVICE_DISABLED/i.test(reason);
-  const blocked = !p.ok && !apiOff && p.status === 403;
+  const blocked2 = !p.ok && !apiOff && p.status === 403;
   return out([
     row2("connection", true, "person"),
-    row2("workspace", !blocked, "admin"),
+    row2("workspace", !blocked2, "admin"),
     row2("compose", true, "person"),
     row2("gmail_api", p.ok ? true : apiOff ? false : null, "admin")
   ]);
 }
-var spec9 = {
+var spec10 = {
   id: "c_google_connection_check",
   name: "google.call.connection_check",
   grounding: "observed",
@@ -23459,7 +23886,7 @@ var spec9 = {
   step_id: "s_google_connection_check",
   lead_days: 0
 };
-var fixtures9 = [
+var fixtures10 = [
   { name: "kopplad med utkast", scopes: [GMAIL_COMPOSE_SCOPE], args: { party: "@runner" }, expect_fields: ["ready", "rows"] },
   { name: "utan koppling s\xE4gs det, med personen som \xE5tg\xE4rdar", args: { party: "@runner" }, expect_fields: ["rows"] }
 ];
@@ -23468,10 +23895,10 @@ var fixtures9 = [
 var pagespeed_atom_exports = {};
 __export(pagespeed_atom_exports, {
   STRATEGIES: () => STRATEGIES,
-  fixtures: () => fixtures11,
+  fixtures: () => fixtures12,
   pagespeedRow: () => pagespeedRow,
-  run: () => run11,
-  spec: () => spec11
+  run: () => run12,
+  spec: () => spec12
 });
 
 // atoms/webb/fetch_pages.atom.ts
@@ -23483,10 +23910,10 @@ __export(fetch_pages_atom_exports, {
   findCanonical: () => findCanonical,
   findNoindex: () => findNoindex,
   findScripts: () => findScripts,
-  fixtures: () => fixtures10,
+  fixtures: () => fixtures11,
   pool: () => pool,
-  run: () => run10,
-  spec: () => spec10,
+  run: () => run11,
+  spec: () => spec11,
   urlsOf: () => urlsOf
 });
 var CHECKS = ["status", "redirect_chain", "canonical", "noindex", "scripts"];
@@ -23545,19 +23972,19 @@ function findNoindex(html, header3) {
 }
 async function fetchPage(get, url, checks, timeoutMs) {
   const chain = [];
-  let at = url;
+  let at3 = url;
   try {
     for (let hop = 0; hop <= 10; hop++) {
-      const res = await get(at, {
+      const res = await get(at3, {
         method: "GET",
         redirect: "manual",
         signal: AbortSignal.timeout(timeoutMs),
         headers: { "user-agent": "rotor-dirigenten/1 (+inventering)", accept: "text/html" }
       });
-      chain.push({ url: at, status: res.status });
+      chain.push({ url: at3, status: res.status });
       const location = res.headers?.get("location");
       if (res.status >= 300 && res.status < 400 && location) {
-        at = new URL(location, at).toString();
+        at3 = new URL(location, at3).toString();
         continue;
       }
       const needsHtml = checks.some((c) => c === "canonical" || c === "noindex" || c === "scripts");
@@ -23565,19 +23992,19 @@ async function fetchPage(get, url, checks, timeoutMs) {
       return {
         url,
         status: res.status,
-        final_url: at,
+        final_url: at3,
         ...checks.includes("redirect_chain") ? { redirect_chain: chain } : {},
         ...checks.includes("canonical") ? { canonical: findCanonical(html) } : {},
         ...checks.includes("noindex") ? { noindex: findNoindex(html, res.headers?.get("x-robots-tag") ?? null) } : {},
         ...checks.includes("scripts") ? { scripts: findScripts(html) } : {}
       };
     }
-    return { url, status: chain.at(-1)?.status ?? 0, final_url: at, redirect_chain: chain, error: "fler \xE4n tio omdirigeringar" };
+    return { url, status: chain.at(-1)?.status ?? 0, final_url: at3, redirect_chain: chain, error: "fler \xE4n tio omdirigeringar" };
   } catch (e) {
     return {
       url,
       status: 0,
-      final_url: at,
+      final_url: at3,
       ...checks.includes("redirect_chain") ? { redirect_chain: chain } : {},
       error: e.message
     };
@@ -23600,7 +24027,7 @@ var int = (v, name, def, lo, hi) => {
   if (!Number.isInteger(n2) || n2 < lo || n2 > hi) throw new Error(`${name} \xE4r ett heltal ${lo}\u2013${hi}, fick ${String(v)}`);
   return n2;
 };
-var spec10 = {
+var spec11 = {
   id: "c_web_fetch_pages",
   name: "web.call.fetch_pages",
   grounding: "decided",
@@ -23636,7 +24063,7 @@ var spec10 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["fetched_pages"]
 };
-async function run10(args, ctx) {
+async function run11(args, ctx) {
   const checks = checksOf(args["checks"]);
   const max = int(args["max"], "max", 500, 1, 2e3);
   const concurrency2 = int(args["concurrency"], "concurrency", 4, 1, 8);
@@ -23655,7 +24082,7 @@ async function run10(args, ctx) {
   );
   return { pages: done, checked: checks, not_checked: skipped, dry_run: false };
 }
-var fixtures10 = [
+var fixtures11 = [
   { name: "status och kedja ur sidlistan", args: { items: [{ url: "https://exempel.se/", published: true }] } },
   // data-i-koden: påhittad provadress
   { name: "m\xE4tskript p\xE5 tv\xE5 adresser", args: { urls: ["https://exempel.se/", "https://exempel.se/om"], checks: ["scripts"], concurrency: 2 } },
@@ -23699,7 +24126,7 @@ function pagespeedRow(url, strategy2, d) {
     field: metrics2 ? Object.fromEntries(Object.entries(metrics2).map(([k, v]) => [k.toLowerCase(), String(v.category ?? "")])) : null
   };
 }
-var spec11 = {
+var spec12 = {
   id: "c_google_pagespeed",
   name: "google.call.pagespeed",
   grounding: "decided",
@@ -23734,7 +24161,7 @@ var spec11 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["pagespeed_report"]
 };
-async function run11(args, ctx) {
+async function run12(args, ctx) {
   const strategy2 = String(args["strategy"] ?? "mobile");
   if (!STRATEGIES.includes(strategy2)) throw new Error(`strategy \xE4r ${STRATEGIES.join(", ")}, fick ${strategy2}`);
   const max = args["max"] === void 0 || args["max"] === null ? 10 : Number(args["max"]);
@@ -23769,7 +24196,7 @@ async function run11(args, ctx) {
   }, deadline - 3e3);
   return { pagespeed: done, not_checked: skipped.map(([u, s2]) => `${s2} ${u}`), dry_run: false };
 }
-var fixtures11 = [
+var fixtures12 = [
   { name: "mobil ur sidlistan", args: { items: [{ url: "https://exempel.se/", published: true }] } },
   // data-i-koden: påhittad provadress
   { name: "b\xE5da strategierna", args: { urls: ["https://exempel.se/"], strategy: "both" } },
@@ -23783,11 +24210,11 @@ var fixtures11 = [
 var search_console_atom_exports = {};
 __export(search_console_atom_exports, {
   QUERIES: () => QUERIES,
-  fixtures: () => fixtures12,
+  fixtures: () => fixtures13,
   periodOf: () => periodOf,
-  run: () => run12,
+  run: () => run13,
   siteOf: () => siteOf,
-  spec: () => spec12,
+  spec: () => spec13,
   urlsOf: () => urlsOf3
 });
 var QUERIES = ["search_analytics", "url_inspection"];
@@ -23844,7 +24271,7 @@ async function call2(get, token, url, body, site) {
     throw new Error(`Search Console ${res.status}: ${String(data["error"]?.message ?? text7.slice(0, 200))}`);
   return data;
 }
-var spec12 = {
+var spec13 = {
   id: "c_google_search_console",
   name: "google.call.search_console",
   grounding: "decided",
@@ -23882,7 +24309,7 @@ var spec12 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["search_console_data"]
 };
-async function run12(args, ctx) {
+async function run13(args, ctx) {
   const query = String(args["query"] ?? "").trim();
   if (!QUERIES.includes(query)) throw new Error(`query \xE4r ${QUERIES.join(" eller ")}, fick ${String(args["query"])}`);
   const urls = urlsOf3(args["urls"], args["items"]);
@@ -23974,7 +24401,7 @@ async function run12(args, ctx) {
   return { site_url: site, index_status, remaining: queue2, dry_run: false };
 }
 var CONNECTED = { scopes: ["https://www.googleapis.com/auth/webmasters.readonly"] };
-var fixtures12 = [
+var fixtures13 = [
   {
     name: "s\xF6kdata per sida, egendomen ur sidlistan",
     ...CONNECTED,
@@ -24005,126 +24432,12 @@ var fixtures12 = [
 // atoms/googleads/change.atom.ts
 var change_atom_exports = {};
 __export(change_atom_exports, {
-  fixtures: () => fixtures13,
-  run: () => run13,
-  spec: () => spec13
+  fixtures: () => fixtures14,
+  run: () => run14,
+  spec: () => spec14
 });
-
-// src/v2/gate/allow.ts
-var rule2 = (system, methods, path_prefix) => ({ system, methods, path_prefix });
-var GOOGLE_ADS_API_VERSION = "v26";
-var R = ["GET"];
-var RW = ["GET", "POST", "PATCH", "PUT"];
-var CORE_ALLOW = [
-  // atoms/hubspot (docs/system/hubspot.md)
-  rule2("hubspot", RW, "/crm/v3/objects/"),
-  rule2("hubspot", RW, "/crm/v4/objects/"),
-  rule2("hubspot", ["GET", "POST", "PUT"], "/crm/v3/lists"),
-  rule2("hubspot", R, "/crm/v3/properties/"),
-  rule2("hubspot", R, "/crm/v3/owners"),
-  rule2("hubspot", RW, "/cms/v3/pages/"),
-  rule2("hubspot", RW, "/cms/v3/blogs/"),
-  // P9d: hubspot.cms.content.write reads the blog's settings before a new post (atoms/hubspot/cms_content.ts, blogExists)
-  rule2("hubspot", R, "/cms/v3/blog-settings/"),
-  rule2("hubspot", ["GET", "PUT"], "/cms/v3/source-code/"),
-  rule2("hubspot", R, "/cms/v3/hubdb/"),
-  rule2("hubspot", R, "/cms/v3/url-redirects"),
-  rule2("hubspot", R, "/cms/v3/domains"),
-  rule2("hubspot", ["GET", "POST", "PUT"], "/automation/v4/flows"),
-  rule2("hubspot", ["GET", "POST", "PUT"], "/settings/v3/users"),
-  rule2("hubspot", ["GET", "POST", "PATCH"], "/marketing/v3/emails"),
-  rule2("hubspot", R, "/marketing/v3/forms"),
-  rule2("hubspot", ["GET", "POST"], "/files/v3/files/"),
-  rule2("hubspot", R, "/conversations/v3/conversations/"),
-  // atoms/gmail, atoms/post (docs/system/gmail.md)
-  rule2("gmail", R, "/gmail/v1/users/me/"),
-  rule2("gmail", ["POST"], "/gmail/v1/users/me/drafts"),
-  rule2("gmail", ["POST"], "/gmail/v1/users/me/messages/send"),
-  rule2("gmail", ["POST"], "/upload/gmail/v1/users/me/drafts"),
-  rule2("gmail", ["POST"], "/upload/gmail/v1/users/me/messages/send"),
-  // atoms/calendar, atoms/kalender (docs/system/google-calendar.md)
-  rule2("calendar", ["GET", "POST"], "/calendar/v3/calendars/"),
-  // atoms/google (docs/system/google-search.md)
-  rule2("google", R, "/pagespeedonline/v5/runPagespeed"),
-  rule2("google", R, "/webmasters/v3/sites/"),
-  rule2("google", ["POST"], "/v1/urlInspection/index"),
-  // atoms/meta (docs/system/meta-ads.md): the ad account's own edges
-  rule2("meta", ["GET", "POST"], "/act_"),
-  // P9d: Google Ads in the function (docs/system/google-ads.md): search/searchStream and campaign status only
-  rule2("googleads", ["POST"], `/${GOOGLE_ADS_API_VERSION}/customers/*/googleAds:search`),
-  rule2("googleads", ["POST"], `/${GOOGLE_ADS_API_VERSION}/customers/*/campaigns:mutate`),
-  rule2("googleads", R, `/${GOOGLE_ADS_API_VERSION}/customers:listAccessibleCustomers`),
-  // P9d task 5: the content bank (Netlify Blobs rotor-innehall, registrations through the gate) and the mirror's
-  // latest readings (rotor-mirror). Internal stores, named by their store; no DELETE.
-  rule2("bank", ["GET", "POST"], "/rotor-innehall/"),
-  rule2("mirror", R, "/rotor-mirror/")
-  // No CTA rule: docs/system/hubspot.md says nothing about a CTA API (?); c_blogg_ctas stays a reading of the customer's way.
-  // No rule for print, ad, doc: local capabilities are checked against LOCAL_ALLOW on the Mac, never here.
-];
-
-// atoms/googleads/client.ts
-var REQUIRED_KEYS = ["GOOGLE_ADS_CLIENT_ID", "GOOGLE_ADS_CLIENT_SECRET", "GOOGLE_ADS_REFRESH_TOKEN"];
-var OPTIONAL_KEYS = ["GOOGLE_ADS_DEVELOPER_TOKEN", "GOOGLE_ADS_LOGIN_CUSTOMER_ID"];
-var ALL_KEYS = [...REQUIRED_KEYS, ...OPTIONAL_KEYS];
-var API2 = `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}`;
-var digits = (v, what) => {
-  const s2 = String(v ?? "").replace(/-/g, "").trim();
-  if (!/^\d{6,12}$/.test(s2)) throw new Error(`${what} \xE4r siffror (t.ex. 123-456-7890), fick ${String(v ?? "inget")}`);
-  return s2;
-};
-async function keysOf(ctx) {
-  const link = ctx.connection ? await ctx.connection("googleads", "") : null;
-  if (!link) throw new Error("ingen Google Ads-koppling i servern \u2014 l\xE4gg in nycklarna " + REQUIRED_KEYS.join(", "));
-  const keys = link.keys ?? {};
-  const missing = REQUIRED_KEYS.filter((k) => !keys[k]);
-  if (missing.length) throw new Error(`Google Ads-kopplingen saknar ${missing.join(", ")} \u2014 l\xE4gg in nyckeln i serverns milj\xF6`);
-  return keys;
-}
-async function send(fetch2, url, init) {
-  const res = await fetch2(url, init);
-  const text7 = await res.text();
-  let data = {};
-  try {
-    data = text7 ? JSON.parse(text7) : {};
-  } catch {
-    data = { raw: text7 };
-  }
-  if (res.status === 401 || res.status === 403)
-    throw new Error(`Google Ads nekar \xE5tkomst (${res.status}) \u2014 kontrollera att kopplingens konto n\xE5r kundkontot och att Cloud-projektet har minst Explorer-niv\xE5`);
-  if (res.status === 429) throw new Error("Google Ads kvot \xE4r slut f\xF6r i dag (RESOURCE_EXHAUSTED) \u2014 f\xF6rs\xF6k igen i morgon");
-  if (res.status >= 400) {
-    const msg = data["error"]?.message ?? (typeof data["error_description"] === "string" ? data["error_description"] : text7.slice(0, 200));
-    throw new Error(`Google Ads ${res.status}: ${String(msg)}`);
-  }
-  return data;
-}
-async function headersFor(fetch2, keys) {
-  const body = new URLSearchParams({
-    grant_type: "refresh_token",
-    client_id: keys["GOOGLE_ADS_CLIENT_ID"],
-    client_secret: keys["GOOGLE_ADS_CLIENT_SECRET"],
-    refresh_token: keys["GOOGLE_ADS_REFRESH_TOKEN"]
-  }).toString();
-  const d = await send(
-    fetch2,
-    "https://oauth2.googleapis.com/token",
-    { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body }
-  );
-  if (typeof d["access_token"] !== "string") throw new Error("Google gav ingen \xE5tkomsttoken f\xF6r GOOGLE_ADS_REFRESH_TOKEN \u2014 koppla Google Ads p\xE5 nytt");
-  const login = keys["GOOGLE_ADS_LOGIN_CUSTOMER_ID"] ? digits(keys["GOOGLE_ADS_LOGIN_CUSTOMER_ID"], "GOOGLE_ADS_LOGIN_CUSTOMER_ID") : null;
-  const dev = keys["GOOGLE_ADS_DEVELOPER_TOKEN"];
-  return {
-    authorization: `Bearer ${d["access_token"]}`,
-    "content-type": "application/json",
-    ...dev ? { "developer-token": dev } : {},
-    ...login ? { "login-customer-id": login } : {}
-  };
-}
-var PROV_KEYS = { GOOGLE_ADS_CLIENT_ID: "prov", GOOGLE_ADS_CLIENT_SECRET: "prov", GOOGLE_ADS_REFRESH_TOKEN: "prov" };
-
-// atoms/googleads/change.atom.ts
 var STATUSES = ["ENABLED", "PAUSED"];
-var spec13 = {
+var spec14 = {
   id: "c_googleads_change",
   name: "googleads.call.change",
   grounding: "decided",
@@ -24164,7 +24477,7 @@ var spec13 = {
   step_id: "s_googleads_change",
   lead_days: 0
 };
-async function run13(args, ctx) {
+async function run14(args, ctx) {
   if (args["customer_id"] === void 0 || args["customer_id"] === "")
     throw new Error("customer_id saknas \u2014 ge kundkontots id uttryckligen; en \xE4ndring g\xE5r aldrig mot f\xF6rvaltarkontot av sig sj\xE4lv");
   const customer = digits(args["customer_id"], "customer_id");
@@ -24176,7 +24489,7 @@ async function run13(args, ctx) {
   if (ctx.dry_run) return { customer_id: customer, campaign: { id: campaignId, status, resource_name: resource }, dry_run: true };
   const fetch2 = ctx.fetch;
   const headers = await headersFor(fetch2, keys);
-  const d = await send(fetch2, `${API2}/customers/${customer}/campaigns:mutate`, {
+  const d = await send(fetch2, `${API}/customers/${customer}/campaigns:mutate`, {
     method: "POST",
     headers,
     body: JSON.stringify({ operations: [{ update: { resourceName: resource, status }, updateMask: "status" }] })
@@ -24184,7 +24497,7 @@ async function run13(args, ctx) {
   const got = d["results"]?.[0]?.resourceName ?? resource;
   return { customer_id: customer, campaign: { id: campaignId, status, resource_name: got }, dry_run: false };
 }
-var fixtures13 = [
+var fixtures14 = [
   { name: "pausa en kampanj (torrt)", keys: PROV_KEYS, args: { customer_id: "1000000001", campaign_id: "2000000001", status: "PAUSED" } },
   { name: "utan kundkonto avvisas", keys: PROV_KEYS, args: { campaign_id: "2000000001", status: "PAUSED" }, expect_error: "customer_id saknas" },
   { name: "ok\xE4nd status avvisas", keys: PROV_KEYS, args: { customer_id: "1000000001", campaign_id: "2000000001", status: "REMOVED" }, expect_error: "status \xE4r" }
@@ -24195,15 +24508,15 @@ var read_atom_exports = {};
 __export(read_atom_exports, {
   ACTIONS: () => ACTIONS3,
   campaignQuery: () => campaignQuery,
-  fixtures: () => fixtures14,
-  run: () => run14,
-  spec: () => spec14
+  fixtures: () => fixtures15,
+  run: () => run15,
+  spec: () => spec15
 });
 var ACTIONS3 = ["accounts", "campaigns", "report"];
 var PERIODS = ["LAST_7_DAYS", "LAST_14_DAYS", "LAST_30_DAYS", "THIS_MONTH", "LAST_MONTH"];
 var MAX_PAGES2 = 20;
 var campaignQuery = (period) => `SELECT campaign.id, campaign.name, campaign.status, metrics.clicks, metrics.impressions, metrics.cost_micros, metrics.conversions, metrics.ctr, metrics.average_cpc FROM campaign WHERE segments.date DURING ${period}`;
-var spec14 = {
+var spec15 = {
   id: "c_googleads_read",
   name: "googleads.call.read",
   grounding: "decided",
@@ -24240,7 +24553,7 @@ var spec14 = {
   step_id: "s_googleads_read",
   lead_days: 0
 };
-async function run14(args, ctx) {
+async function run15(args, ctx) {
   const action = String(args["action"] ?? "").trim();
   if (!ACTIONS3.includes(action)) throw new Error(`action \xE4r ${ACTIONS3.join(", ")}, fick ${String(args["action"] ?? "inget")}`);
   const keys = await keysOf(ctx);
@@ -24261,14 +24574,14 @@ async function run14(args, ctx) {
   const fetch2 = ctx.fetch;
   const headers = await headersFor(fetch2, keys);
   if (action === "accounts") {
-    const d = await send(fetch2, `${API2}/customers:listAccessibleCustomers`, { method: "GET", headers });
+    const d = await send(fetch2, `${API}/customers:listAccessibleCustomers`, { method: "GET", headers });
     const names = Array.isArray(d["resourceNames"]) ? d["resourceNames"] : [];
     return { action, customer_id: null, accounts: names.map((n2) => String(n2).replace(/^customers\//, "")), dry_run: false };
   }
   const rows3 = [];
   let pageToken;
   for (let page = 0; page < MAX_PAGES2; page++) {
-    const d = await send(fetch2, `${API2}/customers/${customer}/googleAds:search`, {
+    const d = await send(fetch2, `${API}/customers/${customer}/googleAds:search`, {
       method: "POST",
       headers,
       body: JSON.stringify({ query, ...pageToken ? { pageToken } : {} })
@@ -24279,7 +24592,7 @@ async function run14(args, ctx) {
   }
   return { action, customer_id: customer, rows: rows3, dry_run: false };
 }
-var fixtures14 = [
+var fixtures15 = [
   { name: "kontona kopplingen n\xE5r", keys: PROV_KEYS, args: { action: "accounts" }, expect_fields: ["action", "accounts"] },
   { name: "kampanjernas nyckeltal", keys: PROV_KEYS, args: { action: "campaigns", customer_id: "100-000-0001", period: "LAST_7_DAYS" }, expect_fields: ["action", "customer_id", "rows"] },
   { name: "egen GAQL-rapport", keys: PROV_KEYS, args: { action: "report", customer_id: "1000000001", query: "SELECT campaign.id FROM campaign" }, expect_fields: ["rows"] },
@@ -24292,15 +24605,15 @@ var fixtures14 = [
 var archive_record_atom_exports = {};
 __export(archive_record_atom_exports, {
   archivePreviewId: () => archivePreviewId,
-  fixtures: () => fixtures15,
+  fixtures: () => fixtures16,
   idsOf: () => idsOf,
-  run: () => run15,
-  spec: () => spec15
+  run: () => run16,
+  spec: () => spec16
 });
 import { createHash as createHash7 } from "node:crypto";
 
 // atoms/hubspot/rest.ts
-var HOST = "https://api.hubapi.com";
+var HOST2 = "https://api.hubapi.com";
 var HubspotError = class extends Error {
   constructor(message, status, transient) {
     super(message);
@@ -24311,7 +24624,7 @@ var HubspotError = class extends Error {
   transient;
   name = "HubspotError";
 };
-var isTransient = (status) => status === 429 || status === 408 || status >= 500;
+var isTransient2 = (status) => status === 429 || status === 408 || status >= 500;
 function queryString(query) {
   if (!query) return "";
   const p = new URLSearchParams();
@@ -24323,9 +24636,9 @@ function queryString(query) {
   const s2 = p.toString();
   return s2 ? `?${s2}` : "";
 }
-async function request(get, token, metod, path2, { query, body, accept } = {}) {
+async function request2(get, token, metod, path2, { query, body, accept } = {}) {
   const p = path2.startsWith("/") ? path2 : `/${path2}`;
-  const svar = await get(HOST + p + queryString(query), {
+  const svar = await get(HOST2 + p + queryString(query), {
     method: metod,
     headers: {
       authorization: `Bearer ${token}`,
@@ -24343,15 +24656,15 @@ async function request(get, token, metod, path2, { query, body, accept } = {}) {
   }
   if (svar.status >= 400) {
     const m = tolkad?.message ?? JSON.stringify(tolkad).slice(0, 200);
-    throw new HubspotError(`hubspot ${svar.status}: ${m}`, svar.status, isTransient(svar.status));
+    throw new HubspotError(`hubspot ${svar.status}: ${m}`, svar.status, isTransient2(svar.status));
   }
   return tolkad;
 }
-async function allPages(get, token, path2, query = {}, { max, maxPages = 50 } = {}) {
+async function allPages2(get, token, path2, query = {}, { max, maxPages = 50 } = {}) {
   const ut = [];
   let after;
   for (let i = 0; i < maxPages; i++) {
-    const d = await request(
+    const d = await request2(
       get,
       token,
       "GET",
@@ -24400,7 +24713,7 @@ function recordName(objectType2, props) {
 // atoms/hubspot/associate_records.ts
 async function describeRecord(get, token, type, id) {
   try {
-    const r = await request(
+    const r = await request2(
       get,
       token,
       "GET",
@@ -24493,7 +24806,7 @@ function severity(objectType2, verb) {
 }
 
 // atoms/hubspot/archive_record.atom.ts
-var spec15 = {
+var spec16 = {
   id: "c_hs_archive_object",
   name: "hubspot.call.archive_object",
   grounding: "decided",
@@ -24557,7 +24870,7 @@ async function attachedTo(get, token, type, ids) {
   const out = [];
   for (const id of ids)
     for (const to of ["deals", "quotes", "line_items", "contacts"].filter((x) => x !== type)) {
-      const r = await request(
+      const r = await request2(
         get,
         token,
         "GET",
@@ -24570,7 +24883,7 @@ async function attachedTo(get, token, type, ids) {
   return out;
 }
 var show = (r) => `${r.type} ${r.id}${r.name ? ` (${r.name})` : ""}`;
-async function run15(args, ctx) {
+async function run16(args, ctx) {
   const objectType2 = String(args["object_type"] ?? "").trim();
   if (!objectType2) throw new Error("object_type saknas, t.ex. quotes eller line_items");
   const path2 = guardType(objectType2, "archive");
@@ -24599,11 +24912,11 @@ async function run15(args, ctx) {
     return { ...base, proposal: true, archived: [], done: false };
   if (missing.length) throw new Error(`${path2} ${missing.join(", ")} finns inte \u2014 ingenting \xE4r arkiverat`);
   const t = encodeURIComponent(path2);
-  for (const i of ids) await request(get, link.token, "DELETE", `/crm/v3/objects/${t}/${encodeURIComponent(i)}`);
+  for (const i of ids) await request2(get, link.token, "DELETE", `/crm/v3/objects/${t}/${encodeURIComponent(i)}`);
   return { ...base, proposal: false, archived: ids, done: true };
 }
 var CONNECTED2 = { scopes: ["crm"] };
-var fixtures15 = [
+var fixtures16 = [
   { name: "testofferten", ...CONNECTED2, args: { object_type: "quotes", ids: ["1"] } },
   { name: "offertraderna som text", ...CONNECTED2, args: { object_type: "line_items", ids: "2, 3" } },
   { name: "anv\xE4ndarobjektet avvisas", ...CONNECTED2, args: { object_type: "users", ids: ["1"] }, expect_error: "anv\xE4ndare och beh\xF6righeter" },
@@ -24616,9 +24929,9 @@ var fixtures15 = [
 // atoms/hubspot/cms_content_publish.atom.ts
 var cms_content_publish_atom_exports = {};
 __export(cms_content_publish_atom_exports, {
-  fixtures: () => fixtures16,
-  run: () => run16,
-  spec: () => spec16
+  fixtures: () => fixtures17,
+  run: () => run17,
+  spec: () => spec17
 });
 
 // atoms/hubspot/cms_content.ts
@@ -24702,8 +25015,8 @@ function contentChecks(f, keyword) {
     { check: "dash", ok: !`${title} ${meta} ${body}`.includes("\u2014"), note: "tankstreck (\u2013), inte em-dash (\u2014)" }
   ];
   if (keyword) {
-    const fold = (x) => x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const k = fold(keyword), slugK = k.replace(/\s+/g, "-");
+    const fold2 = (x) => x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const k = fold2(keyword), slugK = k.replace(/\s+/g, "-");
     const places = [
       ["titeln", title],
       ["metabeskrivningen", meta],
@@ -24711,7 +25024,7 @@ function contentChecks(f, keyword) {
       ["de f\xF6rsta 300 tecknen", body.slice(0, 300)],
       ["alt-texten", alt]
     ];
-    const missing = places.filter(([, t]) => !fold(t).includes(k) && !fold(t).includes(slugK)).map(([w]) => w);
+    const missing = places.filter(([, t]) => !fold2(t).includes(k) && !fold2(t).includes(slugK)).map(([w]) => w);
     out.push({ check: "keyword", ok: missing.length === 0, note: missing.length ? `nyckelordet \xAB${keyword}\xBB saknas i ${missing.join(", ")}` : `nyckelordet \xAB${keyword}\xBB st\xE5r p\xE5 alla fem st\xE4llen` });
   } else out.push({ check: "keyword", ok: false, note: "inget nyckelord angivet: s\xF6kbarheten \xE4r inte kontrollerad" });
   return out;
@@ -24726,43 +25039,43 @@ function sorted(v) {
 }
 function row(raw2) {
   const r = raw2 ?? {};
-  const str4 = (k) => r[k] === void 0 || r[k] === null ? null : String(r[k]);
+  const str5 = (k) => r[k] === void 0 || r[k] === null ? null : String(r[k]);
   return {
     id: String(r["id"] ?? ""),
-    state: str4("state") ?? str4("currentState"),
-    url: str4("url"),
-    updated: str4("updated"),
-    publish_date: str4("publishDate"),
-    name: str4("name")
+    state: str5("state") ?? str5("currentState"),
+    url: str5("url"),
+    updated: str5("updated"),
+    publish_date: str5("publishDate"),
+    name: str5("name")
   };
 }
 async function readContentFull(get, token, t, id) {
-  return await request(get, token, "GET", `${BASE[t]}/${encodeURIComponent(id)}`);
+  return await request2(get, token, "GET", `${BASE[t]}/${encodeURIComponent(id)}`);
 }
 async function cloneContent(get, token, t, id, name) {
-  return row(await request(get, token, "POST", `${BASE[t]}/clone`, { body: { id, ...name ? { cloneName: name } : {} } }));
+  return row(await request2(get, token, "POST", `${BASE[t]}/clone`, { body: { id, ...name ? { cloneName: name } : {} } }));
 }
 async function readContent(get, token, t, id) {
-  return row(await request(get, token, "GET", `${BASE[t]}/${encodeURIComponent(id)}`));
+  return row(await request2(get, token, "GET", `${BASE[t]}/${encodeURIComponent(id)}`));
 }
 async function readDraft(get, token, t, id) {
-  return row(await request(get, token, "GET", `${BASE[t]}/${encodeURIComponent(id)}/draft`));
+  return row(await request2(get, token, "GET", `${BASE[t]}/${encodeURIComponent(id)}/draft`));
 }
 async function createContent(get, token, t, f) {
-  return row(await request(get, token, "POST", BASE[t], { body: { ...f, state: "DRAFT" } }));
+  return row(await request2(get, token, "POST", BASE[t], { body: { ...f, state: "DRAFT" } }));
 }
 async function updateDraft(get, token, t, id, f) {
-  return row(await request(get, token, "PATCH", `${BASE[t]}/${encodeURIComponent(id)}/draft`, { body: f }));
+  return row(await request2(get, token, "PATCH", `${BASE[t]}/${encodeURIComponent(id)}/draft`, { body: f }));
 }
 async function pushLive(get, token, t, id) {
-  await request(get, token, "POST", `${BASE[t]}/${encodeURIComponent(id)}/draft/push-live`);
+  await request2(get, token, "POST", `${BASE[t]}/${encodeURIComponent(id)}/draft/push-live`);
 }
-async function schedule(get, token, t, id, at) {
-  await request(get, token, "POST", `${BASE[t]}/schedule`, { body: { id, publishDate: at } });
+async function schedule(get, token, t, id, at3) {
+  await request2(get, token, "POST", `${BASE[t]}/schedule`, { body: { id, publishDate: at3 } });
 }
 async function blogExists(get, token, id) {
   try {
-    const r = await request(get, token, "GET", `/cms/v3/blog-settings/settings/${encodeURIComponent(id)}`);
+    const r = await request2(get, token, "GET", `/cms/v3/blog-settings/settings/${encodeURIComponent(id)}`);
     return { name: r["name"] === void 0 ? null : String(r["name"]), language: r["language"] === void 0 ? null : String(r["language"]) };
   } catch (e) {
     if (e.status === 404) return null;
@@ -24771,7 +25084,7 @@ async function blogExists(get, token, id) {
 }
 async function authorExists(get, token, id) {
   try {
-    const r = await request(get, token, "GET", `/cms/v3/blogs/authors/${encodeURIComponent(id)}`);
+    const r = await request2(get, token, "GET", `/cms/v3/blogs/authors/${encodeURIComponent(id)}`);
     return { name: r["displayName"] === void 0 ? r["name"] === void 0 ? null : String(r["name"]) : String(r["displayName"]) };
   } catch (e) {
     if (e.status === 404) return null;
@@ -24781,12 +25094,12 @@ async function authorExists(get, token, id) {
 var onHubspot = (url) => /^https:\/\/[^/]*(hubfs|hubspotusercontent|hs-fs)[^/]*\//.test(url) || /\/hubfs\//.test(url);
 async function importImage(get, token, url, folder, wait2) {
   const name = (url.split("?")[0].split("/").pop() ?? "bild").replace(/\.[a-z0-9]+$/i, "").slice(0, 80) || "bild";
-  const task = await request(get, token, "POST", "/files/v3/files/import-from-url/async", {
+  const task = await request2(get, token, "POST", "/files/v3/files/import-from-url/async", {
     body: { access: "PUBLIC_INDEXABLE", url, folderPath: folder, name, duplicateValidationStrategy: "RETURN_EXISTING", duplicateValidationScope: "EXACT_FOLDER" }
   });
   if (!task?.id) throw new Error("HubSpot gav inget uppdrag f\xF6r bilden");
   for (let i = 0; i < 10; i++) {
-    const st = await request(get, token, "GET", `/files/v3/files/import-from-url/async/tasks/${encodeURIComponent(task.id)}/status`);
+    const st = await request2(get, token, "GET", `/files/v3/files/import-from-url/async/tasks/${encodeURIComponent(task.id)}/status`);
     if (st?.status === "COMPLETE" && st.result?.url) return st.result.url;
     if (st?.status === "CANCELED" || st?.errors) throw new Error(`bilden gick inte att h\xE4mta till HubSpot: ${JSON.stringify(st.errors ?? st.status).slice(0, 160)}`);
     await wait2(500 * (i + 1));
@@ -24795,7 +25108,7 @@ async function importImage(get, token, url, folder, wait2) {
 }
 
 // atoms/hubspot/cms_content_publish.atom.ts
-var spec16 = {
+var spec17 = {
   "id": "c_hubspot_cms_content_publish",
   "name": "hubspot.call.cms_content_publish",
   "grounding": "decided",
@@ -24883,16 +25196,16 @@ function when(v, now) {
   if (t <= now) throw new Error("publish_at har redan varit; utel\xE4mna den f\xF6r att publicera nu");
   return new Date(t).toISOString();
 }
-async function run16(args, ctx) {
+async function run17(args, ctx) {
   const type = contentType(args["content_type"]);
   const id = typeof args["content_id"] === "string" ? args["content_id"].trim() : String(args["content_id"] ?? "").trim();
   if (!id) throw new Error("content_id \xE4r utkastets id i HubSpot");
-  const at = when(args["publish_at"], Date.now());
+  const at3 = when(args["publish_at"], Date.now());
   const link = ctx.connection ? await ctx.connection("hubspot", "") : null;
   if (!link?.token) throw new Error("ingen koppling till HubSpot h\xE4r \u2014 HUBSPOT_TOKEN saknas");
   const get = ctx.fetch;
   const draft = ctx.dry_run ? null : await readDraft(get, link.token, type, id);
-  const pid = contentPreviewId(type, id, draft?.updated ?? null, at);
+  const pid = contentPreviewId(type, id, draft?.updated ?? null, at3);
   const base = {
     would_change: {
       content_type: type,
@@ -24900,7 +25213,7 @@ async function run16(args, ctx) {
       name: draft?.name ?? null,
       state_before: draft?.state ?? null,
       url: draft?.url ?? null,
-      when: at ?? "nu"
+      when: at3 ?? "nu"
     },
     confirm_values: { preview_id: pid },
     preview_id: pid
@@ -24908,15 +25221,15 @@ async function run16(args, ctx) {
   const approval = typeof args["user_approval"] === "string" ? args["user_approval"].trim() : "";
   if (ctx.dry_run || args["confirmed"] !== true || args["preview_id"] !== pid || !approval)
     return { ...base, proposal: true, state: draft?.state ?? null, url: draft?.url ?? null, published_at: null, done: false };
-  if (at) await schedule(get, link.token, type, id, at);
+  if (at3) await schedule(get, link.token, type, id, at3);
   else await pushLive(get, link.token, type, id);
   const after = await readContent(get, link.token, type, id);
-  const ok = at ? after.state === "SCHEDULED" || after.state === "PUBLISHED_OR_SCHEDULED" || after.state === "PUBLISHED" : after.state === "PUBLISHED" || after.state === "PUBLISHED_OR_SCHEDULED";
-  if (!ok) throw new Error(`HubSpot tog emot ${at ? "schemal\xE4ggningen" : "publiceringen"} men l\xE4get \xE4r ${after.state ?? "ok\xE4nt"}; kontrollera inl\xE4gget i HubSpot`);
-  return { ...base, proposal: false, state: after.state, url: after.url, published_at: at ?? after.publish_date, done: true };
+  const ok = at3 ? after.state === "SCHEDULED" || after.state === "PUBLISHED_OR_SCHEDULED" || after.state === "PUBLISHED" : after.state === "PUBLISHED" || after.state === "PUBLISHED_OR_SCHEDULED";
+  if (!ok) throw new Error(`HubSpot tog emot ${at3 ? "schemal\xE4ggningen" : "publiceringen"} men l\xE4get \xE4r ${after.state ?? "ok\xE4nt"}; kontrollera inl\xE4gget i HubSpot`);
+  return { ...base, proposal: false, state: after.state, url: after.url, published_at: at3 ?? after.publish_date, done: true };
 }
 var CONNECTED3 = { scopes: ["content"] };
-var fixtures16 = [
+var fixtures17 = [
   { name: "publicera ett utkast nu", ...CONNECTED3, args: { content_type: "blog_post", content_id: "789" } },
   { name: "schemal\xE4gga ett utkast", ...CONNECTED3, args: { content_type: "blog_post", content_id: "789", publish_at: "2099-01-01T07:00:00Z" } },
   { name: "en tid som varit avvisas", ...CONNECTED3, args: { content_id: "789", publish_at: "2020-01-01T07:00:00Z" }, expect_error: "redan varit" },
@@ -24927,11 +25240,11 @@ var fixtures16 = [
 // atoms/hubspot/cms_content_write.atom.ts
 var cms_content_write_atom_exports = {};
 __export(cms_content_write_atom_exports, {
-  fixtures: () => fixtures17,
-  run: () => run17,
-  spec: () => spec17
+  fixtures: () => fixtures18,
+  run: () => run18,
+  spec: () => spec18
 });
-var spec17 = {
+var spec18 = {
   "id": "c_hubspot_cms_content_write",
   "name": "hubspot.call.cms_content_write",
   "grounding": "decided",
@@ -25020,7 +25333,7 @@ var spec17 = {
   }
 };
 var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function run17(args, ctx) {
+async function run18(args, ctx) {
   const type = contentType(args["content_type"]);
   const fields = contentFields(args["fields"]);
   const id = typeof args["content_id"] === "string" && args["content_id"].trim() ? args["content_id"].trim() : null;
@@ -25088,7 +25401,7 @@ var POST = {
   featured_image_alt_text: "hus med solceller",
   widgets: { text: { body: { text: "<p>Minuspriser p\xE5 el uppst\xE5r n\xE4r \u2026</p>" } } }
 };
-var fixtures17 = [
+var fixtures18 = [
   {
     name: "ett nytt blogginl\xE4gg som utkast",
     ...CONNECTED4,
@@ -25132,10 +25445,10 @@ __export(find_objects_atom_exports, {
   LIST_PRODUCTS: () => LIST_PRODUCTS,
   SEARCH_OBJECTS: () => SEARCH_OBJECTS,
   SEARCH_PRODUCTS: () => SEARCH_PRODUCTS,
-  fixtures: () => fixtures18,
+  fixtures: () => fixtures19,
   route: () => route,
-  run: () => run18,
-  spec: () => spec18
+  run: () => run19,
+  spec: () => spec19
 });
 
 // atoms/merged.ts
@@ -25156,10 +25469,10 @@ async function delegate(ctx, call3, args) {
 
 // atoms/hubspot/users.ts
 async function allUsers(get, token) {
-  return await allPages(get, token, "/settings/v3/users", { limit: 100 });
+  return await allPages2(get, token, "/settings/v3/users", { limit: 100 });
 }
 async function allTeams(get, token) {
-  const d = await request(get, token, "GET", "/settings/v3/users/teams");
+  const d = await request2(get, token, "GET", "/settings/v3/users/teams");
   return d.results ?? [];
 }
 var displayName = (u) => `${`${u.firstName ?? ""} ${u.lastName ?? ""}`.trim()}${u.email ? ` <${u.email}>` : ""}`.trim() || u.id;
@@ -25167,10 +25480,10 @@ var displayName = (u) => `${`${u.firstName ?? ""} ${u.lastName ?? ""}`.trim()}${
 // atoms/hubspot/flows.ts
 var INTERNAL_EMAIL = "0-8";
 async function listFlows(get, token) {
-  return await allPages(get, token, "/automation/v4/flows", { limit: 100 });
+  return await allPages2(get, token, "/automation/v4/flows", { limit: 100 });
 }
 function getFlow(get, token, id) {
-  return request(
+  return request2(
     get,
     token,
     "GET",
@@ -25184,7 +25497,7 @@ async function recipients(get, token, flowId) {
   if (step2.length === 0) return { flow: f, step: [] };
   const u = new Map((await allUsers(get, token)).map((x) => [String(x.id), displayName(x)]));
   const t = new Map((await allTeams(get, token)).map((x) => [String(x.id), x.name ?? ""]));
-  const named = (ids, map) => (Array.isArray(ids) ? ids : []).map((i) => ({
+  const named2 = (ids, map) => (Array.isArray(ids) ? ids : []).map((i) => ({
     id: String(i),
     name: map.get(String(i)) ?? "(ok\xE4nd)"
   }));
@@ -25195,8 +25508,8 @@ async function recipients(get, token, flowId) {
       return {
         actionId: a.actionId,
         ...typeof subject === "string" ? { subject } : {},
-        users: named(a.fields?.["user_ids"], u),
-        teams: named(a.fields?.["team_ids"], t)
+        users: named2(a.fields?.["user_ids"], u),
+        teams: named2(a.fields?.["team_ids"], t)
       };
     })
   };
@@ -25220,7 +25533,7 @@ async function rowsOf(get, token, type, o) {
   switch (type) {
     case "owners": {
       const archived = o.status.includes("ARCHIVED");
-      const list4 = await allPages(get, token, "/crm/v3/owners", { limit: 100, ...archived ? { archived: true } : {} }, lim);
+      const list4 = await allPages2(get, token, "/crm/v3/owners", { limit: 100, ...archived ? { archived: true } : {} }, lim);
       return list4.map((u) => ({
         id: String(u["id"]),
         object_type: type,
@@ -25245,7 +25558,7 @@ async function rowsOf(get, token, type, o) {
         }
       }));
     case "roles": {
-      const d = await request(get, token, "GET", "/settings/v3/users/roles");
+      const d = await request2(get, token, "GET", "/settings/v3/users/roles");
       return (d.results ?? []).map((r) => ({
         id: String(r["id"]),
         object_type: type,
@@ -25259,7 +25572,7 @@ async function rowsOf(get, token, type, o) {
     case "segments": {
       const out = [];
       for (let offset = 0, i = 0; i < 50; i++) {
-        const d = await request(
+        const d = await request2(
           get,
           token,
           "POST",
@@ -25289,7 +25602,7 @@ async function rowsOf(get, token, type, o) {
       return out;
     }
     case "files": {
-      const list4 = await allPages(
+      const list4 = await allPages2(
         get,
         token,
         "/files/v3/files/search",
@@ -25325,7 +25638,7 @@ async function rowsOf(get, token, type, o) {
       }));
     }
     case "marketing_emails": {
-      const list4 = await allPages(get, token, "/marketing/v3/emails", { limit: 100 }, lim);
+      const list4 = await allPages2(get, token, "/marketing/v3/emails", { limit: 100 }, lim);
       return list4.map((e) => ({
         id: String(e["id"]),
         object_type: type,
@@ -25370,7 +25683,7 @@ function route(args) {
     return args["text"] !== void 0 ? { call: SEARCH_PRODUCTS, args: without(args, "object_type") } : { call: LIST_PRODUCTS, args: without(args, "object_type") };
   return { call: SEARCH_OBJECTS, args };
 }
-var spec18 = {
+var spec19 = {
   id: "c_hs_find_objects",
   name: "hubspot.call.find_objects",
   grounding: "observed",
@@ -25401,7 +25714,7 @@ var spec18 = {
   step_id: "s_hs_find_objects",
   lead_days: 0
 };
-async function run18(args, ctx) {
+async function run19(args, ctx) {
   const type = typeof args["object_type"] === "string" ? args["object_type"].trim() : "";
   if (isAccountObjectType(type)) return readAccount(type, args, ctx);
   if (args["status"] !== void 0 && args["status"] !== null && args["status"] !== "")
@@ -25424,7 +25737,7 @@ async function readAccount(type, args, ctx) {
   );
   return { objects, object_type: type, count: objects.length, filter: { text: text7 ?? null, status }, dry_run: false };
 }
-var fixtures18 = [
+var fixtures19 = [
   { name: "produkter med text", args: { object_type: "products", text: "panel" }, expect_fields: ["call", "args"] },
   { name: "produkter utan text", args: { object_type: "products" }, expect_fields: ["call", "args"] },
   { name: "kontakter med filter", args: { object_type: "contacts", filter_groups: [] }, expect_fields: ["call", "args"] },
@@ -25443,11 +25756,11 @@ __export(list_content_atom_exports, {
   CONTENT_TYPES: () => CONTENT_TYPES2,
   PAGE_TYPES: () => PAGE_TYPES,
   contentTypes: () => contentTypes,
-  fixtures: () => fixtures19,
+  fixtures: () => fixtures20,
   listContent: () => listContent,
   listObjects: () => listObjects,
-  run: () => run19,
-  spec: () => spec19
+  run: () => run20,
+  spec: () => spec20
 });
 
 // atoms/hubspot/cms_pages.ts
@@ -25467,8 +25780,8 @@ var TYPES = {
 function pageState(p, now = Date.now()) {
   if (p["archived"] === true || time(p["archivedAt"]) !== null) return "archived";
   const current = text(p["currentState"]) ?? text(p["state"]) ?? "";
-  const at = time(p["publishDate"]);
-  if (/SCHEDULED/.test(current) && at !== null && Date.parse(at) > now) return "scheduled";
+  const at3 = time(p["publishDate"]);
+  if (/SCHEDULED/.test(current) && at3 !== null && Date.parse(at3) > now) return "scheduled";
   if (/^PUBLISHED/.test(current) || p["currentlyPublished"] === true) return "published";
   return "draft";
 }
@@ -25492,8 +25805,8 @@ async function listPages(get, token, { kind = "site", query, max = 500, archived
   const path2 = kind === "landing" ? "/cms/v3/pages/landing-pages" : "/cms/v3/pages/site-pages";
   const type = kind === "landing" ? "landing_page" : "site_page";
   const q = { limit: 100, ...query ? { name__icontains: query } : {} };
-  const live = await allPages(get, token, path2, { ...q, archived: false }, { max });
-  const gone = archived ? await allPages(get, token, path2, { ...q, archived: true }, { max }) : [];
+  const live = await allPages2(get, token, path2, { ...q, archived: false }, { max });
+  const gone = archived ? await allPages2(get, token, path2, { ...q, archived: true }, { max }) : [];
   return { pages: [...live, ...gone.map((r) => ({ ...r, archived: true }))].map((r) => pageRow(r, type)) };
 }
 
@@ -25514,7 +25827,7 @@ function postRow(raw2) {
   return { ...pageRow(p, "blog_post"), blog_id: g === void 0 || g === null || g === "" ? null : String(g) };
 }
 async function listBlogs(get, token) {
-  return (await allPages(get, token, "/cms/v3/blog-settings/settings", { limit: 100 })).map(blogRow);
+  return (await allPages2(get, token, "/cms/v3/blog-settings/settings", { limit: 100 })).map(blogRow);
 }
 async function listPosts(get, token, { blogId, query, archived = false, max = 5e3 } = {}) {
   const q = {
@@ -25522,8 +25835,8 @@ async function listPosts(get, token, { blogId, query, archived = false, max = 5e
     ...blogId ? { contentGroupId: blogId } : {},
     ...query ? { name__icontains: query } : {}
   };
-  const live = await allPages(get, token, "/cms/v3/blogs/posts", { ...q, archived: false }, { max, maxPages: 100 });
-  const gone = archived ? await allPages(get, token, "/cms/v3/blogs/posts", { ...q, archived: true }, { max, maxPages: 100 }) : [];
+  const live = await allPages2(get, token, "/cms/v3/blogs/posts", { ...q, archived: false }, { max, maxPages: 100 });
+  const gone = archived ? await allPages2(get, token, "/cms/v3/blogs/posts", { ...q, archived: true }, { max, maxPages: 100 }) : [];
   return [...live, ...gone.map((r) => ({ ...r, archived: true }))].map(postRow);
 }
 
@@ -25585,9 +25898,9 @@ async function readDesign(get, token, o) {
     const t = text3(it.template);
     if (t) used.set(t.replace(/^\//, ""), (used.get(t.replace(/^\//, "")) ?? 0) + 1);
   }
-  const meta = async (path2) => await request(get, token, "GET", `/cms/v3/source-code/published/metadata/${enc(path2) || "@root"}`);
+  const meta = async (path2) => await request2(get, token, "GET", `/cms/v3/source-code/published/metadata/${enc(path2) || "@root"}`);
   const content2 = async (path2) => {
-    const r = await request(get, token, "GET", `/cms/v3/source-code/published/content/${enc(path2)}`, { accept: "*/*" });
+    const r = await request2(get, token, "GET", `/cms/v3/source-code/published/content/${enc(path2)}`, { accept: "*/*" });
     const raw2 = r?.raw;
     return typeof raw2 === "string" ? raw2 : typeof r === "string" ? r : JSON.stringify(r ?? "");
   };
@@ -25654,12 +25967,12 @@ async function readDesign(get, token, o) {
   return { rows: rows3, remaining: queue2 };
 }
 async function readHubdb(get, token, o) {
-  const tables = await allPages(get, token, "/cms/v3/hubdb/tables", { limit: 100 }, { max: o.max ?? 200 });
+  const tables = await allPages2(get, token, "/cms/v3/hubdb/tables", { limit: 100 }, { max: o.max ?? 200 });
   const out = [];
   for (const t of tables) {
     const id = String(t["id"] ?? "");
     const columns = Array.isArray(t["columns"]) ? t["columns"].map((c) => ({ name: String(c["name"] ?? ""), type: String(c["type"] ?? "") })) : [];
-    const rows3 = o.rows === false ? null : (await allPages(get, token, `/cms/v3/hubdb/tables/${encodeURIComponent(id)}/rows`, { limit: 100 }, { max: o.max ?? 500 })).map((r) => ({ id: String(r["id"] ?? ""), path: text3(r["path"]), name: text3(r["name"]), values: r["values"] ?? {} }));
+    const rows3 = o.rows === false ? null : (await allPages2(get, token, `/cms/v3/hubdb/tables/${encodeURIComponent(id)}/rows`, { limit: 100 }, { max: o.max ?? 500 })).map((r) => ({ id: String(r["id"] ?? ""), path: text3(r["path"]), name: text3(r["name"]), values: r["values"] ?? {} }));
     out.push({
       id,
       name: text3(t["label"]) ?? text3(t["name"]) ?? id,
@@ -25679,7 +25992,7 @@ async function readHubdb(get, token, o) {
   return out;
 }
 async function readForms(get, token, o) {
-  const forms = await allPages(get, token, "/marketing/v3/forms", { limit: 100, ...o.archived ? { archived: true } : {} }, { max: o.max ?? 500 });
+  const forms = await allPages2(get, token, "/marketing/v3/forms", { limit: 100, ...o.archived ? { archived: true } : {} }, { max: o.max ?? 500 });
   return forms.map((f) => {
     const groups = Array.isArray(f["fieldGroups"]) ? f["fieldGroups"] : [];
     const fields = groups.flatMap((g) => Array.isArray(g["fields"]) ? g["fields"] : []).map((x) => ({ name: String(x["name"] ?? ""), type: String(x["fieldType"] ?? ""), required: x["required"] === true }));
@@ -25694,7 +26007,7 @@ async function readForms(get, token, o) {
   });
 }
 async function readRedirects(get, token, o) {
-  const list4 = await allPages(get, token, "/cms/v3/url-redirects", { limit: 100 }, { max: o.max ?? 2e3 });
+  const list4 = await allPages2(get, token, "/cms/v3/url-redirects", { limit: 100 }, { max: o.max ?? 2e3 });
   return list4.map((r) => ({
     id: String(r["id"] ?? ""),
     name: text3(r["routePrefix"]) ?? "",
@@ -25721,7 +26034,7 @@ async function readPageAnalytics(get, token, o) {
   }
   const out = [];
   for (const kind of ANALYTICS_KINDS) {
-    const r = await request(
+    const r = await request2(
       get,
       token,
       "GET",
@@ -25825,7 +26138,7 @@ var rootOf = (v) => {
   return list4.length ? list4 : null;
 };
 var itemsOf = (v) => Array.isArray(v) ? v.filter((x) => !!x && typeof x === "object") : void 0;
-var spec19 = {
+var spec20 = {
   id: "c_hubspot_list_content",
   name: "hubspot.call.list_content",
   grounding: "observed",
@@ -25865,7 +26178,7 @@ var spec19 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["cms_content_listing"]
 };
-async function run19(args, ctx) {
+async function run20(args, ctx) {
   const types = contentTypes(args["content_types"]);
   const one = typeof args["content_id"] === "string" && args["content_id"].trim() ? args["content_id"].trim() : null;
   if (one) return readOne(one, types, ctx);
@@ -25927,7 +26240,7 @@ async function readOne(id, types, ctx) {
   return { item, counts: { [t]: 1 }, dry_run: false };
 }
 var CONNECTED5 = { scopes: ["content"] };
-var fixtures19 = [
+var fixtures20 = [
   { name: "sidtyperna", ...CONNECTED5, args: {}, expect_fields: ["items", "blogs", "counts"] },
   {
     name: "mallar, moduler, HubDB, formul\xE4r, omdirigeringar",
@@ -25954,9 +26267,9 @@ var fixtures19 = [
 // atoms/hubspot/read_menus.atom.ts
 var read_menus_atom_exports = {};
 __export(read_menus_atom_exports, {
-  fixtures: () => fixtures20,
-  run: () => run20,
-  spec: () => spec20
+  fixtures: () => fixtures21,
+  run: () => run21,
+  spec: () => spec21
 });
 
 // atoms/hubspot/cms_menus.ts
@@ -26016,7 +26329,7 @@ function menuRow(raw2) {
 }
 async function fetchOne(get, token, row2) {
   try {
-    const one = menuRow(await request(get, token, "GET", `/content/api/v2/menus/${encodeURIComponent(row2.id)}`));
+    const one = menuRow(await request2(get, token, "GET", `/content/api/v2/menus/${encodeURIComponent(row2.id)}`));
     return one.readable ? one : { ...row2, error: one.error };
   } catch (e) {
     return { ...row2, readable: false, links: [], error: `menyn gick inte att l\xE4sa: ${e.message}` };
@@ -26026,7 +26339,7 @@ async function listMenus(get, token) {
   const out = [];
   let offset = 0;
   for (let i = 0; i < 20; i++) {
-    const d = await request(
+    const d = await request2(
       get,
       token,
       "GET",
@@ -26044,7 +26357,7 @@ async function listMenus(get, token) {
   return { menus: out };
 }
 var normalUrl = (u) => u.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/[?#].*$/, "").replace(/\/+$/, "");
-var pathOf = (u) => normalUrl(u).replace(/^[^/]*/, "");
+var pathOf2 = (u) => normalUrl(u).replace(/^[^/]*/, "");
 function outsideMenus(pages, menus) {
   const ids = /* @__PURE__ */ new Set();
   const urls = /* @__PURE__ */ new Set();
@@ -26055,7 +26368,7 @@ function outsideMenus(pages, menus) {
     if (/^(https?:)?\/\//i.test(l.url.trim())) urls.add(normalUrl(l.url.replace(/^\/\//, "")));
     else if (l.url.trim().startsWith("/")) paths.add(normalUrl(l.url));
   }
-  return pages.filter((p) => !ids.has(p.id) && !(p.url && (urls.has(normalUrl(p.url)) || paths.has(pathOf(p.url)))));
+  return pages.filter((p) => !ids.has(p.id) && !(p.url && (urls.has(normalUrl(p.url)) || paths.has(pathOf2(p.url)))));
 }
 
 // atoms/hubspot/read_menus.atom.ts
@@ -26064,7 +26377,7 @@ var pageList = (v) => {
   if (!Array.isArray(v)) throw new Error("items \xE4r en lista med sidor (id och url)");
   return v.filter((p) => !!p && typeof p === "object" && p["page_type"] !== "blog_post").map((p) => ({ ...p, id: String(p["id"] ?? ""), url: typeof p["url"] === "string" ? p["url"] : "" }));
 };
-var spec20 = {
+var spec21 = {
   id: "c_hubspot_read_menus",
   name: "hubspot.call.read_menus",
   grounding: "observed",
@@ -26099,7 +26412,7 @@ var spec20 = {
   step_id: "s_hubspot_read_menus",
   lead_days: 0
 };
-async function run20(args, ctx) {
+async function run21(args, ctx) {
   const pages = pageList(args["items"]);
   const link = ctx.connection ? await ctx.connection("hubspot", "") : null;
   if (!link?.token) throw new Error("ingen koppling till HubSpot h\xE4r \u2014 HUBSPOT_TOKEN saknas");
@@ -26114,7 +26427,7 @@ async function run20(args, ctx) {
   };
 }
 var CONNECTED6 = { scopes: ["content"] };
-var fixtures20 = [
+var fixtures21 = [
   { name: "menyerna utan sidor", ...CONNECTED6, args: {} },
   { name: "med sidor att j\xE4mf\xF6ra", ...CONNECTED6, args: { items: [
     { id: "1", url: "https://www.example.com/om-oss", page_type: "site_page" },
@@ -26129,12 +26442,12 @@ var fixtures20 = [
 var read_object_atom_exports = {};
 __export(read_object_atom_exports, {
   CALL_BY_TYPE: () => CALL_BY_TYPE,
-  fixtures: () => fixtures21,
-  run: () => run21,
-  spec: () => spec21
+  fixtures: () => fixtures22,
+  run: () => run22,
+  spec: () => spec22
 });
 var CALL_BY_TYPE = { products: "hubspot.call.get_product" };
-var spec21 = {
+var spec22 = {
   id: "c_hs_read_object",
   name: "hubspot.call.read_object",
   grounding: "observed",
@@ -26162,7 +26475,7 @@ var spec21 = {
   lead_days: 0
 };
 var list2 = (v) => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : []).map((x) => String(x).trim()).filter(Boolean);
-async function run21(args, ctx) {
+async function run22(args, ctx) {
   const type = typeof args["object_type"] === "string" ? args["object_type"].trim() : "";
   if (!type) throw new Error("object_type saknas (t.ex. products, contacts, deals eller kundens 2-\u2026)");
   const id = args["object_id"] === void 0 || args["object_id"] === null ? "" : String(args["object_id"]).trim();
@@ -26177,7 +26490,7 @@ async function run21(args, ctx) {
   if (ctx.dry_run || !ctx.connection) return { object: null, asked, dry_run: true };
   const link = await ctx.connection("hubspot", "");
   if (!link?.token) throw new Error("ingen koppling till HubSpot h\xE4r \u2014 HUBSPOT_TOKEN saknas");
-  const d = await request(
+  const d = await request2(
     ctx.fetch,
     link.token,
     "GET",
@@ -26200,7 +26513,7 @@ async function run21(args, ctx) {
   }
   return { object: { id: String(d["id"]), properties: d["properties"] ?? {}, associations: assoc }, asked, dry_run: false };
 }
-var fixtures21 = [
+var fixtures22 = [
   { name: "en produkt", args: { object_type: "products", object_id: "123" }, expect_fields: ["call", "args"] },
   { name: "en post med kopplingar", args: { object_type: "2-1", object_id: "1", associations: "2-2" }, expect_fields: ["object", "asked"] },
   { name: "utan id avvisas", args: { object_type: "contacts" }, expect_error: "object_id saknas" }
@@ -26209,14 +26522,14 @@ var fixtures21 = [
 // atoms/hubspot/read_source.atom.ts
 var read_source_atom_exports = {};
 __export(read_source_atom_exports, {
-  fixtures: () => fixtures22,
-  run: () => run22,
-  spec: () => spec22
+  fixtures: () => fixtures23,
+  run: () => run23,
+  spec: () => spec23
 });
 
 // atoms/hubspot/cms_source.ts
 import { createHash as createHash9 } from "node:crypto";
-var HOST2 = "https://api.hubapi.com";
+var HOST3 = "https://api.hubapi.com";
 function environment(v) {
   if (v === void 0 || v === null || v === "") return "published";
   if (v === "draft" || v === "published") return v;
@@ -26231,11 +26544,11 @@ function sourcePath(v) {
 var enc2 = (path2) => path2.split("/").filter(Boolean).map(encodeURIComponent).join("/");
 var time3 = (v) => typeof v === "number" ? v > 0 ? new Date(v).toISOString() : null : typeof v === "string" && v ? v : null;
 async function metadata2(get, token, env, path2) {
-  return await request(get, token, "GET", `/cms/v3/source-code/${env}/metadata/${enc2(path2) || "@root"}`);
+  return await request2(get, token, "GET", `/cms/v3/source-code/${env}/metadata/${enc2(path2) || "@root"}`);
 }
 async function content(get, token, env, path2) {
   try {
-    const r = await request(get, token, "GET", `/cms/v3/source-code/${env}/content/${enc2(path2)}`, { accept: "*/*" });
+    const r = await request2(get, token, "GET", `/cms/v3/source-code/${env}/content/${enc2(path2)}`, { accept: "*/*" });
     const raw2 = r?.raw;
     return typeof raw2 === "string" ? raw2 : typeof r === "string" ? r : r === null ? "" : JSON.stringify(r, null, 2);
   } catch (e) {
@@ -26332,7 +26645,7 @@ Content-Type: application/octet-stream\r
 ${text7}\r
 --${boundary}--\r
 `;
-  const svar = await get(`${HOST2}/cms/v3/source-code/${env}/content/${enc2(path2)}`, {
+  const svar = await get(`${HOST3}/cms/v3/source-code/${env}/content/${enc2(path2)}`, {
     method: "PUT",
     headers: {
       authorization: `Bearer ${token}`,
@@ -26342,7 +26655,7 @@ ${text7}\r
     body
   });
   const t = await svar.text();
-  if (svar.status >= 400) throw new HubspotError(`hubspot ${svar.status}: ${t.slice(0, 200)}`, svar.status, isTransient(svar.status));
+  if (svar.status >= 400) throw new HubspotError(`hubspot ${svar.status}: ${t.slice(0, 200)}`, svar.status, isTransient2(svar.status));
   try {
     return t ? JSON.parse(t) : null;
   } catch {
@@ -26351,7 +26664,7 @@ ${text7}\r
 }
 
 // atoms/hubspot/read_source.atom.ts
-var spec22 = {
+var spec23 = {
   id: "c_hubspot_read_source",
   name: "hubspot.call.read_source",
   grounding: "decided",
@@ -26389,7 +26702,7 @@ var spec22 = {
   step_id: "s_hubspot_read_source",
   lead_days: 0
 };
-async function run22(args, ctx) {
+async function run23(args, ctx) {
   const path2 = sourcePath(args["path"]);
   const env = environment(args["environment"]);
   const link = ctx.connection ? await ctx.connection("hubspot", "") : null;
@@ -26398,7 +26711,7 @@ async function run22(args, ctx) {
   return { ...await readSource(ctx.fetch, link.token, env, path2), dry_run: false };
 }
 var CONNECTED7 = { scopes: ["content"] };
-var fixtures22 = [
+var fixtures23 = [
   { name: "en modul", ...CONNECTED7, args: { path: "Tema/modules/Sammanstallning.module" } },
   { name: "en mall som utkast", ...CONNECTED7, args: { path: "Tema/templates/avtal.html", environment: "draft" } },
   { name: "ok\xE4nd milj\xF6 avvisas", ...CONNECTED7, args: { path: "a.html", environment: "live" }, expect_error: "draft eller published" },
@@ -26409,20 +26722,20 @@ var fixtures22 = [
 // atoms/hubspot/ui_settings_register.atom.ts
 var ui_settings_register_atom_exports = {};
 __export(ui_settings_register_atom_exports, {
-  fixtures: () => fixtures23,
-  run: () => run23,
-  spec: () => spec23
+  fixtures: () => fixtures24,
+  run: () => run24,
+  spec: () => spec24
 });
 
 // atoms/browser/recipe.ts
 var IF_BLOCKED = 'Stoppar klienten handgreppet (t.ex. Claude Codes auto mode) \xE4r det klientens egen s\xE4kerhetsregel, och den kringg\xE5s inte. S\xE4g det till anv\xE4ndaren, citera anv\xE4ndarens ja ordagrant som user_approval, och be anv\xE4ndaren till\xE5ta handlingen i klienten och f\xF6rs\xF6ka igen. G\xE5r det \xE4nd\xE5 inte: skicka write { op: "bug_report" } med var det stoppade.';
 var RUNTIME = /* @__PURE__ */ new Set(["result", "evidence", "user_approval"]);
-function browserRun(spec34) {
+function browserRun(spec38) {
   return async (args, ctx) => {
-    const r = spec34.browser;
-    const optional = new Set(spec34.optional_input ?? []);
+    const r = spec38.browser;
+    const optional = new Set(spec38.optional_input ?? []);
     const values = {};
-    for (const k of spec34.input) {
+    for (const k of spec38.input) {
       if (RUNTIME.has(k)) continue;
       const v = args[k];
       if ((v === void 0 || v === "") && !optional.has(k)) throw new Error(`${k} saknas`);
@@ -26436,12 +26749,12 @@ function browserRun(spec34) {
       steps = [...r.path, ...p];
     }
     const approval = r.severity === "\u25CF" ? "\u25CF g\xF6rs direkt, g\xE5r att \xE5ngra" : r.severity === "\u25D0" ? "\u25D0 visa vad som ska g\xF6ras och v\xE4nta p\xE5 ja innan handgreppet" : "\u25A0 fr\xE5ga alltid, och visa vad som h\xE4nger p\xE5 det innan handgreppet";
-    const recipe = { ...r, steps, values, approval, ...spec34.effect.verb !== "reads" ? { if_blocked: IF_BLOCKED } : {} };
+    const recipe = { ...r, steps, values, approval, ...spec38.effect.verb !== "reads" ? { if_blocked: IF_BLOCKED } : {} };
     const evidence = typeof args["evidence"] === "string" ? args["evidence"].trim() : "";
     const result = typeof args["result"] === "string" ? args["result"].trim() : "";
     if (ctx.dry_run || !evidence) return { recipe, awaiting: true, result: "", evidence: "", done: false };
-    const yes2 = typeof args["user_approval"] === "string" ? args["user_approval"].trim() : "";
-    if (spec34.effect.verb !== "reads" && r.severity !== "\u25CF" && !yes2)
+    const yes3 = typeof args["user_approval"] === "string" ? args["user_approval"].trim() : "";
+    if (spec38.effect.verb !== "reads" && r.severity !== "\u25CF" && !yes3)
       throw new Error("user_approval saknas \u2014 ett \u25D0/\u25A0-handgrepp tas emot f\xF6rst med m\xE4nniskans ja");
     if (!result) throw new Error("result saknas: vad blev gjort (id, namn eller avl\xE4sningen)");
     return { recipe, awaiting: false, result, evidence, done: true };
@@ -26449,7 +26762,7 @@ function browserRun(spec34) {
 }
 
 // atoms/hubspot/ui_settings_register.atom.ts
-var spec23 = {
+var spec24 = {
   "id": "c_hubspot_ui_settings_register",
   "name": "hubspot.call.ui_settings_register",
   "grounding": "observed",
@@ -26547,8 +26860,8 @@ var spec23 = {
     "note": []
   }
 };
-var run23 = browserRun(spec23);
-var fixtures23 = [
+var run24 = browserRun(spec24);
+var fixtures24 = [
   { name: "receptet f\xF6r offertmallen", args: { setting: "quote_template", source: "TEST offertmall.html", display_name: "TEST offertmall" } },
   { name: "ok\xE4nd inst\xE4llning s\xE4gs", args: { setting: "pipelines", source: "x", display_name: "x" }, expect_error: "har inget recept" }
 ];
@@ -26556,11 +26869,11 @@ var fixtures23 = [
 // atoms/hubspot/ui_template_edit.atom.ts
 var ui_template_edit_atom_exports = {};
 __export(ui_template_edit_atom_exports, {
-  fixtures: () => fixtures24,
-  run: () => run24,
-  spec: () => spec24
+  fixtures: () => fixtures25,
+  run: () => run25,
+  spec: () => spec25
 });
-var spec24 = {
+var spec25 = {
   "id": "c_hubspot_ui_template_edit",
   "name": "hubspot.call.ui_template_edit",
   "grounding": "observed",
@@ -26684,9 +26997,9 @@ var spec24 = {
     "note": []
   }
 };
-var run24 = browserRun(spec24);
+var run25 = browserRun(spec25);
 var BASE2 = { action: "insert_token", template_kind: "sales_email", template: "TEST mall", token: "contact.firstname" };
-var fixtures24 = [
+var fixtures25 = [
   { name: "receptet f\xF6r att infoga ett f\xE4lt", args: BASE2 },
   { name: "receptet f\xF6r att klona", args: { ...BASE2, action: "clone", new_name: "TEST klon" } },
   { name: "ok\xE4nd action s\xE4gs", args: { ...BASE2, action: "delete" }, expect_error: "har inget recept" },
@@ -26696,12 +27009,12 @@ var fixtures24 = [
 // atoms/hubspot/user_write.atom.ts
 var user_write_atom_exports = {};
 __export(user_write_atom_exports, {
-  fixtures: () => fixtures25,
-  run: () => run25,
-  spec: () => spec25
+  fixtures: () => fixtures26,
+  run: () => run26,
+  spec: () => spec26
 });
 import { createHash as createHash10 } from "node:crypto";
-var spec25 = {
+var spec26 = {
   "id": "c_hubspot_user_write",
   "name": "hubspot.call.user_write",
   "grounding": "decided",
@@ -26789,12 +27102,12 @@ var yes = (v) => v === true || v === "true" || v === "ja";
 function pick2(what, ref, all2) {
   const byId = all2.find((x) => String(x.id) === ref);
   if (byId) return byId;
-  const named = all2.filter((x) => (x.name ?? "").toLowerCase() === ref.toLowerCase());
-  if (named.length === 1) return named[0];
+  const named2 = all2.filter((x) => (x.name ?? "").toLowerCase() === ref.toLowerCase());
+  if (named2.length === 1) return named2[0];
   const near = all2.filter((x) => (x.name ?? "").toLowerCase().includes(ref.toLowerCase())).map((x) => `${x.name} (${x.id})`).slice(0, 5);
-  throw new Error(named.length > 1 ? `${what} \xAB${ref}\xBB finns ${named.length} g\xE5nger \u2014 ange id:t` : `${what} \xAB${ref}\xBB finns inte i portalen${near.length ? ` (n\xE4rmast: ${near.join(", ")})` : ""}`);
+  throw new Error(named2.length > 1 ? `${what} \xAB${ref}\xBB finns ${named2.length} g\xE5nger \u2014 ange id:t` : `${what} \xAB${ref}\xBB finns inte i portalen${near.length ? ` (n\xE4rmast: ${near.join(", ")})` : ""}`);
 }
-async function run25(args, ctx) {
+async function run26(args, ctx) {
   const email = text5(args["email"]).toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("email \xE4r anv\xE4ndarens e-postadress");
   const first = text5(args["first_name"]), last = text5(args["last_name"]);
@@ -26805,7 +27118,7 @@ async function run25(args, ctx) {
   const get = ctx.fetch;
   const users = ctx.dry_run ? [] : await allUsers(get, link.token);
   const teams = ctx.dry_run || !primaryRef && !secondaryRefs.length ? [] : await allTeams(get, link.token);
-  const roles = ctx.dry_run || !roleRef ? [] : (await request(get, link.token, "GET", "/settings/v3/users/roles"))?.results ?? [];
+  const roles = ctx.dry_run || !roleRef ? [] : (await request2(get, link.token, "GET", "/settings/v3/users/roles"))?.results ?? [];
   const existing = users.find((u) => (u.email ?? "").toLowerCase() === email) ?? null;
   if (!existing && (!first || !last)) throw new Error("en ny anv\xE4ndare beh\xF6ver first_name och last_name");
   const primary = primaryRef ? ctx.dry_run ? { id: primaryRef, name: primaryRef } : pick2("teamet", primaryRef, teams) : null;
@@ -26823,15 +27136,15 @@ async function run25(args, ctx) {
   };
   if (existing && !Object.keys(body).length) throw new Error(`${displayName(existing)} finns redan, och inget team eller ingen roll att \xE4ndra angavs`);
   const pid = createHash10("sha256").update(JSON.stringify([email, body, existing?.id ?? null])).digest("hex").slice(0, 16);
-  const named = (t) => t ? `${t.name ?? t.id} (${t.id})` : null;
+  const named2 = (t) => t ? `${t.name ?? t.id} (${t.id})` : null;
   const base = {
     would_change: {
       new: !existing,
       email,
       name: existing ? displayName(existing) : `${first} ${last}`,
-      primary_team: named(primary),
-      secondary_teams: secondary.map((t) => named(t)),
-      role: named(role),
+      primary_team: named2(primary),
+      secondary_teams: secondary.map((t) => named2(t)),
+      role: named2(role),
       send_welcome_email: welcome,
       existing: existing ? `${displayName(existing)} (${existing.id})` : null
     },
@@ -26841,14 +27154,14 @@ async function run25(args, ctx) {
   const approval = text5(args["user_approval"]);
   if (ctx.dry_run || args["confirmed"] !== true || args["preview_id"] !== pid || !approval)
     return { ...base, proposal: true, user_id: existing?.id ?? null, user: null, done: false };
-  const out = existing ? await request(get, link.token, "PUT", `/settings/v3/users/${encodeURIComponent(existing.id)}`, { body }) : await request(get, link.token, "POST", "/settings/v3/users", { body });
+  const out = existing ? await request2(get, link.token, "PUT", `/settings/v3/users/${encodeURIComponent(existing.id)}`, { body }) : await request2(get, link.token, "POST", "/settings/v3/users", { body });
   const id = String(out?.id ?? existing?.id ?? "");
-  const back = id ? await request(get, link.token, "GET", `/settings/v3/users/${encodeURIComponent(id)}`) : null;
-  return { ...base, proposal: false, user_id: id || null, user: back, done: !!back };
+  const back2 = id ? await request2(get, link.token, "GET", `/settings/v3/users/${encodeURIComponent(id)}`) : null;
+  return { ...base, proposal: false, user_id: id || null, user: back2, done: !!back2 };
 }
 var CONNECTED8 = { scopes: ["settings.users.write", "settings.users.teams.read"] };
 var TEST_MAIL = (who) => `${who}@example.com`;
-var fixtures25 = [
+var fixtures26 = [
   {
     name: "en ny s\xE4ljare med huvudteam, utan v\xE4lkomstmejl",
     ...CONNECTED8,
@@ -26868,11 +27181,11 @@ var fixtures25 = [
 var write_record_atom_exports = {};
 __export(write_record_atom_exports, {
   changeStateKey: () => changeStateKey,
-  fixtures: () => fixtures26,
-  run: () => run26,
-  spec: () => spec26
+  fixtures: () => fixtures27,
+  run: () => run27,
+  spec: () => spec27
 });
-var spec26 = {
+var spec27 = {
   id: "c_hs_write_object",
   name: "hubspot.call.write_object",
   grounding: "decided",
@@ -26925,7 +27238,7 @@ var rowsOf2 = (v) => {
   })() : v;
   return Array.isArray(x) ? x : [];
 };
-async function run26(args, ctx) {
+async function run27(args, ctx) {
   const objectType2 = guardType(String(args["object_type"] ?? ""), "write");
   if (args["require_expected"] === true || args["require_expected"] === "true")
     for (const [i, r] of rowsOf2(args["updates"]).entries()) {
@@ -26948,8 +27261,8 @@ async function run26(args, ctx) {
   if (bank) {
     const done = await bank.store.h\u00E4mta(changeStateKey(bank.tenant, changeId));
     if (done) {
-      const at = JSON.parse(new TextDecoder().decode(done)).applied_at ?? "";
-      throw new Error(`\xE4ndringen ${changeId} \xE4r redan gjord${at ? ` ${at}` : ""} \u2014 ingenting skrivs`);
+      const at3 = JSON.parse(new TextDecoder().decode(done)).applied_at ?? "";
+      throw new Error(`\xE4ndringen ${changeId} \xE4r redan gjord${at3 ? ` ${at3}` : ""} \u2014 ingenting skrivs`);
     }
   }
   const preview = args["preview"] === true || args["preview"] === "true";
@@ -26967,7 +27280,7 @@ async function run26(args, ctx) {
     })), "application/json");
   return result;
 }
-var fixtures26 = [
+var fixtures27 = [
   { name: "en ny produkt", args: {
     object_type: "products",
     unique_property: "name",
@@ -27011,11 +27324,11 @@ var fixtures26 = [
 // atoms/hubspot/write_source.atom.ts
 var write_source_atom_exports = {};
 __export(write_source_atom_exports, {
-  fixtures: () => fixtures27,
-  run: () => run27,
-  spec: () => spec27
+  fixtures: () => fixtures28,
+  run: () => run28,
+  spec: () => spec28
 });
-var spec27 = {
+var spec28 = {
   id: "c_hubspot_write_source",
   name: "hubspot.call.write_source",
   grounding: "decided",
@@ -27058,7 +27371,7 @@ var spec27 = {
   step_id: "s_hubspot_write_source",
   lead_days: 0
 };
-async function run27(args, ctx) {
+async function run28(args, ctx) {
   const path2 = sourcePath(args["path"]);
   const env = environment(args["environment"]);
   const text7 = args["content"];
@@ -27086,7 +27399,7 @@ async function run27(args, ctx) {
   return { ...base, proposal: false, done: true };
 }
 var CONNECTED9 = { scopes: ["content"] };
-var fixtures27 = [
+var fixtures28 = [
   { name: "en ny modulfil", ...CONNECTED9, args: { path: "Tema/modules/Ny TEST.module/module.html", content: "<p>hej</p>" } },
   {
     name: "skriva \xF6ver ett utkast",
@@ -27101,10 +27414,10 @@ var fixtures27 = [
 var change_ad_object_atom_exports = {};
 __export(change_ad_object_atom_exports, {
   CALL_BY_CHANGE: () => CALL_BY_CHANGE,
-  fixtures: () => fixtures28,
+  fixtures: () => fixtures29,
   previews: () => previews,
-  run: () => run28,
-  spec: () => spec28
+  run: () => run29,
+  spec: () => spec29
 });
 var CALL_BY_CHANGE = {
   status: "meta.call.set_status",
@@ -27112,7 +27425,7 @@ var CALL_BY_CHANGE = {
   targeting: "meta.call.update_targeting",
   details: "meta.call.update_object"
 };
-var spec28 = {
+var spec29 = {
   id: "c_meta_change_ad_object",
   name: "meta.call.change_ad_object",
   grounding: "observed",
@@ -27145,7 +27458,9 @@ var spec28 = {
     "age_min",
     "age_max",
     "genders",
-    "countries"
+    "countries",
+    "daily_min_spend_target",
+    "daily_spend_cap"
   ],
   optional_input: [
     "level",
@@ -27164,7 +27479,9 @@ var spec28 = {
     "age_min",
     "age_max",
     "genders",
-    "countries"
+    "countries",
+    "daily_min_spend_target",
+    "daily_spend_cap"
   ],
   output: ["object_id", "before", "after", "changed", "warnings"],
   label: "\xC4ndra kampanj, annonsgrupp eller annons i Meta",
@@ -27184,7 +27501,7 @@ var spec28 = {
     done_when: ["objektet i annonskontot har de nya v\xE4rdena"],
     where: "kundens annonskonto hos Meta"
   },
-  structure: { "objects": ["campaign", "adset", "ad", "lead_form", "audience", "targeting"], "actions": ["starts", "pauses", "archives"], "risk": "costs_money", "leads_to": ["c_meta_read_insights"], "alternatives": ["c_meta_set_status", "c_meta_update_budget"], "fields": { "change": { "type": "string", "example": "status", "note": "status, budget, targeting eller details: v\xE4ljer \xE4ndringens molekyl" }, "object_id": { "type": "id", "example": "120200000000000002", "note": "kampanjens, annonsgruppens eller annonsens id \u2014 level s\xE4ger vilket" }, "level": { "type": "string", "example": "adset", "note": "campaign, adset, ad eller lead_form (bara arkivering, med page_id)" }, "page_id": { "type": "id", "example": "100000000000001", "note": "sidan ett leadformul\xE4r h\xF6r till (level lead_form)" }, "status": { "type": "string", "example": "PAUSED" }, "activate": { "type": "boolean", "example": true, "note": "kr\xE4vs f\xF6r att starta (ACTIVE)" }, "archive": { "type": "boolean", "example": true, "note": "kr\xE4vs f\xF6r att arkivera (ARCHIVED)" }, "plan": { "type": "id", "example": "c_0000000001", "note": "den godk\xE4nda publiceringsplanens id i inneh\xE5llet" }, "allow_unapproved": { "type": "string", "example": "kunden godk\xE4nde texten i telefon", "note": "sk\xE4let; bara en m\xE4nniska f\xE5r anv\xE4nda det" }, "daily_budget": { "type": "integer", "example": 5e4, "note": "minsta valutaenhet (\xF6re): 50000 = 500 kr; dags- eller totalbudget, inte b\xE5da" }, "lifetime_budget": { "type": "integer", "example": 5e4, "note": "minsta valutaenhet (\xF6re): 50000 = 500 kr; dags- eller totalbudget, inte b\xE5da" }, "targeting": { "type": "object", "example": { "interests": [{ "id": "6003000000000", "name": "Solenergi" }], "age_min": 35 }, "note": "bara delarna som \xE4ndras; resten st\xE5r kvar" }, "name": { "type": "string", "example": "TEST-Nytt namn" }, "start_time": { "type": "datetime", "example": "2026-10-01T08:00:00+0200", "note": "ISO 8601 med tidszon" }, "end_time": { "type": "datetime", "example": "2026-10-31T23:59:00+0100", "note": "ISO 8601 med tidszon" }, "age_min": { "type": "integer", "example": 35 }, "age_max": { "type": "integer", "example": 65 }, "genders": { "type": "list", "example": [1, 2], "note": "1 = m\xE4n, 2 = kvinnor" }, "countries": { "type": "list", "example": ["SE"] } }, "choices": { "object_id": { "from": "account", "call": "c_meta_read_structure" }, "level": { "from": "list", "values": ["campaign", "adset", "ad", "lead_form"] }, "status": { "from": "list", "values": ["ACTIVE", "PAUSED", "ARCHIVED"] }, "plan": { "from": "dirigent", "source": "content", "call": "c_meta_build_publishing_plan", "note": "publiceringsplanen, sparad med content_save och godk\xE4nd av en m\xE4nniska" }, "targeting": { "from": "account", "call": "c_meta_search_targeting", "note": "platser och intressen ger sin nyckel och biten av m\xE5lgruppen (use)" }, "genders": { "from": "list", "values": ["1", "2"] }, "change": { "from": "list", "values": ["status", "budget", "targeting", "details"] } } },
+  structure: { "objects": ["campaign", "adset", "ad", "lead_form", "audience", "targeting"], "actions": ["starts", "pauses", "archives"], "risk": "costs_money", "leads_to": ["c_meta_read_insights"], "alternatives": ["c_meta_set_status", "c_meta_update_budget"], "fields": { "change": { "type": "string", "example": "status", "note": "status, budget, targeting eller details: v\xE4ljer \xE4ndringens molekyl" }, "object_id": { "type": "id", "example": "120200000000000002", "note": "kampanjens, annonsgruppens eller annonsens id \u2014 level s\xE4ger vilket" }, "level": { "type": "string", "example": "adset", "note": "campaign, adset, ad eller lead_form (bara arkivering, med page_id)" }, "page_id": { "type": "id", "example": "100000000000001", "note": "sidan ett leadformul\xE4r h\xF6r till (level lead_form)" }, "status": { "type": "string", "example": "PAUSED" }, "activate": { "type": "boolean", "example": true, "note": "kr\xE4vs f\xF6r att starta (ACTIVE)" }, "archive": { "type": "boolean", "example": true, "note": "kr\xE4vs f\xF6r att arkivera (ARCHIVED)" }, "plan": { "type": "id", "example": "c_0000000001", "note": "den godk\xE4nda publiceringsplanens id i inneh\xE5llet" }, "allow_unapproved": { "type": "string", "example": "kunden godk\xE4nde texten i telefon", "note": "sk\xE4let; bara en m\xE4nniska f\xE5r anv\xE4nda det" }, "daily_budget": { "type": "integer", "example": 5e4, "note": "i kronor med enhet (\xAB500 kr\xBB) eller heltal i \xF6re (50000 = 500 kr); dags- eller totalbudget, inte b\xE5da" }, "lifetime_budget": { "type": "integer", "example": 5e4, "note": "i kronor med enhet (\xAB500 kr\xBB) eller heltal i \xF6re (50000 = 500 kr); dags- eller totalbudget, inte b\xE5da" }, "daily_min_spend_target": { "type": "string", "example": "200 kr", "note": "annonsgruppens l\xE4gsta dagsbelopp under kampanjens budget; i kronor med enhet eller heltal i \xF6re" }, "daily_spend_cap": { "type": "string", "example": "800 kr", "note": "annonsgruppens h\xF6gsta dagsbelopp under kampanjens budget; i kronor med enhet eller heltal i \xF6re" }, "targeting": { "type": "object", "example": { "interests": [{ "id": "6003000000000", "name": "Solenergi" }], "age_min": 35 }, "note": "bara delarna som \xE4ndras; resten st\xE5r kvar" }, "name": { "type": "string", "example": "TEST-Nytt namn" }, "start_time": { "type": "datetime", "example": "2026-10-01T08:00:00+0200", "note": "ISO 8601 med tidszon" }, "end_time": { "type": "datetime", "example": "2026-10-31T23:59:00+0100", "note": "ISO 8601 med tidszon" }, "age_min": { "type": "integer", "example": 35 }, "age_max": { "type": "integer", "example": 65 }, "genders": { "type": "list", "example": [1, 2], "note": "1 = m\xE4n, 2 = kvinnor" }, "countries": { "type": "list", "example": ["SE"] } }, "choices": { "object_id": { "from": "account", "call": "c_meta_read_structure" }, "level": { "from": "list", "values": ["campaign", "adset", "ad", "lead_form"] }, "status": { "from": "list", "values": ["ACTIVE", "PAUSED", "ARCHIVED"] }, "plan": { "from": "dirigent", "source": "content", "call": "c_meta_build_publishing_plan", "note": "publiceringsplanen, sparad med content_save och godk\xE4nd av en m\xE4nniska" }, "targeting": { "from": "account", "call": "c_meta_search_targeting", "note": "platser och intressen ger sin nyckel och biten av m\xE5lgruppen (use)" }, "genders": { "from": "list", "values": ["1", "2"] }, "change": { "from": "list", "values": ["status", "budget", "targeting", "details"] } } },
   guards: {
     object_types: ["campaign", "adset", "ad"],
     severity: { campaign: "\u25D0", adset: "\u25D0", ad: "\u25D0" },
@@ -27197,10 +27514,10 @@ var spec28 = {
   lead_days: 0
 };
 var previews = true;
-async function run28(args, ctx) {
+async function run29(args, ctx) {
   return delegate(ctx, pick(CALL_BY_CHANGE, "change", args["change"]), without(args, "change"));
 }
-var fixtures28 = [
+var fixtures29 = [
   ...Object.keys(CALL_BY_CHANGE).map((change) => ({
     name: `change ${change}`,
     args: { change, object_id: "1", level: "adset" },
@@ -27217,10 +27534,10 @@ var fixtures28 = [
 var create_ad_creative_atom_exports = {};
 __export(create_ad_creative_atom_exports, {
   CALL_BY_FORMAT: () => CALL_BY_FORMAT,
-  fixtures: () => fixtures29,
+  fixtures: () => fixtures30,
   previews: () => previews2,
-  run: () => run29,
-  spec: () => spec29
+  run: () => run30,
+  spec: () => spec30
 });
 var CALL_BY_FORMAT = {
   image: "meta.call.create_creative",
@@ -27230,7 +27547,7 @@ var CALL_BY_FORMAT = {
   // Leadformuläret hos sidan (provet 2026-10-08): det annonsmaterialet öppnar med lead_gen_form_id.
   lead_form: "meta.call.create_lead_form"
 };
-var spec29 = {
+var spec30 = {
   id: "c_meta_create_ad_creative",
   name: "meta.call.create_ad_creative",
   grounding: "observed",
@@ -27396,10 +27713,10 @@ var spec29 = {
   lead_days: 0
 };
 var previews2 = true;
-async function run29(args, ctx) {
+async function run30(args, ctx) {
   return delegate(ctx, pick(CALL_BY_FORMAT, "format", args["format"]), without(args, "format"));
 }
-var fixtures29 = [
+var fixtures30 = [
   ...Object.entries(CALL_BY_FORMAT).map(([format2]) => ({
     name: `format ${format2}`,
     args: { format: format2, ad_account_id: "act_1", name: "TEST-creative", page_id: "1" },
@@ -27425,135 +27742,11 @@ __export(manage_access_atom_exports, {
   ACTIONS: () => ACTIONS4,
   ROLES: () => ROLES,
   TASKS: () => TASKS,
-  fixtures: () => fixtures30,
-  run: () => run30,
-  spec: () => spec30
+  fixtures: () => fixtures31,
+  run: () => run31,
+  spec: () => spec31
 });
-
-// atoms/meta/graph.ts
-import { createHmac } from "node:crypto";
-var HOST3 = "https://graph.facebook.com";
-var GRAPH_VERSION = "v23.0";
-var appSecretProof = (c) => createHmac("sha256", c.appSecret).update(c.token).digest("hex");
-var MetaError = class extends Error {
-  constructor(message, status, transient, code = null, type = null, subcode = null) {
-    super(message);
-    this.status = status;
-    this.transient = transient;
-    this.code = code;
-    this.type = type;
-    this.subcode = subcode;
-  }
-  status;
-  transient;
-  code;
-  type;
-  subcode;
-  name = "MetaError";
-};
-var RATE_LIMIT_CODES = /* @__PURE__ */ new Set([4, 17, 613, 80004]);
-var isTransient2 = (status, code, flagged = false) => status >= 500 || status === 429 || flagged || code !== null && RATE_LIMIT_CODES.has(code);
-function toMetaError(status, body, writing) {
-  const e = body?.error ?? {};
-  const code = typeof e["code"] === "number" ? e["code"] : null;
-  const subcode = typeof e["error_subcode"] === "number" ? e["error_subcode"] : null;
-  const type = typeof e["type"] === "string" ? e["type"] : null;
-  const raw2 = typeof e["message"] === "string" ? e["message"] : JSON.stringify(body ?? null).slice(0, 200);
-  const user = [e["error_user_title"], e["error_user_msg"]].filter((x) => typeof x === "string" && x.trim() !== "").join(": ");
-  const transient = isTransient2(status, code, e["is_transient"] === true);
-  const tail = ` (Meta ${status}${code !== null ? `, kod ${code}` : ""}${subcode !== null ? `/${subcode}` : ""}${type ? `, ${type}` : ""}: ${raw2}${user ? ` \u2014 ${user}` : ""})`;
-  let text7;
-  if (/ads_management/i.test(raw2) || writing && code !== null && [3, 10, 200].includes(code))
-    text7 = "nyckeln saknar ads_management \u2014 skapa en ny i Business Manager (systemanv\xE4ndare med ads_management, ads_read och read_insights) och l\xE4gg den i META_ADS_TOKEN";
-  else if (/page access token/i.test(raw2))
-    text7 = "anropet kr\xE4ver sidans egen nyckel, inte systemanv\xE4ndarens \u2014 kontrollera att systemanv\xE4ndaren har sidan tilldelad (Business Manager \u2192 Systemanv\xE4ndare \u2192 Tilldelade tillg\xE5ngar \u2192 Sidor); nyckeln i META_ADS_TOKEN \xE4r inte fel";
-  else if (code === 190)
-    text7 = "nyckeln g\xE4ller inte l\xE4ngre (utg\xE5ngen eller \xE5terkallad) \u2014 skapa en ny i Business Manager och l\xE4gg den i META_ADS_TOKEN";
-  else if (/appsecret_proof/i.test(raw2))
-    text7 = "signaturen godtogs inte \u2014 META_APP_SECRET h\xF6r inte ihop med nyckeln";
-  else if (code !== null && [10, 200].includes(code))
-    text7 = "nyckeln n\xE5r inte det h\xE4r kontot eller objektet \u2014 kontrollera att systemanv\xE4ndaren har kontot tilldelat";
-  else if (SPECIAL_CATEGORY.test(`${raw2} ${user}`))
-    text7 = "m\xE5lgruppen g\xE5r inte ihop med kampanjens s\xE4rskilda annonskategori (t.ex. FINANCIAL_PRODUCTS_SERVICES): \xE5lder 18\u201365, alla k\xF6n, inga postnummer, radie minst 15 miles (?) och inga undantag i den detaljerade inriktningen \u2014 se docs/system/meta-ads.md, S\xE4rskilda annonskategorier";
-  else if (transient)
-    text7 = "Meta stryper eller svarar inte just nu \u2014 f\xF6rs\xF6k igen om en stund";
-  else
-    text7 = "Meta avvisade anropet";
-  return new MetaError(text7 + tail, status, transient, code, type, subcode);
-}
-var SPECIAL_CATEGORY = /special[ _]ad[ _]categor|special ad audience|financial[ _]products[ _]|housing, employment/i;
-function encode(params) {
-  const p = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v === void 0 || v === null) continue;
-    p.append(k, typeof v === "object" ? JSON.stringify(v) : String(v));
-  }
-  return p.toString();
-}
-async function request2(get, cred, method2, path2, params = {}) {
-  if (!cred.token || !cred.appSecret)
-    throw new MetaError("nyckel eller appens hemlighet saknas (META_ADS_TOKEN, META_APP_SECRET)", 0, false);
-  const p = path2.replace(/^\/+/, "");
-  const auth = { access_token: cred.token, appsecret_proof: appSecretProof(cred) };
-  const url = `${HOST3}/${GRAPH_VERSION}/${p}`;
-  const response = method2 === "GET" ? await get(`${url}?${encode({ ...params, ...auth })}`, { method: "GET", headers: { accept: "application/json" } }) : await get(url, {
-    method: "POST",
-    headers: { accept: "application/json", "content-type": "application/x-www-form-urlencoded" },
-    body: encode({ ...params, ...auth })
-  });
-  const text7 = await response.text();
-  let parsed = null;
-  try {
-    parsed = text7 ? JSON.parse(text7) : null;
-  } catch {
-    parsed = { raw: text7.slice(0, 200) };
-  }
-  if (response.status >= 400 || parsed && typeof parsed === "object" && "error" in parsed)
-    throw toMetaError(response.status, parsed, method2 === "POST");
-  return parsed;
-}
-async function allPages2(get, cred, path2, params = {}, { max, maxPages = 50 } = {}) {
-  const out = [];
-  let after;
-  for (let i = 0; i < maxPages; i++) {
-    const d = await request2(get, cred, "GET", path2, { ...params, ...after ? { after } : {} });
-    out.push(...d.data ?? []);
-    if (max !== void 0 && out.length >= max) return out.slice(0, max);
-    after = d.paging?.cursors?.after;
-    if (!after || !d.paging?.next) return out;
-  }
-  throw new MetaError(`${path2}: fler \xE4n ${maxPages} sidor \u2014 avbryter hellre \xE4n snurrar. Sn\xE4va in perioden eller niv\xE5n.`, 0, false);
-}
-function accountPath(v) {
-  const s2 = String(v ?? "").trim().replace(/^act_/, "");
-  if (!s2) throw new MetaError("annonskontot saknas \u2014 ange ad_account_id (kundens konto, t.ex. act_123\u2026)", 400, false);
-  if (!/^\d+$/.test(s2)) throw new MetaError(`ad_account_id ska vara siffror, med eller utan act_, fick \xAB${String(v)}\xBB`, 400, false);
-  return `act_${s2}`;
-}
-function objectId(v, what) {
-  const s2 = String(v ?? "").trim();
-  if (!/^\d+$/.test(s2)) throw new MetaError(`${what} ska vara ett id med siffror, fick \xAB${String(v ?? "")}\xBB`, 400, false);
-  return s2;
-}
-function jsonValue(v) {
-  if (typeof v !== "string") return v;
-  const t = v.trim();
-  if (!t || !/^[[{]/.test(t)) return v;
-  try {
-    return JSON.parse(t);
-  } catch {
-    return v;
-  }
-}
-function listOf(v) {
-  const j = jsonValue(v);
-  if (Array.isArray(j)) return j.map(String).map((s2) => s2.trim()).filter(Boolean);
-  if (typeof j === "string") return j.split(",").map((s2) => s2.trim()).filter(Boolean);
-  return [];
-}
-
-// atoms/meta/manage_access.atom.ts
-var spec30 = {
+var spec31 = {
   "id": "c_meta_manage_access",
   "name": "meta.call.manage_access",
   "grounding": "observed",
@@ -27664,19 +27857,19 @@ function accountList(v) {
   return list4;
 }
 async function businessAccounts(get, cred, business) {
-  const owned = await allPages2(get, cred, `${business}/owned_ad_accounts`, { fields: "id,name" });
-  const client = await allPages2(get, cred, `${business}/client_ad_accounts`, { fields: "id,name" });
+  const owned = await allPages(get, cred, `${business}/owned_ad_accounts`, { fields: "id,name" });
+  const client = await allPages(get, cred, `${business}/client_ad_accounts`, { fields: "id,name" });
   const seen = /* @__PURE__ */ new Set();
   return [...owned, ...client].filter((a) => !seen.has(String(a["id"])) && seen.add(String(a["id"])));
 }
 async function personId(get, cred, business, person2) {
   if (!EMAIL2.test(person2)) return objectId(person2, "person");
-  const users = await allPages2(get, cred, `${business}/business_users`, { fields: "id,email" });
+  const users = await allPages(get, cred, `${business}/business_users`, { fields: "id,email" });
   const hit = users.find((u) => String(u["email"] ?? "").toLowerCase() === person2.toLowerCase());
   if (!hit) throw new Error("personen finns inte i business managern \u2014 bjud in med action: invite f\xF6rst, och v\xE4nta tills inbjudan \xE4r antagen");
   return String(hit["id"]);
 }
-async function run30(args, ctx) {
+async function run31(args, ctx) {
   const action = oneOf(args["action"], ACTIONS4, "action").toLowerCase();
   const business = objectId(args["business_id"], "business_id");
   const person2 = String(args["person"] ?? "").trim();
@@ -27698,18 +27891,18 @@ async function run30(args, ctx) {
     return { action, business_id: business, planned, done: false };
   }
   if (action === "list") {
-    const users = await allPages2(get, cred, `${business}/business_users`, { fields: "id,name,email,role" });
-    const pending = await allPages2(get, cred, `${business}/pending_users`, { fields: "id,email,role,status" });
+    const users = await allPages(get, cred, `${business}/business_users`, { fields: "id,name,email,role" });
+    const pending = await allPages(get, cred, `${business}/pending_users`, { fields: "id,email,role,status" });
     const list4 = await businessAccounts(get, cred, business);
     const withUsers = [];
     for (const a of list4) {
-      const assigned = await allPages2(get, cred, `${String(a["id"])}/assigned_users`, { business, fields: "id,name,tasks" });
+      const assigned = await allPages(get, cred, `${String(a["id"])}/assigned_users`, { business, fields: "id,name,tasks" });
       withUsers.push({ id: a["id"], name: a["name"], users: assigned });
     }
     return { action, business_id: business, users: [...users, ...pending.map((p) => ({ ...p, pending: true }))], accounts: withUsers, done: true };
   }
   if (action === "invite") {
-    const res = await request2(get, cred, "POST", `${business}/business_users`, { email: person2, role });
+    const res = await request(get, cred, "POST", `${business}/business_users`, { email: person2, role });
     return { action, business_id: business, users: [{ id: res["id"], email: person2, role, pending: true }], done: true };
   }
   const user = await personId(get, cred, business, person2);
@@ -27717,8 +27910,8 @@ async function run30(args, ctx) {
   const changed = [];
   for (const account of targets) {
     try {
-      if (action === "grant") await request2(get, cred, "POST", `${account}/assigned_users`, { user, tasks: JSON.stringify(tasks) });
-      else await request2(get, cred, "POST", `${account}/assigned_users`, { user, method: "delete" });
+      if (action === "grant") await request(get, cred, "POST", `${account}/assigned_users`, { user, tasks: JSON.stringify(tasks) });
+      else await request(get, cred, "POST", `${account}/assigned_users`, { user, method: "delete" });
       changed.push({ id: account, ok: true, ...action === "grant" ? { tasks } : {} });
     } catch (e) {
       changed.push({ id: account, ok: false, error: e instanceof MetaError || e instanceof Error ? e.message : String(e) });
@@ -27727,7 +27920,7 @@ async function run30(args, ctx) {
   return { action, business_id: business, accounts: changed, done: changed.every((c) => c["ok"]) };
 }
 var KEYS = { META_ADS_TOKEN: "prov", META_APP_SECRET: "prov" };
-var fixtures30 = [
+var fixtures31 = [
   { name: "lista \xE5tkomst", args: { action: "list", business_id: "100000000000001" }, keys: KEYS, expect_fields: ["planned"] },
   {
     name: "ge l\xE4sbeh\xF6righet p\xE5 alla konton",
@@ -27763,9 +27956,9 @@ var fixtures30 = [
 // atoms/presentation/write.atom.ts
 var write_atom_exports = {};
 __export(write_atom_exports, {
-  fixtures: () => fixtures31,
-  run: () => run31,
-  spec: () => spec31
+  fixtures: () => fixtures32,
+  run: () => run32,
+  spec: () => spec32
 });
 import { createHash as createHash12 } from "node:crypto";
 
@@ -28342,14 +28535,14 @@ function presentationFonts(fonts) {
   const faces = Object.values(fonts?.families ?? {}).filter((f) => f.style !== "italic").map((f) => ({ family: f.family, weight: f.weight ?? 400 }));
   if (!sheets.length || !faces.length) return null;
   const heading = faces.reduce((a, b) => b.weight > a.weight ? b : a);
-  const same = faces.filter((f) => f.family === heading.family);
-  const body = (same.length > 1 ? same : faces).reduce((a, b) => b.weight < a.weight ? b : a);
+  const same2 = faces.filter((f) => f.family === heading.family);
+  const body = (same2.length > 1 ? same2 : faces).reduce((a, b) => b.weight < a.weight ? b : a);
   return { stylesheets: sheets, heading, body };
 }
 var family = (f) => `"${f.family.replace(/["\\]/g, "")}"`;
-function fontsHead(f, esc2) {
+function fontsHead(f, esc4) {
   if (!f) return "";
-  return f.stylesheets.map((u) => `<link rel="stylesheet" href="${esc2(u)}">`).join("") + `<style>body{font-family:${family(f.body)},"Manrope",-apple-system,sans-serif;font-weight:${f.body.weight}}h1,h2,h3,.kicker,.tag,.num,.btn,.pill,b,strong{font-family:${family(f.heading)},"Manrope",-apple-system,sans-serif}h1,h2,h3{font-weight:${f.heading.weight}}</style>`;
+  return f.stylesheets.map((u) => `<link rel="stylesheet" href="${esc4(u)}">`).join("") + `<style>body{font-family:${family(f.body)},"Manrope",-apple-system,sans-serif;font-weight:${f.body.weight}}h1,h2,h3,.kicker,.tag,.num,.btn,.pill,b,strong{font-family:${family(f.heading)},"Manrope",-apple-system,sans-serif}h1,h2,h3{font-weight:${f.heading.weight}}</style>`;
 }
 
 // src/present/render.ts
@@ -28558,7 +28751,7 @@ function parseNumber(s2) {
 function parseNumbers(type, text7, extra = {}) {
   const problems = [];
   const rows3 = text7.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => l.split(";").map((x) => x.trim()));
-  const num3 = (v, n2, what) => {
+  const num5 = (v, n2, what) => {
     const x = parseNumber(v);
     if (x === null) problems.push(`rad ${n2 + 1}: ${what} \xAB${v ?? ""}\xBB \xE4r inget tal`);
     return x ?? 0;
@@ -28566,16 +28759,16 @@ function parseNumbers(type, text7, extra = {}) {
   if (type === "metrics") {
     const metrics2 = rows3.map((r, n2) => ({
       label: r[0] ?? "",
-      value: num3(r[1], n2, "v\xE4rdet"),
+      value: num5(r[1], n2, "v\xE4rdet"),
       ...r[2] ? { unit: r[2] } : {},
-      ...r[3] ? { change: num3(r[3], n2, "f\xF6r\xE4ndringen") } : {},
+      ...r[3] ? { change: num5(r[3], n2, "f\xF6r\xE4ndringen") } : {},
       ...r[4] ? { note: r[4] } : {}
     }));
     return { data: { ...extra, metrics: metrics2 }, problems };
   }
-  if (type === "chart") return { data: { ...extra, series: rows3.map((r, n2) => ({ label: r[0] ?? "", value: num3(r[1], n2, "v\xE4rdet") })) }, problems };
+  if (type === "chart") return { data: { ...extra, series: rows3.map((r, n2) => ({ label: r[0] ?? "", value: num5(r[1], n2, "v\xE4rdet") })) }, problems };
   if (type === "budget")
-    return { data: { ...extra, rows: rows3.map((r, n2) => ({ label: r[0] ?? "", amount: num3(r[1], n2, "beloppet"), ...r[2] ? { note: r[2] } : {} })) }, problems };
+    return { data: { ...extra, rows: rows3.map((r, n2) => ({ label: r[0] ?? "", amount: num5(r[1], n2, "beloppet"), ...r[2] ? { note: r[2] } : {} })) }, problems };
   if (type === "timeline")
     return { data: { ...extra, rows: rows3.map((r) => ({ week: r[0] ?? "", title: r[1] ?? "", ...r[2] ? { text: r[2] } : {} })) }, problems };
   return { data: extra, problems: [`blocket ${type} tar inga inmatade siffror`] };
@@ -28615,10 +28808,10 @@ function planPublish(view, given, draft = false) {
   if (i.presentation && !existing) throw new Error(`presentationen ${i.presentation} finns inte \u2014 utel\xE4mna id:t f\xF6r en ny`);
   if (existing && existing.customer !== i.customer) throw new Error("presentationen h\xF6r till en annan kund");
   const id = i.presentation ?? newPresentationId(i.customer, i.delivery, i.title);
-  const same = all2.get(id);
-  if (same && same.customer !== i.customer) throw new Error("presentationen h\xF6r till en annan kund");
+  const same2 = all2.get(id);
+  if (same2 && same2.customer !== i.customer) throw new Error("presentationen h\xF6r till en annan kund");
   const version2 = nextVersion(all2, id);
-  const blocks = i.add_section && same ? stackSection(TEMPLATES.get(i.template), latest(same).blocks, i.blocks) : i.blocks;
+  const blocks = i.add_section && same2 ? stackSection(TEMPLATES.get(i.template), latest(same2).blocks, i.blocks) : i.blocks;
   const { label, brand, fonts } = brandOf(view, i.customer);
   const payload = {
     presentation: id,
@@ -28641,7 +28834,7 @@ function planPublish(view, given, draft = false) {
     payload,
     preview_id,
     would_change: {
-      what: same ? `Ny version (${version2}) av \xAB${i.title}\xBB` : `Ny presentation \xAB${i.title}\xBB`,
+      what: same2 ? `Ny version (${version2}) av \xAB${i.title}\xBB` : `Ny presentation \xAB${i.title}\xBB`,
       template: TEMPLATES.get(i.template)?.label ?? i.template,
       blocks: blocks.map((b) => `${b.type}${b.items?.length ? ` (${b.items.length})` : ""}`),
       recipients: payload["recipients"],
@@ -28662,7 +28855,7 @@ function planWithdraw(view, id) {
 }
 
 // atoms/presentation/write.atom.ts
-var spec31 = {
+var spec32 = {
   "id": "c_presentation_write",
   "name": "presentation.call.write",
   "grounding": "observed",
@@ -28749,7 +28942,7 @@ var spec31 = {
     "note": []
   }
 };
-async function run31(args, ctx) {
+async function run32(args, ctx) {
   if (!ctx.view) throw new Error("presentationen kan bara publiceras i ett steg \u2014 registret saknas");
   const i = args;
   const action = i.action ?? "publish";
@@ -28819,7 +29012,7 @@ var BLOCKS2 = [
   { type: "cover", title: "Provkampanj" },
   { type: "copy_angles", items: [{ ref: `bank://rotor/${SHA}`, label: "Vinkel A", mime: "text/markdown" }] }
 ];
-var fixtures31 = [
+var fixtures32 = [
   { name: "f\xF6rhandsvisning av en ny presentation", ...RUNNER4, args: {
     action: "publish",
     party: "@runner",
@@ -28865,9 +29058,11 @@ var fixtures31 = [
 // atoms/render/html_pdf.atom.ts
 var html_pdf_atom_exports = {};
 __export(html_pdf_atom_exports, {
-  fixtures: () => fixtures32,
-  run: () => run32,
-  spec: () => spec32
+  fillTemplate: () => fillTemplate,
+  fixtures: () => fixtures33,
+  run: () => run33,
+  runWith: () => runWith,
+  spec: () => spec33
 });
 
 // atoms/render/html-pdf.ts
@@ -29060,658 +29255,264 @@ async function htmlToPdf(source, timeoutMs = 24e3) {
   }
 }
 
+// atoms/render/price-table.ts
+var esc2 = (s2) => s2.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+var num3 = (v) => {
+  const n2 = Number(String(v ?? "").replace("%", "").replace(",", ".").trim());
+  return Number.isFinite(n2) ? n2 : 0;
+};
+var rate = (v) => {
+  const s2 = String(v ?? "").trim();
+  return s2.endsWith("%") ? num3(s2) / 100 : num3(s2);
+};
+function readChange(raw2) {
+  const d = raw2 ?? {};
+  const rows3 = Array.isArray(d["changes"]) ? d["changes"] : Array.isArray(d["andringar"]) ? d["andringar"] : [];
+  return {
+    ...typeof (d["name"] ?? d["namn"]) === "string" ? { name: String(d["name"] ?? d["namn"]) } : {},
+    activated_in_crm: d["activated_in_crm"] ?? d["aktiverad_i_hubspot"] ?? null,
+    changes: rows3.map((r) => {
+      const p = r["price"] ?? r["pris"];
+      const from = p?.["from"] ?? p?.["fran"], to = p?.["to"] ?? p?.["till"];
+      return {
+        id: String(r["id"] ?? ""),
+        ...typeof (r["name"] ?? r["namn"]) === "string" ? { name: String(r["name"] ?? r["namn"]) } : {},
+        ...p ? { price: { ...from !== void 0 ? { from: num3(from) } : {}, ...to !== void 0 ? { to: num3(to) } : {} } } : {},
+        ...typeof (r["new_name"] ?? r["nytt_namn"]) === "string" ? { new_name: String(r["new_name"] ?? r["nytt_namn"]) } : {},
+        ...(r["crm_only"] ?? r["endast_hubspot"]) === true ? { crm_only: true } : {}
+      };
+    })
+  };
+}
+function priceTable(layout, library, change, date) {
+  if (!layout || typeof layout.title !== "string" || !Array.isArray(layout.sections) || !Array.isArray(layout.order))
+    throw new Error("uppl\xE4gget saknar rubrik, sektioner eller ordning");
+  const warnings = [];
+  const cur = layout.currency ?? " kr";
+  const products = new Map(library.map((p) => [p.id, { ...p, shown: p.name }]));
+  if (change) {
+    const stops = [];
+    for (const c of change.changes ?? []) {
+      if (c.crm_only) continue;
+      const p = products.get(c.id);
+      if (!p) {
+        warnings.push(`Pris\xE4ndringen pekar p\xE5 en produkt som inte finns: ${c.name ?? `en produkt utan namn, med nummer ${c.id} i HubSpot`}.`);
+        continue;
+      }
+      if (c.price?.from !== void 0 && Math.abs(p.price - c.price.from) > 0.5) {
+        stops.push(`${p.name}: biblioteket har ${p.price} kr, pris\xE4ndringen v\xE4ntade sig ${c.price.from} kr`);
+        continue;
+      }
+      products.set(c.id, { ...p, ...c.price?.to !== void 0 ? { price: c.price.to } : {}, ...c.new_name ? { shown: c.new_name } : {} });
+    }
+    if (stops.length) throw new Error(`biblioteket ser inte ut som pris\xE4ndringen v\xE4ntar sig: ${stops.join("; ")}. N\xE5gon har \xE4ndrat priset under tiden; reda ut det f\xF6rst`);
+  }
+  const unitOf = (id) => {
+    if (layout.units?.[id]) return layout.units[id];
+    const name = (products.get(id)?.name ?? "").toLowerCase();
+    for (const [suffix, unit] of layout.unit_suffixes ?? []) if (name.includes(suffix.toLowerCase())) return unit;
+    return cur;
+  };
+  const money2 = (v, unit = cur) => `${Math.round(v) < 0 ? "-" : ""}${String(Math.abs(Math.round(v))).replace(/\B(?=(\d{3})+(?!\d))/g, " ")}${unit}`;
+  const shownName = (id) => {
+    let n2 = layout.names?.[id] ?? products.get(id)?.shown ?? id;
+    for (const pre of layout.name_prefixes ?? []) if (n2.startsWith(pre)) {
+      n2 = n2.slice(pre.length);
+      break;
+    }
+    for (const [suffix] of layout.unit_suffixes ?? []) if (n2.endsWith(suffix)) {
+      n2 = n2.slice(0, -suffix.length);
+      break;
+    }
+    return n2.slice(0, 1).toUpperCase() + n2.slice(1);
+  };
+  const credited = (id) => {
+    const p = products.get(id);
+    if (!layout.credit) return p.price;
+    return p.price - p.price * num3(p.fields[layout.credit.share_field]) * rate(p.fields[layout.credit.rate_field]);
+  };
+  const withCredit = layout.credit !== void 0;
+  const priceCells = (id) => {
+    const p = products.get(id);
+    if (p.price === 0) return withCredit ? [layout.zero_price ?? "", layout.zero_price ?? ""] : [layout.zero_price ?? ""];
+    return withCredit ? [money2(p.price, unitOf(id)), money2(credited(id), unitOf(id))] : [money2(p.price, unitOf(id))];
+  };
+  const heads = (cols) => cols.map((c) => `<th class=p>${esc2(c)}</th>`).join("");
+  const priceHeads = () => withCredit ? heads([layout.credit.before_heading, layout.credit.after_heading]) : heads([layout.price_heading ?? ""]);
+  const table = (first, head2, rows3) => `<table><thead><tr><th>${esc2(first)}</th>${head2}</tr></thead><tbody>${rows3.map((r) => `<tr>${r.map((c, i) => i === 0 ? `<td>${esc2(c.text)}</td>` : `<td class=${c.cls ?? "p"}>${esc2(c.text)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+  const amount = (a, credit) => a === void 0 ? 0 : typeof a === "number" ? a : products.has(a) ? credit ? credited(a) : products.get(a).price : missingAmount(a);
+  const missingAmount = (id) => {
+    throw new Error(`produkten ${id} i en tabell finns inte i produktbiblioteket`);
+  };
+  const note = (text7, cols) => text7.replace(/\{name:([^}]+)\}/g, (_2, id) => shownName(id)).replace(/\{parts:([^}]+)\}/g, (_2, title) => {
+    const col = cols?.columns.find((c) => c.title === title);
+    return `${title}: ${(col?.parts ?? []).map(shownName).join(layout.join ?? ", ")}`;
+  });
+  const parts = [`<h1>${esc2(layout.title)}</h1>`];
+  const subtitle = (layout.subtitle ?? "").replace("{date}", date);
+  if (subtitle) parts.push(`<p class=datum>${esc2(subtitle)}</p>`);
+  const placed = /* @__PURE__ */ new Set();
+  for (const block2 of layout.order) {
+    if (block2.kind === "section") {
+      const section2 = layout.sections.find((s2) => s2.title === block2.title);
+      if (!section2) throw new Error(`sektionen \xAB${block2.title}\xBB st\xE5r i ordningen men finns inte bland sektionerna`);
+      for (const id of section2.products) placed.add(id);
+      const present = section2.products.filter((id) => {
+        if (!products.has(id)) {
+          warnings.push(`${id} st\xE5r i listan men finns inte i produktbiblioteket.`);
+          return false;
+        }
+        return true;
+      });
+      const extras = (layout.extra_rows ?? []).filter((e) => e.section === section2.title);
+      const hasCondition = present.some((id) => layout.conditions?.[id]) || extras.some((e) => e.condition);
+      const rows3 = present.map((id) => ({ id, cells: [
+        { text: shownName(id) },
+        ...hasCondition ? [{ text: layout.conditions?.[id] ?? "", cls: "v" }] : [],
+        ...priceCells(id).map((t) => ({ text: t }))
+      ] }));
+      for (const e of extras) {
+        warnings.push(`\xAB${e.name}\xBB (${e.price} kr) st\xE5r p\xE5 listan men finns inte i produktbiblioteket.`);
+        const price = money2(e.price);
+        const row2 = { id: null, cells: [
+          { text: e.name },
+          ...hasCondition ? [{ text: e.condition ?? "", cls: "v" }] : [],
+          ...withCredit ? [{ text: price }, { text: price }] : [{ text: price }]
+        ] };
+        if (e.after === "") {
+          rows3.unshift(row2);
+          continue;
+        }
+        const at3 = rows3.findIndex((r) => r.id === e.after);
+        if (at3 < 0) throw new Error(`raden \xAB${e.name}\xBB ska st\xE5 efter ${e.after}, som inte finns i sektionen \xAB${section2.title}\xBB`);
+        rows3.splice(at3 + 1, 0, row2);
+      }
+      if (!rows3.length) continue;
+      const sn = layout.section_notes?.[section2.title];
+      const condHead = hasCondition ? `<th class=v>${esc2(layout.condition_headings?.[section2.title] ?? layout.condition_heading ?? "")}</th>` : "";
+      parts.push(`<h2>${esc2(section2.title)}</h2>${sn ? `<p class=not>${esc2(note(sn, null))}</p>` : ""}` + table(layout.product_heading ?? "", condHead + priceHeads(), rows3.map((r) => r.cells)));
+    } else if (block2.kind === "quantity") {
+      for (const c of block2.columns) for (const id of [c.base, c.per_unit, ...c.parts ?? []]) if (typeof id === "string") placed.add(id);
+      const credit = block2.credit === true && withCredit && block2.columns.length === 1;
+      const rows3 = [];
+      for (let n2 = block2.from; n2 <= block2.to; n2 += block2.step ?? 1) {
+        const label = (n2 === 1 && block2.label_one ? block2.label_one : block2.label).replace("{n}", String(n2));
+        const cells = block2.columns.flatMap((c) => {
+          const total = (cr) => amount(c.base, cr) + (c.parts ?? []).reduce((s2, id) => s2 + amount(id, cr), 0) + amount(c.per_unit, cr) * n2;
+          return credit ? [money2(total(false)), money2(total(true))] : [money2(total(false))];
+        });
+        rows3.push([{ text: label }, ...cells.map((t) => ({ text: t }))]);
+      }
+      if (block2.last_row) rows3.push([{ text: block2.last_row.label }, ...block2.columns.flatMap((c) => credit ? [money2(amount(c.per_unit, false)), money2(amount(c.per_unit, true))] : [money2(amount(c.per_unit, false))]).map((t) => ({ text: t }))]);
+      const head2 = credit ? priceHeads() : block2.columns.length > 1 ? heads(block2.columns.map((c) => c.title ?? "")) : heads([layout.price_heading ?? ""]);
+      parts.push(`<h2>${esc2(block2.title)}</h2>${block2.note ? `<p class=not>${esc2(note(block2.note, block2))}</p>` : ""}` + table(block2.heading, head2, rows3));
+    } else if (block2.kind === "list") {
+      parts.push(`<h2>${esc2(block2.title)}</h2><ul class=${block2.columns === 2 ? "ingar" : "villkor"}>${block2.items.map((i) => `<li>${esc2(i)}</li>`).join("")}</ul>`);
+    } else {
+      throw new Error(`ok\xE4nt block i ordningen: ${block2.kind ? `\xAB${block2.kind}\xBB` : "ett block utan typ"}`);
+    }
+  }
+  const belongs = (p) => {
+    const n2 = p.name.toLowerCase();
+    const inc = layout.belongs?.name_contains?.toLowerCase(), exc = layout.belongs?.name_excludes?.toLowerCase();
+    return (inc === void 0 || n2.includes(inc)) && (exc === void 0 || !n2.includes(exc));
+  };
+  const unplaced = library.filter((p) => belongs(p) && !placed.has(p.id) && !(layout.omit && p.id in layout.omit)).map((p) => p.name).sort();
+  for (const n2 of unplaced) warnings.push(`${n2} h\xF6r till listan men st\xE5r inte i den: l\xE4gg den i en sektion, eller bland de utel\xE4mnade med ett sk\xE4l.`);
+  if (change && !change.activated_in_crm && layout.pending_notice)
+    parts.push(`<p class=fot>${esc2(layout.pending_notice.replace("{change}", change.name ?? ""))}</p>`);
+  return { title: layout.title, file_name: layout.file_name ?? layout.title, subtitle, html: parts.join(""), unplaced, warnings };
+}
+
 // atoms/render/html_pdf.atom.ts
-var spec32 = {
-  "id": "c_render_html_pdf",
-  "name": "render.call.html_pdf",
-  "grounding": "observed",
-  "found_in": "atomf\xF6rslag render.atom_proposal.html_pdf \u2014 Formatet PDF f\xF6r presentationer f\xF6r kund (del H3b) beh\xF6ver en fil att skicka eller ladda ner, och samma sak beh\xF6vs f\xF6r andra sidor. Sidan /visa g\xF6r redan PDF:en i webbl\xE4saren, men inget steg kan g\xF6ra en PDF av en sida och spara den i kundens filer.",
-  "scope": "shared",
-  "surface": "render",
-  "input": [
-    "html",
-    "url",
-    "file_name",
-    "folder",
-    "page_size",
-    "customer"
-  ],
-  "optional_input": ["html", "url", "folder", "page_size", "customer"],
-  "output": [
-    "proposal",
-    "file_name",
-    "pages",
-    "ref",
-    "done"
-  ],
-  "idempotent": false,
-  "atom": "render.html_pdf",
-  "effect": {
-    "verb": "creates",
-    "object": "file.pdf"
-  },
-  "performer": "code",
-  "built_from": "p_render_html_pdf",
-  "label": "PDF av en sida (sk\xE4rm, RGB)",
-  "summary": "G\xF6r en sida (HTML eller en adress) till en PDF f\xF6r sk\xE4rm i Chrome: RGB, klickbara l\xE4nkar och sidbrytning d\xE4r sidan s\xE4ger det, sparad i kundens filer.",
-  "keywords": [
-    "g\xF6ra pdf",
-    "pdf av en sida",
-    "spara som pdf",
-    "pdf f\xF6r sk\xE4rm",
-    "html till pdf",
-    "html to pdf",
-    "rgb pdf"
-  ],
-  "test_target": "utan confirmed g\xF6rs ingen fil; provdata k\xF6rs torrt med prov:atom, och test/presentation-pdf.test.ts pr\xF6var sidan och molekylen",
-  "leaves": {
-    "schema": {
-      "proposal": "sant n\xE4r filen v\xE4ntar p\xE5 ja",
-      "file_name": "filens namn",
-      "pages": "antal sidor i PDF:en (efter rendering",
-      "ref": "filen i banken (bank://<tenant>/<sha256>)",
-      "done": "sant n\xE4r filen \xE4r sparad"
-    },
-    "done_when": [
-      "PDF:en ligger i kundens filer med det angivna namnet"
-    ],
-    "where": "kundens filer i banken, i den angivna mappen"
-  },
-  "requires": "draft",
-  "stage": "published",
-  "module": "n8002",
-  "operation_id": "o_render_html_pdf",
-  "step_id": "s_render_html_pdf",
-  "guards": {
-    "object_types": [
-      "file.pdf"
-    ],
-    "severity": {
-      "file.pdf": "\u25CF"
-    },
-    "removes": "none",
-    "note": []
-  }
+init_butik();
+
+// atoms/render/html-template.ts
+var GENERIC = /* @__PURE__ */ new Set(["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "inherit", "initial", "unset"]);
+function templateFamilies(html) {
+  const names = [...html.matchAll(/font-family\s*:\s*([^;}]+)/gi)].map((m) => m[1].split(",")[0].trim().replace(/^['"]|['"]$/g, "").trim());
+  return [...new Set(names.filter((n2) => n2 && !GENERIC.has(n2.toLowerCase())))].sort();
+}
+var FONT_MIME = { woff2: "font/woff2", woff: "font/woff", opentype: "font/otf", truetype: "font/ttf" };
+function fontFaceCss(fonts) {
+  return fonts.map((f) => `@font-face{font-family:"${f.family}";font-weight:${f.weight};font-style:${f.style};src:url(data:${FONT_MIME[f.format] ?? "font/otf"};base64,${Buffer.from(f.data).toString("base64")}) format("${f.format}");}`).join("\n");
+}
+function withFonts(html, fonts) {
+  if (!fonts.length) return html;
+  const style = `<style data-fonts>${fontFaceCss(fonts)}</style>`;
+  return /<head[^>]*>/i.test(html) ? html.replace(/<head([^>]*)>/i, `<head$1>${style}`) : style + html;
+}
+function missingFamilies(html, fonts) {
+  const have = new Set(fonts.map((f) => f.family.toLowerCase()));
+  return templateFamilies(html).filter((f) => !have.has(f.toLowerCase()));
+}
+
+// atoms/typografi/web-fonts.ts
+var WebFontError = class extends Error {
 };
-var PAGE = /^(A[3-5]|letter|legal)( (portrait|landscape))?$/i;
-async function run32(args, ctx) {
-  const i = args;
-  const html = typeof i.html === "string" && i.html.trim() ? i.html : null;
-  const url = typeof i.url === "string" && i.url.trim() ? i.url.trim() : null;
-  if (!html === !url) throw new Error("ange sidan: html eller url, inte b\xE5da");
-  if (url) {
-    let u;
+var unquote = (s2) => s2.trim().replace(/^['"]|['"]$/g, "").trim();
+function fontFaces(css) {
+  const out = [];
+  for (const m of css.matchAll(/@font-face\s*\{([^}]*)\}/g)) {
+    const body = m[1];
+    const prop = (name) => new RegExp(`(?:^|;|\\s)${name}\\s*:\\s*([^;]+)`, "i").exec(body)?.[1]?.trim();
+    const family2 = prop("font-family");
+    const src = prop("src") ?? "";
+    if (!family2) continue;
+    const weightText = prop("font-weight") ?? "400";
+    const weight = weightText === "bold" ? 700 : weightText === "normal" ? 400 : Number.parseInt(weightText, 10) || 400;
+    const sources = [...src.matchAll(/url\(\s*(['"]?)([^'")]+)\1\s*\)(?:\s*format\(\s*['"]?([^'")]+)['"]?\s*\))?/g)].map((s2) => ({ url: s2[2], format: (s2[3] ?? "").toLowerCase() }));
+    out.push({ family: unquote(family2), weight, style: (prop("font-style") ?? "normal").toLowerCase(), sources });
+  }
+  return out;
+}
+var formatOf2 = (s2) => s2.format || (/\.otf(\?|$)/i.test(s2.url) ? "opentype" : /\.ttf(\?|$)/i.test(s2.url) ? "truetype" : /\.woff(\?|$)/i.test(s2.url) ? "woff" : "");
+var BROWSER_READABLE = ["woff2", "woff", "opentype", "truetype"];
+var browserFormatOf = (s2) => s2.format || (/\.woff2(\?|$)/i.test(s2.url) ? "woff2" : formatOf2(s2));
+async function webFontFiles(stylesheets, families, fetchImpl = fetch) {
+  if (!families.length) return [];
+  if (!stylesheets.length) throw new WebFontError(`mallen anv\xE4nder ${families.join(", ")} men kunden har inget webbprojekt att h\xE4mta typsnitten ur`);
+  const wanted = new Set(families.map((f) => f.toLowerCase()));
+  const found = /* @__PURE__ */ new Set(), seen = /* @__PURE__ */ new Set();
+  const out = [];
+  for (const sheet of stylesheets) {
+    let res;
     try {
-      u = new URL(url);
-    } catch {
-      throw new Error(`url \xE4r ingen adress: ${url}`);
+      res = await fetchImpl(sheet);
+    } catch (e) {
+      throw new WebFontError(`webbprojektet ${sheet} gick inte att l\xE4sa: ${e instanceof Error ? e.message : String(e)}`);
     }
-    if (u.protocol !== "https:") throw new Error("url m\xE5ste vara https");
+    if (!res.ok) throw new WebFontError(`webbprojektet ${sheet} svarade ${res.status}`);
+    for (const face of fontFaces(await res.text())) {
+      seen.add(face.family);
+      if (!wanted.has(face.family.toLowerCase())) continue;
+      const source = BROWSER_READABLE.map((fmt) => face.sources.find((s2) => browserFormatOf(s2) === fmt)).find(Boolean);
+      if (!source) continue;
+      const file = await fetchImpl(new URL(source.url, sheet).href);
+      if (!file.ok) throw new WebFontError(`typsnittsfilen f\xF6r ${face.family} ${face.weight} i ${sheet} svarade ${file.status}`);
+      out.push({
+        family: face.family,
+        weight: face.weight,
+        style: face.style === "italic" ? "italic" : "normal",
+        data: new Uint8Array(await file.arrayBuffer()),
+        format: browserFormatOf(source)
+      });
+      found.add(face.family.toLowerCase());
+    }
   }
-  if (!i.file_name?.trim()) throw new Error("ange file_name: filens namn");
-  if (i.page_size !== void 0 && i.page_size !== "" && !PAGE.test(i.page_size))
-    throw new Error(`page_size \xE4r A3, A4, A5, letter eller legal (valfritt landscape), fick \xAB${i.page_size}\xBB`);
-  const file_name = /\.pdf$/i.test(i.file_name.trim()) ? i.file_name.trim() : `${i.file_name.trim()}.pdf`;
-  if (i.confirmed !== true || ctx.dry_run) return { proposal: true, file_name, pages: 0, ref: "", done: false };
-  const keep2 = ctx.call.keep;
-  if (!keep2) throw new Error("PDF:en kan bara sparas i ett steg med filbanken");
-  if (!i.customer) throw new Error("ange customer: kunden filen sparas hos");
-  const size = i.page_size ? `@page{size:${i.page_size}}` : "";
-  const source = html ? size ? html.replace(/<\/head>/i, `<style>${size}</style></head>`) : html : { url, ...size ? { css: size } : {} };
-  const pdf = await htmlToPdf(source, 6e4);
-  const kept = await keep2({
-    bytes: pdf,
-    mime: "application/pdf",
-    name: file_name,
-    folder: i.folder?.trim() || "PDF",
-    customer: i.customer,
-    asset_type: "core.asset.material",
-    source: url ?? "html"
-  });
-  return { proposal: false, file_name, pages: pageCount(Buffer.from(pdf)), ref: kept.ref, done: true };
+  const missing = families.filter((f) => !found.has(f.toLowerCase()));
+  if (missing.length)
+    throw new WebFontError(`webbprojektet har inte ${missing.join(", ")}; d\xE4r finns ${[...seen].sort().join(", ") || "inga familjer"}`);
+  return out;
 }
-var fixtures32 = [
-  { name: "en sida som HTML: f\xF6rhandsvisningen", args: { html: '<!doctype html><title>Prov</title><section>Sida 1</section><section style="break-before:page">Sida 2</section>', file_name: "prov", folder: "Prov", page_size: "A4" } },
-  { name: "en sida som adress: f\xF6rhandsvisningen", args: { url: "https://example.com/sida", file_name: "sida.pdf" } },
-  { name: "b\xE5de html och url avvisas", args: { html: "<p>x</p>", url: "https://example.com", file_name: "x" }, expect_error: "inte b\xE5da" },
-  { name: "en adress utan https avvisas", args: { url: "http://example.com", file_name: "x" }, expect_error: "https" }
+
+// src/plan/customer-specific.ts
+var SPECIFIC_PATTERNS = [
+  { re: /\b\d[\d ]*(?:[.,]\d+)?\s?(?:kr|sek|kronor|:-)(?![\p{L}])/giu, why: "ett pris" },
+  { re: /[\p{L}\d_.+-]+@[\p{L}\d-]+(?:\.[\p{L}\d-]+)+/gu, why: "en e-postadress" },
+  { re: /\b\d{6,}\b/g, why: "ett id i ett system" },
+  { re: new RegExp("\\p{L}+(?:gatan|v\xE4gen|gr\xE4nd|torget|all\xE9n|backe)\\s+\\d+\\p{L}?", "giu"), why: "en adress" }
 ];
-
-// atoms/render/qr_code.atom.ts
-var qr_code_atom_exports = {};
-__export(qr_code_atom_exports, {
-  fixtures: () => fixtures33,
-  run: () => run33,
-  spec: () => spec33
-});
-
-// atoms/render/qr.ts
-var ECL_ORDINAL = { L: 0, M: 1, Q: 2, H: 3 };
-var ECL_FORMAT = { L: 1, M: 0, Q: 3, H: 2 };
-var ECC_PER_BLOCK = [
-  [-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
-  [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28],
-  [-1, 13, 22, 18, 26, 18, 24, 18, 22, 20, 24, 28, 26, 24, 20, 30, 24, 28, 28, 26, 30, 28, 30, 30, 30, 30, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
-  [-1, 17, 28, 22, 16, 22, 28, 26, 26, 24, 28, 24, 28, 22, 24, 24, 30, 28, 28, 26, 28, 30, 24, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
-];
-var BLOCKS3 = [
-  [-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25],
-  [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49],
-  [-1, 1, 1, 2, 2, 4, 4, 6, 6, 8, 8, 8, 10, 12, 16, 12, 17, 16, 18, 21, 20, 23, 23, 25, 27, 29, 34, 34, 35, 38, 40, 43, 45, 48, 51, 53, 56, 59, 62, 65, 68],
-  [-1, 1, 1, 2, 4, 4, 4, 5, 6, 8, 8, 11, 11, 16, 16, 18, 16, 19, 21, 25, 25, 25, 34, 30, 32, 35, 37, 40, 42, 45, 48, 51, 54, 57, 60, 63, 66, 70, 74, 77, 81]
-];
-function rawModules(ver) {
-  let r = (16 * ver + 128) * ver + 64;
-  if (ver >= 2) {
-    const n2 = Math.floor(ver / 7) + 2;
-    r -= (25 * n2 - 10) * n2 - 55;
-    if (ver >= 7) r -= 36;
-  }
-  return r;
-}
-var dataCodewords = (ver, e) => Math.floor(rawModules(ver) / 8) - ECC_PER_BLOCK[e][ver] * BLOCKS3[e][ver];
-function gfMul(x, y) {
-  let z2 = 0;
-  for (let i = 7; i >= 0; i--) {
-    z2 = z2 << 1 ^ (z2 >>> 7) * 285;
-    z2 ^= (y >>> i & 1) * x;
-  }
-  return z2 & 255;
-}
-function rsDivisor(degree) {
-  const r = new Array(degree).fill(0);
-  r[degree - 1] = 1;
-  let root = 1;
-  for (let i = 0; i < degree; i++) {
-    for (let j = 0; j < r.length; j++) {
-      r[j] = gfMul(r[j], root);
-      if (j + 1 < r.length) r[j] = r[j] ^ r[j + 1];
-    }
-    root = gfMul(root, 2);
-  }
-  return r;
-}
-function rsRemainder(data, div) {
-  const r = div.map(() => 0);
-  for (const b of data) {
-    const f = b ^ r.shift();
-    r.push(0);
-    div.forEach((c, i) => {
-      r[i] = r[i] ^ gfMul(c, f);
-    });
-  }
-  return r;
-}
-function alignmentPositions(ver) {
-  if (ver === 1) return [];
-  const n2 = Math.floor(ver / 7) + 2;
-  const step2 = ver === 32 ? 26 : Math.ceil((ver * 4 + 4) / (n2 * 2 - 2)) * 2;
-  const r = [6];
-  for (let pos = ver * 4 + 10; r.length < n2; pos -= step2) r.splice(1, 0, pos);
-  return r;
-}
-function encodeQr(text7, ecl = "Q") {
-  const bytes = [...new TextEncoder().encode(text7)];
-  const e = ECL_ORDINAL[ecl];
-  let ver = 1;
-  for (; ver <= 40; ver++) {
-    const bits = 4 + (ver <= 9 ? 8 : 16) + bytes.length * 8;
-    if (bits <= dataCodewords(ver, e) * 8) break;
-  }
-  if (ver > 40) throw new Error("texten \xE4r f\xF6r l\xE5ng f\xF6r en QR-kod");
-  const bb = [];
-  const put = (v, n2) => {
-    for (let i2 = n2 - 1; i2 >= 0; i2--) bb.push(v >>> i2 & 1);
-  };
-  put(4, 4);
-  put(bytes.length, ver <= 9 ? 8 : 16);
-  for (const b of bytes) put(b, 8);
-  const cap = dataCodewords(ver, e) * 8;
-  put(0, Math.min(4, cap - bb.length));
-  put(0, (8 - bb.length % 8) % 8);
-  for (let pad = 236; bb.length < cap; pad ^= 236 ^ 17) put(pad, 8);
-  const data = [];
-  for (let i2 = 0; i2 < bb.length; i2 += 8) data.push(bb.slice(i2, i2 + 8).reduce((a, b) => a << 1 | b, 0));
-  const nBlocks = BLOCKS3[e][ver], eccLen = ECC_PER_BLOCK[e][ver];
-  const raw2 = Math.floor(rawModules(ver) / 8);
-  const nShort = nBlocks - raw2 % nBlocks, shortLen = Math.floor(raw2 / nBlocks);
-  const div = rsDivisor(eccLen);
-  const blocks = [];
-  for (let i2 = 0, k = 0; i2 < nBlocks; i2++) {
-    const dat = data.slice(k, k + shortLen - eccLen + (i2 < nShort ? 0 : 1));
-    k += dat.length;
-    const ecc = rsRemainder(dat, div);
-    if (i2 < nShort) dat.push(0);
-    blocks.push([...dat, ...ecc]);
-  }
-  const all2 = [];
-  for (let i2 = 0; i2 < blocks[0].length; i2++)
-    blocks.forEach((b, j) => {
-      if (i2 !== shortLen - eccLen || j >= nShort) all2.push(b[i2]);
-    });
-  const size = ver * 4 + 17;
-  const mod = Array.from({ length: size }, () => new Array(size).fill(false));
-  const fn2 = Array.from({ length: size }, () => new Array(size).fill(false));
-  const set = (x, y, dark) => {
-    mod[y][x] = dark;
-    fn2[y][x] = true;
-  };
-  for (let i2 = 0; i2 < size; i2++) {
-    set(6, i2, i2 % 2 === 0);
-    set(i2, 6, i2 % 2 === 0);
-  }
-  const finder = (cx, cy) => {
-    for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
-      const d = Math.max(Math.abs(dx), Math.abs(dy)), x = cx + dx, y = cy + dy;
-      if (x >= 0 && x < size && y >= 0 && y < size) set(x, y, d !== 2 && d !== 4);
-    }
-  };
-  finder(3, 3);
-  finder(size - 4, 3);
-  finder(3, size - 4);
-  const al = alignmentPositions(ver), na = al.length;
-  for (let i2 = 0; i2 < na; i2++) for (let j = 0; j < na; j++) {
-    if (i2 === 0 && j === 0 || i2 === 0 && j === na - 1 || i2 === na - 1 && j === 0) continue;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++)
-      set(al[i2] + dx, al[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
-  }
-  const drawFormat = (mask) => {
-    const d = ECL_FORMAT[ecl] << 3 | mask;
-    let rem = d;
-    for (let i2 = 0; i2 < 10; i2++) rem = rem << 1 ^ (rem >>> 9) * 1335;
-    const bits = (d << 10 | rem) ^ 21522;
-    const bit = (i2) => (bits >>> i2 & 1) !== 0;
-    for (let i2 = 0; i2 <= 5; i2++) set(8, i2, bit(i2));
-    set(8, 7, bit(6));
-    set(8, 8, bit(7));
-    set(7, 8, bit(8));
-    for (let i2 = 9; i2 < 15; i2++) set(14 - i2, 8, bit(i2));
-    for (let i2 = 0; i2 < 8; i2++) set(size - 1 - i2, 8, bit(i2));
-    for (let i2 = 8; i2 < 15; i2++) set(8, size - 15 + i2, bit(i2));
-    set(8, size - 8, true);
-  };
-  drawFormat(0);
-  if (ver >= 7) {
-    let rem = ver;
-    for (let i2 = 0; i2 < 12; i2++) rem = rem << 1 ^ (rem >>> 11) * 7973;
-    const bits = ver << 12 | rem;
-    for (let i2 = 0; i2 < 18; i2++) {
-      const b = (bits >>> i2 & 1) !== 0, a = size - 11 + i2 % 3, c = Math.floor(i2 / 3);
-      set(a, c, b);
-      set(c, a, b);
-    }
-  }
-  let i = 0;
-  for (let right = size - 1; right >= 1; right -= 2) {
-    if (right === 6) right = 5;
-    for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
-      const x = right - j, up = (right + 1 & 2) === 0, y = up ? size - 1 - vert : vert;
-      if (!fn2[y][x] && i < all2.length * 8) {
-        mod[y][x] = (all2[i >>> 3] >>> 7 - (i & 7) & 1) !== 0;
-        i++;
-      }
-    }
-  }
-  const applyMask = (m) => {
-    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-      if (fn2[y][x]) continue;
-      const inv = [
-        (x + y) % 2 === 0,
-        y % 2 === 0,
-        x % 3 === 0,
-        (x + y) % 3 === 0,
-        (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
-        x * y % 2 + x * y % 3 === 0,
-        (x * y % 2 + x * y % 3) % 2 === 0,
-        ((x + y) % 2 + x * y % 3) % 2 === 0
-      ][m];
-      if (inv) mod[y][x] = !mod[y][x];
-    }
-  };
-  let best = 0, bestScore = Infinity;
-  for (let m = 0; m < 8; m++) {
-    applyMask(m);
-    drawFormat(m);
-    const s2 = penalty(mod);
-    if (s2 < bestScore) {
-      best = m;
-      bestScore = s2;
-    }
-    applyMask(m);
-  }
-  applyMask(best);
-  drawFormat(best);
-  return { size, version: ver, ecl, mask: best, modules: mod };
-}
-function penalty(m) {
-  const n2 = m.length;
-  let r = 0;
-  const line2 = (get) => {
-    let run34 = 0, color2 = false;
-    const hist = [0, 0, 0, 0, 0, 0, 0];
-    const addHist = (len) => {
-      if (hist[0] === 0) len += n2;
-      hist.pop();
-      hist.unshift(len);
-    };
-    const count = () => {
-      const k = hist[1];
-      const core = k > 0 && hist[2] === k && hist[3] === k * 3 && hist[4] === k && hist[5] === k;
-      return (core && hist[0] >= k * 4 && hist[6] >= k ? 1 : 0) + (core && hist[6] >= k * 4 && hist[0] >= k ? 1 : 0);
-    };
-    for (let i = 0; i < n2; i++) {
-      if (get(i) === color2) {
-        run34++;
-        if (run34 === 5) r += 3;
-        else if (run34 > 5) r++;
-      } else {
-        addHist(run34);
-        if (!color2) r += count() * 40;
-        color2 = get(i);
-        run34 = 1;
-      }
-    }
-    if (color2) {
-      addHist(run34);
-      run34 = 0;
-    }
-    run34 += n2;
-    addHist(run34);
-    r += count() * 40;
-  };
-  for (let y = 0; y < n2; y++) line2((x) => m[y][x]);
-  for (let x = 0; x < n2; x++) line2((y) => m[y][x]);
-  let dark = 0;
-  for (let y = 0; y < n2; y++) for (let x = 0; x < n2; x++) {
-    if (m[y][x]) dark++;
-    if (x < n2 - 1 && y < n2 - 1) {
-      const c = m[y][x];
-      if (c === m[y][x + 1] && c === m[y + 1][x] && c === m[y + 1][x + 1]) r += 3;
-    }
-  }
-  const total = n2 * n2;
-  r += (Math.ceil(Math.abs(dark * 20 - total * 10) / total) - 1) * 10;
-  return r;
-}
-var HEX = /^#[0-9a-f]{6}$/i;
-function qrStyle(v) {
-  const o = typeof v === "string" ? v.trim() ? JSON.parse(v) : {} : v ?? {};
-  const color2 = o.color ?? "#000000";
-  if (!HEX.test(color2)) throw new Error(`style.color ska vara #rrggbb, fick \xAB${color2}\xBB`);
-  const modules = o.modules ?? "square";
-  if (modules !== "square" && modules !== "dots") throw new Error("style.modules \xE4r square eller dots");
-  const error = o.error ?? "Q";
-  if (!(error in ECL_ORDINAL)) throw new Error("style.error \xE4r L, M, Q eller H");
-  const border = o.border ?? 4;
-  if (!Number.isInteger(border) || border < 0 || border > 16) throw new Error("style.border \xE4r ett heltal mellan 0 och 16");
-  return { color: color2.toLowerCase(), modules, error, border };
-}
-function rrect(x, y, w, h, r) {
-  return `M${x + r},${y}H${x + w - r}A${r},${r} 0 0 1 ${x + w},${y + r}V${y + h - r}A${r},${r} 0 0 1 ${x + w - r},${y + h}H${x + r}A${r},${r} 0 0 1 ${x},${y + h - r}V${y + r}A${r},${r} 0 0 1 ${x + r},${y}Z`;
-}
-function qrSvg(q, style) {
-  const b = style.border, full = q.size + 2 * b, n2 = q.size;
-  const inFinder = (x, y) => x < 7 && y < 7 || x >= n2 - 7 && y < 7 || x < 7 && y >= n2 - 7;
-  const parts = [];
-  if (style.modules === "square") {
-    let d = "";
-    q.modules.forEach((row2, y) => row2.forEach((v, x) => {
-      if (v) d += `M${x + b},${y + b}h1v1h-1z`;
-    }));
-    parts.push(`<path d="${d}"/>`);
-  } else {
-    q.modules.forEach((row2, y) => row2.forEach((v, x) => {
-      if (v && !inFinder(x, y)) parts.push(`<circle cx="${x + b + 0.5}" cy="${y + b + 0.5}" r="0.5"/>`);
-    }));
-    for (const [ox, oy] of [[0, 0], [n2 - 7, 0], [0, n2 - 7]]) {
-      parts.push(`<path fill-rule="evenodd" d="${rrect(ox + b, oy + b, 7, 7, 1.6)} ${rrect(ox + b + 1, oy + b + 1, 5, 5, 1.1)}"/>`);
-      parts.push(`<circle cx="${ox + b + 3.5}" cy="${oy + b + 3.5}" r="1.5"/>`);
-    }
-  }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${full} ${full}" width="${full * 12}" height="${full * 12}" shape-rendering="geometricPrecision"><g fill="${style.color}">${parts.join("")}</g></svg>`;
-}
-function withUtm(url, utm) {
-  let u;
-  try {
-    u = new URL(url);
-  } catch {
-    throw new Error(`url \xE4r ingen adress: ${url}`);
-  }
-  if (u.protocol !== "https:" && u.protocol !== "http:") throw new Error("url m\xE5ste vara en webbadress (https)");
-  for (const [k, v] of Object.entries(utm)) {
-    if (typeof v !== "string" || !v.trim()) throw new Error(`utm.${k} saknar v\xE4rde`);
-    u.searchParams.set(k.startsWith("utm_") ? k : `utm_${k}`, v.trim());
-  }
-  return u.toString();
-}
-
-// atoms/render/qr_code.atom.ts
-var spec33 = {
-  "id": "c_render_qr_code",
-  "name": "render.call.qr_code",
-  "grounding": "observed",
-  "found_in": "atomf\xF6rslag render.atom_proposal.qr_code \u2014 S\xE4ljarpaketet beh\xF6ver en QR-kod per kanal till s\xE4ljarens bokningssida med UTM. I dag g\xF6rs den med qr_style.py i hubspot-cli p\xE5 en egen dator.",
-  "scope": "shared",
-  "surface": "render",
-  "input": [
-    "url",
-    "utm",
-    "style",
-    "file_name",
-    "folder",
-    "customer"
-  ],
-  "optional_input": ["utm", "style", "folder", "customer"],
-  "output": [
-    "proposal",
-    "url_with_utm",
-    "refs",
-    "code",
-    "done"
-  ],
-  "idempotent": false,
-  "atom": "render.qr_code",
-  "effect": {
-    "verb": "creates",
-    "object": "image.qr_code"
-  },
-  "performer": "code",
-  "built_from": "p_render_qr_code",
-  "label": "QR-kod till en adress",
-  "summary": "G\xF6r en QR-kod av en adress (med UTM-parametrar som v\xE4rden) i husets eller kundens stil (f\xE4rg, prickform) och sparar den som PNG och SVG i kundens filer.",
-  "keywords": [
-    "qr-kod",
-    "kod till bokningssidan",
-    "qr till brevl\xE5delapp",
-    "utm-l\xE4nk",
-    "qr code",
-    "tracking link"
-  ],
-  "test_target": "utan confirmed g\xF6rs ingen fil; provdata k\xF6rs torrt med prov:atom och pr\xF6var att koden l\xE4ses tillbaka till samma adress",
-  "leaves": {
-    "schema": {
-      "proposal": "sant n\xE4r koden v\xE4ntar p\xE5 ja",
-      "url_with_utm": "adressen som koden leder till",
-      "refs": "QR-koden i banken, PNG och SVG (bank://<tenant>/<sha256>)",
-      "code": "QR-versionen, antal moduler och felr\xE4ttningen",
-      "done": "sant n\xE4r koden \xE4r sparad"
-    },
-    "done_when": [
-      "QR-koden finns i banken och l\xE4ses tillbaka till adressen med UTM"
-    ],
-    "where": "kundens filer i banken, i den angivna mappen (f\xF6rval \xABQR-koder\xBB)"
-  },
-  "requires": "draft",
-  "stage": "draft",
-  "module": "n0102",
-  "operation_id": "o_render_qr_code",
-  "step_id": "s_render_qr_code",
-  "guards": {
-    "object_types": [
-      "image.qr_code"
-    ],
-    "severity": {
-      "image.qr_code": "\u25CF"
-    },
-    "removes": "none",
-    "note": []
-  }
-};
-var PX_PER_MODULE = 24;
-async function run33(args, ctx) {
-  const i = args;
-  if (typeof i.url !== "string" || !i.url.trim()) throw new Error("ange url: adressen koden ska leda till");
-  if (typeof i.file_name !== "string" || !i.file_name.trim()) throw new Error("ange file_name: filens namn");
-  let utm = {};
-  if (i.utm !== void 0 && i.utm !== "") {
-    try {
-      utm = typeof i.utm === "string" ? JSON.parse(i.utm) : i.utm;
-    } catch {
-      throw new Error('utm ska vara JSON, t.ex. {"source":"brevlada"}');
-    }
-  }
-  let style;
-  try {
-    style = qrStyle(i.style);
-  } catch (e) {
-    throw new Error(e instanceof SyntaxError ? "style ska vara JSON" : e.message);
-  }
-  const url_with_utm = withUtm(i.url.trim(), utm);
-  const q = encodeQr(url_with_utm, style.error);
-  const code = { version: q.version, modules: q.size, error: style.error };
-  const base = i.file_name.trim().replace(/\.(png|svg)$/i, "");
-  if (i.confirmed !== true || ctx.dry_run) return { proposal: true, url_with_utm, refs: { png: "", svg: "" }, code, done: false };
-  const keep2 = ctx.call.keep;
-  if (!keep2) throw new Error("QR-koden kan bara sparas i ett steg med filbanken");
-  if (!i.customer) throw new Error("ange customer: kunden filerna sparas hos");
-  const svg = qrSvg(q, style);
-  const { default: sharp2 } = await Promise.resolve().then(() => (init_dist(), dist_exports));
-  const px = (q.size + 2 * style.border) * PX_PER_MODULE;
-  const png3 = await sharp2(Buffer.from(svg), { density: 72 * PX_PER_MODULE / 12 }).resize(px, px).withMetadata({ density: 600 }).png().toBuffer();
-  const folder = i.folder?.trim() || "QR-koder";
-  const common = { folder, customer: i.customer, asset_type: "core.asset.material", source: url_with_utm };
-  const s2 = await keep2({ ...common, bytes: new TextEncoder().encode(svg), mime: "image/svg+xml", name: `${base}.svg` });
-  const p = await keep2({ ...common, bytes: png3, mime: "image/png", name: `${base}.png` });
-  return { proposal: false, url_with_utm, refs: { png: p.ref, svg: s2.ref }, code, done: true };
-}
-var fixtures33 = [
-  { name: "en kod med UTM och runda prickar: f\xF6rhandsvisningen", args: {
-    url: "https://example.com/meetings/prov-person",
-    utm: '{"medium":"fysisk","source":"brevlada_kanal","campaign":"prov_person"}',
-    style: '{"color":"#d75827","modules":"dots"}',
-    file_name: "prov-person - kanal",
-    customer: "@runner"
-  } },
-  { name: "en kod utan stil: svarta rutor", args: { url: "https://example.com/", file_name: "prov" } },
-  { name: "en adress som inte \xE4r en webbadress avvisas", args: { url: "ftp://example.com/fil", file_name: "x" }, expect_error: "webbadress" },
-  { name: "en f\xE4rg som inte \xE4r #rrggbb avvisas", args: { url: "https://example.com", style: '{"color":"orange"}', file_name: "x" }, expect_error: "#rrggbb" }
-];
-
-// atoms/index.generated.ts
-var ATOMS = [change_bank_atom_exports, pack_files_atom_exports, read_bank_atom_exports, create_event_atom_exports, save_version_atom_exports, create_draft_atom_exports, list_inflow_atom_exports, send_mail_atom_exports, connection_check_atom_exports, pagespeed_atom_exports, search_console_atom_exports, change_atom_exports, read_atom_exports, archive_record_atom_exports, cms_content_publish_atom_exports, cms_content_write_atom_exports, find_objects_atom_exports, list_content_atom_exports, read_menus_atom_exports, read_object_atom_exports, read_source_atom_exports, ui_settings_register_atom_exports, ui_template_edit_atom_exports, user_write_atom_exports, write_record_atom_exports, write_source_atom_exports, change_ad_object_atom_exports, create_ad_creative_atom_exports, manage_access_atom_exports, write_atom_exports, html_pdf_atom_exports, qr_code_atom_exports, fetch_pages_atom_exports];
-
-// src/local-runner/server.ts
-import { homedir } from "node:os";
-import { dirname as dirname3, join as join8 } from "node:path";
-import { fileURLToPath as fileURLToPath2 } from "node:url";
-import { createInterface } from "node:readline";
-
-// src/v2/domain/registry-texts.ts
-var DEFAULTS = /* @__PURE__ */ new Map();
-var held = /* @__PURE__ */ new Map();
-var textOf3 = (key) => held.get(key) ?? DEFAULTS.get(key) ?? key;
-function registryTexts(group, defaults) {
-  for (const [k, v] of Object.entries(defaults)) if (typeof v === "string") DEFAULTS.set(`${group}.${k}`, v);
-  return new Proxy(defaults, {
-    get(target, prop, recv) {
-      const v = Reflect.get(target, prop, recv);
-      return typeof prop === "string" && typeof v === "string" ? textOf3(`${group}.${prop}`) : v;
-    }
-  });
-}
-
-// src/v2/mcp/local-text.ts
-var LOCAL_TEXT = registryTexts("local-text.local_text", {
-  waiting: "Det h\xE4r g\xF6rs p\xE5 din Mac. Be Claude p\xE5 din Mac att k\xF6ra uppdrag {order_id}. Det m\xE5ste g\xF6ras inom tio minuter.",
-  no_runner: "Det h\xE4r g\xF6rs p\xE5 en Mac med dirigentens lokala del ig\xE5ng, och den svarar inte h\xE4r. \xD6ppna samtalet i Claude Code eller Claude Desktop p\xE5 Macen d\xE4r Freebo-mappen finns, eller be Daniel P k\xF6ra det. Inget \xE4r gjort.",
-  // data-i-koden: ordagrann text för Daniels ja (P9d)
-  expired: "K\xF6rordern \xE4r \xE4ldre \xE4n tio minuter och k\xF6rs inte. K\xF6r momentet igen f\xF6r en ny.",
-  already: "K\xF6rordern \xE4r redan h\xE4mtad och k\xF6rs inte tv\xE5 g\xE5nger.",
-  plugin_old: "Pluginen k\xE4nner inte det h\xE4r anropet. Uppdatera pluginen och f\xF6rs\xF6k igen.",
-  /** say.happened and say.now while the order waits: say may not name the tool or the order (?) for Daniels ja. */
-  waiting_happened: "Det h\xE4r g\xF6rs p\xE5 din Mac.",
-  waiting_now: "K\xF6rordern v\xE4ntar p\xE5 Macen och g\xE4ller i tio minuter.",
-  done: "Det k\xF6rdes p\xE5 Macen.",
-  /** test: true on a local capability (final review): no order is written, and the Mac refuses an order marked as a test. (?) for Daniels ja. */
-  no_test_local: "Lokala moment provk\xF6rs inte h\xE4rifr\xE5n. De provas med provet f\xF6r den lokala k\xF6raren, mot provmappen. Inget \xE4r gjort.",
-  /** The local runner's own refusals and failures (task 7). {setting} is the plugin setting's name. */
-  not_approved: "Det h\xE4r momentet skickar n\xE5got utanf\xF6r huset och \xE4r inte godk\xE4nt \xE4n, s\xE5 det har inte gjorts. Godk\xE4nn momentet i dirigenten och f\xF6rs\xF6k igen.",
-  setting_missing: "Inst\xE4llningen {setting} saknas p\xE5 Macen. Ange den i pluginens inst\xE4llningar eller i ~/.config/rotor/ytor.json. Inget \xE4r gjort.",
-  timeout: "Skriptet tog l\xE4ngre \xE4n tv\xE5 minuter och stoppades. Det blev inte klart.",
-  not_wired: "Den lokala delen kan inte n\xE5 dirigenten \xE4n. Inget \xE4r gjort.",
-  not_local_yet: "Det h\xE4r momentet ska g\xF6ras p\xE5 Macen, men den lokala delen kan inte g\xF6ra det \xE4n. Inget \xE4r gjort.",
-  unknown_surface: "Dirigenten p\xE5 din Mac vet inte hur den n\xE5r {surface}. Inget har gjorts. Be Daniel P l\xE4gga till det.",
-  param_flag: "Uppgiften \xAB{param}\xBB f\xE5r inte b\xF6rja med ett minustecken, s\xE5 inget har gjorts. Ta bort minustecknet och f\xF6rs\xF6k igen.",
-  bad_param: "Uppgiften \xAB{param}\xBB har ett v\xE4rde som inte g\xE5r att anv\xE4nda, s\xE5 inget har gjorts. Kontrollera v\xE4rdet och f\xF6rs\xF6k igen.",
-  path_outside: "S\xF6kv\xE4gen i {param} ligger utanf\xF6r mapparna i pluginens inst\xE4llningar och k\xF6rs inte. Inget \xE4r gjort.",
-  too_much_output: "Skriptet skrev mer \xE4n den lokala delen tar emot och stoppades. Det blev inte klart.",
-  ytor_unreadable: "Inst\xE4llningarna f\xF6r vilka system dirigenten kan n\xE5 p\xE5 den h\xE4r datorn gick inte att l\xE4sa. Be Daniel P titta p\xE5 dem."
-});
-
-// src/local-runner/allow.ts
-import { existsSync as existsSync3, readFileSync } from "node:fs";
-var LOCAL_ARGV0 = /* @__PURE__ */ new Set(["python3", "/usr/bin/python3", "node"]);
-function findAllow(allow, surface, call3) {
-  const a = allow.find((x) => x.surface === surface && x.call === call3);
-  if (!a) return null;
-  if (a.kind === "script" && !(a.argv[0] === a.argv0 && LOCAL_ARGV0.has(a.argv0))) return null;
-  return a;
-}
-function loadAllow(path2) {
-  if (!existsSync3(path2)) return [];
-  const d = JSON.parse(readFileSync(path2, "utf8"));
-  return Array.isArray(d.allow) ? d.allow : [];
-}
-
-// src/local-runner/run.ts
-import { existsSync as existsSync4, readFileSync as readFileSync2, realpathSync } from "node:fs";
-import { dirname as dirname2, isAbsolute, join as join7, resolve as resolve2, sep as sep2 } from "node:path";
-import { execFile as execFile2 } from "node:child_process";
-
-// src/execute/surface.ts
-var SurfaceError = class extends Error {
-  constructor(message, transient) {
-    super(message);
-    this.transient = transient;
-  }
-  transient;
-  name = "SurfaceError";
-};
-
-// src/execute/surfaces/script.ts
-var PLATSH\u00C5LLARE = /^\{([a-z_][a-z0-9_]*)\}$/;
-function buildArgv(mall, args) {
-  const fylld = [];
-  for (const del of mall) {
-    const v = /^\{([a-z_][a-z0-9_]*)\?\}$/.exec(del);
-    if (!v) {
-      fylld.push(del);
-      continue;
-    }
-    const x = args[v[1]];
-    if (x === void 0 || x === null || x === "") {
-      if (fylld.at(-1)?.startsWith("-")) fylld.pop();
-    } else fylld.push(`{${v[1]}}`);
-  }
-  return fylld.map((del) => {
-    const m = PLATSH\u00C5LLARE.exec(del);
-    if (!m) return del;
-    const v\u00E4rde = args[m[1]];
-    if (v\u00E4rde === void 0 || v\u00E4rde === null)
-      throw new SurfaceError(`argumentet "${m[1]}" saknas f\xF6r kommandot`, false);
-    return String(v\u00E4rde);
-  });
-}
 
 // src/types/event.ts
 var eventType = z.enum([
@@ -30456,6 +30257,354 @@ function isSchema2Definition(e) {
   return e.type === "node_defined" && e.payload?.["schema"] === 2;
 }
 
+// src/registry/known-events.ts
+var KNOWN = new Set(eventType.options);
+
+// src/registry/atom-aliases.ts
+var APPROVE_CALL = "c_content_approve";
+var approve = (oldName, what, approver, channel, extra) => ({
+  call: APPROVE_CALL,
+  old_name: oldName,
+  bind: { what: `value:${what}`, approver: `value:${approver}`, channel: `value:${channel}`, ...extra }
+});
+var MERGED_CALLS = {
+  c_content_sheet_approval: approve(
+    "content.call.approve_product_sheet_text",
+    "product_sheet_pdf",
+    "customer_approver",
+    "email",
+    { subject: "param:product_sheet_pdf" }
+  ),
+  n0578: approve(
+    "content.call.record_plan_approval",
+    "content_plan",
+    "customer_approver",
+    "email",
+    { subject: "param:plan", evidence: "param:svar" }
+  ),
+  c_content_call_update_premeeting_brief: approve(
+    "content.call.update_premeeting_brief",
+    "premeeting_brief",
+    "internal_reviewer",
+    "in_view",
+    { subject: "param:content.premeeting_brief" }
+  ),
+  c_content_call_update_proposal_plan: approve(
+    "content.call.update_proposal_plan",
+    "proposal_plan",
+    "internal_reviewer",
+    "in_view",
+    { subject: "param:content.proposal_plan" }
+  ),
+  c_content_call_update_proposal_copy: approve(
+    "content.call.update_proposal_copy",
+    "proposal_copy",
+    "internal_reviewer",
+    "in_view",
+    { subject: "param:content.proposal_copy" }
+  ),
+  // 2026-10-13 (Daniel P: «Om det går att generalisera ska det göras»): samma
+  // effekt med en annan utförare är samma molekyl. Utföraren står på steget;
+  // människan följer receptet (`instruction`), Claude instruktionen.
+  c_knowledge_call_frame_by_claude: { call: "c_knowledge_frame", old_name: "knowledge.call.frame_by_claude", bind: {} },
+  c_knowledge_run: {
+    call: "c_knowledge_gather",
+    old_name: "knowledge.call.run",
+    bind: { research_plan: "param:research_package", basis: "value:research_package" }
+  },
+  c_knowledge_call_run_by_claude: {
+    call: "c_knowledge_gather",
+    old_name: "knowledge.call.run_by_claude",
+    bind: { research_plan: "param:research_package", basis: "value:research_package" }
+  },
+  // Skicka för godkännande: föremålet (post, dokument) är parametern `what`.
+  // Meta: formatet och det som ändras är parametrar på de generella anropen.
+  c_meta_create_video_creative: {
+    call: "c_meta_create_ad_creative",
+    old_name: "meta.call.create_video_creative",
+    bind: { format: "value:video" }
+  },
+  c_meta_create_flexible_creative: {
+    call: "c_meta_create_ad_creative",
+    old_name: "meta.call.create_flexible_creative",
+    bind: { format: "value:flexible" }
+  },
+  c_meta_update_object: { call: "c_meta_change_ad_object", old_name: "meta.call.update_object", bind: { change: "value:details" } },
+  c_meta_update_targeting: {
+    call: "c_meta_change_ad_object",
+    old_name: "meta.call.update_targeting",
+    bind: { change: "value:targeting" }
+  },
+  n0583: { call: "n0616", old_name: "gmail.call.send_social_preview", bind: {
+    what: "value:social_post",
+    bilagor: "param:manifest",
+    arende: "value:SoMe-post f\xF6r godk\xE4nnande",
+    svarsdatum: "value:tre arbetsdagar efter utskicket"
+  } }
+};
+var MERGED_CALL_NAMES = Object.fromEntries(
+  Object.entries(MERGED_CALLS).map(([id, m]) => [m.old_name, id])
+);
+
+// src/plan/goal-library.ts
+var LIBRARY_ROLES = {
+  customer: { label: ROLE_LABELS["customer"], by: "customer" },
+  customer_decider: { label: ROLE_LABELS["customer_decider"], by: "customer" },
+  owner: { label: ROLE_LABELS["owner"], by: "human" },
+  reviewer: { label: ROLE_LABELS["reviewer"], by: "human" },
+  copy: { label: ROLE_LABELS["copy"], by: "human" }
+};
+
+// src/search/text.ts
+var GRANNAR = [
+  ["sammanfatta", "sammanfattning", "summarize", "underlag", "dokumenttext"],
+  ["bild", "bilder", "foto", "image", "png", "jpg", "webp", "forhandsbild"],
+  ["bank", "innehallsbank", "asset", "fil", "filer", "katalog"],
+  ["mejl", "mejla", "mail", "email", "gmail", "skicka", "send", "meddelande"],
+  ["dokument", "document", "pdf", "leveransdokument"],
+  ["rapport", "rapportrader", "report", "rows", "kontrollresultat", "kpi"],
+  ["kund", "customer", "part", "mottagare", "recipient"],
+  ["sida", "sidor", "page", "pages", "cms", "webbsida"],
+  ["annons", "annonser", "ad", "ads", "kampanj", "creative"],
+  ["godkanna", "godkannande", "godkand", "approve", "approval", "granska"],
+  ["pris", "prislista", "prisandring", "price"],
+  ["some", "social", "post", "inlagg"],
+  ["saljare", "salesperson", "user", "person"],
+  ["logga", "logo", "logotyp"],
+  ["vektorformat", "vektor", "svg", "eps"],
+  ["webbinarium", "webbinariet", "webinar", "webbinar"]
+];
+var ID_WORDS = [
+  ["kampanj", "campaign"]
+];
+var norm = (s2) => s2.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+var SM\u00C5ORD = /* @__PURE__ */ new Set(["ur", "i", "till", "for", "en", "ett", "och", "av", "pa", "med", "som", "den", "det"]);
+var FR\u00C5GEORD = /* @__PURE__ */ new Set([
+  "hur",
+  "jag",
+  "mig",
+  "min",
+  "mitt",
+  "mina",
+  "vad",
+  "var",
+  "vem",
+  "vilka",
+  "vilken",
+  "vilket",
+  "kan",
+  "kunna",
+  "du",
+  "dig",
+  "din",
+  "ditt",
+  "dina",
+  "vi",
+  "oss",
+  "var",
+  "vara",
+  "ni",
+  "de",
+  "dem",
+  "ha",
+  "har",
+  "hade",
+  "ska",
+  "skulle",
+  "vill",
+  "man",
+  "nar",
+  "om",
+  "att",
+  "inte",
+  "eller",
+  "sa",
+  "ar",
+  "alla",
+  "allt",
+  "nagon",
+  "nagot",
+  "nagra",
+  "bara",
+  "ocksa",
+  "igen",
+  "nu",
+  "idag",
+  "imorgon",
+  "nasta",
+  "forra",
+  "denna",
+  "detta",
+  "dessa",
+  "hos",
+  "fran",
+  "efter",
+  "innan",
+  "under",
+  "over",
+  "hej",
+  "tack",
+  "snalla",
+  "genom",
+  "vart",
+  "varfor",
+  // Tid i vardagsspråk (B-255): "på torsdag", "i september", "förra månaden"
+  // säger när, inte vad — de får inte räknas som ord ingen känner.
+  "mandag",
+  "tisdag",
+  "onsdag",
+  "torsdag",
+  "fredag",
+  "lordag",
+  "sondag",
+  "januari",
+  "februari",
+  "mars",
+  "april",
+  "maj",
+  "juni",
+  "juli",
+  "augusti",
+  "september",
+  "oktober",
+  "november",
+  "december",
+  "igar",
+  "idag",
+  "ikvall",
+  "manad",
+  "manaden",
+  "veckan",
+  "veckans",
+  "ar",
+  "aret",
+  "snart",
+  "sen",
+  "langre",
+  "langer",
+  "sent",
+  "tidigt",
+  "genast",
+  "direkt",
+  // Önskan i vardagsspråk: "önskar ett utdrag" handlar om utdraget.
+  "onskar",
+  "onskas",
+  "undrar",
+  "behover",
+  "behovs",
+  "garna",
+  "ville",
+  "kolla",
+  "fixa",
+  // Verbpartiklar: "ladda upp", "skicka ut" — verbet bär betydelsen, partikeln
+  // träffar annars allt som råkar ha samma partikel.
+  "upp",
+  "ner",
+  "ut",
+  "in",
+  "av",
+  "pa",
+  "bort",
+  "fram",
+  "tillbaka"
+]);
+var VOKAL = /[aeiouy]/;
+var STEG1 = [
+  "heterna",
+  "hetens",
+  "anden",
+  "andes",
+  "andet",
+  "arens",
+  "arnas",
+  "ernas",
+  "ornas",
+  "heter",
+  "heten",
+  "arna",
+  "erna",
+  "orna",
+  "ande",
+  "arne",
+  "aste",
+  "aren",
+  "ades",
+  "erns",
+  "ade",
+  "are",
+  "ern",
+  "ens",
+  "het",
+  "ast",
+  "ad",
+  "en",
+  "ar",
+  "er",
+  "or",
+  "as",
+  "es",
+  "at",
+  "a",
+  "e"
+];
+var S_F\u00D6RE = /[bcdfghjklmnoprtvy]$/;
+var stamCache = /* @__PURE__ */ new Map();
+function stam(ord) {
+  const hit = stamCache.get(ord);
+  if (hit !== void 0) return hit;
+  let r1 = ord.length;
+  for (let i = 1; i < ord.length; i++)
+    if (!VOKAL.test(ord[i]) && VOKAL.test(ord[i - 1])) {
+      r1 = i + 1;
+      break;
+    }
+  r1 = Math.max(r1, 3);
+  let w = ord;
+  const iR1 = (suf) => w.endsWith(suf) && w.length - suf.length >= r1;
+  const s1 = STEG1.find(iR1);
+  if (s1) w = w.slice(0, -s1.length);
+  else if (iR1("s") && S_F\u00D6RE.test(w.slice(0, -1))) {
+    w = w.slice(0, -1);
+    if (iR1("at")) w = w.slice(0, -2);
+  }
+  if (["dd", "gd", "nn", "dt", "gt", "kt", "tt"].some(iR1)) w = w.slice(0, -1);
+  if (iR1("fullt")) w = w.slice(0, -1);
+  else if (iR1("lost")) w = w.slice(0, -1);
+  else {
+    const s3 = ["lig", "els", "ig"].find(iR1);
+    if (s3) w = w.slice(0, -s3.length);
+  }
+  stamCache.set(ord, w);
+  return w;
+}
+var S\u00C4GER_INGET = /* @__PURE__ */ new Set([
+  "system",
+  "systemet",
+  "problem",
+  "problemet",
+  "fel",
+  "felet",
+  "sak",
+  "saken",
+  "grej",
+  "hjalp",
+  "fraga",
+  "fragan",
+  "arende",
+  "arendet",
+  "kund",
+  "kunden",
+  "ny",
+  "nytt",
+  "nya",
+  "gammal",
+  "sakna",
+  "saknas",
+  "finns",
+  "gor",
+  "gora"
+]);
+
 // src/v2/domain/capability.ts
 function hasCode(n2) {
   return n2.performer !== "code" || typeof n2.call === "string" && n2.call.trim() !== "" || n2.request !== null && typeof n2.request === "object";
@@ -30528,6 +30677,2692 @@ function callOf(id, n2, v1Calls) {
   };
 }
 
+// src/plan/prompt-lint.ts
+var DOMAIN_RE = "[a-z0-9-]{2,}(?:\\.[a-z0-9-]{2,})*\\.(?:se|com|nu|io|net|org|eu|dk|no|fi)";
+var DOMAIN_ALL = new RegExp(`^${DOMAIN_RE}$`, "i");
+
+// src/plan/prompt-contract.ts
+var DONE_STATE = "(done|complete|completed|finished|saved|sent|submitted|delivered|published|stored|recorded|ready)";
+var CLAIMS = [
+  new RegExp(`\\b(is|are|was|were|has been|have been|had been|now)\\s+(now\\s+|already\\s+|fully\\s+)?${DONE_STATE}\\b`, "i"),
+  /\b(i|we)\s+(have\s+|'ve\s+|just\s+|already\s+)*(saved|sent|submitted|completed|finished|delivered|published|stored|recorded)\b/i,
+  /\b(and|then)\s+(saved|sent|submitted|published|delivered|stored|recorded)\b/i,
+  /\b(\w+)\s+(saved|sent|submitted|stored)\s+(on|to|in|as)\b/i,
+  /\bsuccessfully\b|\btask complete\b|\ball done\b|✅/i
+];
+
+// src/registry/capabilities.ts
+import { existsSync as existsSync3, readFileSync } from "node:fs";
+import { dirname as dirname2, join as join7 } from "node:path";
+import { fileURLToPath as fileURLToPath2 } from "node:url";
+
+// src/v2/domain/registry-texts.ts
+var DEFAULTS = /* @__PURE__ */ new Map();
+var held = /* @__PURE__ */ new Map();
+var PLAN_ORIGIN_TEXT = registryTexts("plan.origin", { method_why: "Planeringen f\xF6ljer husets bundna arbetss\xE4tt." });
+var textOf3 = (key) => held.get(key) ?? DEFAULTS.get(key) ?? key;
+function registryTexts(group, defaults) {
+  for (const [k, v] of Object.entries(defaults)) if (typeof v === "string") DEFAULTS.set(`${group}.${k}`, v);
+  return new Proxy(defaults, {
+    get(target, prop, recv) {
+      const v = Reflect.get(target, prop, recv);
+      return typeof prop === "string" && typeof v === "string" ? textOf3(`${group}.${prop}`) : v;
+    }
+  });
+}
+function registryTextTree(group, defaults) {
+  registerDefaults(group, defaults);
+  return new Proxy(defaults, {
+    get(target, prop, recv) {
+      const v = Reflect.get(target, prop, recv);
+      if (typeof prop !== "string") return v;
+      if (typeof v === "string") return textOf3(`${group}.${prop}`);
+      return v !== null && typeof v === "object" && !Array.isArray(v) ? registryTextTree(`${group}.${prop}`, v) : v;
+    }
+  });
+}
+function registerDefaults(group, values) {
+  for (const [key, value] of Object.entries(values)) {
+    if (typeof value === "string") DEFAULTS.set(`${group}.${key}`, value);
+    else if (value !== null && typeof value === "object" && !Array.isArray(value)) registerDefaults(`${group}.${key}`, value);
+  }
+}
+
+// src/v2/domain/sorts.ts
+var SORTS = ["produce", "review", "approve", "ask", "publish", "send", "measure", "record"];
+var RESTORES = ["reopen", "correct_done", "unskip", "withdraw_override"];
+var SORT_TEXT = registryTextTree("sorts", {
+  produce: { label_sv: "Ta fram", needs: "det som metoden s\xE4ger (underlag)", leaves: "materialet (en enhet med delar)", follow: "Resultatet fr\xE5n momentet kan anv\xE4ndas vidare." },
+  review: { label_sv: "Granska", needs: "materialet", leaves: "materialet, granskat", follow: "Granskningen st\xE5r p\xE5 momentet och materialet kan godk\xE4nnas eller \xE4ndras." },
+  approve: { label_sv: "Godk\xE4nn", needs: "materialet (granskat om granskning finns)", leaves: "materialet, godk\xE4nt, med vem och n\xE4r", yes_means: "att materialet f\xE5r anv\xE4ndas vidare; g\xE4ller hela enheten", follow: "Det godk\xE4nda materialet kan anv\xE4ndas vidare." },
+  ask: { label_sv: "Fr\xE5ga", needs: "\u2013", leaves: "svaret", follow: "Svaret st\xE5r p\xE5 momentet och det som v\xE4ntar p\xE5 svaret kan forts\xE4tta." },
+  publish: { label_sv: "Publicera", needs: "godk\xE4nt material", leaves: "\xE4ndringen, med var", follow: "Det \xE4r publicerat p\xE5 den angivna platsen." },
+  send: { label_sv: "Skicka", needs: "godk\xE4nt material", leaves: "utskicket, med till vem", follow: "Utskicket har n\xE5tt mottagarna." },
+  measure: { label_sv: "M\xE4ta", needs: "det som ska m\xE4tas finns", leaves: "m\xE4tningen", follow: "M\xE4tningen st\xE5r p\xE5 momentet." },
+  record: { label_sv: "Bokf\xF6r", needs: "\u2013", leaves: "\u2013", follow: "Bokf\xF6ringen \xE4r sparad." }
+});
+var SORT_DEFAULTS = {
+  produce: {
+    label_sv: SORT_TEXT.produce.label_sv,
+    needs: SORT_TEXT.produce.needs,
+    leaves: SORT_TEXT.produce.leaves,
+    yes_means: null,
+    follow: SORT_TEXT.produce.follow,
+    result_states: ["created", "produced"],
+    answer_actions: [],
+    restores_actions: RESTORES,
+    visible_on_map: true,
+    consequence: false,
+    effect_verb: "creates",
+    actions: ["do_self", "run", "write_self", "attach_file", "fetch_image", "detach_file"]
+  },
+  review: {
+    label_sv: SORT_TEXT.review.label_sv,
+    needs: SORT_TEXT.review.needs,
+    leaves: SORT_TEXT.review.leaves,
+    yes_means: null,
+    follow: SORT_TEXT.review.follow,
+    result_states: ["reviewed"],
+    answer_actions: [],
+    restores_actions: RESTORES,
+    visible_on_map: true,
+    consequence: false,
+    effect_verb: "creates",
+    actions: ["do_self", "request_change"]
+  },
+  approve: {
+    label_sv: SORT_TEXT.approve.label_sv,
+    needs: SORT_TEXT.approve.needs,
+    leaves: SORT_TEXT.approve.leaves,
+    yes_means: SORT_TEXT.approve.yes_means,
+    follow: SORT_TEXT.approve.follow,
+    result_states: ["approved", "ready"],
+    requires_states: ["produced"],
+    approver_role: "internal_approver",
+    customer_approver_role: "customer_approver",
+    answer_actions: ["yes", "decline", "request_change", "done_outside", "approve"],
+    restores_actions: RESTORES,
+    visible_on_map: true,
+    consequence: false,
+    effect_verb: "creates",
+    actions: ["yes", "approve_units", "decline", "request_change", "remind", "extend_wait", "withdraw_yes", "approve"]
+  },
+  ask: {
+    label_sv: SORT_TEXT.ask.label_sv,
+    needs: SORT_TEXT.ask.needs,
+    leaves: SORT_TEXT.ask.leaves,
+    yes_means: null,
+    follow: SORT_TEXT.ask.follow,
+    result_states: ["answered"],
+    answer_actions: [],
+    restores_actions: RESTORES,
+    visible_on_map: true,
+    consequence: false,
+    effect_verb: "creates",
+    actions: ["answer_question", "defer_question", "forward_question", "choose"]
+  },
+  publish: {
+    label_sv: SORT_TEXT.publish.label_sv,
+    needs: SORT_TEXT.publish.needs,
+    leaves: SORT_TEXT.publish.leaves,
+    yes_means: null,
+    follow: SORT_TEXT.publish.follow,
+    result_verb: "published",
+    result_states: ["published"],
+    requires_states: ["approved"],
+    requires_system: true,
+    requires_capability_for_code: true,
+    answer_actions: [],
+    restores_actions: RESTORES,
+    visible_on_map: true,
+    consequence: false,
+    effect_verb: "publishes",
+    actions: ["publish", "unpublish", "run", "do_self"]
+  },
+  send: {
+    label_sv: SORT_TEXT.send.label_sv,
+    needs: SORT_TEXT.send.needs,
+    leaves: SORT_TEXT.send.leaves,
+    yes_means: null,
+    follow: SORT_TEXT.send.follow,
+    result_verb: "sent",
+    result_states: ["sent"],
+    requires_states: ["approved"],
+    requires_system: true,
+    requires_capability_for_code: true,
+    answer_actions: [],
+    restores_actions: RESTORES,
+    visible_on_map: true,
+    consequence: false,
+    effect_verb: "sends",
+    actions: ["run", "do_self"]
+  },
+  measure: {
+    label_sv: SORT_TEXT.measure.label_sv,
+    needs: SORT_TEXT.measure.needs,
+    leaves: SORT_TEXT.measure.leaves,
+    yes_means: null,
+    follow: SORT_TEXT.measure.follow,
+    result_states: ["measured"],
+    answer_actions: [],
+    restores_actions: RESTORES,
+    visible_on_map: true,
+    consequence: false,
+    effect_verb: "creates",
+    actions: ["run", "do_self"]
+  },
+  record: {
+    label_sv: SORT_TEXT.record.label_sv,
+    needs: SORT_TEXT.record.needs,
+    leaves: SORT_TEXT.record.leaves,
+    yes_means: null,
+    follow: SORT_TEXT.record.follow,
+    result_states: ["recorded", "saved"],
+    answer_actions: [],
+    restores_actions: RESTORES,
+    visible_on_map: false,
+    consequence: true,
+    effect_verb: "creates",
+    actions: []
+  }
+};
+var SORT_TABLE = Object.fromEntries(SORTS.map((sort) => {
+  const row2 = SORT_DEFAULTS[sort];
+  const text7 = SORT_TEXT[sort];
+  return [sort, new Proxy(row2, { get(target, property, receiver) {
+    return typeof property === "string" && Object.hasOwn(text7, property) ? text7[property] : Reflect.get(target, property, receiver);
+  } })];
+}));
+var RESTORES_ACTIONS = [...new Set(SORTS.flatMap((sort) => SORT_TABLE[sort].restores_actions))];
+var ANSWER_ACTIONS = [...new Set(SORTS.flatMap((sort) => SORT_TABLE[sort].answer_actions))];
+
+// src/registry/capabilities.ts
+var ROOT = join7(dirname2(fileURLToPath2(import.meta.url)), "..", "..", "..");
+var SYSTEMS = (() => {
+  const f = join7(ROOT, "docs", "system", "system.json");
+  try {
+    return JSON.parse(readFileSync(f, "utf8"));
+  } catch {
+    return { kallor: {}, internt: {} };
+  }
+})();
+
+// src/plan/goal-planning.ts
+var ASSUMED = "(?)";
+var BASIS_DEFAULT = `det best\xE4llningen s\xE4ger; resten tas fram i uppdraget ${ASSUMED}`;
+
+// src/mcp/oauth.ts
+var REFRESH_S = 30 * 86400;
+
+// src/plan/loose-material.ts
+var GROUPS = [...GRANNAR, ...ID_WORDS].map((g) => g.map((w) => stam(norm(w))));
+
+// src/types/resolved.ts
+var resolvedStep = z.object({
+  step: z.string().min(1),
+  /** Stegets version när metoden räknades fram. */
+  version: z.number().int().positive(),
+  operation: z.string().min(1),
+  operation_version: z.number().int().positive(),
+  values: z.record(z.string()),
+  responsible: z.string().min(1),
+  requirements: z.array(requirement),
+  /**
+   * Utförare och godkännare (B-079), variantens om den byter. Valfria så att
+   * låsningar skrivna före fälten fortfarande följer schemat.
+   */
+  performer: z.array(actorRef).optional(),
+  approver: actorRef.nullable().optional(),
+  /**
+   * Kundens instruktion, när varianten sätter en för steget (B-114). Saknas:
+   * molekylens gäller. Den som utför steget läser den här före molekylens.
+   */
+  instruktion: instruktion.optional(),
+  /** Var steget kommer ifrån: grunden, ett tillägg eller ett byte. */
+  origin: z.enum(["base", "added", "replaced"]),
+  /** Grundens steg som bytts ut, när `origin` är `replaced`. */
+  replaces: z.string().min(1).optional()
+}).strict();
+var resolvedGoal = z.object({
+  milestones: z.record(z.string().min(1), z.number().int().positive()),
+  /**
+   * Ett sparat mål (metoden har `goal_choices`): uppgiften följer målmodellen
+   * räknad baklänges ur det, inte metodens steg. Skrivs av metodbytet (etapp
+   * 1d); en låsning utan det följer stegen som förut.
+   */
+  saved: z.literal(true).optional(),
+  deliverable_type: z.object({ id: z.string().min(1), version: z.number().int().positive() }).strict().optional(),
+  /**
+   * Uppgiftens eget mål (del 1f, planeringen i kopplingen): målet som det
+   * planerades (leveranstypens form, med svaren på värden i `bind`), valen och
+   * svaren på luckorna (`PlannedGoal`, src/plan/goal-planning.ts). Modellen
+   * räknas baklänges ur det i stället för ur leveranstypens sparade mål, med
+   * handstegen för luckorna. Skrivs av inskrivningen och av en justering i
+   * efterhand, alltid efter ja; en omlåsning behåller det.
+   */
+  planned: z.object({
+    goal: goalSpec,
+    choices: z.record(z.string().regex(/^[a-z][a-z0-9_]*:([a-z][a-z0-9_]*|\*)$/), z.string().min(1)).optional(),
+    gaps: z.record(z.string().regex(/^[a-z][a-z0-9_]*:[a-z][a-z0-9_]*$/), z.string().min(1).max(300)).optional(),
+    /** Uppdragets ändringar i banden (runda D1). */
+    bands: bandEdits.optional(),
+    /** Tiden (runda D1): ankarena och de uttryckligt låsta tiderna, med vem som låste och när. */
+    time: z.object({
+      anchors: z.array(z.object({
+        on: z.string().min(1),
+        kind: z.enum(["at", "by", "from"]),
+        date: z.string().optional(),
+        from: z.string().optional(),
+        to: z.string().optional(),
+        /** Ankaret kom ur det som är lovat kunden (`brief.due`), inte ur ett uttryckligt ankare. */
+        from_due: z.boolean().optional()
+      }).strict()).optional(),
+      locks: z.array(z.object({
+        node: z.string().min(1),
+        from: z.string(),
+        to: z.string(),
+        reason: z.enum(["person_available", "external_event", "customer_asked", "other"]),
+        note: z.string().optional(),
+        locked_by: z.string().min(1),
+        locked_at: z.string().min(1),
+        unlocked_by: z.string().optional(),
+        unlocked_at: z.string().optional()
+      }).strict()).optional(),
+      margin_days: z.number().nonnegative().optional()
+    }).strict().optional(),
+    /** Det som redan fanns, utpekat i planeringen (`goal.existing`): resultatet eller delmålet och källan. */
+    existing: z.array(z.object({ result: z.string().min(1), source: z.string().min(1).max(300) }).strict()).max(12).optional(),
+    lists: z.record(z.string().min(1), z.array(z.string().min(1).max(300)).max(60)).optional(),
+    /** Projektet har ingen kund: trädet räknas med kundens roller som husets (`projectLibrary`). */
+    without_customer: z.literal(true).optional(),
+    /** Vem som gör ett kodmoment tills förmågan finns (`<delmål>/<moment>`; src/plan/moment-gate.ts, planStandIns). */
+    doers: z.record(z.string().regex(/^[^/\s]+\/[^/\s]+$/), z.enum(["human", "claude"])).optional()
+  }).strict().optional()
+}).strict();
+var resolvedMethod = z.object({
+  method: z.string().min(1),
+  method_version: z.number().int().positive(),
+  variant: z.string().min(1).nullable(),
+  variant_version: z.number().int().positive().nullable(),
+  delivers: z.string().min(1),
+  steps: z.array(resolvedStep),
+  goal: resolvedGoal.optional()
+}).strict();
+
+// src/plan/no-method.ts
+var STOP = /* @__PURE__ */ new Set([
+  ...SM\u00C5ORD,
+  ...FR\u00C5GEORD,
+  ...S\u00C4GER_INGET,
+  "fore",
+  "efterat",
+  "laggs",
+  "lagga",
+  "minst",
+  "mest",
+  "vecka",
+  "veckor",
+  "dagar",
+  "kvar",
+  "klar",
+  "klart",
+  "steg",
+  "stegen",
+  "inf\xF6r",
+  "infor",
+  "genom",
+  "olika",
+  "andra"
+]);
+
+// src/plan/actions.ts
+var FILORD = new RegExp([
+  "\\b(fil|filen|filer)\\b",
+  "|\\b[a-z0-9]*(bildfil|typsnittsfil|foto|foton|bild|bilder|dokument|dokumentet|mall|mallar",
+  "|tryckoriginal|korrektur|pdf|rapport|plan|planen|brief|underlag|presentation",
+  "|instruktion|guide|specifikation|schema|karta|checklista|text|texter|utkast",
+  "|inventering|logotyp|manus)\\b"
+].join(""));
+
+// src/content/customer-fonts.ts
+function customerFonts(view, customer) {
+  if (!customer) return null;
+  const p = view.get(customer);
+  return p?.kind === "party" && p.fonts ? p.fonts : null;
+}
+var FONTS_WHERE = 'Kundens typsnitt s\xE4tts i kundposten: webbprojektets adress (till exempel Adobe Fonts), vilken familj och vikt varje typsnittsnamn i mallen motsvarar, och typsnittsprovet. Skrivs med write { op: "registry_define", node: { id: "<kundens id>", fonts: { stylesheets, families, sample } }, change: true }. Har en metod andra typsnitt f\xF6r kunden s\xE4tts de i kundens variant av metoden (typsnitt, webbprojekt, typsnittsprov).';
+
+// atoms/render/html_pdf.atom.ts
+var spec33 = {
+  "id": "c_render_html_pdf",
+  "name": "render.call.html_pdf",
+  "grounding": "observed",
+  "found_in": "atomf\xF6rslag render.atom_proposal.html_pdf \u2014 Formatet PDF f\xF6r presentationer f\xF6r kund (del H3b) beh\xF6ver en fil att skicka eller ladda ner, och samma sak beh\xF6vs f\xF6r andra sidor. Sidan /visa g\xF6r redan PDF:en i webbl\xE4saren, men inget steg kan g\xF6ra en PDF av en sida och spara den i kundens filer.",
+  "scope": "shared",
+  "surface": "render",
+  "input": [
+    "html",
+    "url",
+    "file_name",
+    "folder",
+    "page_size",
+    "customer",
+    "template",
+    "data",
+    "data_file",
+    "data_kind",
+    "products_from",
+    "price_change",
+    "also_html",
+    "dated",
+    "date"
+  ],
+  "optional_input": [
+    "html",
+    "url",
+    "file_name",
+    "folder",
+    "page_size",
+    "customer",
+    "template",
+    "data",
+    "data_file",
+    "data_kind",
+    "products_from",
+    "price_change",
+    "also_html",
+    "dated",
+    "date"
+  ],
+  "output": [
+    "proposal",
+    "file_name",
+    "pages",
+    "ref",
+    "done",
+    "html_file_name",
+    "html_ref",
+    "warnings"
+  ],
+  "idempotent": false,
+  "atom": "render.html_pdf",
+  "effect": {
+    "verb": "creates",
+    "object": "file.pdf"
+  },
+  "performer": "code",
+  "built_from": "p_render_html_pdf",
+  "label": "PDF av en sida (sk\xE4rm, RGB)",
+  "summary": "G\xF6r en sida (HTML eller en adress) till en PDF f\xF6r sk\xE4rm i Chrome: RGB, klickbara l\xE4nkar och sidbrytning d\xE4r sidan s\xE4ger det, sparad i kundens filer.",
+  "keywords": [
+    "g\xF6ra pdf",
+    "pdf av en sida",
+    "spara som pdf",
+    "pdf f\xF6r sk\xE4rm",
+    "html till pdf",
+    "html to pdf",
+    "rgb pdf",
+    "pdf ur mall",
+    "prislista som pdf"
+  ],
+  "test_target": "utan confirmed g\xF6rs ingen fil; provdata k\xF6rs torrt med prov:atom, och test/presentation-pdf.test.ts pr\xF6var sidan och molekylen",
+  "leaves": {
+    "schema": {
+      "proposal": "sant n\xE4r filen v\xE4ntar p\xE5 ja",
+      "file_name": "filens namn",
+      "pages": "antal sidor i PDF:en (efter rendering",
+      "ref": "filen i banken (bank://<tenant>/<sha256>)",
+      "done": "sant n\xE4r filen \xE4r sparad",
+      "html_file_name": "med also_html: HTML-filens namn",
+      "html_ref": "med also_html: HTML-filen i banken (bank://<tenant>/<sha256>)",
+      "warnings": "med en mall: det datan inte st\xE4mde med (en produkt utan plats p\xE5 prislistan, en rad som inte finns i biblioteket)"
+    },
+    "done_when": [
+      "PDF:en ligger i kundens filer med det angivna namnet"
+    ],
+    "where": "kundens filer i banken, i den angivna mappen"
+  },
+  "requires": "draft",
+  "stage": "published",
+  "module": "n8002",
+  "operation_id": "o_render_html_pdf",
+  "step_id": "s_render_html_pdf",
+  "guards": {
+    "object_types": [
+      "file.pdf",
+      "file.html"
+    ],
+    "severity": {
+      "file.pdf": "\u25CF",
+      "file.html": "\u25CF"
+    },
+    "removes": "none",
+    "note": []
+  }
+};
+var PAGE = /^(A[3-5]|letter|legal)( (portrait|landscape))?$/i;
+var DATE3 = /^\d{4}-\d{2}-\d{2}$/;
+var yes2 = (v) => v === true || v === "true";
+var DATA_KINDS = ["values", "price_table"];
+var today = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm", year: "numeric", month: "2-digit", day: "2-digit" }).format(/* @__PURE__ */ new Date());
+var esc3 = (s2) => s2.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+function fillTemplate(template, values) {
+  const missing = /* @__PURE__ */ new Set();
+  const value = (k) => {
+    const v = values[k];
+    if (v === void 0 || v === null || typeof v === "object") {
+      missing.add(k);
+      return null;
+    }
+    return String(v);
+  };
+  const out = template.replace(/\{\{\{\s*([\w.-]+)\s*\}\}\}/g, (_2, k) => value(k) ?? "").replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (_2, k) => {
+    const v = value(k);
+    return v === null ? "" : esc3(v);
+  });
+  if (missing.size) throw new Error(`mallen v\xE4ntar sig v\xE4rden som datan saknar: ${[...missing].join(", ")}`);
+  return out;
+}
+async function bankFile(ctx, customer, name) {
+  if (!ctx.bank) throw new Error("inneh\xE5llsbanken \xE4r inte kopplad h\xE4r, s\xE5 mallen kan inte l\xE4sas: k\xF6r steget i dirigenten p\xE5 servern");
+  const want = name.trim().normalize("NFC").toLowerCase();
+  const base = (s2) => (s2 ?? "").split("/").pop().normalize("NFC").toLowerCase();
+  const view = await ctx.bank.view();
+  const hit = registrationsOf(view).filter((r) => r.party === customer && r.uri.startsWith("bank://") && (base(r.found_in) === want || base(r.uri) === want)).at(-1);
+  if (!hit) throw new Error(`${name} finns inte i kundens bank: l\xE4gg filen i kundens bank f\xF6rst`);
+  const data = await h\u00E4mta(ctx.bank.store, ctx.bank.tenant, hit.sha256);
+  if (!data) throw new Error(`${name} \xE4r registrerad men filen finns inte i banken`);
+  return data;
+}
+var jsonOf = (bytes, name) => {
+  try {
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    throw new Error(`${name} g\xE5r inte att l\xE4sa: filen \xE4r trasig eller har fel form`);
+  }
+};
+async function hubspotProducts(ctx, fields) {
+  const link = ctx.connection ? await ctx.connection("hubspot", "") : null;
+  if (!link?.token) throw new Error("ingen koppling till kundens produktbibliotek h\xE4r (HubSpot): produkterna kan inte l\xE4sas");
+  const out = [];
+  let after;
+  for (let page = 0; page < 50; page++) {
+    const d = await request2(
+      ctx.fetch,
+      link.token,
+      "POST",
+      "/crm/v3/objects/products/search",
+      { body: { properties: ["name", "price", ...fields], limit: 100, ...after ? { after } : {} } }
+    );
+    for (const r of d.results ?? []) {
+      const p = r.properties ?? {};
+      out.push({ id: String(r.id), name: String(p["name"] ?? ""), price: Number(p["price"] ?? 0) || 0, fields: p });
+    }
+    after = d.paging?.next?.after;
+    if (!after) return out;
+  }
+  throw new Error("produktbiblioteket har fler \xE4n 5 000 produkter; l\xE4sningen stoppades");
+}
+async function embedFonts(html, ctx, customer, fetchFonts) {
+  const families = templateFamilies(html);
+  if (!families.length) return html;
+  const view = await ctx.bank.view();
+  const stylesheets = customerFonts(view, customer)?.stylesheets ?? [];
+  if (!stylesheets.length) throw new Error(`mallen anv\xE4nder typsnitten ${families.join(", ")}, men kunden har inget webbprojekt att h\xE4mta dem ur. ${FONTS_WHERE}`);
+  const fonts = await webFontFiles(stylesheets, families, fetchFonts);
+  const out = withFonts(html, fonts);
+  const missing = missingFamilies(out, fonts);
+  if (missing.length) throw new Error(`typsnitten ${missing.join(", ")} finns inte i kundens webbprojekt`);
+  return out;
+}
+async function fromTemplate(i, ctx, customer, date) {
+  const kind = i.data_kind ?? "values";
+  const template = new TextDecoder().decode(await bankFile(ctx, customer, i.template));
+  const fromFile = i.data_file ? jsonOf(await bankFile(ctx, customer, i.data_file), i.data_file) : {};
+  const given = typeof i.data === "string" && i.data.trim() ? jsonOf(new TextEncoder().encode(i.data), "data") : i.data ?? {};
+  const data = { ...fromFile, ...given };
+  if (kind === "values") {
+    const name = typeof data["file_name"] === "string" ? data["file_name"] : typeof data["title"] === "string" ? data["title"] : null;
+    return { html: fillTemplate(template, { date, ...data }), name, warnings: [] };
+  }
+  if ((i.products_from ?? "hubspot") !== "hubspot") throw new Error(`produkterna kan bara h\xE4mtas fr\xE5n HubSpot, fick \xAB${i.products_from}\xBB`);
+  const layout = data;
+  const fields = layout.credit ? [layout.credit.share_field, layout.credit.rate_field] : [];
+  const products = await hubspotProducts(ctx, fields);
+  const change = i.price_change ? readChange(jsonOf(await bankFile(ctx, customer, i.price_change), i.price_change)) : null;
+  const doc = priceTable(layout, products, change, date);
+  return { html: fillTemplate(template, { date, title: doc.title, subtitle: doc.subtitle, content: doc.html }), name: doc.file_name, warnings: doc.warnings };
+}
+async function save(ctx, f) {
+  const keep2 = ctx.call.keep;
+  if (keep2) return (await keep2({ ...f, asset_type: "core.asset.material" })).ref;
+  if (!ctx.bank) throw new Error("PDF:en kan bara sparas i ett steg med filbanken");
+  const ref = await l\u00E4gg(ctx.bank.store, ctx.bank.tenant, f.bytes, f.mime);
+  const task = ctx.call.task;
+  await ctx.bank.append([{
+    type: "asset_produced",
+    subject_ref: task ?? f.customer,
+    payload: {
+      asset_type: "core.asset.material",
+      acquisition: "fetched",
+      party: f.customer,
+      ref: { sha256: ref.sha256, uri: bankUri(ctx.bank.tenant, ref.sha256), size: ref.size, mime: f.mime },
+      found_in: `${f.source}:${f.folder}/${f.name}`,
+      ...task ? { for_task: task } : {}
+    },
+    call_key: `render.html_pdf:${task ?? f.customer}:kept:${ref.sha256}`
+  }]);
+  return ref.uri;
+}
+function run33(args, ctx) {
+  return runWith(args, ctx, (html) => htmlToPdf(html, 6e4));
+}
+async function runWith(args, ctx, pdfOf, fetchFonts) {
+  const i = args;
+  const html = typeof i.html === "string" && i.html.trim() ? i.html : null;
+  const url = typeof i.url === "string" && i.url.trim() ? i.url.trim() : null;
+  const template = typeof i.template === "string" && i.template.trim() ? i.template.trim() : null;
+  if ([html, url, template].filter(Boolean).length !== 1) throw new Error(html && url ? "ange sidan som f\xE4rdig sida eller som adress, inte b\xE5da" : "ange sidan p\xE5 ett s\xE4tt: som f\xE4rdig sida, som adress eller som en mall i kundens bank");
+  if (url) {
+    let u;
+    try {
+      u = new URL(url);
+    } catch {
+      throw new Error(`url \xE4r ingen adress: ${url}`);
+    }
+    if (u.protocol !== "https:") throw new Error("url m\xE5ste vara https");
+  }
+  if (!template && !i.file_name?.trim()) throw new Error("ange file_name: filens namn");
+  if (i.page_size !== void 0 && i.page_size !== "" && !PAGE.test(i.page_size))
+    throw new Error(`page_size \xE4r A3, A4, A5, letter eller legal (valfritt landscape), fick \xAB${i.page_size}\xBB`);
+  if (i.data_kind !== void 0 && !DATA_KINDS.includes(i.data_kind)) throw new Error(`datan ska vara v\xE4rden eller en pristabell, fick \xAB${i.data_kind}\xBB`);
+  if (i.date !== void 0 && !DATE3.test(i.date)) throw new Error(`datumet skrivs \xC5\xC5\xC5\xC5-MM-DD, fick \xAB${i.date}\xBB`);
+  const date = i.date ?? today();
+  const stemOf = (name) => {
+    const n2 = name.trim().replace(/\.pdf$/i, "").replace(/[\\/]/g, "-");
+    return yes2(i.dated) ? `${n2}_${date}` : n2;
+  };
+  const folder = i.folder?.trim() || "PDF";
+  const customer = typeof i.customer === "string" ? i.customer.trim() : "";
+  if (i.confirmed !== true || ctx.dry_run) {
+    if (!template) return { proposal: true, file_name: `${stemOf(i.file_name)}.pdf`, pages: 0, ref: "", done: false };
+    const stem2 = stemOf(i.file_name?.trim() || template.replace(/\.html?$/i, ""));
+    return { proposal: true, file_name: `${stem2}.pdf`, pages: 0, ref: "", done: false, ...yes2(i.also_html) ? { html_file_name: `${stem2}.html` } : {}, warnings: [] };
+  }
+  if (!ctx.call.keep && !ctx.bank) throw new Error("PDF:en kan bara sparas i ett steg med filbanken");
+  if (!customer) throw new Error("ange customer: kunden filen sparas hos");
+  const size = i.page_size ? `@page{size:${i.page_size}}` : "";
+  if (!template) {
+    const file_name2 = `${stemOf(i.file_name)}.pdf`;
+    const source = html ? size ? html.replace(/<\/head>/i, `<style>${size}</style></head>`) : html : { url, ...size ? { css: size } : {} };
+    const pdf2 = await pdfOf(source);
+    const ref2 = await save(ctx, { bytes: pdf2, mime: "application/pdf", name: file_name2, folder, customer, source: url ?? "html" });
+    return { proposal: false, file_name: file_name2, pages: pageCount(Buffer.from(pdf2)), ref: ref2, done: true };
+  }
+  const made = await fromTemplate(i, ctx, customer, date);
+  const page = { ...made, html: await embedFonts(made.html, ctx, customer, fetchFonts) };
+  const stem = stemOf(i.file_name?.trim() || page.name || template.replace(/\.html?$/i, ""));
+  const file_name = `${stem}.pdf`;
+  const filled = size ? page.html.replace(/<\/head>/i, `<style>${size}</style></head>`) : page.html;
+  const pdf = await pdfOf(filled);
+  const ref = await save(ctx, { bytes: pdf, mime: "application/pdf", name: file_name, folder, customer, source: `mall ${template}` });
+  const htmlOut = yes2(i.also_html) ? { html_file_name: `${stem}.html`, html_ref: await save(ctx, { bytes: new TextEncoder().encode(filled), mime: "text/html", name: `${stem}.html`, folder, customer, source: `mall ${template}` }) } : {};
+  return { proposal: false, file_name, pages: pageCount(Buffer.from(pdf)), ref, done: true, ...htmlOut, warnings: page.warnings };
+}
+var PAGE_FIELDS = ["proposal", "file_name", "pages", "ref", "done"];
+var fixtures33 = [
+  { name: "en sida som HTML: f\xF6rhandsvisningen", args: { html: '<!doctype html><title>Prov</title><section>Sida 1</section><section style="break-before:page">Sida 2</section>', file_name: "prov", folder: "Prov", page_size: "A4" }, expect_fields: PAGE_FIELDS },
+  { name: "en sida som adress: f\xF6rhandsvisningen", args: { url: "https://example.com/sida", file_name: "sida.pdf" }, expect_fields: PAGE_FIELDS },
+  { name: "b\xE5de html och url avvisas", args: { html: "<p>x</p>", url: "https://example.com", file_name: "x" }, expect_error: "inte b\xE5da" },
+  { name: "en adress utan https avvisas", args: { url: "http://example.com", file_name: "x" }, expect_error: "https" },
+  {
+    name: "en mall i kundens bank med data: f\xF6rhandsvisningen med datum och HTML",
+    args: { template: "mall.html", data_file: "data.json", data_kind: "price_table", folder: "Prov", also_html: "true", dated: "true", date: "2026-11-05", file_name: "Prov" },
+    expect_fields: [...PAGE_FIELDS, "html_file_name", "warnings"]
+  },
+  { name: "en ok\xE4nd sorts data avvisas", args: { template: "mall.html", data_kind: "okand" }, expect_error: "pristabell" }
+];
+
+// atoms/render/qr_code.atom.ts
+var qr_code_atom_exports = {};
+__export(qr_code_atom_exports, {
+  fixtures: () => fixtures34,
+  run: () => run34,
+  spec: () => spec34
+});
+
+// atoms/render/qr.ts
+var ECL_ORDINAL = { L: 0, M: 1, Q: 2, H: 3 };
+var ECL_FORMAT = { L: 1, M: 0, Q: 3, H: 2 };
+var ECC_PER_BLOCK = [
+  [-1, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
+  [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28],
+  [-1, 13, 22, 18, 26, 18, 24, 18, 22, 20, 24, 28, 26, 24, 20, 30, 24, 28, 28, 26, 30, 28, 30, 30, 30, 30, 28, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30],
+  [-1, 17, 28, 22, 16, 22, 28, 26, 26, 24, 28, 24, 28, 22, 24, 24, 30, 28, 28, 26, 28, 30, 24, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
+];
+var BLOCKS3 = [
+  [-1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 4, 6, 6, 6, 6, 7, 8, 8, 9, 9, 10, 12, 12, 12, 13, 14, 15, 16, 17, 18, 19, 19, 20, 21, 22, 24, 25],
+  [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49],
+  [-1, 1, 1, 2, 2, 4, 4, 6, 6, 8, 8, 8, 10, 12, 16, 12, 17, 16, 18, 21, 20, 23, 23, 25, 27, 29, 34, 34, 35, 38, 40, 43, 45, 48, 51, 53, 56, 59, 62, 65, 68],
+  [-1, 1, 1, 2, 4, 4, 4, 5, 6, 8, 8, 11, 11, 16, 16, 18, 16, 19, 21, 25, 25, 25, 34, 30, 32, 35, 37, 40, 42, 45, 48, 51, 54, 57, 60, 63, 66, 70, 74, 77, 81]
+];
+function rawModules(ver) {
+  let r = (16 * ver + 128) * ver + 64;
+  if (ver >= 2) {
+    const n2 = Math.floor(ver / 7) + 2;
+    r -= (25 * n2 - 10) * n2 - 55;
+    if (ver >= 7) r -= 36;
+  }
+  return r;
+}
+var dataCodewords = (ver, e) => Math.floor(rawModules(ver) / 8) - ECC_PER_BLOCK[e][ver] * BLOCKS3[e][ver];
+function gfMul(x, y) {
+  let z2 = 0;
+  for (let i = 7; i >= 0; i--) {
+    z2 = z2 << 1 ^ (z2 >>> 7) * 285;
+    z2 ^= (y >>> i & 1) * x;
+  }
+  return z2 & 255;
+}
+function rsDivisor(degree) {
+  const r = new Array(degree).fill(0);
+  r[degree - 1] = 1;
+  let root = 1;
+  for (let i = 0; i < degree; i++) {
+    for (let j = 0; j < r.length; j++) {
+      r[j] = gfMul(r[j], root);
+      if (j + 1 < r.length) r[j] = r[j] ^ r[j + 1];
+    }
+    root = gfMul(root, 2);
+  }
+  return r;
+}
+function rsRemainder(data, div) {
+  const r = div.map(() => 0);
+  for (const b of data) {
+    const f = b ^ r.shift();
+    r.push(0);
+    div.forEach((c, i) => {
+      r[i] = r[i] ^ gfMul(c, f);
+    });
+  }
+  return r;
+}
+function alignmentPositions(ver) {
+  if (ver === 1) return [];
+  const n2 = Math.floor(ver / 7) + 2;
+  const step2 = ver === 32 ? 26 : Math.ceil((ver * 4 + 4) / (n2 * 2 - 2)) * 2;
+  const r = [6];
+  for (let pos = ver * 4 + 10; r.length < n2; pos -= step2) r.splice(1, 0, pos);
+  return r;
+}
+function encodeQr(text7, ecl = "Q") {
+  const bytes = [...new TextEncoder().encode(text7)];
+  const e = ECL_ORDINAL[ecl];
+  let ver = 1;
+  for (; ver <= 40; ver++) {
+    const bits = 4 + (ver <= 9 ? 8 : 16) + bytes.length * 8;
+    if (bits <= dataCodewords(ver, e) * 8) break;
+  }
+  if (ver > 40) throw new Error("texten \xE4r f\xF6r l\xE5ng f\xF6r en QR-kod");
+  const bb = [];
+  const put = (v, n2) => {
+    for (let i2 = n2 - 1; i2 >= 0; i2--) bb.push(v >>> i2 & 1);
+  };
+  put(4, 4);
+  put(bytes.length, ver <= 9 ? 8 : 16);
+  for (const b of bytes) put(b, 8);
+  const cap = dataCodewords(ver, e) * 8;
+  put(0, Math.min(4, cap - bb.length));
+  put(0, (8 - bb.length % 8) % 8);
+  for (let pad = 236; bb.length < cap; pad ^= 236 ^ 17) put(pad, 8);
+  const data = [];
+  for (let i2 = 0; i2 < bb.length; i2 += 8) data.push(bb.slice(i2, i2 + 8).reduce((a, b) => a << 1 | b, 0));
+  const nBlocks = BLOCKS3[e][ver], eccLen = ECC_PER_BLOCK[e][ver];
+  const raw2 = Math.floor(rawModules(ver) / 8);
+  const nShort = nBlocks - raw2 % nBlocks, shortLen = Math.floor(raw2 / nBlocks);
+  const div = rsDivisor(eccLen);
+  const blocks = [];
+  for (let i2 = 0, k = 0; i2 < nBlocks; i2++) {
+    const dat = data.slice(k, k + shortLen - eccLen + (i2 < nShort ? 0 : 1));
+    k += dat.length;
+    const ecc = rsRemainder(dat, div);
+    if (i2 < nShort) dat.push(0);
+    blocks.push([...dat, ...ecc]);
+  }
+  const all2 = [];
+  for (let i2 = 0; i2 < blocks[0].length; i2++)
+    blocks.forEach((b, j) => {
+      if (i2 !== shortLen - eccLen || j >= nShort) all2.push(b[i2]);
+    });
+  const size = ver * 4 + 17;
+  const mod = Array.from({ length: size }, () => new Array(size).fill(false));
+  const fn2 = Array.from({ length: size }, () => new Array(size).fill(false));
+  const set = (x, y, dark) => {
+    mod[y][x] = dark;
+    fn2[y][x] = true;
+  };
+  for (let i2 = 0; i2 < size; i2++) {
+    set(6, i2, i2 % 2 === 0);
+    set(i2, 6, i2 % 2 === 0);
+  }
+  const finder = (cx, cy) => {
+    for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+      const d = Math.max(Math.abs(dx), Math.abs(dy)), x = cx + dx, y = cy + dy;
+      if (x >= 0 && x < size && y >= 0 && y < size) set(x, y, d !== 2 && d !== 4);
+    }
+  };
+  finder(3, 3);
+  finder(size - 4, 3);
+  finder(3, size - 4);
+  const al = alignmentPositions(ver), na = al.length;
+  for (let i2 = 0; i2 < na; i2++) for (let j = 0; j < na; j++) {
+    if (i2 === 0 && j === 0 || i2 === 0 && j === na - 1 || i2 === na - 1 && j === 0) continue;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++)
+      set(al[i2] + dx, al[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+  }
+  const drawFormat = (mask) => {
+    const d = ECL_FORMAT[ecl] << 3 | mask;
+    let rem = d;
+    for (let i2 = 0; i2 < 10; i2++) rem = rem << 1 ^ (rem >>> 9) * 1335;
+    const bits = (d << 10 | rem) ^ 21522;
+    const bit = (i2) => (bits >>> i2 & 1) !== 0;
+    for (let i2 = 0; i2 <= 5; i2++) set(8, i2, bit(i2));
+    set(8, 7, bit(6));
+    set(8, 8, bit(7));
+    set(7, 8, bit(8));
+    for (let i2 = 9; i2 < 15; i2++) set(14 - i2, 8, bit(i2));
+    for (let i2 = 0; i2 < 8; i2++) set(size - 1 - i2, 8, bit(i2));
+    for (let i2 = 8; i2 < 15; i2++) set(8, size - 15 + i2, bit(i2));
+    set(8, size - 8, true);
+  };
+  drawFormat(0);
+  if (ver >= 7) {
+    let rem = ver;
+    for (let i2 = 0; i2 < 12; i2++) rem = rem << 1 ^ (rem >>> 11) * 7973;
+    const bits = ver << 12 | rem;
+    for (let i2 = 0; i2 < 18; i2++) {
+      const b = (bits >>> i2 & 1) !== 0, a = size - 11 + i2 % 3, c = Math.floor(i2 / 3);
+      set(a, c, b);
+      set(c, a, b);
+    }
+  }
+  let i = 0;
+  for (let right = size - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;
+    for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) {
+      const x = right - j, up = (right + 1 & 2) === 0, y = up ? size - 1 - vert : vert;
+      if (!fn2[y][x] && i < all2.length * 8) {
+        mod[y][x] = (all2[i >>> 3] >>> 7 - (i & 7) & 1) !== 0;
+        i++;
+      }
+    }
+  }
+  const applyMask = (m) => {
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      if (fn2[y][x]) continue;
+      const inv = [
+        (x + y) % 2 === 0,
+        y % 2 === 0,
+        x % 3 === 0,
+        (x + y) % 3 === 0,
+        (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
+        x * y % 2 + x * y % 3 === 0,
+        (x * y % 2 + x * y % 3) % 2 === 0,
+        ((x + y) % 2 + x * y % 3) % 2 === 0
+      ][m];
+      if (inv) mod[y][x] = !mod[y][x];
+    }
+  };
+  let best = 0, bestScore = Infinity;
+  for (let m = 0; m < 8; m++) {
+    applyMask(m);
+    drawFormat(m);
+    const s2 = penalty(mod);
+    if (s2 < bestScore) {
+      best = m;
+      bestScore = s2;
+    }
+    applyMask(m);
+  }
+  applyMask(best);
+  drawFormat(best);
+  return { size, version: ver, ecl, mask: best, modules: mod };
+}
+function penalty(m) {
+  const n2 = m.length;
+  let r = 0;
+  const line2 = (get) => {
+    let run38 = 0, color2 = false;
+    const hist = [0, 0, 0, 0, 0, 0, 0];
+    const addHist = (len) => {
+      if (hist[0] === 0) len += n2;
+      hist.pop();
+      hist.unshift(len);
+    };
+    const count = () => {
+      const k = hist[1];
+      const core = k > 0 && hist[2] === k && hist[3] === k * 3 && hist[4] === k && hist[5] === k;
+      return (core && hist[0] >= k * 4 && hist[6] >= k ? 1 : 0) + (core && hist[6] >= k * 4 && hist[0] >= k ? 1 : 0);
+    };
+    for (let i = 0; i < n2; i++) {
+      if (get(i) === color2) {
+        run38++;
+        if (run38 === 5) r += 3;
+        else if (run38 > 5) r++;
+      } else {
+        addHist(run38);
+        if (!color2) r += count() * 40;
+        color2 = get(i);
+        run38 = 1;
+      }
+    }
+    if (color2) {
+      addHist(run38);
+      run38 = 0;
+    }
+    run38 += n2;
+    addHist(run38);
+    r += count() * 40;
+  };
+  for (let y = 0; y < n2; y++) line2((x) => m[y][x]);
+  for (let x = 0; x < n2; x++) line2((y) => m[y][x]);
+  let dark = 0;
+  for (let y = 0; y < n2; y++) for (let x = 0; x < n2; x++) {
+    if (m[y][x]) dark++;
+    if (x < n2 - 1 && y < n2 - 1) {
+      const c = m[y][x];
+      if (c === m[y][x + 1] && c === m[y + 1][x] && c === m[y + 1][x + 1]) r += 3;
+    }
+  }
+  const total = n2 * n2;
+  r += (Math.ceil(Math.abs(dark * 20 - total * 10) / total) - 1) * 10;
+  return r;
+}
+var HEX = /^#[0-9a-f]{6}$/i;
+function qrStyle(v) {
+  const o = typeof v === "string" ? v.trim() ? JSON.parse(v) : {} : v ?? {};
+  const color2 = o.color ?? "#000000";
+  if (!HEX.test(color2)) throw new Error(`style.color ska vara #rrggbb, fick \xAB${color2}\xBB`);
+  const modules = o.modules ?? "square";
+  if (modules !== "square" && modules !== "dots") throw new Error("style.modules \xE4r square eller dots");
+  const error = o.error ?? "Q";
+  if (!(error in ECL_ORDINAL)) throw new Error("style.error \xE4r L, M, Q eller H");
+  const border = o.border ?? 4;
+  if (!Number.isInteger(border) || border < 0 || border > 16) throw new Error("style.border \xE4r ett heltal mellan 0 och 16");
+  return { color: color2.toLowerCase(), modules, error, border };
+}
+function rrect(x, y, w, h, r) {
+  return `M${x + r},${y}H${x + w - r}A${r},${r} 0 0 1 ${x + w},${y + r}V${y + h - r}A${r},${r} 0 0 1 ${x + w - r},${y + h}H${x + r}A${r},${r} 0 0 1 ${x},${y + h - r}V${y + r}A${r},${r} 0 0 1 ${x + r},${y}Z`;
+}
+function qrSvg(q, style) {
+  const b = style.border, full = q.size + 2 * b, n2 = q.size;
+  const inFinder = (x, y) => x < 7 && y < 7 || x >= n2 - 7 && y < 7 || x < 7 && y >= n2 - 7;
+  const parts = [];
+  if (style.modules === "square") {
+    let d = "";
+    q.modules.forEach((row2, y) => row2.forEach((v, x) => {
+      if (v) d += `M${x + b},${y + b}h1v1h-1z`;
+    }));
+    parts.push(`<path d="${d}"/>`);
+  } else {
+    q.modules.forEach((row2, y) => row2.forEach((v, x) => {
+      if (v && !inFinder(x, y)) parts.push(`<circle cx="${x + b + 0.5}" cy="${y + b + 0.5}" r="0.5"/>`);
+    }));
+    for (const [ox, oy] of [[0, 0], [n2 - 7, 0], [0, n2 - 7]]) {
+      parts.push(`<path fill-rule="evenodd" d="${rrect(ox + b, oy + b, 7, 7, 1.6)} ${rrect(ox + b + 1, oy + b + 1, 5, 5, 1.1)}"/>`);
+      parts.push(`<circle cx="${ox + b + 3.5}" cy="${oy + b + 3.5}" r="1.5"/>`);
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${full} ${full}" width="${full * 12}" height="${full * 12}" shape-rendering="geometricPrecision"><g fill="${style.color}">${parts.join("")}</g></svg>`;
+}
+function withUtm(url, utm) {
+  let u;
+  try {
+    u = new URL(url);
+  } catch {
+    throw new Error(`url \xE4r ingen adress: ${url}`);
+  }
+  if (u.protocol !== "https:" && u.protocol !== "http:") throw new Error("url m\xE5ste vara en webbadress (https)");
+  for (const [k, v] of Object.entries(utm)) {
+    if (typeof v !== "string" || !v.trim()) throw new Error(`utm.${k} saknar v\xE4rde`);
+    u.searchParams.set(k.startsWith("utm_") ? k : `utm_${k}`, v.trim());
+  }
+  return u.toString();
+}
+
+// atoms/render/qr_code.atom.ts
+var spec34 = {
+  "id": "c_render_qr_code",
+  "name": "render.call.qr_code",
+  "grounding": "observed",
+  "found_in": "atomf\xF6rslag render.atom_proposal.qr_code \u2014 S\xE4ljarpaketet beh\xF6ver en QR-kod per kanal till s\xE4ljarens bokningssida med UTM. I dag g\xF6rs den med qr_style.py i hubspot-cli p\xE5 en egen dator.",
+  "scope": "shared",
+  "surface": "render",
+  "input": [
+    "url",
+    "utm",
+    "style",
+    "file_name",
+    "folder",
+    "customer"
+  ],
+  "optional_input": ["utm", "style", "folder", "customer"],
+  "output": [
+    "proposal",
+    "url_with_utm",
+    "refs",
+    "code",
+    "done"
+  ],
+  "idempotent": false,
+  "atom": "render.qr_code",
+  "effect": {
+    "verb": "creates",
+    "object": "image.qr_code"
+  },
+  "performer": "code",
+  "built_from": "p_render_qr_code",
+  "label": "QR-kod till en adress",
+  "summary": "G\xF6r en QR-kod av en adress (med UTM-parametrar som v\xE4rden) i husets eller kundens stil (f\xE4rg, prickform) och sparar den som PNG och SVG i kundens filer.",
+  "keywords": [
+    "qr-kod",
+    "kod till bokningssidan",
+    "qr till brevl\xE5delapp",
+    "utm-l\xE4nk",
+    "qr code",
+    "tracking link"
+  ],
+  "test_target": "utan confirmed g\xF6rs ingen fil; provdata k\xF6rs torrt med prov:atom och pr\xF6var att koden l\xE4ses tillbaka till samma adress",
+  "leaves": {
+    "schema": {
+      "proposal": "sant n\xE4r koden v\xE4ntar p\xE5 ja",
+      "url_with_utm": "adressen som koden leder till",
+      "refs": "QR-koden i banken, PNG och SVG (bank://<tenant>/<sha256>)",
+      "code": "QR-versionen, antal moduler och felr\xE4ttningen",
+      "done": "sant n\xE4r koden \xE4r sparad"
+    },
+    "done_when": [
+      "QR-koden finns i banken och l\xE4ses tillbaka till adressen med UTM"
+    ],
+    "where": "kundens filer i banken, i den angivna mappen (f\xF6rval \xABQR-koder\xBB)"
+  },
+  "requires": "draft",
+  "stage": "draft",
+  "module": "n0102",
+  "operation_id": "o_render_qr_code",
+  "step_id": "s_render_qr_code",
+  "guards": {
+    "object_types": [
+      "image.qr_code"
+    ],
+    "severity": {
+      "image.qr_code": "\u25CF"
+    },
+    "removes": "none",
+    "note": []
+  }
+};
+var PX_PER_MODULE = 24;
+async function run34(args, ctx) {
+  const i = args;
+  if (typeof i.url !== "string" || !i.url.trim()) throw new Error("ange url: adressen koden ska leda till");
+  if (typeof i.file_name !== "string" || !i.file_name.trim()) throw new Error("ange file_name: filens namn");
+  let utm = {};
+  if (i.utm !== void 0 && i.utm !== "") {
+    try {
+      utm = typeof i.utm === "string" ? JSON.parse(i.utm) : i.utm;
+    } catch {
+      throw new Error('utm ska vara JSON, t.ex. {"source":"brevlada"}');
+    }
+  }
+  let style;
+  try {
+    style = qrStyle(i.style);
+  } catch (e) {
+    throw new Error(e instanceof SyntaxError ? "style ska vara JSON" : e.message);
+  }
+  const url_with_utm = withUtm(i.url.trim(), utm);
+  const q = encodeQr(url_with_utm, style.error);
+  const code = { version: q.version, modules: q.size, error: style.error };
+  const base = i.file_name.trim().replace(/\.(png|svg)$/i, "");
+  if (i.confirmed !== true || ctx.dry_run) return { proposal: true, url_with_utm, refs: { png: "", svg: "" }, code, done: false };
+  const keep2 = ctx.call.keep;
+  if (!keep2) throw new Error("QR-koden kan bara sparas i ett steg med filbanken");
+  if (!i.customer) throw new Error("ange customer: kunden filerna sparas hos");
+  const svg = qrSvg(q, style);
+  const { default: sharp2 } = await Promise.resolve().then(() => (init_dist(), dist_exports));
+  const px = (q.size + 2 * style.border) * PX_PER_MODULE;
+  const png3 = await sharp2(Buffer.from(svg), { density: 72 * PX_PER_MODULE / 12 }).resize(px, px).withMetadata({ density: 600 }).png().toBuffer();
+  const folder = i.folder?.trim() || "QR-koder";
+  const common = { folder, customer: i.customer, asset_type: "core.asset.material", source: url_with_utm };
+  const s2 = await keep2({ ...common, bytes: new TextEncoder().encode(svg), mime: "image/svg+xml", name: `${base}.svg` });
+  const p = await keep2({ ...common, bytes: png3, mime: "image/png", name: `${base}.png` });
+  return { proposal: false, url_with_utm, refs: { png: p.ref, svg: s2.ref }, code, done: true };
+}
+var fixtures34 = [
+  { name: "en kod med UTM och runda prickar: f\xF6rhandsvisningen", args: {
+    url: "https://example.com/meetings/prov-person",
+    utm: '{"medium":"fysisk","source":"brevlada_kanal","campaign":"prov_person"}',
+    style: '{"color":"#d75827","modules":"dots"}',
+    file_name: "prov-person - kanal",
+    customer: "@runner"
+  } },
+  { name: "en kod utan stil: svarta rutor", args: { url: "https://example.com/", file_name: "prov" } },
+  { name: "en adress som inte \xE4r en webbadress avvisas", args: { url: "ftp://example.com/fil", file_name: "x" }, expect_error: "webbadress" },
+  { name: "en f\xE4rg som inte \xE4r #rrggbb avvisas", args: { url: "https://example.com", style: '{"color":"orange"}', file_name: "x" }, expect_error: "#rrggbb" }
+];
+
+// atoms/state/desired_state.atom.ts
+var desired_state_atom_exports = {};
+__export(desired_state_atom_exports, {
+  fixtures: () => fixtures35,
+  run: () => run35,
+  spec: () => spec35
+});
+
+// src/v2/state/desired/diff.ts
+import { createHash as createHash13 } from "node:crypto";
+var RANK = { "\u25CF": 0, "\u25D0": 1, "\u25A0": 2 };
+var maxMark = (a, b) => RANK[a] >= RANK[b] ? a : b;
+function comparedFields(t, values) {
+  return t.open ? [.../* @__PURE__ */ new Set([...t.compare, ...Object.keys(values)])] : [...t.compare];
+}
+function inOrder(profile, rows3) {
+  const o = profile.order;
+  if (!o?.length) return [...rows3];
+  const rank = (t) => {
+    const i = o.indexOf(t);
+    return i < 0 ? o.length : i;
+  };
+  return rows3.map((r, i) => [r, i]).sort((a, b) => rank(a[0].type) - rank(b[0].type) || a[1] - b[1]).map(([r]) => r);
+}
+var same = (a, b) => JSON.stringify(normal(a)) === JSON.stringify(normal(b));
+function normal(v) {
+  if (typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v.trim())) return Number(v);
+  if (Array.isArray(v)) return v.map(normal);
+  if (v && typeof v === "object")
+    return Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)).map(([k, x]) => [k, normal(x)]));
+  return v ?? null;
+}
+var isPartial = (t, f, v) => t.partial?.includes(f) === true && !!v && typeof v === "object" && !Array.isArray(v);
+var sameKey2 = (t, f, have, want) => isPartial(t, f, want) ? Object.keys(want).every((k) => same(have?.[k] ?? null, want[k])) : same(have, want);
+function looseOf(have, want) {
+  if (!Array.isArray(have) || !Array.isArray(want) || have.length !== want.length) return have;
+  return have.map((h, i) => {
+    const w = want[i];
+    if (!h || typeof h !== "object" || !w || typeof w !== "object") return h;
+    return Object.fromEntries(Object.keys(w).map((k) => [k, h[k] ?? null]));
+  });
+}
+var num4 = (v) => {
+  const n2 = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
+  return Number.isFinite(n2) ? n2 : 0;
+};
+function fieldMark(t, field, after) {
+  const s2 = t.severity ?? {};
+  return s2[`${field}:${String(after)}`] ?? s2[field] ?? (t.money?.includes(field) ? "\u25A0" : "\u25D0");
+}
+function inMain(minor, u) {
+  const v = minor / u.scale;
+  const [whole, dec] = Math.abs(v).toFixed(Number.isInteger(v) ? 0 : 2).split(".");
+  return `${v < 0 ? "-" : ""}${whole.replace(/\B(?=(\d{3})+(?!\d))/g, " ")}${dec ? `,${dec}` : ""} ${u.label}`;
+}
+function moneyValue(v, u) {
+  if (!u || typeof v !== "string") return { value: v, main: false };
+  const words = u.words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  const m = new RegExp(`^\\s*(-?[\\d\\s\xA0]+(?:[.,]\\d+)?)\\s*(?:${words})\\.?\\s*$`, "i").exec(v);
+  if (!m) return { value: v, main: false };
+  const n2 = Number(m[1].replace(/[\s\u00a0]/g, "").replace(",", "."));
+  return Number.isFinite(n2) ? { value: Math.round(n2 * u.scale), main: true } : { value: v, main: false };
+}
+var blocked = (r, why, fixed_by, id = null) => ({ row: r.row, type: r.type, state: "blocked", mark: "\u25CF", id, parent_row: null, changes: [], replace: false, archive: false, why, fixed_by });
+function diff(profile, desired, existing, ledger = /* @__PURE__ */ new Map()) {
+  const byId = new Map(existing.map((e) => [e.id, e]));
+  const resolved = /* @__PURE__ */ new Map();
+  const rows3 = [];
+  const claimed = /* @__PURE__ */ new Set();
+  const normalized = /* @__PURE__ */ new Map();
+  for (let r of inOrder(profile, desired)) {
+    const t = profile.object_types[r.type];
+    if (r.refused) {
+      rows3.push(blocked(r, r.refused.why, r.refused.fixed_by));
+      continue;
+    }
+    const given = /* @__PURE__ */ new Map();
+    if (t && profile.money_unit) {
+      const vals = { ...r.values };
+      for (const f of t.money ?? []) if (vals[f] !== void 0) {
+        const m = moneyValue(vals[f], profile.money_unit);
+        vals[f] = m.value;
+        given.set(f, m.main);
+      }
+      r = { ...r, values: vals };
+    }
+    normalized.set(r.row, r);
+    const shownOf = (f, before, after) => {
+      const u = profile.money_unit;
+      if (!u || !given.has(f)) return {};
+      const b = before === null || before === void 0 ? "inget" : inMain(num4(before), u);
+      return { shown: `${b} \u2192 ${inMain(num4(after), u)}${given.get(f) ? "" : ` (${String(after)} angivet i minsta enhet; skriv \xAB${inMain(num4(after), u)}\xBB f\xF6r att ange ${u.label})`}` };
+    };
+    if (!t) {
+      rows3.push(blocked(r, `\xAB${r.type}\xBB finns inte i systemdelen f\xF6r ${profile.system}.`, "l\xE4gg till typen i systemets post"));
+      continue;
+    }
+    let parentId = null, parentRow = null;
+    if (t.parent !== null) {
+      if (!r.parent) {
+        rows3.push(blocked(r, `Raden saknar f\xF6r\xE4lder (${t.parent}).`, `ange raden f\xF6r ${t.parent} som parent`));
+        continue;
+      }
+      if (!resolved.has(r.parent)) {
+        rows3.push(blocked(r, `F\xF6r\xE4ldern \xAB${r.parent}\xBB st\xE5r inte f\xF6re raden.`, "l\xE4gg f\xF6r\xE4ldrarnas rader f\xF6rst"));
+        continue;
+      }
+      parentId = resolved.get(r.parent) ?? null;
+      if (parentId === null) parentRow = r.parent;
+    }
+    let found = null;
+    const fromLedger = ledger.get(r.row);
+    const wanted = fromLedger ?? r.id;
+    if (wanted !== void 0) {
+      found = byId.get(wanted) ?? null;
+      if (!found) {
+        if (r.id !== void 0 && fromLedger === void 0) {
+          rows3.push(blocked(r, `Id ${r.id} finns inte i ${profile.system}.`, "r\xE4tta id:t eller ta bort det fr\xE5n raden"));
+          continue;
+        }
+        rows3.push(blocked(r, `Det som raden skapade (${wanted}) finns inte l\xE4ngre i ${profile.system}.`, "l\xE4s systemet igen, eller ta bort kopplingen f\xF6r raden"));
+        continue;
+      }
+    } else if (parentRow === null) {
+      const hits = existing.filter((e) => e.type === r.type && e.parent_id === parentId && !claimed.has(e.id) && t.key.every((k) => sameKey2(t, k, e.values[k], r.values[k])));
+      if (hits.length > 1) {
+        rows3.push(blocked(r, `${hits.length} saker i ${profile.system} har samma ${t.key.join(" och ")}.`, "ange id p\xE5 raden", null));
+        continue;
+      }
+      found = hits[0] ?? null;
+    }
+    if (!found && r.archive) {
+      if (profile.object_types[r.type]?.archive?.gone === true) {
+        rows3.push({ row: r.row, type: r.type, state: "matches", mark: "\u25CF", id: null, parent_row: null, changes: [], replace: false, archive: true, why: null, fixed_by: null });
+        continue;
+      }
+      rows3.push(blocked(r, `Det finns inget att arkivera: ${r.type} finns inte i ${profile.system}.`, "ange id p\xE5 raden, eller ta bort raden"));
+      continue;
+    }
+    if (!found) {
+      resolved.set(r.row, null);
+      const mark3 = (t.severity ?? {})["create"] ?? "\u25CF";
+      const money3 = (t.money ?? []).filter((f) => num4(r.values[f]) > 0);
+      const changes2 = comparedFields(t, r.values).filter((f) => r.values[f] !== void 0).map((f) => ({ field: f, before: null, after: r.values[f], mark: fieldMark(t, f, r.values[f]), ...shownOf(f, null, r.values[f]) }));
+      const switched2 = changes2.find((c) => t.switches_on?.[c.field]?.includes(String(c.after)));
+      if (switched2) {
+        rows3.push(blocked(r, `Att sl\xE5 p\xE5 (${switched2.field} ${String(switched2.after)}) ing\xE5r aldrig i samma ja som annat.`, "skapa pausat, och starta i ett eget steg"));
+        continue;
+      }
+      rows3.push({
+        row: r.row,
+        type: r.type,
+        state: "create",
+        mark: money3.length ? maxMark(mark3, "\u25A0") : mark3,
+        id: null,
+        parent_row: parentRow,
+        changes: changes2,
+        replace: false,
+        archive: false,
+        why: null,
+        fixed_by: null
+      });
+      continue;
+    }
+    claimed.add(found.id);
+    resolved.set(r.row, found.id);
+    if (r.archive) {
+      const set = t.archive?.set ?? {};
+      const done = Object.keys(set).length > 0 && Object.entries(set).every(([k, v]) => same(found.values[k], v));
+      rows3.push({ row: r.row, type: r.type, state: done ? "matches" : "change", mark: done ? "\u25CF" : "\u25A0", id: found.id, parent_row: null, changes: [], replace: false, archive: true, why: null, fixed_by: null });
+      continue;
+    }
+    const changes = comparedFields(t, r.values).filter((f) => r.values[f] !== void 0).flatMap((f) => {
+      const want = r.values[f], have = t.loose?.includes(f) ? looseOf(found.values[f] ?? null, want) : found.values[f] ?? null;
+      if (isPartial(t, f, want)) {
+        const keys = Object.keys(want).filter((k) => !same(have?.[k] ?? null, want[k]));
+        if (!keys.length) return [];
+        const pick3 = (o) => Object.fromEntries(keys.map((k) => [k, o?.[k] ?? null]));
+        return [{ field: f, before: pick3(have), after: pick3(want), mark: fieldMark(t, f, want) }];
+      }
+      return same(have, want) ? [] : [{ field: f, before: have, after: want, mark: fieldMark(t, f, want), ...shownOf(f, have, want) }];
+    });
+    const switched = changes.find((c) => t.switches_on?.[c.field]?.includes(String(c.after)));
+    if (switched) {
+      rows3.push(blocked(r, `Att sl\xE5 p\xE5 (${switched.field} ${String(switched.after)}) ing\xE5r aldrig i samma ja som annat.`, "starta i ett eget steg", found.id));
+      continue;
+    }
+    const mark2 = changes.reduce((m, c) => maxMark(m, c.mark), "\u25CF");
+    rows3.push({
+      row: r.row,
+      type: r.type,
+      state: changes.length ? "change" : "matches",
+      mark: changes.length ? mark2 : "\u25CF",
+      id: found.id,
+      parent_row: null,
+      changes,
+      replace: changes.length > 0 && t.immutable === true,
+      archive: false,
+      why: null,
+      fixed_by: null
+    });
+  }
+  const parents = new Set([...resolved.values()].filter((v) => v !== null));
+  const only = existing.filter((e) => !claimed.has(e.id) && e.parent_id !== null && parents.has(e.parent_id));
+  const money2 = [];
+  for (const [type, t] of Object.entries(profile.object_types)) for (const field of t.money ?? []) {
+    const own = rows3.filter((x) => x.type === type);
+    if (!own.length) continue;
+    const before = own.reduce((s2, x) => s2 + num4(x.id ? byId.get(x.id)?.values[field] : 0), 0);
+    const after = own.reduce((s2, x) => {
+      const want = (normalized.get(x.row) ?? desired.find((d) => d.row === x.row))?.values[field];
+      const was = x.id ? byId.get(x.id)?.values[field] : 0;
+      return s2 + num4(x.state === "blocked" ? was : want === void 0 ? was : want);
+    }, 0);
+    const u = profile.money_unit;
+    if (before !== 0 || after !== 0) money2.push({ field: `${type}.${field}`, before, after, ...u ? { shown: `${inMain(before, u)} \u2192 ${inMain(after, u)}` } : {} });
+  }
+  const mark = rows3.reduce((m, x) => maxMark(m, x.mark), "\u25CF");
+  return { system: profile.system, rows: rows3, only_in_system: only, money: money2, mark, fingerprint: fingerprint(rows3) };
+}
+function fingerprint(rows3) {
+  const body = rows3.map((r) => [r.row, r.type, r.state, r.id, r.parent_row, r.archive, r.replace, r.changes.map((c) => [c.field, normal(c.before), normal(c.after)])]);
+  return createHash13("sha256").update(JSON.stringify(body)).digest("hex");
+}
+function tally(d) {
+  const n2 = { matches: 0, create: 0, change: 0, blocked: 0, only_in_system: d.only_in_system.length };
+  for (const r of d.rows) n2[r.state]++;
+  return n2;
+}
+
+// atoms/state/read.ts
+var fill = (path2, vars2) => path2.replace(/\{(\w+)\}/g, (m, k) => vars2[k] ?? m);
+var idOf2 = (r) => String(r["id"] ?? r["hash"] ?? r["name"] ?? "");
+function at(v, path2) {
+  let cur = [v];
+  for (const part of path2.split(".")) {
+    const each = part.endsWith("[]");
+    const key = each ? part.slice(0, -2) : part;
+    cur = cur.flatMap((x) => {
+      const y = x && typeof x === "object" && !Array.isArray(x) ? x[key] : void 0;
+      return each ? Array.isArray(y) ? y : [] : y === void 0 || y === null ? [] : [y];
+    });
+  }
+  return cur.filter((x) => x !== void 0 && x !== null && x !== "");
+}
+function valuesOf(r, compare, derive = {}, paths = {}, open = false) {
+  const out = open ? { ...r } : {};
+  for (const [f, p] of Object.entries(paths)) {
+    const v = at(r, p)[0];
+    if (v !== void 0) out[f] = v;
+  }
+  for (const f of compare) {
+    if (paths[f]) continue;
+    if (derive[f]) {
+      const found = derive[f].map((p) => at(r, p)).find((xs) => xs.length);
+      if (found) out[f] = found;
+      continue;
+    }
+    if (r[f] !== void 0) out[f] = r[f];
+    else if (f.endsWith("_id")) {
+      const nested = r[f.slice(0, -3)];
+      if (nested && typeof nested === "object" && "id" in nested) out[f] = String(nested["id"]);
+    }
+  }
+  return out;
+}
+async function readScoped(profile, desired, ledger, t, vars2) {
+  const out = [];
+  const seen = /* @__PURE__ */ new Set();
+  const add = (type, r, parent) => {
+    const id = idOf2(r);
+    const t2 = profile.object_types[type];
+    if (!id || seen.has(`${type}:${id}`)) return;
+    const is = (v, w) => JSON.stringify(v ?? null) === JSON.stringify(w ?? null);
+    if (t2.read.where && !Object.entries(t2.read.where).every(([k, v]) => is(r[k], v))) return;
+    if (t2.read.where_not && Object.entries(t2.read.where_not).some(([k, v]) => is(r[k], v))) return;
+    seen.add(`${type}:${id}`);
+    out.push({ type, id, parent_id: parent, values: valuesOf(r, t2.compare, t2.read.derive, t2.read.paths, t2.open === true) });
+  };
+  const byFilter = async (type, path2, field, values) => {
+    const read = profile.object_types[type].read;
+    const f = read.filter;
+    for (let i = 0; i < values.length; i += 50) {
+      const list4 = values.slice(i, i + 50).map((v) => JSON.stringify(v)).join(",");
+      const params = { [f.param]: f.template.replace("{field}", field).replace("{values}", list4) };
+      for (const r of await t.list(path2, params, read.results ? { results: read.results } : void 0)) add(type, r, null);
+    }
+  };
+  const types = [...new Set(inOrder(profile, desired).map((r) => r.type))].filter((ty) => profile.object_types[ty]);
+  for (const type of types) {
+    const spec38 = profile.object_types[type];
+    const rows3 = desired.filter((r) => r.type === type);
+    if (spec38.parent === null && spec38.read.list_all) {
+      const params = {
+        ...spec38.read.query ? { query: fill(spec38.read.query, vars2) } : spec38.read.fields.length ? { fields: spec38.read.fields.join(",") } : {},
+        ...Object.fromEntries(Object.entries(spec38.read.params ?? {}).map(([k, v]) => [k, fill(v, vars2)]))
+      };
+      const opts = {
+        ...spec38.read.results ? { results: spec38.read.results } : {},
+        ...spec38.read.row ? { row: spec38.read.row } : {},
+        ...spec38.read.graphql ? { graphql: fill(spec38.read.graphql, vars2) } : {}
+      };
+      for (const r of await t.list(fill(spec38.read.path, vars2), params, Object.keys(opts).length ? opts : void 0)) add(type, r, null);
+      continue;
+    }
+    if (spec38.parent === null && spec38.read.filter) {
+      const path2 = fill(spec38.read.path, vars2);
+      const ids = [...new Set(rows3.flatMap((r) => [ledger.get(r.row), r.id]).filter((x) => !!x))];
+      if (ids.length && spec38.read.by_ids !== false) await byFilter(type, path2, "id", ids);
+      const key = spec38.key[0];
+      const sub = spec38.read.filter.key_field?.split(".").slice(1);
+      const names = key && spec38.read.filter_names ? [...new Set(rows3.filter((r) => !ledger.has(r.row) && !r.id).map((r) => sub?.length ? at(r.values[key], sub.join("."))[0] : r.values[key]).filter((v) => v !== void 0 && v !== null && v !== "").map((v) => JSON.stringify(v)))].map((v) => JSON.parse(v)) : [];
+      if (names.length) await byFilter(type, path2, spec38.read.filter.key_field ?? key, names);
+      continue;
+    }
+    if (spec38.parent === null) {
+      const ids = [...new Set(rows3.flatMap((r) => [ledger.get(r.row), r.id]).filter((x) => !!x))];
+      const named2 = (spec38.partial ?? []).flatMap((f) => rows3.flatMap((r) => {
+        const v = r.values[f];
+        return v && typeof v === "object" && !Array.isArray(v) ? Object.keys(v) : [];
+      }));
+      const fields = [.../* @__PURE__ */ new Set([...spec38.read.fields, ...named2])];
+      if (ids.length && spec38.read.by_ids !== false)
+        for (const r of await t.byIds(ids, fields, { path: fill(spec38.read.path, vars2), ...spec38.read.fields_param ? { fields_param: spec38.read.fields_param } : {} })) add(type, r, null);
+      const key = spec38.key[0];
+      const names = key && spec38.read.filter_names ? [...new Set(rows3.filter((r) => !ledger.has(r.row) && !r.id).map((r) => r.values[key]).filter((v) => v !== void 0).map(String))] : [];
+      if (names.length) {
+        const found = await t.list(fill(spec38.read.path, vars2), { fields: spec38.read.fields.join(","), filtering: [{ field: key, operator: "IN", value: names }] });
+        for (const r of found) add(type, r, null);
+      }
+      continue;
+    }
+    const parents = out.filter((e) => e.type === spec38.parent).map((e) => e.id);
+    if (spec38.read.parent_from) {
+      if (!parents.length) continue;
+      const from = spec38.read.parent_from;
+      const opts = spec38.read.results ? { results: spec38.read.results } : void 0;
+      for (const r of await t.list(fill(spec38.read.path, vars2), spec38.read.fields.length ? { fields: spec38.read.fields.join(",") } : {}, opts)) {
+        const p = at(r, from)[0];
+        if (typeof p === "string" && parents.includes(p)) add(type, r, p);
+      }
+      continue;
+    }
+    for (const p of parents) {
+      const found = await t.list(fill(spec38.read.path, { ...vars2, parent: p }), { fields: spec38.read.fields.join(",") });
+      for (const r of found) add(type, r, p);
+    }
+  }
+  return out;
+}
+
+// src/v2/domain/publishing-plan.ts
+var PUBLISHING_PLAN_FIELD = "plan";
+
+// atoms/meta/plan.ts
+function parsePlan(fields) {
+  const raw2 = fields?.[PUBLISHING_PLAN_FIELD];
+  if (!raw2) return null;
+  try {
+    const p = JSON.parse(raw2);
+    return p && p.kind === "publishing_plan" && Array.isArray(p.rows) ? p : null;
+  } catch {
+    return null;
+  }
+}
+var norm2 = (s2) => s2.replace(/\s+/g, " ").trim().toLocaleLowerCase("sv");
+var rowKey = (adsetId, adName) => `${adsetId}|${norm2(adName)}`;
+
+// atoms/state/transports.ts
+function wrapped(params, wrap) {
+  const out = { ...params };
+  for (const [field, w] of Object.entries(wrap ?? {})) {
+    if (out[field] === void 0) continue;
+    out[w.as] = { ...out[w.as] && typeof out[w.as] === "object" ? out[w.as] : {}, [w.key]: out[field] };
+    delete out[field];
+  }
+  return out;
+}
+function metaTransport(get, cred) {
+  return {
+    async list(path2, params) {
+      return await allPages(get, cred, path2, params);
+    },
+    async byIds(ids, fields) {
+      if (!ids.length) return [];
+      const r = await request(get, cred, "GET", "", { ids: ids.join(","), fields: fields.join(",") });
+      return Object.values(r ?? {});
+    }
+  };
+}
+function metaWriteTransport(get, cred) {
+  return {
+    async batch(ops, ids) {
+      const nameOf2 = new Map(ops.map((o, n2) => [o.row, `r${n2}`]));
+      const items2 = ops.map((o) => {
+        const params = { ...o.params };
+        for (const [field, row2] of Object.entries(o.refs)) params[field] = ids.get(row2) ?? (nameOf2.has(row2) ? `{result=${nameOf2.get(row2)}:$.id}` : "");
+        return {
+          method: "POST",
+          relative_url: `${GRAPH_VERSION}/${o.path.replace(/^\/+/, "")}`,
+          body: encode(wrapped(params, o.wrap)),
+          name: nameOf2.get(o.row),
+          omit_response_on_success: false
+        };
+      });
+      const res = await request(get, cred, "POST", "", { batch: items2, include_headers: false });
+      return ops.map((o, n2) => {
+        const r = res?.[n2] ?? null;
+        if (!r) return { row: o.row, ok: false, error: "Meta hann inte k\xF6ra raden (tidsgr\xE4nsen); den g\xF6rs vid n\xE4sta k\xF6rning" };
+        let body = {};
+        try {
+          body = r.body ? JSON.parse(r.body) : {};
+        } catch {
+          body = {};
+        }
+        if ((r.code ?? 500) >= 400 || body["error"]) {
+          const e = body["error"] ?? {};
+          return { row: o.row, ok: false, error: String(e["error_user_msg"] ?? e["message"] ?? `Meta ${r.code}`) };
+        }
+        return { row: o.row, ok: true, ...typeof body["id"] === "string" ? { id: body["id"] } : {} };
+      });
+    }
+  };
+}
+var at2 = (o, dotted) => dotted.split(".").reduce((x, k) => x && typeof x === "object" ? x[k] : void 0, o);
+function bearerTransport(fetch2, host, token, paging, maxPages = 50) {
+  const get = async (path2, query) => {
+    const q = new URLSearchParams();
+    for (const [k, v] of Object.entries(query)) if (v !== void 0 && v !== null && v !== "") q.append(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+    const url = `${host.replace(/\/+$/, "")}${path2}${q.toString() ? `?${q}` : ""}`;
+    const r = await fetch2(url, { method: "GET", headers: { authorization: `Bearer ${token}`, accept: "application/json" } });
+    const text7 = await r.text();
+    if (r.status >= 400) throw new Error(`${path2}: systemet svarade ${r.status} (${text7.slice(0, 200)})`);
+    return text7 ? JSON.parse(text7) : null;
+  };
+  return {
+    async list(path2, params, opts) {
+      if (opts?.graphql) {
+        const r = await fetch2(`${host.replace(/\/+$/, "")}${path2}`, {
+          method: "POST",
+          headers: { authorization: `Bearer ${token}`, accept: "application/json", "content-type": "application/json" },
+          body: JSON.stringify({ query: opts.graphql })
+        });
+        const text7 = await r.text();
+        const json = text7 ? JSON.parse(text7) : {};
+        if (r.status >= 400 || Array.isArray(json["errors"])) throw new Error(`${path2}: ${JSON.stringify(json["errors"] ?? text7).slice(0, 200)}`);
+        const rows3 = at2(json, opts.results ?? paging.results);
+        return Array.isArray(rows3) ? rows3 : [];
+      }
+      const out = [];
+      let after;
+      const param = paging.param ?? "after";
+      if (opts?.one) {
+        const page = await get(path2, params);
+        return page && typeof page === "object" ? [page] : [];
+      }
+      if (opts?.search) {
+        for (let i = 0; i < maxPages; i++) {
+          const r = await fetch2(`${host.replace(/\/+$/, "")}${path2}`, {
+            method: "POST",
+            headers: { authorization: `Bearer ${token}`, accept: "application/json", "content-type": "application/json" },
+            body: JSON.stringify({ ...opts.search, ...after ? { [param]: after } : {} })
+          });
+          const text7 = await r.text();
+          if (r.status >= 400) throw new Error(`${path2}: systemet svarade ${r.status} (${text7.slice(0, 200)})`);
+          const page = text7 ? JSON.parse(text7) : {};
+          const rows3 = at2(page, opts.results ?? paging.results);
+          if (Array.isArray(rows3)) out.push(...rows3);
+          const next = at2(page, paging.after);
+          if (typeof next !== "string" || next === "") return out;
+          after = next;
+        }
+        throw new Error(`${path2}: fler \xE4n ${maxPages} sidor \u2014 avbryter hellre \xE4n snurrar`);
+      }
+      for (let i = 0; i < maxPages; i++) {
+        const page = await get(path2, { ...params, ...after ? { [param]: after } : {} });
+        const rows3 = at2(page, opts?.results ?? paging.results);
+        if (Array.isArray(rows3)) out.push(...rows3);
+        const next = at2(page, paging.after);
+        if (paging.more !== void 0 && at2(page, paging.more) !== true) return out;
+        if (typeof next !== "string" || next === "") return out;
+        after = next;
+      }
+      throw new Error(`${path2}: fler \xE4n ${maxPages} sidor \u2014 avbryter hellre \xE4n snurrar`);
+    },
+    async byIds(ids, fields, at3) {
+      if (!at3) return [];
+      const out = [];
+      for (const id of ids) {
+        const r = await fetch2(
+          `${host.replace(/\/+$/, "")}${at3.path}/${encodeURIComponent(id)}${fields.length ? `?${new URLSearchParams({ [at3.fields_param ?? "fields"]: fields.join(",") })}` : ""}`,
+          { method: "GET", headers: { authorization: `Bearer ${token}`, accept: "application/json" } }
+        );
+        const text7 = await r.text();
+        if (r.status === 404) continue;
+        if (r.status >= 400) throw new Error(`${at3.path}/${id}: systemet svarade ${r.status} (${text7.slice(0, 200)})`);
+        const page = text7 ? JSON.parse(text7) : null;
+        if (page && typeof page === "object") out.push(page);
+      }
+      return out;
+    }
+  };
+}
+function bearerWriteTransport(fetch2, host, token, specOf) {
+  const send2 = async (method2, path2, body) => {
+    const r = await fetch2(`${host.replace(/\/+$/, "")}${path2}`, {
+      method: method2,
+      headers: { authorization: `Bearer ${token}`, accept: "application/json", "content-type": "application/json" },
+      ...method2 === "DELETE" ? {} : { body: JSON.stringify(body) }
+    });
+    const text7 = await r.text();
+    let json = null;
+    try {
+      json = text7 ? JSON.parse(text7) : null;
+    } catch {
+      json = { message: text7.slice(0, 200) };
+    }
+    return { status: r.status, json };
+  };
+  const why = (j, status) => String(j?.message ?? `systemet svarade ${status}`);
+  const sameKey3 = (have, sent) => sent !== void 0 && (sent && typeof sent === "object" && !Array.isArray(sent) ? !!have && typeof have === "object" && Object.entries(sent).every(([k, v]) => JSON.stringify(have[k]) === JSON.stringify(v)) : have === sent);
+  return {
+    async batch(ops, given) {
+      const out = [];
+      const ids = new Map(given);
+      const failedRefs = (o) => {
+        const missing = Object.values(o.refs).filter((row2) => !ids.has(row2));
+        return missing.length ? `det raden pekar p\xE5 (${missing.join(", ")}) \xE4r inte gjort; raden g\xF6rs vid n\xE4sta k\xF6rning` : null;
+      };
+      const body = (o) => wrapped({ ...o.params, ...Object.fromEntries(Object.entries(o.refs).map(([f, row2]) => [f, ids.get(row2)])) }, o.wrap);
+      const grouped = /* @__PURE__ */ new Map();
+      for (const o of ops) if (o.kind === "create" && o.batch_path) grouped.set(o.batch_path, [...grouped.get(o.batch_path) ?? [], o]);
+      for (const [path2, all2] of grouped) {
+        const spec38 = specOf(all2[0].type);
+        const key = spec38.key;
+        const group = [];
+        for (const o of all2) {
+          const missing = failedRefs(o);
+          if (missing) out.push({ row: o.row, ok: false, error: missing });
+          else group.push(o);
+        }
+        if (!group.length) continue;
+        const list4 = group.map(body);
+        const r = await send2("POST", path2, spec38.batchBody === "array" ? list4 : { inputs: list4 });
+        const found = at2(r.json, spec38.batchResults);
+        const results2 = Array.isArray(found) ? found : [];
+        group.forEach((o, n2) => {
+          const hit = results2.find((x) => sameKey3(x[key], o.params[key])) ?? (spec38.batchBody === "array" && results2.length === group.length ? results2[n2] : void 0);
+          if (r.status < 400 && hit) {
+            const id = String(hit["id"] ?? hit[key]);
+            ids.set(o.row, id);
+            out.push({ row: o.row, ok: true, id });
+          } else out.push({ row: o.row, ok: false, error: why(r.json, r.status) });
+        });
+      }
+      for (const o of ops) {
+        if (o.kind === "create" && o.batch_path) continue;
+        const spec38 = specOf(o.type);
+        const missing = failedRefs(o);
+        if (missing) {
+          out.push({ row: o.row, ok: false, error: missing });
+          continue;
+        }
+        if (o.mutation) {
+          const r2 = await send2("POST", o.path, { query: o.mutation, variables: o.kind === "create" ? { input: body(o) } : { id: o.id, input: o.params } });
+          const errors2 = r2.json?.errors;
+          const made = o.kind === "create" && spec38.result ? at2(r2.json, spec38.result) : null;
+          out.push(r2.status < 400 && !Array.isArray(errors2) ? { row: o.row, ok: true, ...o.kind === "create" ? { id: String(made?.["id"] ?? made?.[spec38.key] ?? "") } : {} } : { row: o.row, ok: false, error: Array.isArray(errors2) ? JSON.stringify(errors2).slice(0, 200) : why(r2.json, r2.status) });
+          continue;
+        }
+        const r = await send2(o.kind === "create" ? "POST" : o.method ?? "PATCH", o.path, body(o));
+        const j = (spec38.result ? at2(r.json, spec38.result) : r.json) ?? {};
+        const id = o.kind === "create" ? String(j["id"] ?? j[spec38.key] ?? "") : "";
+        if (r.status < 400 && id) ids.set(o.row, id);
+        out.push(r.status < 400 ? { row: o.row, ok: true, ...o.kind === "create" ? { id } : {} } : { row: o.row, ok: false, error: why(r.json, r.status) });
+      }
+      return out;
+    }
+  };
+}
+function googleAdsTransports(fetch2, headers, api, customer, specOf, maxPages = 50) {
+  const post = async (path2, body) => {
+    const r = await fetch2(`${api}/customers/${customer}${path2}`, { method: "POST", headers: await headers(), body: JSON.stringify(body) });
+    const text7 = await r.text();
+    const json = text7 ? JSON.parse(text7) : {};
+    if (r.status >= 400) throw new Error(`Google Ads ${r.status}: ${String(json["error"]?.message ?? text7.slice(0, 200))}`);
+    return json;
+  };
+  const resourceName = (type, id) => `customers/${customer}/${specOf(type)?.resource ?? type}/${id}`;
+  const read = {
+    async list(path2, params, opts) {
+      const out = [];
+      let pageToken;
+      for (let i = 0; i < maxPages; i++) {
+        const page = await post(path2.replace(/^\/customers\/[^/]+/, ""), { ...params, ...pageToken ? { pageToken } : {} });
+        for (const r of page["results"] ?? []) out.push(opts?.row ? r[opts.row] : r);
+        pageToken = typeof page["nextPageToken"] === "string" && page["nextPageToken"] !== "" ? page["nextPageToken"] : void 0;
+        if (!pageToken) return out;
+      }
+      throw new Error("Google Ads: fler \xE4n " + maxPages + " sidor \u2014 avbryter hellre \xE4n snurrar");
+    },
+    async byIds() {
+      return [];
+    }
+  };
+  const write = {
+    async batch(ops, ids) {
+      const temp = /* @__PURE__ */ new Map();
+      ops.forEach((o, n2) => {
+        if (o.kind === "create") temp.set(o.row, resourceName(o.type, String(-(n2 + 1))));
+      });
+      const pointer = (o, field, row2) => {
+        const refType = specOf(o.type)?.refTypes[field] ?? ops.find((x) => x.row === row2)?.type ?? "";
+        return ids.has(row2) ? resourceName(refType, ids.get(row2)) : temp.get(row2) ?? "";
+      };
+      const mutateOperations = ops.map((o) => {
+        const spec38 = specOf(o.type);
+        const fields = { ...o.params };
+        for (const [field, row2] of Object.entries(o.refs)) fields[field] = pointer(o, field, row2);
+        for (const [field, refType] of Object.entries(spec38?.refTypes ?? {}))
+          if (typeof fields[field] === "string" && /^\d+$/.test(fields[field])) fields[field] = resourceName(refType, fields[field]);
+        const name = spec38?.operation ?? `${o.type}Operation`;
+        return o.kind === "create" ? { [name]: { create: { resourceName: temp.get(o.row), ...fields } } } : { [name]: { update: { resourceName: resourceName(o.type, o.id ?? ""), ...fields }, updateMask: Object.keys(o.params).join(",") } };
+      });
+      const res = await post("/googleAds:mutate", { mutateOperations, partialFailure: true });
+      const failed = /* @__PURE__ */ new Map();
+      for (const d of res["partialFailureError"]?.details ?? [])
+        for (const e of d.errors ?? []) {
+          const idx = (e["location"]?.fieldPathElements ?? []).find((p) => p.fieldName === "mutate_operations")?.index;
+          if (typeof idx === "number") failed.set(idx, String(e["message"] ?? "Google avvisade raden"));
+        }
+      const responses = res["mutateOperationResponses"] ?? [];
+      return ops.map((o, n2) => {
+        if (failed.has(n2)) return { row: o.row, ok: false, error: failed.get(n2) };
+        const hit = Object.values(responses[n2] ?? {})[0];
+        if (!hit?.resourceName) return { row: o.row, ok: false, error: "Google gav inget svar f\xF6r raden" };
+        return { row: o.row, ok: true, ...o.kind === "create" ? { id: hit.resourceName.split("/").pop() } : {} };
+      });
+    }
+  };
+  return { read, write };
+}
+
+// atoms/state/from-publishing-plan.ts
+var digits2 = (s2) => /^\d+$/.test(s2) ? s2 : void 0;
+function rowsFromPublishingPlan(plan, approved) {
+  if (!approved) return { rows: [], refused: "Publiceringsplanen \xE4r inte godk\xE4nd i den h\xE4r versionen; godk\xE4nn den f\xF6rst, sedan visas skillnaden." };
+  const campaigns = /* @__PURE__ */ new Map(), adsets = /* @__PURE__ */ new Map();
+  const creatives = [], ads = [];
+  for (const r of plan.rows) {
+    const ck = `campaign:${r.campaign.id || r.campaign.name}`;
+    if (!campaigns.has(ck)) {
+      const id = digits2(r.campaign.id);
+      campaigns.set(ck, { row: ck, type: "campaign", values: { name: r.campaign.name }, ...id ? { id } : {} });
+    }
+    const ak = `adset:${r.adset.id || `${r.campaign.name}/${r.adset.name}`}`;
+    if (!adsets.has(ak)) {
+      const id = digits2(r.adset.id);
+      adsets.set(ak, { row: ak, type: "adset", parent: ck, values: { name: r.adset.name }, ...id ? { id } : {} });
+    }
+    const values = { name: r.ad_name };
+    creatives.push({
+      row: `creative:${r.row}`,
+      type: "creative",
+      values,
+      build: { content: r.content, images: r.images, link: r.link, call_to_action: r.call_to_action }
+    });
+    ads.push({ row: `ad:${r.row}`, type: "ad", parent: ak, values: { name: r.ad_name }, refs: { creative_id: `creative:${r.row}` } });
+  }
+  return { rows: [...campaigns.values(), ...adsets.values(), ...creatives, ...ads], refused: null };
+}
+
+// atoms/state/meta-ad-texts.ts
+var AD_TEXT_LIMIT = 5;
+var HEADLINE_WARN = 40;
+var LABEL = /^\s*\*\*\s*prim[äa]rtext\s*:?\s*\*\*\s*:?\s*$/i;
+var clean = (s2) => typeof s2 === "string" ? s2.replace(/[ \t]+/g, " ").trim() : "";
+var split = (s2) => clean(s2).split(/\s+·\s+/).map(clean).filter(Boolean);
+var uniq = (xs) => {
+  const seen = /* @__PURE__ */ new Set();
+  return xs.filter((x) => {
+    const k = x.replace(/\s+/g, " ").toLocaleLowerCase("sv");
+    if (!x || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+};
+function markdownText(doc) {
+  const lines = (doc.markdown ?? "").split(/\r?\n/);
+  const first = lines.findIndex((l) => l.trim() !== "");
+  if (first >= 0 && LABEL.test(lines[first])) lines.splice(0, first + 1);
+  return lines.join("\n").trim();
+}
+function roleOf(field) {
+  const words = field.toLocaleLowerCase("sv").split(/[^a-zåäöéü0-9]+/).filter(Boolean);
+  if (words.some((w) => /rubrik|headline|title/.test(w))) return "title";
+  if (words.some((w) => /beskrivning|description/.test(w))) return "description";
+  if (words.some((w) => /(text|message|body|copy)$/.test(w))) return words.some((w) => w === "kort" || w === "short") ? "short" : "body";
+  return null;
+}
+function adTextsOf(doc) {
+  if (!doc) return { bodies: [], titles: [], descriptions: [] };
+  const by = { body: [], short: [], title: [], description: [] };
+  for (const [k, v] of Object.entries(doc.fields ?? {})) {
+    const role = roleOf(k);
+    if (!role || typeof v !== "string") continue;
+    by[role].push(...role === "title" || role === "description" ? split(v) : [v.trim()]);
+  }
+  const long = by.body.length ? by.body : [markdownText(doc)];
+  return { bodies: uniq([...long, ...by.short].map((x) => x.trim())), titles: uniq(by.title), descriptions: uniq(by.description) };
+}
+function adTextProblems(t, o) {
+  const out = [];
+  if (!t.bodies.length) out.push("inneh\xE5llet har ingen annonstext");
+  for (const [list4, what] of [[t.bodies, "texter"], [t.titles, "rubriker"], [t.descriptions, "beskrivningar"]])
+    if (list4.length > AD_TEXT_LIMIT) out.push(`inneh\xE5llet har ${list4.length} ${what}; Meta tar h\xF6gst ${AD_TEXT_LIMIT}`);
+  if (!o.placementImages && (t.bodies.length > 1 || t.titles.length > 1 || t.descriptions.length > 1))
+    out.push("flera texter kr\xE4ver en bild per placering (fl\xF6det och stories), s\xE5 att Meta f\xE5r sina regler per placering");
+  return out;
+}
+function adTextLines(t) {
+  const lines = [], warnings = [];
+  for (const [list4, label] of [[t.bodies, "text"], [t.titles, "rubrik"], [t.descriptions, "beskrivning"]])
+    list4.forEach((x, n2) => {
+      const len = [...x].length;
+      lines.push(`${label}_${n2 + 1} (${len} tecken): ${x}`);
+      if (label === "rubrik" && len > HEADLINE_WARN)
+        warnings.push(`${label}_${n2 + 1} har ${len} tecken; \xF6ver ${HEADLINE_WARN} kortas rubriken i m\xE5nga placeringar`);
+    });
+  return { lines, warnings };
+}
+var refuse = (r, why, fixed_by) => ({ ...r, refused: { why, fixed_by } });
+async function withCreativeTexts(rows3, src) {
+  const out = [];
+  for (const r of rows3) {
+    const b = r.build ?? {};
+    const id = b.content?.id;
+    if (r.type !== "creative" || !id) {
+      out.push(r);
+      continue;
+    }
+    const c = src.contents().find((x) => x.id === id);
+    const name = c?.name ?? id;
+    if (!c) {
+      out.push(refuse(r, "texten p\xE5 raden finns inte i inneh\xE5llsbanken", "r\xE4tta inneh\xE5llet p\xE5 planens rad"));
+      continue;
+    }
+    const version2 = b.content?.version || c.latest.sha256;
+    if (c.approved?.sha256 !== version2) {
+      out.push(refuse(r, c.approved ? `texten i \xAB${name}\xBB \xE4r godk\xE4nd i en annan version \xE4n den publiceringsplanen bygger p\xE5` : `texten i \xAB${name}\xBB \xE4r inte godk\xE4nd`, c.approved ? "bygg om publiceringsplanen med den godk\xE4nda versionen och godk\xE4nn den" : "en m\xE4nniska godk\xE4nner texten"));
+      continue;
+    }
+    const doc = await src.readText(version2);
+    if (!doc) {
+      out.push(refuse(r, `texten i \xAB${name}\xBB gick inte att l\xE4sa`, "f\xF6rs\xF6k igen om en stund"));
+      continue;
+    }
+    const t = adTextsOf(doc);
+    const placed = (b.images ?? []).some((p) => p.placement !== "all");
+    const problems = adTextProblems(t, { placementImages: placed });
+    if (problems.length) {
+      out.push(refuse(r, `${name}: ${problems.join("; ")}`, "r\xE4tta inneh\xE5llet eller bilderna p\xE5 planens rad"));
+      continue;
+    }
+    const { lines, warnings } = adTextLines(t);
+    out.push({
+      ...r,
+      values: { ...r.values, bodies: t.bodies, ...t.titles.length ? { titles: t.titles } : {}, ...t.descriptions.length ? { descriptions: t.descriptions } : {} },
+      build: { ...r.build, texts: t, text_lines: lines, text_warnings: warnings }
+    });
+  }
+  return out;
+}
+function textNotes(rows3) {
+  return rows3.flatMap((r) => {
+    const b = r.build ?? {};
+    return b.text_lines ? [{ row: r.row, lines: b.text_lines, warnings: b.text_warnings ?? [] }] : [];
+  });
+}
+
+// atoms/state/context.ts
+function desiredRowsOf(fields) {
+  const raw2 = fields?.["desired"];
+  if (!raw2) return null;
+  try {
+    const d = JSON.parse(raw2);
+    return Array.isArray(d.rows) && d.rows.every((r) => r && typeof r === "object" && typeof r.row === "string" && typeof r.type === "string") ? d.rows : null;
+  } catch {
+    return null;
+  }
+}
+var LEDGER_KEY = "state:";
+var undefinedIfBlank = (v) => v === "" ? void 0 : v;
+async function transportsFor(system, transport, ctx, profile, args) {
+  if (transport === "google_ads") {
+    const keys = await keysOf(ctx);
+    const account = profile.account;
+    const customer = digits(account ? undefinedIfBlank(args[account.param]) : void 0, account?.param ?? "customer_id");
+    const specOf = (type) => {
+      const t = profile.object_types[type];
+      if (!t?.resource || !t.operation) return null;
+      return {
+        resource: t.resource,
+        operation: t.operation,
+        refTypes: { ...t.refs ?? {}, ...t.parent && t.create?.parent_field ? { [t.create.parent_field]: t.parent } : {} }
+      };
+    };
+    return googleAdsTransports(ctx.fetch, () => headersFor(ctx.fetch, keys), API, customer, specOf);
+  }
+  if (transport === "bearer_rest") {
+    const link2 = ctx.connection ? await ctx.connection(system, "") : null;
+    const keyName = profile.keys?.[0] ?? "";
+    const token = link2?.token ?? (keyName ? link2?.keys?.[keyName] : void 0) ?? "";
+    if (!token) throw new Error(`kopplingen till ${system} saknar nyckeln${keyName ? ` (${keyName})` : ""}`);
+    const paging = profile.limits?.paging ?? { results: "results", after: "paging.next.after" };
+    const host = profile.host;
+    const specOf = (type) => {
+      const t = profile.object_types[type];
+      return { key: t?.key?.[0] ?? "id", batchBody: t?.create?.batch_body ?? "inputs", batchResults: t?.create?.batch_results ?? "results", result: t?.create?.result ?? null };
+    };
+    return { read: bearerTransport(ctx.fetch, host, token, paging), write: bearerWriteTransport(ctx.fetch, host, token, specOf) };
+  }
+  if (transport !== "meta_graph") throw new Error(`transporten ${transport} f\xF6r ${system} finns inte \xE4n \u2014 ett nytt s\xE4tt att logga in kr\xE4ver kod en g\xE5ng`);
+  const link = ctx.connection ? await ctx.connection("meta", "") : null;
+  const cred = { token: link?.keys?.["META_ADS_TOKEN"] ?? "", appSecret: link?.keys?.["META_APP_SECRET"] ?? "" };
+  if (!cred.token || !cred.appSecret) throw new Error("Meta-kopplingen saknar META_ADS_TOKEN eller META_APP_SECRET");
+  return { read: metaTransport(ctx.fetch, cred), write: metaWriteTransport(ctx.fetch, cred) };
+}
+async function loadDesired(args, ctx) {
+  const system = String(args["system"] ?? "").trim();
+  const profile = ctx.call?.systemProfile?.(system);
+  if (!profile) throw new Error(`systemposten f\xF6r \xAB${system}\xBB finns inte i nya registret \u2014 skillnaden visas bara genom nya dirigenten`);
+  const planId = String(args["plan"] ?? "").trim();
+  const state = ctx.call?.contents?.().find((c) => c.id === planId) ?? null;
+  if (!state) throw new Error(`publiceringsplanen ${planId || "(saknas)"} finns inte i banken`);
+  const approved = !!state.approved && state.approved.sha256 === state.latest.sha256;
+  const doc = approved && ctx.call?.readText ? await ctx.call.readText(state.latest.sha256) : null;
+  if (!approved) throw new Error(`Planen ${planId} \xE4r inte godk\xE4nd i den h\xE4r versionen; godk\xE4nn den f\xF6rst, sedan visas skillnaden.`);
+  const plan = parsePlan(doc?.fields);
+  const generic = plan ? null : desiredRowsOf(doc?.fields);
+  if (!plan && !generic) throw new Error(`${planId} g\xE5r inte att l\xE4sa: f\xE4ltet plan eller desired saknas eller \xE4r trasigt`);
+  const { rows: planRows, refused } = plan ? rowsFromPublishingPlan(plan, true) : { rows: generic, refused: null };
+  if (refused) throw new Error(refused);
+  const contents = ctx.call?.contents, readText = ctx.call?.readText;
+  const rows3 = plan && contents && readText ? await withCreativeTexts(planRows, { contents: () => contents(), readText: (sha) => readText(sha) }) : planRows;
+  const ledger = /* @__PURE__ */ new Map();
+  for (const p of ctx.call?.publications?.() ?? []) {
+    if (p.content !== planId || !p.key) continue;
+    if (p.key.startsWith(LEDGER_KEY)) ledger.set(p.key.slice(LEDGER_KEY.length), p.channel_id);
+  }
+  for (const r of plan?.rows ?? []) {
+    const done = (ctx.call?.publications?.() ?? []).find((p) => p.content === planId && p.key === rowKey(r.adset.id, r.ad_name));
+    if (done && !ledger.has(`ad:${r.row}`)) ledger.set(`ad:${r.row}`, done.channel_id);
+  }
+  const t = await transportsFor(system, profile.transport, ctx, profile, args);
+  const given = args["vars"] && typeof args["vars"] === "object" ? Object.fromEntries(Object.entries(args["vars"]).map(([k, v]) => [k, String(v)])) : {};
+  const acc = profile.account;
+  const account = !acc ? {} : acc.form.startsWith("act_") ? { account: accountPath(args[acc.param] ?? args["ad_account_id"]) } : { account: digits(args[acc.param], acc.param) };
+  return { system, profile, planId, rows: rows3, ledger, vars: { ...given, ...account }, ...t };
+}
+async function listOne(args, ctx) {
+  const system = String(args["system"] ?? "").trim();
+  const profile = ctx.call?.systemProfile?.(system);
+  if (!profile) throw new Error(`systemposten f\xF6r \xAB${system}\xBB finns inte i nya registret`);
+  const type = String(args["read_type"]);
+  const spec38 = profile.object_types[type];
+  if (!spec38) throw new Error(`\xAB${type}\xBB finns inte i systemposten f\xF6r ${system}`);
+  const t = await transportsFor(system, profile.transport, ctx, profile, args);
+  const own = Object.fromEntries(Object.entries(args).filter(([k, v]) => typeof v === "string" && !["system", "read_type", "as", "plan"].includes(k)));
+  const given = { ...own, ...args["vars"] && typeof args["vars"] === "object" ? Object.fromEntries(Object.entries(args["vars"]).map(([k, v]) => [k, String(v)])) : {} };
+  const acc = profile.account;
+  const needsAccount = !!acc && JSON.stringify(spec38.read).includes("{account}");
+  const vars2 = { ...given, ...!needsAccount ? {} : acc.form.startsWith("act_") ? { account: accountPath(args[acc.param] ?? args["ad_account_id"]) } : { account: digits(args[acc.param], acc.param) } };
+  const fill3 = (s2) => s2.replace(/\{(\w+)\}/g, (m, k) => vars2[k] ?? m);
+  const read = spec38.read;
+  const params = {
+    ...read.query ? { query: fill3(read.query) } : read.fields.length ? { fields: read.fields.join(",") } : {},
+    ...Object.fromEntries(Object.entries(read.params ?? {}).map(([k, v]) => [k, fill3(v)]))
+  };
+  const asList = (v) => typeof v === "string" ? v.split(",").map((x) => x.trim()).filter(Boolean) : v;
+  const search = read.search ? { ...Object.fromEntries(Object.entries(read.search.body).filter(([, arg]) => args[arg] !== void 0 && args[arg] !== "").map(([k, arg]) => [k, read.search.lists?.includes(arg) ? asList(args[arg]) : args[arg]])), ...read.search.fixed ?? {} } : null;
+  const opts = {
+    ...read.results ? { results: read.results } : {},
+    ...read.row ? { row: read.row } : {},
+    ...read.graphql ? { graphql: fill3(read.graphql) } : {},
+    ...search ? { search } : {},
+    ...read.one ? { one: true } : {}
+  };
+  const path2 = fill3(read.path);
+  const missing = [...path2.matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
+  if (missing.length) throw new Error(`${missing.join(" och ")} saknas: ange ${missing.length > 1 ? "dem" : "det"} f\xF6r att l\xE4sa ${type} i ${system}`);
+  const rows3 = await t.read.list(path2, params, Object.keys(opts).length ? opts : void 0);
+  if (!read.one) return rows3;
+  const got = rows3[0] ?? {};
+  return Object.fromEntries(Object.entries(read.one.defaults).map(([k, d]) => [k, got[k] ?? d]));
+}
+
+// atoms/state/preview.ts
+function previewOf(d, label) {
+  return {
+    preview_id: `ds_${d.fingerprint.slice(0, 16)}`,
+    action: "desired_state_apply",
+    label,
+    severity: d.mark,
+    from: null,
+    to: d.system,
+    params: { rows: d.rows, only_in_system: d.only_in_system, money: d.money, fingerprint: d.fingerprint },
+    follows: `${summaryOf(d)} Det h\xE4r \xE4r bara skillnaden: ingenting skrivs.`
+  };
+}
+function summaryOf(d, system = d.system) {
+  const n2 = tally(d);
+  return `${n2.matches} st\xE4mmer, ${n2.create} skapas, ${n2.change} \xE4ndras, ${n2.blocked} g\xE5r inte; ${n2.only_in_system} finns bara i ${system}.`;
+}
+function withTexts(p, rows3) {
+  const texts = textNotes(rows3);
+  if (!texts.length) return p;
+  const warned = texts.reduce((n2, t) => n2 + t.warnings.length, 0);
+  return {
+    ...p,
+    params: { ...p.params, texts },
+    follows: warned ? `${p.follows} ${warned} rubrik${warned > 1 ? "er" : ""} \xE4r l\xE4ngre \xE4n vad m\xE5nga placeringar visar; se varningen vid varje text.` : p.follows
+  };
+}
+
+// atoms/state/desired_state.atom.ts
+var spec35 = {
+  "id": "c_state_desired_state",
+  "name": "state.call.desired_state",
+  "grounding": "observed",
+  "found_in": "atomf\xF6rslag state.atom_proposal.desired_state \u2014 41 f\xF6rhandsvisningar och lika m\xE5nga ja i vinterkampanjen; en generell j\xE4mf\xF6relse med systemdelen som registerpost g\xF6r att ett nytt system inte kr\xE4ver kod eller utl\xE4ggning. Ny yta: ingen befintlig atom g\xF6r samma sak.",
+  "scope": "shared",
+  "surface": "state",
+  "input": [
+    "system",
+    "plan",
+    "ad_account_id",
+    "read_type",
+    "as",
+    "vars"
+  ],
+  "optional_input": ["plan", "ad_account_id", "read_type", "as", "vars"],
+  "output": [
+    "preview",
+    "summary",
+    "rows",
+    "only_in_system",
+    "money"
+  ],
+  "idempotent": true,
+  "atom": "state.desired.read",
+  "effect": {
+    "verb": "reads",
+    "object": "state.object_set"
+  },
+  "performer": "code",
+  "built_from": "p_state_desired_state",
+  "label": "Visa skillnaden mellan \xF6nskat l\xE4ge och kundsystemet",
+  "summary": "L\xE4ser det en godk\xE4nd plan ber\xF6r i ett kundsystem, j\xE4mf\xF6r rad f\xF6r rad (st\xE4mmer, skapas, \xE4ndras, g\xE5r inte, finns bara i systemet) och visar skillnaden med allvaret per rad. Systemets delar l\xE4ses ur systemposten i registret. Skriver ingenting.",
+  "keywords": [
+    "\xF6nskat l\xE4ge",
+    "visa skillnaden",
+    "j\xE4mf\xF6r plan och konto",
+    "st\xE4mmer det",
+    "desired state",
+    "diff",
+    "drift"
+  ],
+  "test_target": "Torrt mot en falsk transport; skarpt bara l\xE4sande mot ett annonskonto f\xF6r test.",
+  "leaves": {
+    "schema": {
+      "preview": "f\xF6rhandsvisningen i dagens form, med raderna och fingeravtrycket",
+      "summary": "en mening p\xE5 svenska: hur m\xE5nga rader som st\xE4mmer, skapas, \xE4ndras och g\xE5r inte",
+      "rows": "raderna med l\xE4ge, allvar, f\xF6re och efter",
+      "only_in_system": "det som finns i systemet under planens f\xF6r\xE4ldrar men inte i planen",
+      "money": "budgetarnas summa f\xF6re och efter"
+    },
+    "done_when": [
+      "skillnaden \xE4r visad",
+      "ingenting \xE4r skrivet i systemet"
+    ],
+    "where": "svaret; inget sparas"
+  },
+  "requires": "read",
+  "stage": "draft",
+  "module": "n0101",
+  "operation_id": "o_state_desired_state",
+  "step_id": "s_state_desired_state"
+};
+async function run35(args, ctx) {
+  if (typeof args["read_type"] === "string" && args["read_type"] !== "") {
+    const items2 = await listOne(args, ctx);
+    if (!Array.isArray(items2)) return items2;
+    return { [typeof args["as"] === "string" && args["as"] !== "" ? args["as"] : "items"]: items2 };
+  }
+  const l = await loadDesired(args, ctx);
+  const existing = await readScoped(l.profile, l.rows, l.ledger, l.read, l.vars);
+  const d = diff(l.profile, l.rows, existing, l.ledger);
+  const preview = withTexts(previewOf(d, `Publiceringsplanen mot ${l.system}`), l.rows);
+  return { preview, summary: summaryOf(d), rows: d.rows, only_in_system: d.only_in_system, money: d.money };
+}
+var fixtures35 = [
+  {
+    name: "utan systemposten i nya registret k\xF6rs inget",
+    args: { system: "meta", plan: "c_0000000001", ad_account_id: "act_1" },
+    expect_error: "systemposten"
+  }
+];
+
+// atoms/state/desired_state_apply.atom.ts
+var desired_state_apply_atom_exports = {};
+__export(desired_state_apply_atom_exports, {
+  fixtures: () => fixtures36,
+  run: () => run36,
+  spec: () => spec36
+});
+
+// src/v2/state/desired/batches.ts
+var fill2 = (path2, vars2) => path2.replace(/\{(\w+)\}/g, (m, k) => vars2[k] ?? m);
+var fillAll = (o, vars2) => Object.fromEntries(Object.entries(o ?? {}).map(([k, v]) => [k, typeof v === "string" ? fill2(v, vars2) : v]));
+var renamed = (o, as) => !as ? o : Object.fromEntries(Object.entries(o).map(([k, v]) => [as[k] ?? k, v]));
+var usable = (t, op) => {
+  const s2 = t.ops?.[op]?.stage;
+  return s2 === "tested" || s2 === "live";
+};
+function planWrites(profile, d, desired, vars2) {
+  const ops = [], refused = [];
+  const idOfRow = new Map(d.rows.map((r) => [r.row, r.id]));
+  for (const r of d.rows) {
+    if (r.state === "matches") continue;
+    if (r.state === "blocked") {
+      refused.push({ row: r.row, why: r.why ?? "raden g\xE5r inte" });
+      continue;
+    }
+    const t = profile.object_types[r.type];
+    const want = desired.find((x) => x.row === r.row);
+    const kind = r.archive ? "archive" : r.state === "create" ? "create" : "update";
+    if (r.replace) {
+      refused.push({ row: r.row, why: `${r.type} g\xE5r inte att \xE4ndra; att ers\xE4tta det g\xF6rs i etapp 3` });
+      continue;
+    }
+    if (!usable(t, kind)) {
+      const what = `att ${kind === "create" ? "skapa" : kind === "archive" ? "arkivera" : "\xE4ndra"} ${r.type} \xE4r bara deklarerad i systemposten och har inte provats`;
+      const trial = profile.trial;
+      const inTrial = !!trial && trial.accounts.includes(vars2["account"] ?? "");
+      const named2 = inTrial && t.key.length > 0 && t.key.every((k) => String(want.values[k] ?? "").startsWith(trial.name_prefix));
+      if (!named2) {
+        refused.push({ row: r.row, why: inTrial ? `${what}; i provkontot g\xE5r det bara f\xF6r namn som b\xF6rjar med ${trial.name_prefix}` : what });
+        continue;
+      }
+    }
+    if (kind === "create") {
+      const spec38 = t.create;
+      const params = {};
+      for (const c of r.changes) params[c.field] = c.after;
+      for (const f of comparedFields(t, want.values)) if (params[f] === void 0 && want.values[f] !== void 0) params[f] = want.values[f];
+      Object.assign(params, fillAll(spec38.fixed, vars2));
+      const refs = {};
+      if (t.parent !== null && spec38.parent_field) {
+        const pid = want.parent ? idOfRow.get(want.parent) : null;
+        if (pid) params[spec38.parent_field] = pid;
+        else if (r.parent_row) refs[spec38.parent_field] = r.parent_row;
+      }
+      for (const [field, other] of Object.entries(want.refs ?? {})) {
+        const id = idOfRow.get(other);
+        if (id) params[field] = id;
+        else refs[field] = other;
+      }
+      ops.push({
+        row: r.row,
+        type: r.type,
+        kind,
+        path: fill2(spec38.path, vars2),
+        params: renamed(params, spec38.as),
+        refs,
+        id: null,
+        ...spec38.wrap ? { wrap: spec38.wrap } : {},
+        ...spec38.mutation ? { mutation: spec38.mutation } : {},
+        ...spec38.batch_path ? { batch_path: fill2(spec38.batch_path, vars2) } : {}
+      });
+    } else if (kind === "archive") {
+      const spec38 = t.archive;
+      ops.push({
+        row: r.row,
+        type: r.type,
+        kind,
+        path: fill2(spec38.path, { ...vars2, id: r.id }),
+        params: fillAll(spec38.set, { ...vars2, id: r.id }),
+        refs: {},
+        id: r.id,
+        ...spec38.method ? { method: spec38.method } : {}
+      });
+    } else {
+      const spec38 = t.update;
+      ops.push({
+        row: r.row,
+        type: r.type,
+        kind,
+        path: fill2(spec38.path, { ...vars2, id: encodeURIComponent(r.id) }),
+        params: { ...renamed(Object.fromEntries(r.changes.map((c) => [c.field, c.after])), spec38.as), ...fillAll(spec38.fixed, { ...vars2, id: r.id }) },
+        refs: {},
+        id: r.id,
+        ...spec38.method ? { method: spec38.method } : {},
+        ...spec38.mutation ? { mutation: spec38.mutation } : {}
+      });
+    }
+  }
+  return { ops, refused };
+}
+function batchesOf(ops, profile) {
+  const out = [];
+  let cur = [];
+  const count = (b, type) => b.filter((o) => o.type === type).length;
+  for (const op of ops) {
+    const cap = profile.batch.max_by_type?.[op.type];
+    if (cur.length >= profile.batch.max || cap !== void 0 && count(cur, op.type) >= cap) {
+      out.push(cur);
+      cur = [];
+    }
+    cur.push(op);
+  }
+  if (cur.length) out.push(cur);
+  return out;
+}
+
+// src/v2/state/desired/apply.ts
+var NOT_BACK = "systemet svarade ok, men \xE4ndringen syns inte n\xE4r den l\xE4ses tillbaka";
+async function applyDiff(i) {
+  const before = diff(i.profile, i.desired, await i.read(), i.ledger);
+  if (before.fingerprint !== i.fingerprint)
+    return { stopped: "Skillnaden \xE4r inte l\xE4ngre den som visades; g\xF6r en ny f\xF6rhandsvisning och s\xE4g ja p\xE5 den.", rows: [], remaining: 0, summary: "Inget k\xF6rdes." };
+  const { ops, refused } = planWrites(i.profile, before, i.desired, i.vars);
+  const batches2 = batchesOf(ops, i.profile);
+  const max = i.maxBatches ?? batches2.length;
+  const ids = new Map([...i.ledger, ...before.rows.filter((r) => r.id).map((r) => [r.row, r.id])]);
+  const failed = /* @__PURE__ */ new Map();
+  const ran = /* @__PURE__ */ new Set();
+  for (const b of batches2.slice(0, max)) {
+    const res = [];
+    for (const op of b.filter((o) => o.kind === "create" && i.builders?.[o.type])) {
+      const want = i.desired.find((d) => d.row === op.row);
+      const r = await i.builders[op.type](op, want, ids).catch((e) => ({ row: op.row, ok: false, error: e instanceof Error ? e.message : String(e) }));
+      res.push(r);
+      if (r.ok && r.id) ids.set(op.row, r.id);
+    }
+    const plain2 = b.filter((o) => !(o.kind === "create" && i.builders?.[o.type]));
+    if (plain2.length) res.push(...await i.write.batch(plain2, ids));
+    for (const op of b) {
+      ran.add(op.row);
+      const r = res.find((x) => x.row === op.row);
+      if (!r || !r.ok) {
+        failed.set(op.row, r?.error ?? "systemet gav inget svar f\xF6r raden");
+        continue;
+      }
+      if (op.kind === "create" && r.id) {
+        ids.set(op.row, r.id);
+        i.ledger.set(op.row, r.id);
+        await i.onLedger?.(op.row, r.id);
+      }
+    }
+  }
+  const back2 = await i.read();
+  const after = diff(i.profile, i.desired, back2, i.ledger);
+  const archived = (op) => {
+    const spec38 = i.profile.object_types[op.type]?.archive;
+    const e = back2.find((x) => x.type === op.type && x.id === op.id);
+    if (spec38?.gone === true) return !e;
+    const set = spec38?.set ?? {};
+    return !!e && Object.entries(set).every(([k, v]) => e.values[k] === v);
+  };
+  const rows3 = [];
+  for (const op of ops) {
+    if (!ran.has(op.row)) {
+      rows3.push({ row: op.row, result: "remaining" });
+      continue;
+    }
+    if (failed.has(op.row)) {
+      rows3.push({ row: op.row, result: "not_saved", why: failed.get(op.row) });
+      continue;
+    }
+    const now = after.rows.find((x) => x.row === op.row);
+    const ok = op.kind === "archive" ? archived(op) : now?.state === "matches";
+    rows3.push(ok ? { row: op.row, result: "saved" } : { row: op.row, result: "not_saved", why: NOT_BACK });
+  }
+  for (const r of refused) rows3.push({ row: r.row, result: "refused", why: r.why });
+  const n2 = (k) => rows3.filter((x) => x.result === k).length;
+  const remaining = n2("remaining");
+  return {
+    stopped: null,
+    rows: rows3,
+    remaining,
+    summary: `${n2("saved")} sparade och l\xE4sta tillbaka, ${n2("not_saved")} inte sparade, ${n2("refused")} g\xE5r inte${remaining ? `, ${remaining} kvar till n\xE4sta k\xF6rning` : ""}.`
+  };
+}
+
+// atoms/state/activate.ts
+import { createHash as createHash14 } from "node:crypto";
+var ON = "ACTIVE";
+var usable2 = (s2) => s2 === "tested" || s2 === "live";
+function activationPreview(profile, ledger, existing) {
+  const picked = [];
+  for (const [row2, id] of ledger) {
+    const e = existing.find((x) => x.id === id);
+    const t = e ? profile.object_types[e.type] : void 0;
+    if (!e || !t || !usable2(t.ops?.["activate"]?.stage) || !t.switches_on?.["status"]?.includes(ON)) continue;
+    if (e.values["status"] === "PAUSED") picked.push([row2, id]);
+  }
+  picked.sort((a, b) => a[1] < b[1] ? -1 : 1);
+  const ids = picked.map(([, id]) => id);
+  return {
+    ids,
+    rows: picked.map(([r]) => r),
+    mark: "\u25A0",
+    fingerprint: createHash14("sha256").update(JSON.stringify(ids)).digest("hex"),
+    summary: `${ids.length} saker sl\xE5s p\xE5 och b\xF6rjar visas (och kosta): de som dirigenten skapat och som \xE4r pausade. Inget annat startas.`
+  };
+}
+async function activate(i) {
+  const now = activationPreview(i.profile, i.ledger, await i.read());
+  if (now.fingerprint !== i.fingerprint)
+    return { stopped: "Det som ska startas \xE4r inte l\xE4ngre det som visades; g\xF6r en ny f\xF6rhandsvisning och s\xE4g ja p\xE5 den.", rows: [], remaining: 0, summary: "Inget startades." };
+  const existing = await i.read();
+  const ops = now.rows.map((row2, n3) => {
+    const id = now.ids[n3];
+    const type = existing.find((x) => x.id === id).type;
+    const path2 = i.profile.object_types[type].update.path.replace("{id}", id);
+    return { row: row2, type, kind: "update", path: path2, params: { status: ON }, refs: {}, id };
+  });
+  const res = ops.length ? await i.write.batch(ops, new Map(i.ledger)) : [];
+  const back2 = await i.read();
+  const rows3 = ops.map((op) => {
+    const r = res.find((x) => x.row === op.row);
+    if (!r?.ok) return { row: op.row, result: "not_saved", why: r?.error ?? "systemet gav inget svar" };
+    return back2.find((x) => x.id === op.id)?.values["status"] === ON ? { row: op.row, result: "saved" } : { row: op.row, result: "not_saved", why: "systemet svarade ok, men den \xE4r inte p\xE5slagen n\xE4r den l\xE4ses tillbaka" };
+  });
+  const n2 = rows3.filter((r) => r.result === "saved").length;
+  return { stopped: null, rows: rows3, remaining: 0, summary: `${n2} av ${rows3.length} p\xE5slagna och l\xE4sta tillbaka.` };
+}
+
+// atoms/state/desired_state_apply.atom.ts
+var spec36 = {
+  "id": "c_state_desired_state_apply",
+  "name": "state.call.desired_state_apply",
+  "grounding": "observed",
+  "found_in": "atomf\xF6rslag state.atom_proposal.desired_state_apply \u2014 Vinterkampanjen tog 41 ja ett i taget; skrivningen i omg\xE5ngar med kvitto \xE4r lagrets andra halva. Eget verb (updates) s\xE5 att visa skillnaden f\xF6rblir en l\xE4sning utan ja.",
+  "scope": "shared",
+  "surface": "state",
+  "input": [
+    "system",
+    "plan",
+    "ad_account_id",
+    "mode",
+    "fingerprint",
+    "page_id",
+    "instagram_user_id",
+    "lead_gen_form_id"
+  ],
+  "optional_input": ["mode", "fingerprint", "page_id", "instagram_user_id", "lead_gen_form_id"],
+  "output": [
+    "receipt",
+    "summary",
+    "rows",
+    "remaining"
+  ],
+  "idempotent": false,
+  "atom": "state.desired.update",
+  "effect": {
+    "verb": "updates",
+    "object": "state.object_set"
+  },
+  "performer": "code",
+  "built_from": "p_state_desired_state_apply",
+  "label": "G\xF6r skillnaden i kundsystemet, eller starta det som skapats",
+  "summary": "G\xF6r skillnaden som visats, efter ett ja som g\xE4ller just den: i omg\xE5ngar inom systemets gr\xE4nser, med varje nytt id antecknat direkt, och l\xE4ser tillbaka; sparat bara det som st\xE4mmer efter\xE5t. mode activate sl\xE5r p\xE5 det lagret skapat och som \xE4r pausat, med ett eget ja. Bara handlingar som provats i systemposten skrivs.",
+  "keywords": [
+    "g\xF6r skillnaden",
+    "l\xE4gg upp kampanjen",
+    "batch",
+    "i omg\xE5ngar",
+    "starta annonserna",
+    "apply desired state",
+    "sync"
+  ],
+  "test_target": "Mot ett l\xE5tsat system i proven; skarpt bara i ett annonskonto f\xF6r test, med namn som b\xF6rjar med TEST-, efter ja.",
+  "leaves": {
+    "schema": {
+      "receipt": "kvittot: per rad sparad, inte sparad med sk\xE4l, g\xE5r inte eller kvar",
+      "summary": "en mening p\xE5 svenska",
+      "rows": "raderna i kvittot",
+      "remaining": "hur m\xE5nga rader som \xE4r kvar till n\xE4sta k\xF6rning"
+    },
+    "done_when": [
+      "varje gjord rad st\xE4mmer n\xE4r den l\xE4ses tillbaka",
+      "kvarst\xE5ende rader \xE4r r\xE4knade"
+    ],
+    "where": "kundens system; kopplingsboken i dirigentens logg"
+  },
+  "requires": "draft",
+  "stage": "draft",
+  "module": "n0101",
+  "operation_id": "o_state_desired_state_apply",
+  "step_id": "s_state_desired_state_apply",
+  "guards": {
+    "object_types": [
+      "campaign",
+      "adset",
+      "ad",
+      "ad_creative"
+    ],
+    "severity": {
+      "campaign": "\u25A0",
+      "adset": "\u25A0",
+      "ad": "\u25A0",
+      "ad_creative": "\u25A0"
+    },
+    "removes": "archives",
+    "note": []
+  }
+};
+async function run36(args, ctx) {
+  const l = await loadDesired(args, ctx);
+  const mode = String(args["mode"] ?? "apply");
+  if (mode !== "apply" && mode !== "activate") throw new Error(`mode ska vara apply eller activate, fick \xAB${mode}\xBB`);
+  const fingerprint2 = String(args["fingerprint"] ?? "");
+  const read = () => readScoped(l.profile, l.rows, l.ledger, l.read, l.vars);
+  const note = (row2, id) => {
+    ctx.call?.published?.({ content: l.planId, channel: l.system, channel_id: id, key: `${LEDGER_KEY}${row2}` });
+  };
+  if (mode === "apply" && fingerprint2 === "") {
+    const d = diff(l.profile, l.rows, await read(), l.ledger);
+    const preview = withTexts(previewOf(d, `Publiceringsplanen mot ${l.system}`), l.rows);
+    return {
+      receipt: null,
+      preview,
+      rows: d.rows,
+      remaining: planWrites(l.profile, d, l.rows, l.vars).ops.length,
+      summary: `${summaryOf(d)} Inget \xE4r gjort \xE4n: s\xE4g ja p\xE5 just den h\xE4r skillnaden (fingeravtrycket i f\xF6rhandsvisningen) f\xF6r att g\xF6ra den.`
+    };
+  }
+  if (ctx.dry_run) {
+    if (mode === "activate") {
+      const p = activationPreview(l.profile, l.ledger, await read());
+      return { receipt: null, summary: `Torrk\xF6rning: ${p.summary}`, rows: p.rows, remaining: p.ids.length };
+    }
+    const d = diff(l.profile, l.rows, await read(), l.ledger);
+    const { ops, refused } = planWrites(l.profile, d, l.rows, l.vars);
+    return {
+      receipt: null,
+      rows: [...ops.map((o) => ({ row: o.row, would: o.kind })), ...refused.map((r) => ({ row: r.row, refused: r.why }))],
+      remaining: ops.length,
+      summary: `Torrk\xF6rning: ${ops.length} skrivningar i ${batchesOf(ops, l.profile).length} omg\xE5ngar skulle g\xF6ras, ${refused.length} g\xE5r inte; inget skickat.`
+    };
+  }
+  const builders = l.system === "meta" && ctx.next ? { creative: async (op, want) => {
+    const b = want.build ?? {};
+    const content2 = b.content?.id ? ctx.call?.contents?.().find((c) => c.id === b.content.id) ?? null : null;
+    const doc = !b.texts && content2 && ctx.call?.readText ? await ctx.call.readText(content2.latest.sha256) : null;
+    const t = b.texts;
+    const many = (k, l2) => l2.length > 1 ? { [k]: l2 } : {};
+    const texts = t ? {
+      message: t.bodies[0],
+      ...many("bodies", t.bodies),
+      ...t.titles.length ? { headline: t.titles[0] } : {},
+      ...many("titles", t.titles),
+      ...t.descriptions.length ? { description: t.descriptions[0] } : {},
+      ...many("descriptions", t.descriptions)
+    } : { message: doc?.fields?.["message"], headline: doc?.fields?.["headline"] };
+    const img = (p) => p.ref ? { image_ref: p.ref } : { image_hash: p.hash };
+    const byPlace = Object.fromEntries((b.images ?? []).filter((p) => p.placement !== "all").map((p) => [p.placement, img(p)]));
+    const all2 = (b.images ?? []).find((p) => p.placement === "all");
+    const made = await ctx.next("meta.call.create_creative", {
+      ad_account_id: l.vars["account"],
+      name: String(want.values["name"] ?? ""),
+      ...args["page_id"] ? { page_id: args["page_id"] } : {},
+      ...args["instagram_user_id"] ? { instagram_user_id: args["instagram_user_id"] } : {},
+      ...args["lead_gen_form_id"] ? { lead_gen_form_id: args["lead_gen_form_id"] } : {},
+      link: b.link,
+      ...texts,
+      call_to_action: b.call_to_action,
+      ...b.content?.id ? { content: b.content.id } : {},
+      plan: l.planId,
+      ...Object.keys(byPlace).length ? { placement_images: byPlace } : all2 ? img(all2) : {},
+      confirmed: true
+    });
+    const id = made?.creative_id ?? made?.id;
+    return id ? { row: op.row, ok: true, id: String(id) } : { row: op.row, ok: false, error: "Meta gav inget id f\xF6r annonsmaterialet" };
+  } } : void 0;
+  const receipt = mode === "activate" ? await activate({ profile: l.profile, ledger: l.ledger, read, write: l.write, fingerprint: fingerprint2 }) : await applyDiff({
+    profile: l.profile,
+    desired: l.rows,
+    read,
+    write: l.write,
+    ledger: l.ledger,
+    onLedger: note,
+    fingerprint: fingerprint2,
+    vars: l.vars,
+    maxBatches: 1,
+    ...builders ? { builders } : {}
+  });
+  return { receipt, summary: receipt.stopped ?? receipt.summary, rows: receipt.rows, remaining: receipt.remaining };
+}
+var fixtures36 = [
+  {
+    name: "utan systemposten i nya registret skrivs inget",
+    args: { system: "meta", plan: "c_0000000001", ad_account_id: "act_1", mode: "apply", fingerprint: "x" },
+    expect_error: "systemposten"
+  }
+];
+
+// atoms/usage/read_calls.atom.ts
+var read_calls_atom_exports = {};
+__export(read_calls_atom_exports, {
+  fixtures: () => fixtures37,
+  run: () => run37,
+  spec: () => spec37
+});
+var spec37 = {
+  id: "c_usage_read_calls",
+  name: "usage.call.read_calls",
+  grounding: "decided",
+  found_in: "inkorgsplanen P15 etapp 0 (docs/inkorgen-v2/plan.md): underlaget till beslut 6 och Bad Gateway 2026-11-04",
+  built_from: "plan-p15-etapp-0",
+  scope: "shared",
+  stage: "published",
+  surface: "usage",
+  atom: "usage.calls.read",
+  effect: { verb: "reads", object: "usage.call" },
+  performer: "code",
+  requires: "read",
+  idempotent: true,
+  input: ["from", "to", "tool", "op", "only_errors", "limit", "gap_minutes", "slow_ms"],
+  optional_input: ["tool", "op", "only_errors", "limit", "gap_minutes", "slow_ms"],
+  output: ["window", "total", "errors", "slow", "groups", "rows", "gaps"],
+  label: "L\xE4s anropsloggen",
+  summary: "L\xE4ser dirigentens egen anropslogg f\xF6r ett tidsf\xF6nster, med filter p\xE5 verktyg, op och fel: antal, fel och svarstider per verktyg och op, raderna, de l\xE5ngsamma anropen och h\xE5len i loggen. Argumenten finns inte i loggen.",
+  keywords: ["anropsloggen", "anropslogg", "hur ofta anv\xE4nds", "fel i dirigenten", "tidsgr\xE4ns", "bad gateway", "call log", "usage"],
+  test_target: "L\xE4ser bara. Prov i test/las-anropsloggen.test.ts mot en logg i minnet med provdata (test/fixtures/call-log-provdata.json).",
+  leaves: {
+    schema: {
+      window: "f\xF6nstret som l\xE4stes, from och to som UTC",
+      total: "antalet anrop i f\xF6nstret efter filtren",
+      errors: "antalet anrop med fel",
+      slow: "antalet anrop som tog minst slow_ms (standard 8000 ms)",
+      groups: "en grupp per verktyg och op: anrop, fel, median och l\xE4ngsta svarstid, flest anrop f\xF6rst",
+      rows: "raderna, \xE4ldst f\xF6rst, h\xF6gst limit (standard 200): tid, verktyg, op, part, fel, felets text, ms",
+      gaps: "perioder mellan tv\xE5 anrop i f\xF6nstret utan n\xE5gon rad, l\xE4ngre \xE4n gap_minutes (standard 10)"
+    },
+    done_when: ["f\xF6nstret \xE4r l\xE4st"],
+    where: "Svaret p\xE5 steget; ingenting skrivs"
+  },
+  module: "n0104",
+  operation_id: "o_usage_read_calls",
+  step_id: "s_usage_read_calls",
+  lead_days: 0
+};
+var str4 = (v) => typeof v === "string" && v.trim() !== "" ? v.trim() : null;
+var int2 = (v, d) => {
+  const n2 = Number(v);
+  return Number.isFinite(n2) && n2 > 0 ? Math.floor(n2) : d;
+};
+function time4(v, field) {
+  const s2 = str4(v);
+  if (s2 === null) throw new Error(`${field} saknas: en tidpunkt (2026-11-04T23:00:00+01:00) eller ett datum (2026-11-04)`);
+  const t = Date.parse(s2);
+  if (Number.isNaN(t)) throw new Error(`${field} \xE4r ingen tidpunkt: ${s2}`);
+  return t;
+}
+var median2 = (xs) => {
+  if (xs.length === 0) return null;
+  const s2 = [...xs].sort((a, b) => a - b), m = Math.floor(s2.length / 2);
+  return s2.length % 2 ? s2[m] : Math.round((s2[m - 1] + s2[m]) / 2);
+};
+async function run37(args, ctx) {
+  if (!ctx.usage) throw new Error("anropsloggen \xE4r inte kopplad h\xE4r; inget l\xE4stes");
+  const from = time4(args["from"], "from"), to = time4(args["to"], "to");
+  if (to <= from) throw new Error("from m\xE5ste vara f\xF6re to");
+  const tool = str4(args["tool"]), op = str4(args["op"]), onlyErrors = args["only_errors"] === true;
+  const limit = int2(args["limit"], 200), gapMs = int2(args["gap_minutes"], 10) * 6e4, slowMs = int2(args["slow_ms"], 8e3);
+  const inWindow = (await ctx.usage.calls(new Date(from).toISOString())).filter((r) => {
+    const t = Date.parse(r.at);
+    return t >= from && t < to;
+  });
+  const picked = inWindow.filter((r) => (tool === null || r.tool === tool) && (op === null || r.op === op) && (!onlyErrors || r.error !== null));
+  const groups = /* @__PURE__ */ new Map();
+  for (const r of picked) {
+    const k = `${r.tool}\0${r.op ?? ""}`;
+    groups.set(k, [...groups.get(k) ?? [], r]);
+  }
+  const grouped = [...groups.values()].map((rs) => {
+    const ms = rs.map((r) => r.ms).filter((x) => typeof x === "number");
+    return {
+      tool: rs[0].tool,
+      op: rs[0].op,
+      calls: rs.length,
+      errors: rs.filter((r) => r.error !== null).length,
+      ms_median: median2(ms),
+      ms_max: ms.length ? Math.max(...ms) : null
+    };
+  }).sort((a, b) => b.calls - a.calls || a.tool.localeCompare(b.tool) || String(a.op).localeCompare(String(b.op)));
+  const times = inWindow.map((r) => Date.parse(r.at)).sort((a, b) => a - b);
+  const gaps = [];
+  for (let i = 1; i < times.length; i++)
+    if (times[i] - times[i - 1] > gapMs)
+      gaps.push({ from: new Date(times[i - 1]).toISOString(), to: new Date(times[i]).toISOString(), minutes: Math.round((times[i] - times[i - 1]) / 6e3) / 10 });
+  return {
+    window: { from: new Date(from).toISOString(), to: new Date(to).toISOString() },
+    total: picked.length,
+    errors: picked.filter((r) => r.error !== null).length,
+    slow: picked.filter((r) => typeof r.ms === "number" && r.ms >= slowMs).length,
+    groups: grouped,
+    rows: picked.slice(0, limit).map((r) => ({ at: r.at, tool: r.tool, op: r.op, party: r.party, error: r.error, error_message: r.error_message, ms: r.ms, bytes: r.bytes })),
+    gaps
+  };
+}
+var fixtures37 = [
+  { name: "utan kopplad logg s\xE4ger atomen det", args: { from: "2026-11-04T23:00:00+01:00", to: "2026-11-04T23:45:00+01:00" }, expect_error: "inte kopplad" }
+];
+
+// atoms/index.generated.ts
+var ATOMS = [request_atom_exports, change_bank_atom_exports, pack_files_atom_exports, read_bank_atom_exports, create_event_atom_exports, save_version_atom_exports, create_draft_atom_exports, list_inflow_atom_exports, send_mail_atom_exports, connection_check_atom_exports, pagespeed_atom_exports, search_console_atom_exports, change_atom_exports, read_atom_exports, archive_record_atom_exports, cms_content_publish_atom_exports, cms_content_write_atom_exports, find_objects_atom_exports, list_content_atom_exports, read_menus_atom_exports, read_object_atom_exports, read_source_atom_exports, ui_settings_register_atom_exports, ui_template_edit_atom_exports, user_write_atom_exports, write_record_atom_exports, write_source_atom_exports, change_ad_object_atom_exports, create_ad_creative_atom_exports, manage_access_atom_exports, write_atom_exports, html_pdf_atom_exports, qr_code_atom_exports, desired_state_atom_exports, desired_state_apply_atom_exports, read_calls_atom_exports, fetch_pages_atom_exports];
+
+// src/local-runner/server.ts
+import { homedir } from "node:os";
+import { dirname as dirname4, join as join9 } from "node:path";
+import { fileURLToPath as fileURLToPath3 } from "node:url";
+import { createInterface } from "node:readline";
+
+// src/v2/mcp/local-text.ts
+var LOCAL_TEXT = registryTexts("local-text.local_text", {
+  waiting: "Det h\xE4r g\xF6rs p\xE5 din Mac. Be Claude p\xE5 din Mac att k\xF6ra uppdrag {order_id}. Det m\xE5ste g\xF6ras inom tio minuter.",
+  no_runner: "Det h\xE4r g\xF6rs p\xE5 en Mac med dirigentens lokala del ig\xE5ng, och den svarar inte h\xE4r. \xD6ppna samtalet i Claude Code eller Claude Desktop p\xE5 Macen d\xE4r Freebo-mappen finns, eller be Daniel P k\xF6ra det. Inget \xE4r gjort.",
+  // data-i-koden: ordagrann text för Daniels ja (P9d)
+  expired: "K\xF6rordern \xE4r \xE4ldre \xE4n tio minuter och k\xF6rs inte. K\xF6r momentet igen f\xF6r en ny.",
+  already: "K\xF6rordern \xE4r redan h\xE4mtad och k\xF6rs inte tv\xE5 g\xE5nger.",
+  plugin_old: "Pluginen k\xE4nner inte det h\xE4r anropet. Uppdatera pluginen och f\xF6rs\xF6k igen.",
+  /** say.happened and say.now while the order waits: say may not name the tool or the order (?) for Daniels ja. */
+  waiting_happened: "Det h\xE4r g\xF6rs p\xE5 din Mac.",
+  waiting_now: "K\xF6rordern v\xE4ntar p\xE5 Macen och g\xE4ller i tio minuter.",
+  done: "Det k\xF6rdes p\xE5 Macen.",
+  /** test: true on a local capability (final review): no order is written, and the Mac refuses an order marked as a test. (?) for Daniels ja. */
+  no_test_local: "Lokala moment provk\xF6rs inte h\xE4rifr\xE5n. De provas med provet f\xF6r den lokala k\xF6raren, mot provmappen. Inget \xE4r gjort.",
+  /** The local runner's own refusals and failures (task 7). {setting} is the plugin setting's name. */
+  not_approved: "Det h\xE4r momentet skickar n\xE5got utanf\xF6r huset och \xE4r inte godk\xE4nt \xE4n, s\xE5 det har inte gjorts. Godk\xE4nn momentet i dirigenten och f\xF6rs\xF6k igen.",
+  setting_missing: "Inst\xE4llningen {setting} saknas p\xE5 Macen. Ange den i pluginens inst\xE4llningar eller i ~/.config/rotor/ytor.json. Inget \xE4r gjort.",
+  timeout: "Skriptet tog l\xE4ngre \xE4n tv\xE5 minuter och stoppades. Det blev inte klart.",
+  not_wired: "Den lokala delen kan inte n\xE5 dirigenten \xE4n. Inget \xE4r gjort.",
+  not_local_yet: "Det h\xE4r momentet ska g\xF6ras p\xE5 Macen, men den lokala delen kan inte g\xF6ra det \xE4n. Inget \xE4r gjort.",
+  unknown_surface: "Dirigenten p\xE5 din Mac vet inte hur den n\xE5r {surface}. Inget har gjorts. Be Daniel P l\xE4gga till det.",
+  param_flag: "Uppgiften \xAB{param}\xBB f\xE5r inte b\xF6rja med ett minustecken, s\xE5 inget har gjorts. Ta bort minustecknet och f\xF6rs\xF6k igen.",
+  bad_param: "Uppgiften \xAB{param}\xBB har ett v\xE4rde som inte g\xE5r att anv\xE4nda, s\xE5 inget har gjorts. Kontrollera v\xE4rdet och f\xF6rs\xF6k igen.",
+  path_outside: "S\xF6kv\xE4gen i {param} ligger utanf\xF6r mapparna i pluginens inst\xE4llningar och k\xF6rs inte. Inget \xE4r gjort.",
+  too_much_output: "Skriptet skrev mer \xE4n den lokala delen tar emot och stoppades. Det blev inte klart.",
+  ytor_unreadable: "Inst\xE4llningarna f\xF6r vilka system dirigenten kan n\xE5 p\xE5 den h\xE4r datorn gick inte att l\xE4sa. Be Daniel P titta p\xE5 dem."
+});
+
+// src/local-runner/allow.ts
+import { existsSync as existsSync4, readFileSync as readFileSync2 } from "node:fs";
+var LOCAL_ARGV0 = /* @__PURE__ */ new Set(["python3", "/usr/bin/python3", "node"]);
+function findAllow(allow, surface, call3) {
+  const a = allow.find((x) => x.surface === surface && x.call === call3);
+  if (!a) return null;
+  if (a.kind === "script" && !(a.argv[0] === a.argv0 && LOCAL_ARGV0.has(a.argv0))) return null;
+  return a;
+}
+function loadAllow(path2) {
+  if (!existsSync4(path2)) return [];
+  const d = JSON.parse(readFileSync2(path2, "utf8"));
+  return Array.isArray(d.allow) ? d.allow : [];
+}
+
+// src/local-runner/run.ts
+import { existsSync as existsSync5, readFileSync as readFileSync3, realpathSync } from "node:fs";
+import { dirname as dirname3, isAbsolute, join as join8, resolve as resolve2, sep as sep2 } from "node:path";
+import { execFile as execFile2 } from "node:child_process";
+
+// src/execute/surface.ts
+var SurfaceError = class extends Error {
+  constructor(message, transient) {
+    super(message);
+    this.transient = transient;
+  }
+  transient;
+  name = "SurfaceError";
+};
+
+// src/execute/surfaces/script.ts
+var PLATSH\u00C5LLARE = /^\{([a-z_][a-z0-9_]*)\}$/;
+function buildArgv(mall, args) {
+  const fylld = [];
+  for (const del of mall) {
+    const v = /^\{([a-z_][a-z0-9_]*)\?\}$/.exec(del);
+    if (!v) {
+      fylld.push(del);
+      continue;
+    }
+    const x = args[v[1]];
+    if (x === void 0 || x === null || x === "") {
+      if (fylld.at(-1)?.startsWith("-")) fylld.pop();
+    } else fylld.push(`{${v[1]}}`);
+  }
+  return fylld.map((del) => {
+    const m = PLATSH\u00C5LLARE.exec(del);
+    if (!m) return del;
+    const v\u00E4rde = args[m[1]];
+    if (v\u00E4rde === void 0 || v\u00E4rde === null)
+      throw new SurfaceError(`argumentet "${m[1]}" saknas f\xF6r kommandot`, false);
+    return String(v\u00E4rde);
+  });
+}
+
 // src/registry/atom-stage.ts
 function atomStage(view, callName, fallback) {
   if (!view) return fallback;
@@ -30593,6 +33428,7 @@ var AtomSurface = class {
       // aldrig en part ur indata. I ett steg står parten i indata.
       ...connect && tenant ? { connection: (system, party2) => connect(system, ctx?.runner ?? party2, tenant) } : {},
       ...this.deps.bank && tenant ? { bank: this.deps.bank(tenant) } : {},
+      ...this.deps.usage && tenant ? { usage: this.deps.usage(tenant) } : {},
       dry_run: dry,
       ...this.fallback ? { next: (name, a) => this.fallback.call(name, a, key, ctx) } : {}
     });
@@ -30651,10 +33487,10 @@ var optionName = (k) => `CLAUDE_PLUGIN_OPTION_${settingName(k)}`;
 function readHomes(env, home) {
   let file = {};
   let problem;
-  const p = join7(home, ".config", "rotor", "ytor.json");
-  if (existsSync4(p)) {
+  const p = join8(home, ".config", "rotor", "ytor.json");
+  if (existsSync5(p)) {
     try {
-      const d = JSON.parse(readFileSync2(p, "utf8"));
+      const d = JSON.parse(readFileSync3(p, "utf8"));
       if (!d || typeof d !== "object" || Array.isArray(d)) throw new Error("not an object");
       file = { ...d };
       for (const [surface, k] of Object.entries(V1_SURFACE)) {
@@ -30693,15 +33529,15 @@ var timedRun = (timeoutMs) => (argv, cwd, env) => new Promise((done) => {
 var real = (p) => {
   let head2 = p;
   const tail = [];
-  while (!existsSync4(head2) && dirname2(head2) !== head2) {
-    tail.unshift(head2.slice(dirname2(head2).length + 1));
-    head2 = dirname2(head2);
+  while (!existsSync5(head2) && dirname3(head2) !== head2) {
+    tail.unshift(head2.slice(dirname3(head2).length + 1));
+    head2 = dirname3(head2);
   }
   try {
     head2 = realpathSync(head2);
   } catch {
   }
-  return tail.length ? join7(head2, ...tail) : head2;
+  return tail.length ? join8(head2, ...tail) : head2;
 };
 var inside = (p, root) => p === root || p.startsWith(root.endsWith(sep2) ? root : root + sep2);
 function checkParams(template, params, cwd, roots) {
@@ -30769,8 +33605,8 @@ async function runLocal(order, homes, allow, deps = {}) {
   } catch (e) {
     return fail(e.message, t0, clock);
   }
-  const envFile = where === "hubspot_cli" ? join7(cwd, ".env") : null;
-  const fromFile = envFile && existsSync4(envFile) ? parseEnvFile(readFileSync2(envFile, "utf8")) : {};
+  const envFile = where === "hubspot_cli" ? join8(cwd, ".env") : null;
+  const fromFile = envFile && existsSync5(envFile) ? parseEnvFile(readFileSync3(envFile, "utf8")) : {};
   const env = {
     ...fromFile,
     ...process.env,
@@ -30883,8 +33719,8 @@ var DEFAULT_BASE = "https://rotor-dirigenten.netlify.app";
 var baseOf = (env) => env["CLAUDE_PLUGIN_OPTION_DIRIGENT_URL"] || env["ROTOR_DIRIGENT_URL"] || DEFAULT_BASE;
 function main(client = httpClient(baseOf(process.env), fetch), atoms = []) {
   for (const k of ["log", "info", "debug", "dir", "table"]) console[k] = (...a) => console.error(...a);
-  const here = dirname3(fileURLToPath2(import.meta.url));
-  const allowPath = join8(here, "local-allow.json");
+  const here = dirname4(fileURLToPath3(import.meta.url));
+  const allowPath = join9(here, "local-allow.json");
   const srv = createServer({ client, homes: () => readHomes(process.env, homedir()), allow: () => loadAllow(allowPath), run: { ownDir: here, atoms } });
   const rl = createInterface({ input: process.stdin });
   rl.on("line", (line2) => {

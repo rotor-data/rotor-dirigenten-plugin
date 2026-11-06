@@ -3,30 +3,6 @@
   "allow": [
     {
       "kind": "script",
-      "surface": "ad",
-      "call": "ad.call.build_ad_creative",
-      "argv0": "node",
-      "argv": [
-        "node",
-        "dist/atoms/annons/bygg.js",
-        "{uppdrag}",
-        "{ut}"
-      ]
-    },
-    {
-      "kind": "script",
-      "surface": "ad",
-      "call": "ad.call.render_social_post",
-      "argv0": "node",
-      "argv": [
-        "node",
-        "dist/atoms/some/kor.js",
-        "--uppdrag",
-        "{job}"
-      ]
-    },
-    {
-      "kind": "script",
       "surface": "bank",
       "call": "bank.call.ingest_directory",
       "argv0": "node",
@@ -214,20 +190,9 @@
       "call": "print.call.order_one_off_print"
     },
     {
-      "kind": "script",
+      "kind": "pending",
       "surface": "print",
-      "call": "print.call.price_list",
-      "argv0": "/usr/bin/python3",
-      "argv": [
-        "/usr/bin/python3",
-        "print_onboarding/prislista.py",
-        "--lista",
-        "{prislista}",
-        "--overlag",
-        "{underlag}",
-        "--fixtur",
-        "{fixtur?}"
-      ]
+      "call": "print.call.price_list"
     },
     {
       "kind": "script",

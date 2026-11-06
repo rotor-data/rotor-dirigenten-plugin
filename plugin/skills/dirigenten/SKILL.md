@@ -56,7 +56,7 @@ Varje handling har ett allvar som servern räknar ut. Du följer det, du bedöme
 
 Löst i praktiken (`hint`): föreslå «Stäng som löst?», stäng efter ja. Skriv aldrig ett ja åt användaren och tolka inte «ok, kör väl» som ja till något annat än det som visades. Ändras det som ska skickas behövs en ny förhandsvisning och ett nytt ja.
 
-Går något inte nu, läs `then` och `unavailable`: där står vad som ska bli klart först. Säg aldrig att det inte går när momentet bara väntar på något annat; säg vad det väntar på.
+Går något inte nu, läs `then`, `unavailable` och `help`. Säg aldrig att det inte går när momentet bara väntar på något annat; säg vad det väntar på. Bara en rättighet stoppar (`help.stops`); annars visa vägarna i `help.ways` sida vid sida och markera gjort utanför med vägens `record`.
 
 ## Det som fungerar nu
 
@@ -113,4 +113,4 @@ Användaren: «Ja, skicka.» Du skickar `act{on, action, rev, preview_id, user_a
 - Någon annan hann före (`written: false` med ny `rev`): läs igen och säg vad som ändrats innan du gör något.
 - Användaren ångrar sig: erbjud `undo` om det går; för ■ som redan har gått ut säger du att det inte går att ta tillbaka och vad som kan göras i stället.
 - Något misslyckas: säg vad som hände med `say`, rätta det som går, och fråga servern igen innan du säger att det inte fungerar.
-- Användaren frågar något dirigenten inte kan: säg det, säg vilken annan väg du tar och varför. Hitta inte på en ersättning i dirigenten (till exempel att lägga in det som en sak att göra) om servern inte erbjuder det i `available`.
+- Saknar dirigenten förmågan: säg vilken annan väg du tar och varför. Hitta inte på en ersättning i dirigenten som servern inte erbjuder.

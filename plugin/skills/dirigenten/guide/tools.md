@@ -19,10 +19,10 @@ Example 2: `plan_state{agenda:true}` for what is due, ordered by urgency, then e
 Counterexample: calling a customer's system through another connector when this server has the capability.
 Edge case: a legacy call shape (`asset_register`, `{tool,args}` wrapper) is translated while the adapter window is open; `say.now` shows the new form.
 A file into the customer's file bank: `write` with `op` `file_add` and `name`, `text` or `base64` (+`mime`), `customer`, optionally `folder` and `asset_type`; with `task` and `moment` it is also tied to that moment. Without a task it is the customer's alone. v1's `asset_register` with `text` or `base64` becomes this call.
+A bug report about dirigenten: `write{op:"bug_report", text, where?, screenshot?}` (●, a png as base64 after the person has seen it). People in the house list the open ones with `read{op:"bug_report"}` and mark one fixed with `write{op:"bug_report", resolve, note}` (●).
 Upload app: `upload{customer, for_task?, for_node?}` (only when the user wants to upload; `read{op:"upload_link"}` gives the link alone) gives a page where the user drops one or more files; they go straight to the file bank (never base64). Then offer «Ska jag föreslå var filerna hör hemma?» and, after a yes to the shown proposal, tie each with `act attach_file` (from_ref).
 
 v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{phase:"verktyg:<op>"}` gives an op's fields from the schema the write is checked against, and a field it does not have is refused with a template. Severity from the policy, ■ needs `user_approval`:
-- `write{op:"time_report"}`: rapportera verklig tid på ett steg eller ärende
 - `write{op:"message"}`: meddelande till en kollega; read, resolve
 - `write{op:"message_mark"}`: markera meddelanden
 - `read{op:"image_picker"}`: bildväljaren: sources, search, prompt
@@ -30,8 +30,6 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 - `read{op:"upload_link"}`: uppladdningssidan för en kund: customer, valfritt for_task och for_node (momentet), folder; fler filer på en gång
 - `write{op:"image_fetch"}`: bild ur en extern källa: register + filename och provenance { source, source_id }
 - `write{op:"asset_copy"}`: kopiera en fil i filbanken till en annan mapp: from_ref, folder, valfritt filename, customer; originalet ligger kvar
-- `write{op:"bug_report"}`: felrapport: text, where, screenshot (png som base64) sparas av v2 (●); resolve, eller utan båda listan
-- `write{op:"note_link"}`: anteckning med länk
 - `read{op:"plan_estimate"}`: uppskatta en plan
 - `read{op:"content_search"}`: sök i innehållsbanken
 - `read{op:"content_list"}`: lista innehåll
@@ -54,13 +52,10 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 - `read{op:"intake_status"}`: beställningens läge
 - `read{op:"settings"}`: inställningarna: kopplingar, arbetsdag och för en superadmin vem som har vilka rättigheter
 - `read{op:"messages"}`: meddelandena som trådar med läget i ord och antal per flik; since
-- `read{op:"inbox_sheet"}`: Inkommet: kön och varje tråds öde, utan ämne och avsändare; days
 - `write{op:"classify_accept"}`: flytta inkommet dit det hör: thread, classification.route.to
-- `read{op:"view_start"}`: startsidan för en egen vy (några kB) och förmågorna den läggs ut med; vyns egen html ges aldrig
-- `read{op:"view_file"}`: vyns ark: sheet delivery|calendar|how|library|method|order …
+- `read{op:"view_file"}`: vyns ark: sheet delivery|calendar|how|library|method|order …; utan sheet: for page|version (vyns sida och stämpel) eller personens egen vyadress
 - `write{op:"how_customer"}`: kundens sätt: patch { variant, step, set { responsible | values } }
 - `read{op:"quick_actions"}`: snabbhandlingarna per kund; med ref: uppdragen filen kan kopplas till
-- `write{op:"quick_run"}`: kör en snabbhandling för en kund: call, customer, values; förhandsvisning först
 - `write{op:"mail_draft"}`: mejl som utkast i din egen e-post, bilagor som ref ur filbanken: values { to, subject, body, cc?, attachments: [ref] }; förhandsvisning först (■), sedan användarens ja ordagrant; personen skickar själv från sin e-post. Aldrig mejlet bara i chatten eller via en annan e-postkoppling i Claude (den bifogar inga filer). Saknas en rätt: säg vilken och vem som ordnar den, med svarets ord, och erbjud guidning i Chrome. Kontroll: search { q: ["Kontrollera kopplingen för mejl"] } och kör den med read { op: "read_call" }
 - `read{op:"handovers"}`: överlämningar och väntan per leverans: agenda true, format oversikt
 - `read{op:"order_preview"}`: förhandsvisa en beställning: samma fält som när den läggs in, inget skrivs
@@ -80,6 +75,7 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"material"}`: materialet per moment: task + node (momentets grupper), task (hela leveransen), task + ref (en saks innehåll)
 - `read|write{op:"files"}`: filbanken att bläddra i: customer, folder, q, order new|old|name, cursor; ref (en fils innehåll, thumb för miniatyren), ref + task (uppdragets moment att knyta till)
 - `read|write{op:"project_brief_save"}`: spara projektets brief: project (uppdraget), brief { goal, recipient, scope, due, internal_due }
+- `read|write{op:"inbox_sheet"}`: Inkommet: kön och varje tråds öde, utan ämne och avsändare (60 dagar)
 - `read|write{op:"intake_submit"}`: ta emot kandidater: candidates [...]; undo: kandidaten drar tillbaka den; release: släpper fram en som hålls; fetch läser brevlådan
 - `read|write{op:"intake_order"}`: lägg in en beställning: customer, deliverable_type, due, ordered_by, note, description; preview: true visar den utan att skriva; finns en likadan öppen i dag används den, create_new: true lägger in en ny
 - `read|write{op:"quick_run"}`: kör en snabbhandling: task (uppdraget) eller values.delivery ger act run_quick på uppdraget; utan dem läses en förmåga som bara läser direkt för customer (även execute_step { call, customer, values }, utan steg), och annars blir det först ett uppdrag (customer, deliverable_type ur förmågans yta, due)

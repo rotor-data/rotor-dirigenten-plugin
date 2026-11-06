@@ -5205,7 +5205,9 @@ var goalSpec = z.object({
   /** Recept per moment i målet (runda D3): `<objekt>/<moment>` till receptet; går före bibliotekets. */
   recipes: z.record(recipeKey, momentRecipe).optional(),
   /** Molekylerna per moment (etapp 2): `<objekt>/<moment>` till molekylen eller atomförslaget som gör det. */
-  molecules: moleculeBindings.optional()
+  molecules: moleculeBindings.optional(),
+  /** Extra körbara alternativ per moment, utan att ersätta dess huvudsakliga molekyl. */
+  molecule_alternatives: z.record(z.array(z.string().min(1))).optional()
 }).strict().refine((g) => (g.needs?.length ?? 0) > 0 || (g.results?.length ?? 0) > 0 || g.clarity === "vague", {
   message: "m\xE5let beh\xF6ver needs (delm\xE5len), results (det sparade m\xE5let) eller clarity: vague"
 });
