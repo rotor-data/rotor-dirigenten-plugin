@@ -1,0 +1,13 @@
+{
+  "description": "Vägkartan: loggar vad Claude gör i webbläsaren och andra kopplingar medan ett moment görs utanför dirigenten, utan värden, och skickar stegen till dirigenten i bakgrunden när momentet markeras gjort.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/trail.mjs\"", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}

@@ -23,9 +23,10 @@ Actions
 - `archive` — Arkivera. Means: Ärendet flyttas till arkivet men finns kvar. Not for: Inte för att radera ärendet. Severity: ● do directly. Inverse: unarchive. From: new, classified, in_task, resolved.
 - `take_over` — Ta över ärendet. Means: Ärendet blir ditt, utan att den som hade det behöver svara. Not for: Inte för att lämna över ärendet till någon annan. Severity: ● do directly. Inverse: take_over. From: new, classified, in_task.
 - `merge` — Slå ihop med …. Means: Ärendet läggs under ett annat ärende som gäller samma sak. Not for: Inte för ärenden som gäller olika saker. Severity: ◐ one yes per task and day. Inverse: reopen. From: new, classified, in_task.
+- `save_attachments` — Spara bilagorna. Means: Mejlets bilagor läggs i kundens filbank under Inkommande. Not for: Inte för post som inte har blivit ett ärende. Severity: ● do directly. Inverse: none. From: new, classified, in_task, resolved.
 - `unarchive` — Ta fram ur arkivet. Means: Ärendet tas fram ur arkivet och är löst som förut. Not for: Inte för att öppna ärendet igen. Severity: ● do directly. Inverse: archive. From: archived.
 
 Example 1: `act{on:{kind:"case",id:"<id>"}, action:"classify", rev:"<rev>"}` — Bedöm: Du bestämmer vad ärendet gäller.
 Example 2: `act{on:{kind:"case",id:"<id>"}, action:"classify", rev:"<rev>"}` (Bedöm, inverse `classify`) followed by `act{…, action:"undo", rev:"<new rev>"}` when the user changes their mind.
-Counterexample: `classify` while the case is "in_task" is refused (Går inte nu: ärendet är i ett uppdrag. Det som går nu: Stäng som löst, Markera löst, Ta över ärendet, Slå ihop med …, Arkivera.). Do not retry it; read and take what `available` offers.
+Counterexample: `classify` while the case is "in_task" is refused (Går inte nu: ärendet är i ett uppdrag. Det som går nu: Stäng som löst, Markera löst, Ta över ärendet, Slå ihop med …, Spara bilagorna, Arkivera.). Do not retry it; read and take what `available` offers.
 Edge case: two people act on the same `rev`: one is written, the other gets `written:false` with the new `rev`. Read, then decide again. The `unavailable` list gives `why` and what unlocks it.

@@ -1,0 +1,27 @@
+# Guide: routes
+Where a request starts. What can run for one customer: `guide{phase:"map", customer:"<name>"}`.
+
+Steps
+1. Something with several steps or a goal («vi ska göra…», «planera…», «kampanj till mars»): the skill starta-projekt. The plan is counted backwards from the goal out of the methods and the customer's way (`guide{phase:"planning"}`), shown, and written with `write{op:"project_brief_save"}` after a yes.
+2. One more step on a running task, in free words: `act{on: the task, action:"add_moment_after", params:{ask: the user's words}}`; it plans the chain from the registry and shows it before the yes.
+3. A step that is there: `search` or `plan_state` finds it, `read` shows what it offers, `act` does it (`run` with `params.text` for a text Claude writes), `execute_step{on, rev, test:true}` runs its capability as a test first.
+4. A capability without a task: `execute_step{call, customer, values, test:true}`; the reply offers to keep the result on the customer's task.
+5. Reading a customer's system (CRM, ads, analytics): ask `search` the question in words («hur många kontakter saknar telefon»); the reply's `system_read` is the ready call, or the choices.
+6. Changing a customer's system: the desired-state layer. Send the wanted rows on the task, `act{on: the task, action}` with action `batch` and `params.rows` (or `params.items`); the reply reads the system and shows the difference row by row, ■ rows in their own preview; one yes with `preview_id` and `user_approval` writes the round, and action `undo` with `params.batch` takes the whole round back. Never one call per object.
+7. Images, ads, price lists and print PDFs from the customer's templates: rendered on the server. Find the capability with `search` («prislista», «annonsbild», «tryckfärdig pdf»), run it on its moment or freely, as a test first; the file lands in the file bank.
+8. Mail: what came in, `read{op:"inbox_sheet"}`, and the cases, `read{view:"queue"}`; a reply is a draft in the user's own mail, `write{op:"mail_draft"}` (■, preview first), attachments as `ref` from the file bank.
+9. Files. Finding: `search{q:[…], want:"file"}` with several words in Swedish and English (varumärkesbok, brand book, grafisk profil), parts of the name and the customer's name; the customer's name does not filter, so pick the hit whose customer and folder fit, `read{on:{kind:"file",id}}` it, and answer with what it is, where it is (customer and folder) and the link. Ask only when several fit equally. Saving, whatever form the file is in: `write` with `op` `file_add`, `name`, `customer`, `folder` and the content as `text` or `base64` with `mime`; with `task` and `moment` it is tied there too. The same bytes twice are one file. The user holds the file: `upload{customer}`. Say where it landed.
+10. Work that is complex and done once, with no capability: a moment done by Claude Code with a code plan (`guide{phase:"moment"}`); the second time it is an atom proposal.
+
+When a route is closed
+1. Read why: `unavailable`, `then` and `missing` say what it waits for or lacks, often with the fix ready in `missing[].fixed_by`. Waiting is not impossible: say what it waits for.
+2. Fix the setting when you can (a connection, a template, a recipient, who does it): the fix is an action or a write like any other, with its severity.
+3. Another route: another capability (see the map), a capability run freely, Claude's own connectors or Claude in Chrome when dirigenten lacks the capability (say which and why), or a person with a recipe (Vad behövs, Så gör du, Kontrollera).
+4. Do it and document it: done elsewhere is `done_outside` with `reason` and `evidence`; a different way here is `change_how_here`; for the customer from now on, its way.
+5. Needed again: an atom proposal, a `write{op:"define"}` of a capability without code; it is saved as a proposal and built later.
+Only rights stop: a session with no person, a role that may not write, a customer who has not given access. Say who can give it, and keep everything that does not need it going.
+
+Example 1: «Lägg upp annonserna» → `plan_state{lens:"mine"}` or `search{q:["annons"]}` → `read{on}` of the ads moment → the preview of what goes out → the user's yes.
+Example 2: «Ändra telefonnumret på en kontakt i CRM:et» → `guide{phase:"map", customer}` shows the CRM is connected → one row through the layer (route 6) → preview → yes.
+Counterexample: saying «det går inte» because a moment waits for another, or because a capability failed earlier in the conversation; read why and ask the server again.
+Edge case: the customer is not named and several fit: say which ones the map or the search shows and ask once; never pick one silently.

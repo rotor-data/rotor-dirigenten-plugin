@@ -2,7 +2,7 @@
 - `search`: find tasks, moments and deliveries; each hit has an `on` for `read`.
 - `read`: one subject's envelope with `rev`; `view:"net"` adds the map; `on:{kind:"file",id}` gives a bank file's text in pages (`guide{phase:"verktyg:read"}`).
 - `guide`: this text, by `phase`.
-- `plan_state`: the overview of deliveries (`agenda`, `include`).
+- `plan_state`: the overview of deliveries; `lens` `mine` (on me), `yes` (waits for my yes), `late`, `waiting` (on the customer); `customer`, `include`.
 - `act`: the only way to do an action: `on`, `action`, `rev`, `params`, `preview_id`, `user_approval`, `batch`; action `undo` takes the last action back.
 - `execute_step`: run a capability for a moment (`on`, `rev`, `params`, `test`); the result is always logged.
 - `write`: define, append or draft a registry entry (`op`, `entry`, `fixes`); the gate lists what is missing.
@@ -12,10 +12,10 @@ Steps
 1. `search{q:[…]}` (one to five phrasings) or `plan_state{}` to find the subject.
 2. `read{on}` to get the envelope and `rev`; `read{on, view:"net"}` for a task map (60 moments per page, follow `page.cursor`).
 3. `act{on, action, rev}` for every action, `execute_step` to run a capability, `write` to define registry entries.
-4. `guide{phase}` for details: moment, task, delivery, case, idea, envelope, severity, promptstandard, tools.
+4. `guide{phase}` for details: moment, task, delivery, case, idea, envelope, severity, promptstandard, tools, routes; `map` for what can run here.
 
 Example 1: `search{q:["offer","quote"]}` then `read{on:hit.on}`.
-Example 2: `plan_state{agenda:true}` for what is due, ordered by urgency, then end date.
+Example 2: `plan_state{lens:"mine"}` for what is on the person now; `plan_state{lens:"yes"}` for what waits for her yes.
 Counterexample: calling a customer's system through another connector when this server has the capability.
 Edge case: a legacy call shape (`asset_register`, `{tool,args}` wrapper) is translated while the adapter window is open; `say.now` shows the new form.
 A file into the customer's file bank: `write` with `op` `file_add` and `name`, `text` or `base64` (+`mime`), `customer`, optionally `folder` and `asset_type`; with `task` and `moment` it is also tied to that moment. Without a task it is the customer's alone. v1's `asset_register` with `text` or `base64` becomes this call.
@@ -23,25 +23,8 @@ A bug report about dirigenten: `write{op:"bug_report", text, where?, screenshot?
 Upload app: `upload{customer, for_task?, for_node?}` (only when the user wants to upload; `read{op:"upload_link"}` gives the link alone) gives a page where the user drops one or more files; they go straight to the file bank (never base64). Then offer «Ska jag föreslå var filerna hör hemma?» and, after a yes to the shown proposal, tie each with `act attach_file` (from_ref).
 
 v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{phase:"verktyg:<op>"}` gives an op's fields from the schema the write is checked against, and a field it does not have is refused with a template. Severity from the policy, ■ needs `user_approval`:
-- `write{op:"message"}`: meddelande till en kollega; read, resolve
-- `write{op:"message_mark"}`: markera meddelanden
-- `read{op:"image_picker"}`: bildväljaren: sources, search, prompt
-- `read{op:"image_target"}`: bildväljarens mål: pick_image { task, ref }
-- `read{op:"upload_link"}`: uppladdningssidan för en kund: customer, valfritt for_task och for_node (momentet), folder; fler filer på en gång
-- `write{op:"image_fetch"}`: bild ur en extern källa: register + filename och provenance { source, source_id }
-- `write{op:"asset_copy"}`: kopiera en fil i filbanken till en annan mapp: from_ref, folder, valfritt filename, customer; originalet ligger kvar
 - `read{op:"plan_estimate"}`: uppskatta en plan
-- `read{op:"content_search"}`: sök i innehållsbanken
-- `read{op:"content_list"}`: lista innehåll
-- `write{op:"content_save"}`: spara text
-- `write{op:"content_approve"}`: godkänn senaste versionen av en text i banken: id, user_approval (personens ord)
-- `write{op:"content_published"}`: markera publicerat
 - `read{op:"presentation_draft"}`: presentationens utkast
-- `read{op:"delivery_material"}`: leveransens material och saker: task (whole: true för hela leveransen) eller delivery
-- `read{op:"step_layer_call"}`: anropet för kundens sätt eller metoden: task, step, layer customer|method, prompt, prompt_addition, checklist
-- `write{op:"method_variant_build"}`: kundens sätt: patch, som step_layer_call gav
-- `write{op:"registry_define"}`: ändra metoden eller en post i registret: change, node (step_layer_call eller metodbyggaren)
-- `write{op:"presentation_text"}`: presentationens text
 - `read{op:"project_brief"}`: projektets brief
 - `write{op:"project_brief_save"}`: spara projektets brief
 - `read{op:"library_search"}`: sök i biblioteket
@@ -49,21 +32,24 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 - `read{op:"library_debt"}`: bibliotekets skuld
 - `read{op:"measure_debt"}`: mät skuld
 - `read{op:"classify_propose"}`: förslag på klassning
-- `read{op:"intake_status"}`: beställningens läge
-- `read{op:"settings"}`: inställningarna: kopplingar, arbetsdag och för en superadmin vem som har vilka rättigheter
-- `read{op:"messages"}`: meddelandena som trådar med läget i ord och antal per flik; since
+- `read{op:"intake_status"}`: kön: queue: true, format kort|full; övriga lägen (thread, image, pending, candidates, trial) är v2:s egna
 - `write{op:"classify_accept"}`: flytta inkommet dit det hör: thread, classification.route.to
 - `read{op:"view_file"}`: vyns ark: sheet delivery|calendar|how|library|method|order …; utan sheet: for page|version (vyns sida och stämpel) eller personens egen vyadress
-- `write{op:"how_customer"}`: kundens sätt: patch { variant, step, set { responsible | values } }
 - `read{op:"quick_actions"}`: snabbhandlingarna per kund; med ref: uppdragen filen kan kopplas till
 - `write{op:"mail_draft"}`: mejl som utkast i din egen e-post, bilagor som ref ur filbanken: values { to, subject, body, cc?, attachments: [ref] }; förhandsvisning först (■), sedan användarens ja ordagrant; personen skickar själv från sin e-post. Aldrig mejlet bara i chatten eller via en annan e-postkoppling i Claude (den bifogar inga filer). Saknas en rätt: säg vilken och vem som ordnar den, med svarets ord, och erbjud guidning i Chrome. Kontroll: search { q: ["Kontrollera kopplingen för mejl"] } och kör den med read { op: "read_call" }
 - `read{op:"handovers"}`: överlämningar och väntan per leverans: agenda true, format oversikt
 - `read{op:"order_preview"}`: förhandsvisa en beställning: samma fält som när den läggs in, inget skrivs
-- `write{op:"method_build"}`: ny version av ett arbetssätt (metodbyggaren)
-- `read{op:"read_call"}`: läs med en del: call, args (Ny beställning: ett mötes slutsatser)
 - `write{op:"intake_order"}`: lägg in en beställning: kund, leveranstyp, datum, vem som beställt; blir ett uppdrag
-- `write{op:"intake_submit"}`: ta emot kandidater (möte, mejl, formulär); fetch läser brevlådan utan att skriva
 v1's step tools, with v1's fields, done on v2's moments through read, act or plan_state (severity and yes as there):
+- `read|write{op:"content_search"}`: sök i innehållsbanken: query, customer?, limit?
+- `read|write{op:"content_list"}`: lista innehåll med läge (utkast, godkänd, publicerad): customer?, kind?, status?
+- `read|write{op:"content_approve"}`: godkänn senaste versionen av en text i banken: id, user_approval (personens ord); decline (vad som ska ändras) eller withdraw
+- `read|write{op:"asset_copy"}`: lägg en fil ur filbanken i en mapp: from_ref, folder, valfritt filename, customer; samma fil, kopplingarna står kvar
+- `read|write{op:"upload_link"}`: uppladdningssidan för en kund: customer, valfritt for_task och for_node (momentet), folder; fler filer på en gång
+- `read|write{op:"image_picker"}`: bildväljaren: mode sources|search|prompt; customer eller content; source, q, page, formats, text_area, channel
+- `read|write{op:"image_target"}`: bildväljarens mål: pick_image { task, ref }
+- `read|write{op:"find_file"}`: hitta en fil, text eller länk: q (vad du letar efter, i vardagsord), customer?, task?, moment?, sort? (rapport, bild, annons, länk …); varje träff säger vad, var och länken
+- `read|write{op:"delivery_material"}`: leveransens material och saker: task (whole: true för hela leveransen) eller delivery
 - `read|write{op:"mail_draft"}`: mejl som utkast i din egen e-post, bilagor som ref ur filbanken: values { to, subject, body, cc?, attachments: [ref] }; förhandsvisning först (■), sedan användarens ja ordagrant; personen skickar själv från sin e-post. Aldrig mejlet bara i chatten eller via en annan e-postkoppling i Claude (den bifogar inga filer). Saknas en rätt: säg vilken och vem som ordnar den, med svarets ord, och erbjud guidning i Chrome. Kontroll: search { q: ["Kontrollera kopplingen för mejl"] } och kör den med read { op: "read_call" }
 - `read|write{op:"context"}`: lägesbilden: task + step/node, eller thread
 - `read|write{op:"step_sheet"}`: stegets ark: task + step/node
@@ -87,6 +73,18 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"content_get"}`: en text eller fil ur banken: ref, id eller name (namnet räcker)
 - `read|write{op:"asset_get"}`: en fil ur banken: ref, id eller name (namnet räcker); thumb för miniatyren
 - `read|write{op:"content_save"}`: spara text; utan for_step väljer servern plats
+- `read|write{op:"view_file"}`: vyns ark: sheet library och how (v2:s egna), delivery|calendar|method|order …
+- `read|write{op:"settings"}`: inställningarna: kopplingar, arbetsdag och för en superadmin vem som har vilka rättigheter
+- `read|write{op:"method_build"}`: nytt eller ändrat arbetssätt: method + draft (metodbyggaren) eller from_plan { label, steps [{ label, type }] }; förhandsvisning först
+- `read|write{op:"registry_define"}`: ändra en post: node { id, … } med change: true (arbetssätt, delmål, moment, förmåga, eller v1:s steg och molekyl), eller en ny förmåga; förhandsvisning först
+- `read|write{op:"how_customer"}`: kundens sätt: patch { variant (kunden), step (momentet), set { responsible | values } }; förhandsvisning först
+- `read|write{op:"method_variant_build"}`: kundens sätt: patch { variant, step, set } eller responsible/approver/values/instruktion/prompt_addition per steg; förhandsvisning först
+- `read|write{op:"step_layer_call"}`: anropet för kundens sätt eller metoden: task, step, layer customer|method, prompt, prompt_addition, checklist
+- `read|write{op:"read_call"}`: läs med en del: call, args, hitta (Ny beställning: ett mötes slutsatser)
 - `read|write{op:"delivery_sheet"}`: leveransens sida: tasks (uppdragen), räknad i servern
 - `read|write{op:"step_card"}`: stegets ark: task, step (momentets nyckel)
 - `read|write{op:"batch_apply"}`: en handling på flera: action, items [{ task, step|node }], params; ■ en i taget efter förhandsvisning
+v1's ops that v2 now does itself, with v1's names and fields (severity and yes as above):
+- `read{op:"messages"}`: meddelandena som trådar med läget i ord och antal per flik; since (ÅÅÅÅ-MM-DD) läser längre bak
+- `write{op:"message"}`: meddelande till en eller flera kollegor: to (namn, mejladress eller id), text, about { task?, step?, thread? }, reply_to; read (id) markerar läst; resolve (id) + note?, scope «thread», undo: true; review + answer för second opinion
+- `write{op:"message_mark"}`: arkivera meddelanden: sent (id), archived true döljer, false tar tillbaka; bara för den som gör det

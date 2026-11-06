@@ -23721,7 +23721,7 @@ async function run9(args, ctx) {
       broken.push({ id: t, error: String(e.message).slice(0, 90) });
     }
   }
-  const bodyOf = async (id) => plainText((await api(`messages/${encodeURIComponent(id)}`, { format: "full" }))["payload"]).slice(0, 4e3);
+  const bodyOf2 = async (id) => plainText((await api(`messages/${encodeURIComponent(id)}`, { format: "full" }))["payload"]).slice(0, 4e3);
   const messages = [];
   let bodies = 0;
   for (const id of ids) {
@@ -23731,7 +23731,7 @@ async function run9(args, ctx) {
       if (!plain2.from) throw new Error("svaret bar inga huvuden");
       const needs = plain2.internal && looksForwarded(plain2.subject);
       if (needs) bodies++;
-      messages.push(needs ? toRawMessage(m, await bodyOf(id), domains) : plain2);
+      messages.push(needs ? toRawMessage(m, await bodyOf2(id), domains) : plain2);
     } catch (e) {
       broken.push({ id, error: String(e.message).slice(0, 90) });
     }
@@ -23745,7 +23745,7 @@ async function run9(args, ctx) {
   for (const m of only ? [] : last.values()) {
     if (m.internal || m.body_chars !== void 0) continue;
     try {
-      messages[messages.indexOf(m)] = toRawMessage(raw2.get(m.id), await bodyOf(m.id), domains);
+      messages[messages.indexOf(m)] = toRawMessage(raw2.get(m.id), await bodyOf2(m.id), domains);
       bodies++;
     } catch (e) {
       broken.push({ id: m.id, error: String(e.message).slice(0, 90) });
@@ -23775,13 +23775,299 @@ var fixtures9 = [
   }
 ];
 
+// atoms/gmail/read_attachments.atom.ts
+var read_attachments_atom_exports = {};
+__export(read_attachments_atom_exports, {
+  ATTACHMENT_MAX: () => ATTACHMENT_MAX,
+  THREAD_MAX: () => THREAD_MAX,
+  fixtures: () => fixtures10,
+  run: () => run10,
+  spec: () => spec10
+});
+
+// src/intake/attachments.ts
+function safeFilename(name, fallback = "bilaga") {
+  const rent = name.replace(/[\u0000-\u001f\u007f]/g, "").split(/[/\\]/).pop().replace(/^\.+/, "").trim().slice(0, 200);
+  return rent || fallback;
+}
+
+// atoms/post/gmail.ts
+import { createHash as createHash7 } from "node:crypto";
+var MIN_IMAGE_BYTES = 2e4;
+var CONTENT_IMAGE_BYTES = 15e4;
+var CONTENT_MIN_W = 300;
+var CONTENT_MIN_H = 180;
+var LOGO_MAX_H = 120;
+var LOGO_MIN_RATIO = 3;
+function cidDims(html, cid) {
+  if (!html || !cid) return null;
+  const at3 = html.indexOf(`cid:${cid}`);
+  if (at3 < 0) return null;
+  const start = html.lastIndexOf("<img", at3), end = html.indexOf(">", at3);
+  if (start < 0 || end < 0) return null;
+  const tag = html.slice(start, end);
+  const num5 = (re) => {
+    const m = tag.match(re);
+    return m ? Number(m[1]) : NaN;
+  };
+  const w = num5(/\bwidth\s*[=:]\s*["']?(\d+)/i), h = num5(/\bheight\s*[=:]\s*["']?(\d+)/i);
+  return Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0 ? { w, h } : null;
+}
+var DECORATION_NAME = /logo|icon|ikon|signat|banner|facebook|linkedin|instagram|twitter|youtube|tiktok|social|badge|spacer|pixel/i;
+var imageName = (p, mime) => p.filename || `bild.${mime.split("/")[1] ?? "png"}`;
+var SIGNATURE_START = /(^|\n|>)[ \t]*(--[ \t]*$|(med )?vänlig(a)? hälsning(ar)?|bästa hälsningar|hälsningar|väl mött|mvh|best regards|kind regards|regards|cheers)[ \t,.!]*(\r?\n|<|$)/im;
+var decodeBody = (data) => data ? Buffer.from(data.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8") : "";
+function bodyOf(payload, mime, depth = 0) {
+  if (depth > 20 || !payload || typeof payload !== "object") return "";
+  const p = payload;
+  if ((p.mimeType ?? "").toLowerCase() === mime && p.body?.data) return decodeBody(p.body.data);
+  for (const c of p.parts ?? []) {
+    const b = bodyOf(c, mime, depth + 1);
+    if (b) return b;
+  }
+  return "";
+}
+function afterSignature(payload, inline) {
+  const out = /* @__PURE__ */ new Set();
+  if (!inline.length) return out;
+  const html = bodyOf(payload, "text/html");
+  const cut = html ? html.search(SIGNATURE_START) : -1;
+  let found = false;
+  if (cut >= 0)
+    for (const c of inline) {
+      if (!c.cid) continue;
+      const at3 = html.indexOf(`cid:${c.cid}`);
+      if (at3 < 0) continue;
+      found = true;
+      if (at3 > cut) out.add(c.part);
+    }
+  if (found) return out;
+  const plain2 = bodyOf(payload, "text/plain");
+  const pcut = plain2.search(SIGNATURE_START);
+  if (pcut < 0) return out;
+  const places = [...plain2.matchAll(/\[[^\]\n]+\.(png|jpe?g|gif|webp|bmp)\]/gi)];
+  if (places.length !== inline.length) return out;
+  places.forEach((m, i) => {
+    if ((m.index ?? 0) > pcut) out.add(inline[i].part);
+  });
+  return out;
+}
+function candidates(message, sender, payload, depth = 0) {
+  if (depth > 20 || !payload || typeof payload !== "object") return [];
+  const p = payload;
+  const mime = (p.mimeType ?? "").toLowerCase();
+  const h = (n2) => p.headers?.find((x) => x.name?.toLowerCase() === n2)?.value ?? "";
+  const own = mime.startsWith("image/") ? [{
+    message,
+    part: p.partId ?? "",
+    filename: imageName(p, mime),
+    mime,
+    size: p.body?.size ?? 0,
+    sender,
+    inline: !!h("content-id") || /^\s*inline/i.test(h("content-disposition")),
+    cid: h("content-id").replace(/^<|>$/g, "").trim(),
+    hash: p.body?.data ? createHash7("sha256").update(p.body.data).digest("hex").slice(0, 16) : ""
+  }] : [];
+  return [...own, ...(p.parts ?? []).flatMap((c) => candidates(message, sender, c, depth + 1))];
+}
+var senderOf = (payload) => {
+  const from = payload?.headers?.find((x) => x.name?.toLowerCase() === "from")?.value ?? "";
+  return (from.match(/<([^>]+)>/)?.[1] ?? from).trim().toLowerCase();
+};
+function threadImages(messages, earlier = []) {
+  const all2 = messages.flatMap((m) => m.id ? candidates(m.id, senderOf(m.payload), m.payload) : []);
+  const key = (c) => `${c.filename}|${c.size}`;
+  const seenBy = /* @__PURE__ */ new Map();
+  const note = (k, message) => seenBy.set(k, (seenBy.get(k) ?? /* @__PURE__ */ new Set()).add(message));
+  for (const c of all2) {
+    if (!c.sender) continue;
+    note(`${c.sender}|size|${c.size}`, c.message);
+    if (c.hash) note(`${c.sender}|hash|${c.hash}`, c.message);
+  }
+  for (const e of earlier) {
+    const sender = e.sender.trim().toLowerCase();
+    note(`${sender}|size|${e.size}`, "earlier");
+    if (e.hash) note(`${sender}|hash|${e.hash}`, "earlier");
+  }
+  const dims = /* @__PURE__ */ new Map();
+  for (const m of messages) {
+    if (!m.id) continue;
+    const html = bodyOf(m.payload, "text/html");
+    for (const c of all2) if (c.message === m.id && c.cid) {
+      const d = cidDims(html, c.cid);
+      if (d) dims.set(`${m.id}|${c.part}`, d);
+    }
+  }
+  const tail = /* @__PURE__ */ new Set();
+  for (const m of messages) {
+    if (!m.id) continue;
+    for (const part of afterSignature(m.payload, all2.filter((c) => c.message === m.id && c.inline)))
+      tail.add(`${m.id}|${part}`);
+  }
+  const seen = /* @__PURE__ */ new Set();
+  const out = [];
+  for (const c of all2) {
+    if (seen.has(key(c))) continue;
+    seen.add(key(c));
+    const times = (k) => seenBy.get(k)?.size ?? 0;
+    const repeated = c.inline && !!c.sender && (times(`${c.sender}|size|${c.size}`) > 1 || !!c.hash && times(`${c.sender}|hash|${c.hash}`) > 1);
+    const hashRepeated = c.inline && !!c.sender && !!c.hash && times(`${c.sender}|hash|${c.hash}`) > 1;
+    const d = dims.get(`${c.message}|${c.part}`);
+    const logoShape = !!d && (d.h <= LOGO_MAX_H || d.w / d.h >= LOGO_MIN_RATIO);
+    const content2 = !DECORATION_NAME.test(c.filename) && !hashRepeated && !logoShape && (!!d && d.w >= CONTENT_MIN_W && d.h >= CONTENT_MIN_H || c.size >= CONTENT_IMAGE_BYTES);
+    const signature = !content2 && (c.size < MIN_IMAGE_BYTES || DECORATION_NAME.test(c.filename) || repeated || tail.has(`${c.message}|${c.part}`) || logoShape);
+    const { inline: _i, sender: _s, cid: _c, hash: _h, ...image } = c;
+    out.push(signature ? { ...image, likely_signature: true } : image);
+  }
+  return out;
+}
+
+// atoms/gmail/read_attachments.atom.ts
+var spec10 = {
+  id: "c_gmail_read_attachments",
+  name: "gmail.call.read_attachments",
+  grounding: "decided",
+  found_in: "docs/inkorgen-v2/plan.md, \xABBilagor i kundmejl till filbanken\xBB och beslut 2\u20133 (Daniel P 2026-11-05: \xABBara \xE4renden och uppdrag\xBB)",
+  built_from: "inkorgen-v2-bilagor",
+  extend_existing: false,
+  because: "L\xE4s inkommande e-post (gmail.message.list) l\xE4ser huvuden i ett f\xF6nster f\xF6r en adress; den h\xE4r l\xE4ser en tr\xE5ds bilagor med inneh\xE5ll. Att l\xE4gga inneh\xE5llet d\xE4r g\xF6r varje l\xE4sning av inkorgen tyngre (inkorgsplanens beslut 3).",
+  scope: "shared",
+  stage: "published",
+  surface: "gmail",
+  atom: "gmail.attachment.get",
+  effect: { verb: "reads", object: "gmail.attachment" },
+  performer: "code",
+  requires: "read",
+  idempotent: true,
+  input: ["party", "thread", "content"],
+  optional_input: ["content"],
+  output: ["thread", "attachments", "skipped"],
+  label: "L\xE4s bilagorna i ett mejl",
+  summary: "L\xE4ser bilagorna i en tr\xE5d med personens egen Google-koppling (gmail.readonly): namn, typ, storlek och vilket mejl, och med content filernas inneh\xE5ll. Ikoner och signaturbilder s\xE5llas bort. Skriver ingenting.",
+  keywords: ["bilagor", "bifogade filer", "pdf i mejlet", "spara filerna som kom med mejlet", "attachments", "gmail", "email files"],
+  test_target: "L\xE4ser bara. Prov i test/inkorgen-facit.test.ts och test/bilagor-atom.test.ts mot ett fejkat Gmail.",
+  leaves: {
+    schema: {
+      thread: "tr\xE5den som l\xE4stes",
+      attachments: "bilagorna: message, part, filename, mime, size, at, och data_base64 n\xE4r content inte \xE4r false",
+      skipped: "det som inte togs med, med sk\xE4l (signaturbild, f\xF6r stor)"
+    },
+    done_when: ["tr\xE5dens bilagor \xE4r l\xE4sta"],
+    where: "Svaret p\xE5 steget; ingenting skrivs"
+  },
+  module: "n0105",
+  operation_id: "o_gmail_read_attachments",
+  step_id: "s_gmail_read_attachments",
+  lead_days: 0
+};
+var API3 = "https://gmail.googleapis.com/gmail/v1/users/me/";
+var ATTACHMENT_MAX = 20 * 1024 * 1024;
+var THREAD_MAX = 40 * 1024 * 1024;
+var fromBase64Url = (s2) => Buffer.from(s2.replace(/-/g, "+").replace(/_/g, "/"), "base64");
+function fileParts(p, depth = 0) {
+  if (!p || depth > 20) return [];
+  const own = p.filename && p.body?.attachmentId ? [p] : [];
+  return [...own, ...(p.parts ?? []).flatMap((x) => fileParts(x, depth + 1))];
+}
+function findPart(p, id, depth = 0) {
+  if (!p || depth > 20) return void 0;
+  if (p.partId === id) return p;
+  for (const x of p.parts ?? []) {
+    const f = findPart(x, id, depth + 1);
+    if (f) return f;
+  }
+  return void 0;
+}
+async function run10(args, ctx) {
+  const party2 = String(args["party"] ?? "").trim();
+  if (!party2) throw new Error("party saknas \u2014 personen vars Google-koppling l\xE4ser posten");
+  const thread = String(args["thread"] ?? "").trim();
+  if (!thread) throw new Error("thread saknas \u2014 tr\xE5den vars bilagor ska l\xE4sas");
+  const content2 = args["content"] !== false && args["content"] !== "false";
+  const link = ctx.connection ? await ctx.connection("google", party2) : null;
+  if (!link) throw new Error("personen har ingen Google-koppling i dirigenten \u2014 koppla Google Gmail under Inst\xE4llningar");
+  if (!link.scopes.includes(GMAIL_SCOPE)) throw new Error("Google-kopplingen saknar Gmail (gmail.readonly) \u2014 koppla om med Gmail p\xE5slaget");
+  if (ctx.dry_run) return { thread, attachments: [], skipped: [], dry_run: true };
+  const api = async (path2, params = {}) => {
+    const u = new URL(path2, API3);
+    for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
+    const r = await ctx.fetch(u.toString(), { headers: { authorization: `Bearer ${link.token}` } });
+    if (r.ok) return await r.json();
+    const text7 = await r.text();
+    if (r.status === 429 || r.status === 403 && text7.includes("rateLimitExceeded"))
+      throw new Error("Gmails kvot per minut \xE4r slut \u2014 f\xF6rs\xF6k igen om en minut");
+    throw new Error(`Gmail ${r.status}: ${text7.slice(0, 200)}`);
+  };
+  const posts2 = (await api(`threads/${encodeURIComponent(thread)}`, { format: "full" }))["messages"] ?? [];
+  const at3 = (p) => p.internalDate && /^\d+$/.test(p.internalDate) ? new Date(Number(p.internalDate)).toISOString() : null;
+  const found = [];
+  const skipped = [];
+  const pictures = threadImages(posts2);
+  const pictureKey = /* @__PURE__ */ new Set();
+  for (const i of pictures) {
+    pictureKey.add(`${i.message}|${i.part}`);
+    if (i.likely_signature) {
+      skipped.push({ message: i.message, filename: i.filename, why: "signaturbild eller ikon" });
+      continue;
+    }
+    const post = posts2.find((p) => p.id === i.message);
+    const part = findPart(post?.payload, i.part);
+    if (post && part) found.push({ message: i.message, part: i.part, filename: i.filename, mime: i.mime, size: i.size, at: at3(post), body: part.body });
+  }
+  for (const post of posts2) {
+    if (!post.id) continue;
+    for (const part of fileParts(post.payload)) {
+      if (pictureKey.has(`${post.id}|${part.partId ?? ""}`)) continue;
+      found.push({
+        message: post.id,
+        part: part.partId ?? "",
+        filename: part.filename,
+        mime: part.mimeType ?? "application/octet-stream",
+        size: part.body?.size ?? 0,
+        at: at3(post),
+        body: part.body
+      });
+    }
+  }
+  const attachments = [];
+  let total = 0;
+  for (const f of found) {
+    const filename = safeFilename(f.filename);
+    if (f.size > ATTACHMENT_MAX) {
+      skipped.push({ message: f.message, filename, why: "st\xF6rre \xE4n 20 MB" });
+      continue;
+    }
+    if (!content2) {
+      attachments.push({ message: f.message, part: f.part, filename, mime: f.mime, size: f.size, at: f.at });
+      continue;
+    }
+    const data = f.body?.data ? fromBase64Url(f.body.data) : f.body?.attachmentId ? fromBase64Url(String((await api(`messages/${encodeURIComponent(f.message)}/attachments/${encodeURIComponent(f.body.attachmentId)}`))["data"] ?? "")) : null;
+    if (!data || data.length === 0) {
+      skipped.push({ message: f.message, filename, why: "inneh\xE5llet gick inte att l\xE4sa" });
+      continue;
+    }
+    if (total + data.length > THREAD_MAX) {
+      skipped.push({ message: f.message, filename, why: "tr\xE5dens bilagor \xE4r st\xF6rre \xE4n 40 MB tillsammans" });
+      continue;
+    }
+    total += data.length;
+    attachments.push({ message: f.message, part: f.part, filename, mime: f.mime, size: data.length, at: f.at, data_base64: data.toString("base64") });
+  }
+  return { thread, attachments, skipped };
+}
+var fixtures10 = [
+  { name: "utan koppling", args: { party: "@runner", thread: "t-1" }, expect_error: "Google" },
+  { name: "utan gmail.readonly", scopes: [], args: { party: "@runner", thread: "t-1" }, expect_error: "Gmail" },
+  { name: "utan tr\xE5d", args: { party: "@runner", thread: "" }, expect_error: "thread" }
+];
+
 // atoms/google/connection_check.atom.ts
 var connection_check_atom_exports = {};
 __export(connection_check_atom_exports, {
   CHECK_TEXT: () => CHECK_TEXT,
-  fixtures: () => fixtures10,
-  run: () => run10,
-  spec: () => spec10
+  fixtures: () => fixtures11,
+  run: () => run11,
+  spec: () => spec11
 });
 
 // src/registry/admin.ts
@@ -23804,7 +24090,7 @@ async function reasonOf2(r) {
   const c = b?.error?.errors?.[0]?.reason ?? b?.error?.status;
   return typeof c === "string" ? c : "";
 }
-async function run10(args, ctx) {
+async function run11(args, ctx) {
   const party2 = ctx.call.runner ?? (typeof args["party"] === "string" ? args["party"] : "");
   const view = ctx.view;
   const admins = view ? view.find("party").filter((p2) => isSuperadmin(view, p2.id)).map((p2) => p2.label ?? p2.id) : [];
@@ -23849,7 +24135,7 @@ async function run10(args, ctx) {
     row2("gmail_api", p.ok ? true : apiOff ? false : null, "admin")
   ]);
 }
-var spec10 = {
+var spec11 = {
   id: "c_google_connection_check",
   name: "google.call.connection_check",
   grounding: "observed",
@@ -23886,7 +24172,7 @@ var spec10 = {
   step_id: "s_google_connection_check",
   lead_days: 0
 };
-var fixtures10 = [
+var fixtures11 = [
   { name: "kopplad med utkast", scopes: [GMAIL_COMPOSE_SCOPE], args: { party: "@runner" }, expect_fields: ["ready", "rows"] },
   { name: "utan koppling s\xE4gs det, med personen som \xE5tg\xE4rdar", args: { party: "@runner" }, expect_fields: ["rows"] }
 ];
@@ -23895,10 +24181,10 @@ var fixtures10 = [
 var pagespeed_atom_exports = {};
 __export(pagespeed_atom_exports, {
   STRATEGIES: () => STRATEGIES,
-  fixtures: () => fixtures12,
+  fixtures: () => fixtures13,
   pagespeedRow: () => pagespeedRow,
-  run: () => run12,
-  spec: () => spec12
+  run: () => run13,
+  spec: () => spec13
 });
 
 // atoms/webb/fetch_pages.atom.ts
@@ -23910,10 +24196,10 @@ __export(fetch_pages_atom_exports, {
   findCanonical: () => findCanonical,
   findNoindex: () => findNoindex,
   findScripts: () => findScripts,
-  fixtures: () => fixtures11,
+  fixtures: () => fixtures12,
   pool: () => pool,
-  run: () => run11,
-  spec: () => spec11,
+  run: () => run12,
+  spec: () => spec12,
   urlsOf: () => urlsOf
 });
 var CHECKS = ["status", "redirect_chain", "canonical", "noindex", "scripts"];
@@ -24027,7 +24313,7 @@ var int = (v, name, def, lo, hi) => {
   if (!Number.isInteger(n2) || n2 < lo || n2 > hi) throw new Error(`${name} \xE4r ett heltal ${lo}\u2013${hi}, fick ${String(v)}`);
   return n2;
 };
-var spec11 = {
+var spec12 = {
   id: "c_web_fetch_pages",
   name: "web.call.fetch_pages",
   grounding: "decided",
@@ -24063,7 +24349,7 @@ var spec11 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["fetched_pages"]
 };
-async function run11(args, ctx) {
+async function run12(args, ctx) {
   const checks = checksOf(args["checks"]);
   const max = int(args["max"], "max", 500, 1, 2e3);
   const concurrency2 = int(args["concurrency"], "concurrency", 4, 1, 8);
@@ -24082,7 +24368,7 @@ async function run11(args, ctx) {
   );
   return { pages: done, checked: checks, not_checked: skipped, dry_run: false };
 }
-var fixtures11 = [
+var fixtures12 = [
   { name: "status och kedja ur sidlistan", args: { items: [{ url: "https://exempel.se/", published: true }] } },
   // data-i-koden: påhittad provadress
   { name: "m\xE4tskript p\xE5 tv\xE5 adresser", args: { urls: ["https://exempel.se/", "https://exempel.se/om"], checks: ["scripts"], concurrency: 2 } },
@@ -24126,7 +24412,7 @@ function pagespeedRow(url, strategy2, d) {
     field: metrics2 ? Object.fromEntries(Object.entries(metrics2).map(([k, v]) => [k.toLowerCase(), String(v.category ?? "")])) : null
   };
 }
-var spec12 = {
+var spec13 = {
   id: "c_google_pagespeed",
   name: "google.call.pagespeed",
   grounding: "decided",
@@ -24161,7 +24447,7 @@ var spec12 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["pagespeed_report"]
 };
-async function run12(args, ctx) {
+async function run13(args, ctx) {
   const strategy2 = String(args["strategy"] ?? "mobile");
   if (!STRATEGIES.includes(strategy2)) throw new Error(`strategy \xE4r ${STRATEGIES.join(", ")}, fick ${strategy2}`);
   const max = args["max"] === void 0 || args["max"] === null ? 10 : Number(args["max"]);
@@ -24196,7 +24482,7 @@ async function run12(args, ctx) {
   }, deadline - 3e3);
   return { pagespeed: done, not_checked: skipped.map(([u, s2]) => `${s2} ${u}`), dry_run: false };
 }
-var fixtures12 = [
+var fixtures13 = [
   { name: "mobil ur sidlistan", args: { items: [{ url: "https://exempel.se/", published: true }] } },
   // data-i-koden: påhittad provadress
   { name: "b\xE5da strategierna", args: { urls: ["https://exempel.se/"], strategy: "both" } },
@@ -24210,11 +24496,11 @@ var fixtures12 = [
 var search_console_atom_exports = {};
 __export(search_console_atom_exports, {
   QUERIES: () => QUERIES,
-  fixtures: () => fixtures13,
+  fixtures: () => fixtures14,
   periodOf: () => periodOf,
-  run: () => run13,
+  run: () => run14,
   siteOf: () => siteOf,
-  spec: () => spec13,
+  spec: () => spec14,
   urlsOf: () => urlsOf3
 });
 var QUERIES = ["search_analytics", "url_inspection"];
@@ -24271,7 +24557,7 @@ async function call2(get, token, url, body, site) {
     throw new Error(`Search Console ${res.status}: ${String(data["error"]?.message ?? text7.slice(0, 200))}`);
   return data;
 }
-var spec13 = {
+var spec14 = {
   id: "c_google_search_console",
   name: "google.call.search_console",
   grounding: "decided",
@@ -24309,7 +24595,7 @@ var spec13 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["search_console_data"]
 };
-async function run13(args, ctx) {
+async function run14(args, ctx) {
   const query = String(args["query"] ?? "").trim();
   if (!QUERIES.includes(query)) throw new Error(`query \xE4r ${QUERIES.join(" eller ")}, fick ${String(args["query"])}`);
   const urls = urlsOf3(args["urls"], args["items"]);
@@ -24401,7 +24687,7 @@ async function run13(args, ctx) {
   return { site_url: site, index_status, remaining: queue2, dry_run: false };
 }
 var CONNECTED = { scopes: ["https://www.googleapis.com/auth/webmasters.readonly"] };
-var fixtures13 = [
+var fixtures14 = [
   {
     name: "s\xF6kdata per sida, egendomen ur sidlistan",
     ...CONNECTED,
@@ -24432,12 +24718,12 @@ var fixtures13 = [
 // atoms/googleads/change.atom.ts
 var change_atom_exports = {};
 __export(change_atom_exports, {
-  fixtures: () => fixtures14,
-  run: () => run14,
-  spec: () => spec14
+  fixtures: () => fixtures15,
+  run: () => run15,
+  spec: () => spec15
 });
 var STATUSES = ["ENABLED", "PAUSED"];
-var spec14 = {
+var spec15 = {
   id: "c_googleads_change",
   name: "googleads.call.change",
   grounding: "decided",
@@ -24477,7 +24763,7 @@ var spec14 = {
   step_id: "s_googleads_change",
   lead_days: 0
 };
-async function run14(args, ctx) {
+async function run15(args, ctx) {
   if (args["customer_id"] === void 0 || args["customer_id"] === "")
     throw new Error("customer_id saknas \u2014 ge kundkontots id uttryckligen; en \xE4ndring g\xE5r aldrig mot f\xF6rvaltarkontot av sig sj\xE4lv");
   const customer = digits(args["customer_id"], "customer_id");
@@ -24497,7 +24783,7 @@ async function run14(args, ctx) {
   const got = d["results"]?.[0]?.resourceName ?? resource;
   return { customer_id: customer, campaign: { id: campaignId, status, resource_name: got }, dry_run: false };
 }
-var fixtures14 = [
+var fixtures15 = [
   { name: "pausa en kampanj (torrt)", keys: PROV_KEYS, args: { customer_id: "1000000001", campaign_id: "2000000001", status: "PAUSED" } },
   { name: "utan kundkonto avvisas", keys: PROV_KEYS, args: { campaign_id: "2000000001", status: "PAUSED" }, expect_error: "customer_id saknas" },
   { name: "ok\xE4nd status avvisas", keys: PROV_KEYS, args: { customer_id: "1000000001", campaign_id: "2000000001", status: "REMOVED" }, expect_error: "status \xE4r" }
@@ -24508,15 +24794,15 @@ var read_atom_exports = {};
 __export(read_atom_exports, {
   ACTIONS: () => ACTIONS3,
   campaignQuery: () => campaignQuery,
-  fixtures: () => fixtures15,
-  run: () => run15,
-  spec: () => spec15
+  fixtures: () => fixtures16,
+  run: () => run16,
+  spec: () => spec16
 });
 var ACTIONS3 = ["accounts", "campaigns", "report"];
 var PERIODS = ["LAST_7_DAYS", "LAST_14_DAYS", "LAST_30_DAYS", "THIS_MONTH", "LAST_MONTH"];
 var MAX_PAGES2 = 20;
 var campaignQuery = (period) => `SELECT campaign.id, campaign.name, campaign.status, metrics.clicks, metrics.impressions, metrics.cost_micros, metrics.conversions, metrics.ctr, metrics.average_cpc FROM campaign WHERE segments.date DURING ${period}`;
-var spec15 = {
+var spec16 = {
   id: "c_googleads_read",
   name: "googleads.call.read",
   grounding: "decided",
@@ -24553,7 +24839,7 @@ var spec15 = {
   step_id: "s_googleads_read",
   lead_days: 0
 };
-async function run15(args, ctx) {
+async function run16(args, ctx) {
   const action = String(args["action"] ?? "").trim();
   if (!ACTIONS3.includes(action)) throw new Error(`action \xE4r ${ACTIONS3.join(", ")}, fick ${String(args["action"] ?? "inget")}`);
   const keys = await keysOf(ctx);
@@ -24592,7 +24878,7 @@ async function run15(args, ctx) {
   }
   return { action, customer_id: customer, rows: rows3, dry_run: false };
 }
-var fixtures15 = [
+var fixtures16 = [
   { name: "kontona kopplingen n\xE5r", keys: PROV_KEYS, args: { action: "accounts" }, expect_fields: ["action", "accounts"] },
   { name: "kampanjernas nyckeltal", keys: PROV_KEYS, args: { action: "campaigns", customer_id: "100-000-0001", period: "LAST_7_DAYS" }, expect_fields: ["action", "customer_id", "rows"] },
   { name: "egen GAQL-rapport", keys: PROV_KEYS, args: { action: "report", customer_id: "1000000001", query: "SELECT campaign.id FROM campaign" }, expect_fields: ["rows"] },
@@ -24605,12 +24891,12 @@ var fixtures15 = [
 var archive_record_atom_exports = {};
 __export(archive_record_atom_exports, {
   archivePreviewId: () => archivePreviewId,
-  fixtures: () => fixtures16,
+  fixtures: () => fixtures17,
   idsOf: () => idsOf,
-  run: () => run16,
-  spec: () => spec16
+  run: () => run17,
+  spec: () => spec17
 });
-import { createHash as createHash7 } from "node:crypto";
+import { createHash as createHash8 } from "node:crypto";
 
 // atoms/hubspot/rest.ts
 var HOST2 = "https://api.hubapi.com";
@@ -24806,7 +25092,7 @@ function severity(objectType2, verb) {
 }
 
 // atoms/hubspot/archive_record.atom.ts
-var spec16 = {
+var spec17 = {
   id: "c_hs_archive_object",
   name: "hubspot.call.archive_object",
   grounding: "decided",
@@ -24864,7 +25150,7 @@ function idsOf(v) {
   return ids;
 }
 function archivePreviewId(objectType2, ids) {
-  return createHash7("sha256").update(JSON.stringify([objectType2, [...ids].sort()])).digest("hex").slice(0, 16);
+  return createHash8("sha256").update(JSON.stringify([objectType2, [...ids].sort()])).digest("hex").slice(0, 16);
 }
 async function attachedTo(get, token, type, ids) {
   const out = [];
@@ -24883,7 +25169,7 @@ async function attachedTo(get, token, type, ids) {
   return out;
 }
 var show = (r) => `${r.type} ${r.id}${r.name ? ` (${r.name})` : ""}`;
-async function run16(args, ctx) {
+async function run17(args, ctx) {
   const objectType2 = String(args["object_type"] ?? "").trim();
   if (!objectType2) throw new Error("object_type saknas, t.ex. quotes eller line_items");
   const path2 = guardType(objectType2, "archive");
@@ -24916,7 +25202,7 @@ async function run16(args, ctx) {
   return { ...base, proposal: false, archived: ids, done: true };
 }
 var CONNECTED2 = { scopes: ["crm"] };
-var fixtures16 = [
+var fixtures17 = [
   { name: "testofferten", ...CONNECTED2, args: { object_type: "quotes", ids: ["1"] } },
   { name: "offertraderna som text", ...CONNECTED2, args: { object_type: "line_items", ids: "2, 3" } },
   { name: "anv\xE4ndarobjektet avvisas", ...CONNECTED2, args: { object_type: "users", ids: ["1"] }, expect_error: "anv\xE4ndare och beh\xF6righeter" },
@@ -24929,13 +25215,13 @@ var fixtures16 = [
 // atoms/hubspot/cms_content_publish.atom.ts
 var cms_content_publish_atom_exports = {};
 __export(cms_content_publish_atom_exports, {
-  fixtures: () => fixtures17,
-  run: () => run17,
-  spec: () => spec17
+  fixtures: () => fixtures18,
+  run: () => run18,
+  spec: () => spec18
 });
 
 // atoms/hubspot/cms_content.ts
-import { createHash as createHash8 } from "node:crypto";
+import { createHash as createHash9 } from "node:crypto";
 var CONTENT_TYPES = ["blog_post", "site_page", "landing_page"];
 function contentType(v) {
   const t = String(v ?? "").trim() || "blog_post";
@@ -25030,7 +25316,7 @@ function contentChecks(f, keyword) {
   return out;
 }
 function contentPreviewId(...parts) {
-  return createHash8("sha256").update(JSON.stringify(sorted(parts))).digest("hex").slice(0, 16);
+  return createHash9("sha256").update(JSON.stringify(sorted(parts))).digest("hex").slice(0, 16);
 }
 function sorted(v) {
   if (Array.isArray(v)) return v.map(sorted);
@@ -25108,7 +25394,7 @@ async function importImage(get, token, url, folder, wait2) {
 }
 
 // atoms/hubspot/cms_content_publish.atom.ts
-var spec17 = {
+var spec18 = {
   "id": "c_hubspot_cms_content_publish",
   "name": "hubspot.call.cms_content_publish",
   "grounding": "decided",
@@ -25196,7 +25482,7 @@ function when(v, now) {
   if (t <= now) throw new Error("publish_at har redan varit; utel\xE4mna den f\xF6r att publicera nu");
   return new Date(t).toISOString();
 }
-async function run17(args, ctx) {
+async function run18(args, ctx) {
   const type = contentType(args["content_type"]);
   const id = typeof args["content_id"] === "string" ? args["content_id"].trim() : String(args["content_id"] ?? "").trim();
   if (!id) throw new Error("content_id \xE4r utkastets id i HubSpot");
@@ -25229,7 +25515,7 @@ async function run17(args, ctx) {
   return { ...base, proposal: false, state: after.state, url: after.url, published_at: at3 ?? after.publish_date, done: true };
 }
 var CONNECTED3 = { scopes: ["content"] };
-var fixtures17 = [
+var fixtures18 = [
   { name: "publicera ett utkast nu", ...CONNECTED3, args: { content_type: "blog_post", content_id: "789" } },
   { name: "schemal\xE4gga ett utkast", ...CONNECTED3, args: { content_type: "blog_post", content_id: "789", publish_at: "2099-01-01T07:00:00Z" } },
   { name: "en tid som varit avvisas", ...CONNECTED3, args: { content_id: "789", publish_at: "2020-01-01T07:00:00Z" }, expect_error: "redan varit" },
@@ -25240,11 +25526,11 @@ var fixtures17 = [
 // atoms/hubspot/cms_content_write.atom.ts
 var cms_content_write_atom_exports = {};
 __export(cms_content_write_atom_exports, {
-  fixtures: () => fixtures18,
-  run: () => run18,
-  spec: () => spec18
+  fixtures: () => fixtures19,
+  run: () => run19,
+  spec: () => spec19
 });
-var spec18 = {
+var spec19 = {
   "id": "c_hubspot_cms_content_write",
   "name": "hubspot.call.cms_content_write",
   "grounding": "decided",
@@ -25333,7 +25619,7 @@ var spec18 = {
   }
 };
 var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function run18(args, ctx) {
+async function run19(args, ctx) {
   const type = contentType(args["content_type"]);
   const fields = contentFields(args["fields"]);
   const id = typeof args["content_id"] === "string" && args["content_id"].trim() ? args["content_id"].trim() : null;
@@ -25401,7 +25687,7 @@ var POST = {
   featured_image_alt_text: "hus med solceller",
   widgets: { text: { body: { text: "<p>Minuspriser p\xE5 el uppst\xE5r n\xE4r \u2026</p>" } } }
 };
-var fixtures18 = [
+var fixtures19 = [
   {
     name: "ett nytt blogginl\xE4gg som utkast",
     ...CONNECTED4,
@@ -25445,10 +25731,10 @@ __export(find_objects_atom_exports, {
   LIST_PRODUCTS: () => LIST_PRODUCTS,
   SEARCH_OBJECTS: () => SEARCH_OBJECTS,
   SEARCH_PRODUCTS: () => SEARCH_PRODUCTS,
-  fixtures: () => fixtures19,
+  fixtures: () => fixtures20,
   route: () => route,
-  run: () => run19,
-  spec: () => spec19
+  run: () => run20,
+  spec: () => spec20
 });
 
 // atoms/merged.ts
@@ -25679,11 +25965,13 @@ var SEARCH_OBJECTS = "hubspot.call.search_objects";
 function route(args) {
   const type = typeof args["object_type"] === "string" ? args["object_type"].trim() : "";
   if (!type) throw new Error("object_type saknas (t.ex. contacts, companies, deals, products)");
-  if (type === "products" && args["filter_groups"] === void 0)
-    return args["text"] !== void 0 ? { call: SEARCH_PRODUCTS, args: without(args, "object_type") } : { call: LIST_PRODUCTS, args: without(args, "object_type") };
+  if (type === "products") {
+    const searching = ["text", "query", "filter_groups", "filters"].some((k) => args[k] !== void 0);
+    return { call: searching ? SEARCH_PRODUCTS : LIST_PRODUCTS, args: without(args, "object_type") };
+  }
   return { call: SEARCH_OBJECTS, args };
 }
-var spec19 = {
+var spec20 = {
   id: "c_hs_find_objects",
   name: "hubspot.call.find_objects",
   grounding: "observed",
@@ -25697,8 +25985,8 @@ var spec19 = {
   requires: "read",
   idempotent: true,
   needs_env: ["HUBSPOT_TOKEN"],
-  input: ["object_type", "text", "filter_groups", "properties", "sorts", "limit", "after", "status"],
-  optional_input: ["text", "filter_groups", "properties", "sorts", "limit", "after", "status"],
+  input: ["object_type", "text", "query", "filter_groups", "filters", "properties", "sorts", "limit", "after", "status"],
+  optional_input: ["text", "query", "filter_groups", "filters", "properties", "sorts", "limit", "after", "status"],
   output: ["objects", "products"],
   label: "S\xF6k poster i HubSpot",
   summary: "S\xF6ker poster av en typ i HubSpot (contacts, companies, deals, products \u2026) med filter, eller med fritext f\xF6r produkter; utan filter och text listas produkterna. L\xE4ser ocks\xE5 portalens \xE4gare, anv\xE4ndare, roller, segment, marknadsmejl, filer och arbetsfl\xF6den (med internmejlens mottagare), filtrerade p\xE5 namn eller id (text) och l\xE4ge (status). L\xE4ser bara.",
@@ -25714,7 +26002,7 @@ var spec19 = {
   step_id: "s_hs_find_objects",
   lead_days: 0
 };
-async function run19(args, ctx) {
+async function run20(args, ctx) {
   const type = typeof args["object_type"] === "string" ? args["object_type"].trim() : "";
   if (isAccountObjectType(type)) return readAccount(type, args, ctx);
   if (args["status"] !== void 0 && args["status"] !== null && args["status"] !== "")
@@ -25737,7 +26025,7 @@ async function readAccount(type, args, ctx) {
   );
   return { objects, object_type: type, count: objects.length, filter: { text: text7 ?? null, status }, dry_run: false };
 }
-var fixtures19 = [
+var fixtures20 = [
   { name: "produkter med text", args: { object_type: "products", text: "panel" }, expect_fields: ["call", "args"] },
   { name: "produkter utan text", args: { object_type: "products" }, expect_fields: ["call", "args"] },
   { name: "kontakter med filter", args: { object_type: "contacts", filter_groups: [] }, expect_fields: ["call", "args"] },
@@ -25756,11 +26044,11 @@ __export(list_content_atom_exports, {
   CONTENT_TYPES: () => CONTENT_TYPES2,
   PAGE_TYPES: () => PAGE_TYPES,
   contentTypes: () => contentTypes,
-  fixtures: () => fixtures20,
+  fixtures: () => fixtures21,
   listContent: () => listContent,
   listObjects: () => listObjects,
-  run: () => run20,
-  spec: () => spec20
+  run: () => run21,
+  spec: () => spec21
 });
 
 // atoms/hubspot/cms_pages.ts
@@ -26138,7 +26426,7 @@ var rootOf = (v) => {
   return list4.length ? list4 : null;
 };
 var itemsOf = (v) => Array.isArray(v) ? v.filter((x) => !!x && typeof x === "object") : void 0;
-var spec20 = {
+var spec21 = {
   id: "c_hubspot_list_content",
   name: "hubspot.call.list_content",
   grounding: "observed",
@@ -26178,7 +26466,7 @@ var spec20 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["cms_content_listing"]
 };
-async function run20(args, ctx) {
+async function run21(args, ctx) {
   const types = contentTypes(args["content_types"]);
   const one = typeof args["content_id"] === "string" && args["content_id"].trim() ? args["content_id"].trim() : null;
   if (one) return readOne(one, types, ctx);
@@ -26240,7 +26528,7 @@ async function readOne(id, types, ctx) {
   return { item, counts: { [t]: 1 }, dry_run: false };
 }
 var CONNECTED5 = { scopes: ["content"] };
-var fixtures20 = [
+var fixtures21 = [
   { name: "sidtyperna", ...CONNECTED5, args: {}, expect_fields: ["items", "blogs", "counts"] },
   {
     name: "mallar, moduler, HubDB, formul\xE4r, omdirigeringar",
@@ -26267,9 +26555,9 @@ var fixtures20 = [
 // atoms/hubspot/read_menus.atom.ts
 var read_menus_atom_exports = {};
 __export(read_menus_atom_exports, {
-  fixtures: () => fixtures21,
-  run: () => run21,
-  spec: () => spec21
+  fixtures: () => fixtures22,
+  run: () => run22,
+  spec: () => spec22
 });
 
 // atoms/hubspot/cms_menus.ts
@@ -26377,7 +26665,7 @@ var pageList = (v) => {
   if (!Array.isArray(v)) throw new Error("items \xE4r en lista med sidor (id och url)");
   return v.filter((p) => !!p && typeof p === "object" && p["page_type"] !== "blog_post").map((p) => ({ ...p, id: String(p["id"] ?? ""), url: typeof p["url"] === "string" ? p["url"] : "" }));
 };
-var spec21 = {
+var spec22 = {
   id: "c_hubspot_read_menus",
   name: "hubspot.call.read_menus",
   grounding: "observed",
@@ -26412,7 +26700,7 @@ var spec21 = {
   step_id: "s_hubspot_read_menus",
   lead_days: 0
 };
-async function run21(args, ctx) {
+async function run22(args, ctx) {
   const pages = pageList(args["items"]);
   const link = ctx.connection ? await ctx.connection("hubspot", "") : null;
   if (!link?.token) throw new Error("ingen koppling till HubSpot h\xE4r \u2014 HUBSPOT_TOKEN saknas");
@@ -26427,7 +26715,7 @@ async function run21(args, ctx) {
   };
 }
 var CONNECTED6 = { scopes: ["content"] };
-var fixtures21 = [
+var fixtures22 = [
   { name: "menyerna utan sidor", ...CONNECTED6, args: {} },
   { name: "med sidor att j\xE4mf\xF6ra", ...CONNECTED6, args: { items: [
     { id: "1", url: "https://www.example.com/om-oss", page_type: "site_page" },
@@ -26442,12 +26730,12 @@ var fixtures21 = [
 var read_object_atom_exports = {};
 __export(read_object_atom_exports, {
   CALL_BY_TYPE: () => CALL_BY_TYPE,
-  fixtures: () => fixtures22,
-  run: () => run22,
-  spec: () => spec22
+  fixtures: () => fixtures23,
+  run: () => run23,
+  spec: () => spec23
 });
 var CALL_BY_TYPE = { products: "hubspot.call.get_product" };
-var spec22 = {
+var spec23 = {
   id: "c_hs_read_object",
   name: "hubspot.call.read_object",
   grounding: "observed",
@@ -26475,7 +26763,7 @@ var spec22 = {
   lead_days: 0
 };
 var list2 = (v) => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : []).map((x) => String(x).trim()).filter(Boolean);
-async function run22(args, ctx) {
+async function run23(args, ctx) {
   const type = typeof args["object_type"] === "string" ? args["object_type"].trim() : "";
   if (!type) throw new Error("object_type saknas (t.ex. products, contacts, deals eller kundens 2-\u2026)");
   const id = args["object_id"] === void 0 || args["object_id"] === null ? "" : String(args["object_id"]).trim();
@@ -26513,7 +26801,7 @@ async function run22(args, ctx) {
   }
   return { object: { id: String(d["id"]), properties: d["properties"] ?? {}, associations: assoc }, asked, dry_run: false };
 }
-var fixtures22 = [
+var fixtures23 = [
   { name: "en produkt", args: { object_type: "products", object_id: "123" }, expect_fields: ["call", "args"] },
   { name: "en post med kopplingar", args: { object_type: "2-1", object_id: "1", associations: "2-2" }, expect_fields: ["object", "asked"] },
   { name: "utan id avvisas", args: { object_type: "contacts" }, expect_error: "object_id saknas" }
@@ -26522,13 +26810,13 @@ var fixtures22 = [
 // atoms/hubspot/read_source.atom.ts
 var read_source_atom_exports = {};
 __export(read_source_atom_exports, {
-  fixtures: () => fixtures23,
-  run: () => run23,
-  spec: () => spec23
+  fixtures: () => fixtures24,
+  run: () => run24,
+  spec: () => spec24
 });
 
 // atoms/hubspot/cms_source.ts
-import { createHash as createHash9 } from "node:crypto";
+import { createHash as createHash10 } from "node:crypto";
 var HOST3 = "https://api.hubapi.com";
 function environment(v) {
   if (v === void 0 || v === null || v === "") return "published";
@@ -26633,10 +26921,10 @@ function lineDiff(before, after, context = 3) {
   return { text: out.join("\n"), added: ops.filter((o) => o.op === "+").length, removed: ops.filter((o) => o.op === "-").length };
 }
 function previewId(env, path2, before, after) {
-  return createHash9("sha256").update(JSON.stringify([env, path2, before, after])).digest("hex").slice(0, 16);
+  return createHash10("sha256").update(JSON.stringify([env, path2, before, after])).digest("hex").slice(0, 16);
 }
 async function putSource(get, token, env, path2, text7) {
-  const boundary = `----dirigent${createHash9("sha256").update(path2 + text7).digest("hex").slice(0, 24)}`;
+  const boundary = `----dirigent${createHash10("sha256").update(path2 + text7).digest("hex").slice(0, 24)}`;
   const name = path2.split("/").pop().replace(/"/g, "");
   const body = `--${boundary}\r
 Content-Disposition: form-data; name="file"; filename="${name}"\r
@@ -26664,7 +26952,7 @@ ${text7}\r
 }
 
 // atoms/hubspot/read_source.atom.ts
-var spec23 = {
+var spec24 = {
   id: "c_hubspot_read_source",
   name: "hubspot.call.read_source",
   grounding: "decided",
@@ -26702,7 +26990,7 @@ var spec23 = {
   step_id: "s_hubspot_read_source",
   lead_days: 0
 };
-async function run23(args, ctx) {
+async function run24(args, ctx) {
   const path2 = sourcePath(args["path"]);
   const env = environment(args["environment"]);
   const link = ctx.connection ? await ctx.connection("hubspot", "") : null;
@@ -26711,7 +26999,7 @@ async function run23(args, ctx) {
   return { ...await readSource(ctx.fetch, link.token, env, path2), dry_run: false };
 }
 var CONNECTED7 = { scopes: ["content"] };
-var fixtures23 = [
+var fixtures24 = [
   { name: "en modul", ...CONNECTED7, args: { path: "Tema/modules/Sammanstallning.module" } },
   { name: "en mall som utkast", ...CONNECTED7, args: { path: "Tema/templates/avtal.html", environment: "draft" } },
   { name: "ok\xE4nd milj\xF6 avvisas", ...CONNECTED7, args: { path: "a.html", environment: "live" }, expect_error: "draft eller published" },
@@ -26722,20 +27010,20 @@ var fixtures23 = [
 // atoms/hubspot/ui_settings_register.atom.ts
 var ui_settings_register_atom_exports = {};
 __export(ui_settings_register_atom_exports, {
-  fixtures: () => fixtures24,
-  run: () => run24,
-  spec: () => spec24
+  fixtures: () => fixtures25,
+  run: () => run25,
+  spec: () => spec25
 });
 
 // atoms/browser/recipe.ts
 var IF_BLOCKED = 'Stoppar klienten handgreppet (t.ex. Claude Codes auto mode) \xE4r det klientens egen s\xE4kerhetsregel, och den kringg\xE5s inte. S\xE4g det till anv\xE4ndaren, citera anv\xE4ndarens ja ordagrant som user_approval, och be anv\xE4ndaren till\xE5ta handlingen i klienten och f\xF6rs\xF6ka igen. G\xE5r det \xE4nd\xE5 inte: skicka write { op: "bug_report" } med var det stoppade.';
 var RUNTIME = /* @__PURE__ */ new Set(["result", "evidence", "user_approval"]);
-function browserRun(spec38) {
+function browserRun(spec39) {
   return async (args, ctx) => {
-    const r = spec38.browser;
-    const optional = new Set(spec38.optional_input ?? []);
+    const r = spec39.browser;
+    const optional = new Set(spec39.optional_input ?? []);
     const values = {};
-    for (const k of spec38.input) {
+    for (const k of spec39.input) {
       if (RUNTIME.has(k)) continue;
       const v = args[k];
       if ((v === void 0 || v === "") && !optional.has(k)) throw new Error(`${k} saknas`);
@@ -26749,12 +27037,12 @@ function browserRun(spec38) {
       steps = [...r.path, ...p];
     }
     const approval = r.severity === "\u25CF" ? "\u25CF g\xF6rs direkt, g\xE5r att \xE5ngra" : r.severity === "\u25D0" ? "\u25D0 visa vad som ska g\xF6ras och v\xE4nta p\xE5 ja innan handgreppet" : "\u25A0 fr\xE5ga alltid, och visa vad som h\xE4nger p\xE5 det innan handgreppet";
-    const recipe = { ...r, steps, values, approval, ...spec38.effect.verb !== "reads" ? { if_blocked: IF_BLOCKED } : {} };
+    const recipe = { ...r, steps, values, approval, ...spec39.effect.verb !== "reads" ? { if_blocked: IF_BLOCKED } : {} };
     const evidence = typeof args["evidence"] === "string" ? args["evidence"].trim() : "";
     const result = typeof args["result"] === "string" ? args["result"].trim() : "";
     if (ctx.dry_run || !evidence) return { recipe, awaiting: true, result: "", evidence: "", done: false };
     const yes3 = typeof args["user_approval"] === "string" ? args["user_approval"].trim() : "";
-    if (spec38.effect.verb !== "reads" && r.severity !== "\u25CF" && !yes3)
+    if (spec39.effect.verb !== "reads" && r.severity !== "\u25CF" && !yes3)
       throw new Error("user_approval saknas \u2014 ett \u25D0/\u25A0-handgrepp tas emot f\xF6rst med m\xE4nniskans ja");
     if (!result) throw new Error("result saknas: vad blev gjort (id, namn eller avl\xE4sningen)");
     return { recipe, awaiting: false, result, evidence, done: true };
@@ -26762,7 +27050,7 @@ function browserRun(spec38) {
 }
 
 // atoms/hubspot/ui_settings_register.atom.ts
-var spec24 = {
+var spec25 = {
   "id": "c_hubspot_ui_settings_register",
   "name": "hubspot.call.ui_settings_register",
   "grounding": "observed",
@@ -26860,8 +27148,8 @@ var spec24 = {
     "note": []
   }
 };
-var run24 = browserRun(spec24);
-var fixtures24 = [
+var run25 = browserRun(spec25);
+var fixtures25 = [
   { name: "receptet f\xF6r offertmallen", args: { setting: "quote_template", source: "TEST offertmall.html", display_name: "TEST offertmall" } },
   { name: "ok\xE4nd inst\xE4llning s\xE4gs", args: { setting: "pipelines", source: "x", display_name: "x" }, expect_error: "har inget recept" }
 ];
@@ -26869,11 +27157,11 @@ var fixtures24 = [
 // atoms/hubspot/ui_template_edit.atom.ts
 var ui_template_edit_atom_exports = {};
 __export(ui_template_edit_atom_exports, {
-  fixtures: () => fixtures25,
-  run: () => run25,
-  spec: () => spec25
+  fixtures: () => fixtures26,
+  run: () => run26,
+  spec: () => spec26
 });
-var spec25 = {
+var spec26 = {
   "id": "c_hubspot_ui_template_edit",
   "name": "hubspot.call.ui_template_edit",
   "grounding": "observed",
@@ -26997,9 +27285,9 @@ var spec25 = {
     "note": []
   }
 };
-var run25 = browserRun(spec25);
+var run26 = browserRun(spec26);
 var BASE2 = { action: "insert_token", template_kind: "sales_email", template: "TEST mall", token: "contact.firstname" };
-var fixtures25 = [
+var fixtures26 = [
   { name: "receptet f\xF6r att infoga ett f\xE4lt", args: BASE2 },
   { name: "receptet f\xF6r att klona", args: { ...BASE2, action: "clone", new_name: "TEST klon" } },
   { name: "ok\xE4nd action s\xE4gs", args: { ...BASE2, action: "delete" }, expect_error: "har inget recept" },
@@ -27009,12 +27297,12 @@ var fixtures25 = [
 // atoms/hubspot/user_write.atom.ts
 var user_write_atom_exports = {};
 __export(user_write_atom_exports, {
-  fixtures: () => fixtures26,
-  run: () => run26,
-  spec: () => spec26
+  fixtures: () => fixtures27,
+  run: () => run27,
+  spec: () => spec27
 });
-import { createHash as createHash10 } from "node:crypto";
-var spec26 = {
+import { createHash as createHash11 } from "node:crypto";
+var spec27 = {
   "id": "c_hubspot_user_write",
   "name": "hubspot.call.user_write",
   "grounding": "decided",
@@ -27107,7 +27395,7 @@ function pick2(what, ref, all2) {
   const near = all2.filter((x) => (x.name ?? "").toLowerCase().includes(ref.toLowerCase())).map((x) => `${x.name} (${x.id})`).slice(0, 5);
   throw new Error(named2.length > 1 ? `${what} \xAB${ref}\xBB finns ${named2.length} g\xE5nger \u2014 ange id:t` : `${what} \xAB${ref}\xBB finns inte i portalen${near.length ? ` (n\xE4rmast: ${near.join(", ")})` : ""}`);
 }
-async function run26(args, ctx) {
+async function run27(args, ctx) {
   const email = text5(args["email"]).toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("email \xE4r anv\xE4ndarens e-postadress");
   const first = text5(args["first_name"]), last = text5(args["last_name"]);
@@ -27135,7 +27423,7 @@ async function run26(args, ctx) {
     ...role ? { roleId: role.id } : {}
   };
   if (existing && !Object.keys(body).length) throw new Error(`${displayName(existing)} finns redan, och inget team eller ingen roll att \xE4ndra angavs`);
-  const pid = createHash10("sha256").update(JSON.stringify([email, body, existing?.id ?? null])).digest("hex").slice(0, 16);
+  const pid = createHash11("sha256").update(JSON.stringify([email, body, existing?.id ?? null])).digest("hex").slice(0, 16);
   const named2 = (t) => t ? `${t.name ?? t.id} (${t.id})` : null;
   const base = {
     would_change: {
@@ -27161,7 +27449,7 @@ async function run26(args, ctx) {
 }
 var CONNECTED8 = { scopes: ["settings.users.write", "settings.users.teams.read"] };
 var TEST_MAIL = (who) => `${who}@example.com`;
-var fixtures26 = [
+var fixtures27 = [
   {
     name: "en ny s\xE4ljare med huvudteam, utan v\xE4lkomstmejl",
     ...CONNECTED8,
@@ -27181,11 +27469,11 @@ var fixtures26 = [
 var write_record_atom_exports = {};
 __export(write_record_atom_exports, {
   changeStateKey: () => changeStateKey,
-  fixtures: () => fixtures27,
-  run: () => run27,
-  spec: () => spec27
+  fixtures: () => fixtures28,
+  run: () => run28,
+  spec: () => spec28
 });
-var spec27 = {
+var spec28 = {
   id: "c_hs_write_object",
   name: "hubspot.call.write_object",
   grounding: "decided",
@@ -27238,7 +27526,7 @@ var rowsOf2 = (v) => {
   })() : v;
   return Array.isArray(x) ? x : [];
 };
-async function run27(args, ctx) {
+async function run28(args, ctx) {
   const objectType2 = guardType(String(args["object_type"] ?? ""), "write");
   if (args["require_expected"] === true || args["require_expected"] === "true")
     for (const [i, r] of rowsOf2(args["updates"]).entries()) {
@@ -27280,7 +27568,7 @@ async function run27(args, ctx) {
     })), "application/json");
   return result;
 }
-var fixtures27 = [
+var fixtures28 = [
   { name: "en ny produkt", args: {
     object_type: "products",
     unique_property: "name",
@@ -27324,11 +27612,11 @@ var fixtures27 = [
 // atoms/hubspot/write_source.atom.ts
 var write_source_atom_exports = {};
 __export(write_source_atom_exports, {
-  fixtures: () => fixtures28,
-  run: () => run28,
-  spec: () => spec28
+  fixtures: () => fixtures29,
+  run: () => run29,
+  spec: () => spec29
 });
-var spec28 = {
+var spec29 = {
   id: "c_hubspot_write_source",
   name: "hubspot.call.write_source",
   grounding: "decided",
@@ -27371,7 +27659,7 @@ var spec28 = {
   step_id: "s_hubspot_write_source",
   lead_days: 0
 };
-async function run28(args, ctx) {
+async function run29(args, ctx) {
   const path2 = sourcePath(args["path"]);
   const env = environment(args["environment"]);
   const text7 = args["content"];
@@ -27399,7 +27687,7 @@ async function run28(args, ctx) {
   return { ...base, proposal: false, done: true };
 }
 var CONNECTED9 = { scopes: ["content"] };
-var fixtures28 = [
+var fixtures29 = [
   { name: "en ny modulfil", ...CONNECTED9, args: { path: "Tema/modules/Ny TEST.module/module.html", content: "<p>hej</p>" } },
   {
     name: "skriva \xF6ver ett utkast",
@@ -27414,10 +27702,10 @@ var fixtures28 = [
 var change_ad_object_atom_exports = {};
 __export(change_ad_object_atom_exports, {
   CALL_BY_CHANGE: () => CALL_BY_CHANGE,
-  fixtures: () => fixtures29,
+  fixtures: () => fixtures30,
   previews: () => previews,
-  run: () => run29,
-  spec: () => spec29
+  run: () => run30,
+  spec: () => spec30
 });
 var CALL_BY_CHANGE = {
   status: "meta.call.set_status",
@@ -27425,7 +27713,7 @@ var CALL_BY_CHANGE = {
   targeting: "meta.call.update_targeting",
   details: "meta.call.update_object"
 };
-var spec29 = {
+var spec30 = {
   id: "c_meta_change_ad_object",
   name: "meta.call.change_ad_object",
   grounding: "observed",
@@ -27514,10 +27802,10 @@ var spec29 = {
   lead_days: 0
 };
 var previews = true;
-async function run29(args, ctx) {
+async function run30(args, ctx) {
   return delegate(ctx, pick(CALL_BY_CHANGE, "change", args["change"]), without(args, "change"));
 }
-var fixtures29 = [
+var fixtures30 = [
   ...Object.keys(CALL_BY_CHANGE).map((change) => ({
     name: `change ${change}`,
     args: { change, object_id: "1", level: "adset" },
@@ -27534,10 +27822,10 @@ var fixtures29 = [
 var create_ad_creative_atom_exports = {};
 __export(create_ad_creative_atom_exports, {
   CALL_BY_FORMAT: () => CALL_BY_FORMAT,
-  fixtures: () => fixtures30,
+  fixtures: () => fixtures31,
   previews: () => previews2,
-  run: () => run30,
-  spec: () => spec30
+  run: () => run31,
+  spec: () => spec31
 });
 var CALL_BY_FORMAT = {
   image: "meta.call.create_creative",
@@ -27547,7 +27835,7 @@ var CALL_BY_FORMAT = {
   // Leadformuläret hos sidan (provet 2026-10-08): det annonsmaterialet öppnar med lead_gen_form_id.
   lead_form: "meta.call.create_lead_form"
 };
-var spec30 = {
+var spec31 = {
   id: "c_meta_create_ad_creative",
   name: "meta.call.create_ad_creative",
   grounding: "observed",
@@ -27713,10 +28001,10 @@ var spec30 = {
   lead_days: 0
 };
 var previews2 = true;
-async function run30(args, ctx) {
+async function run31(args, ctx) {
   return delegate(ctx, pick(CALL_BY_FORMAT, "format", args["format"]), without(args, "format"));
 }
-var fixtures30 = [
+var fixtures31 = [
   ...Object.entries(CALL_BY_FORMAT).map(([format2]) => ({
     name: `format ${format2}`,
     args: { format: format2, ad_account_id: "act_1", name: "TEST-creative", page_id: "1" },
@@ -27742,11 +28030,11 @@ __export(manage_access_atom_exports, {
   ACTIONS: () => ACTIONS4,
   ROLES: () => ROLES,
   TASKS: () => TASKS,
-  fixtures: () => fixtures31,
-  run: () => run31,
-  spec: () => spec31
+  fixtures: () => fixtures32,
+  run: () => run32,
+  spec: () => spec32
 });
-var spec31 = {
+var spec32 = {
   "id": "c_meta_manage_access",
   "name": "meta.call.manage_access",
   "grounding": "observed",
@@ -27869,7 +28157,7 @@ async function personId(get, cred, business, person2) {
   if (!hit) throw new Error("personen finns inte i business managern \u2014 bjud in med action: invite f\xF6rst, och v\xE4nta tills inbjudan \xE4r antagen");
   return String(hit["id"]);
 }
-async function run31(args, ctx) {
+async function run32(args, ctx) {
   const action = oneOf(args["action"], ACTIONS4, "action").toLowerCase();
   const business = objectId(args["business_id"], "business_id");
   const person2 = String(args["person"] ?? "").trim();
@@ -27920,7 +28208,7 @@ async function run31(args, ctx) {
   return { action, business_id: business, accounts: changed, done: changed.every((c) => c["ok"]) };
 }
 var KEYS = { META_ADS_TOKEN: "prov", META_APP_SECRET: "prov" };
-var fixtures31 = [
+var fixtures32 = [
   { name: "lista \xE5tkomst", args: { action: "list", business_id: "100000000000001" }, keys: KEYS, expect_fields: ["planned"] },
   {
     name: "ge l\xE4sbeh\xF6righet p\xE5 alla konton",
@@ -27956,14 +28244,14 @@ var fixtures31 = [
 // atoms/presentation/write.atom.ts
 var write_atom_exports = {};
 __export(write_atom_exports, {
-  fixtures: () => fixtures32,
-  run: () => run32,
-  spec: () => spec32
+  fixtures: () => fixtures33,
+  run: () => run33,
+  spec: () => spec33
 });
-import { createHash as createHash12 } from "node:crypto";
+import { createHash as createHash13 } from "node:crypto";
 
 // src/present/publish.ts
-import { createHash as createHash11 } from "node:crypto";
+import { createHash as createHash12 } from "node:crypto";
 
 // src/present/model.ts
 var PRESENTATION_ID = /^pr_[a-z0-9]{6,32}$/;
@@ -28788,7 +29076,7 @@ function withNumbers(blocks) {
 }
 
 // src/present/publish.ts
-var newPresentationId = (customer, delivery, title) => `pr_${createHash11("sha256").update(`${customer}|${delivery ?? ""}|${title.trim().toLowerCase()}`).digest("hex").slice(0, 16)}`;
+var newPresentationId = (customer, delivery, title) => `pr_${createHash12("sha256").update(`${customer}|${delivery ?? ""}|${title.trim().toLowerCase()}`).digest("hex").slice(0, 16)}`;
 function brandOf(view, customer) {
   const p = view.get(customer);
   if (p?.kind !== "party") return { label: customer };
@@ -28827,7 +29115,7 @@ function planPublish(view, given, draft = false) {
     ...brand ? { brand } : {},
     ...fonts ? { fonts } : {}
   };
-  const preview_id = createHash11("sha256").update(JSON.stringify(payload)).digest("hex").slice(0, 24);
+  const preview_id = createHash12("sha256").update(JSON.stringify(payload)).digest("hex").slice(0, 24);
   return {
     presentation: id,
     version: version2,
@@ -28855,7 +29143,7 @@ function planWithdraw(view, id) {
 }
 
 // atoms/presentation/write.atom.ts
-var spec32 = {
+var spec33 = {
   "id": "c_presentation_write",
   "name": "presentation.call.write",
   "grounding": "observed",
@@ -28942,14 +29230,14 @@ var spec32 = {
     "note": []
   }
 };
-async function run32(args, ctx) {
+async function run33(args, ctx) {
   if (!ctx.view) throw new Error("presentationen kan bara publiceras i ett steg \u2014 registret saknas");
   const i = args;
   const action = i.action ?? "publish";
   if (action === "withdraw") {
     if (!i.presentation) throw new Error("ange presentation f\xF6r att dra tillbaka");
     const w = planWithdraw(ctx.view, i.presentation);
-    const preview_id = createHash12("sha256").update(`withdraw|${i.presentation}|${w.version}`).digest("hex").slice(0, 24);
+    const preview_id = createHash13("sha256").update(`withdraw|${i.presentation}|${w.version}`).digest("hex").slice(0, 24);
     const base2 = {
       would_change: { what: `Dra tillbaka \xAB${w.title}\xBB`, note: "Ingen mottagare kan \xF6ppna den efter\xE5t. Loggen beh\xE5ller den." },
       confirm_values: { preview_id },
@@ -29012,7 +29300,7 @@ var BLOCKS2 = [
   { type: "cover", title: "Provkampanj" },
   { type: "copy_angles", items: [{ ref: `bank://rotor/${SHA}`, label: "Vinkel A", mime: "text/markdown" }] }
 ];
-var fixtures32 = [
+var fixtures33 = [
   { name: "f\xF6rhandsvisning av en ny presentation", ...RUNNER4, args: {
     action: "publish",
     party: "@runner",
@@ -29059,10 +29347,10 @@ var fixtures32 = [
 var html_pdf_atom_exports = {};
 __export(html_pdf_atom_exports, {
   fillTemplate: () => fillTemplate,
-  fixtures: () => fixtures33,
-  run: () => run33,
+  fixtures: () => fixtures34,
+  run: () => run34,
   runWith: () => runWith,
-  spec: () => spec33
+  spec: () => spec34
 });
 
 // atoms/render/html-pdf.ts
@@ -31033,7 +31321,7 @@ function customerFonts(view, customer) {
 var FONTS_WHERE = 'Kundens typsnitt s\xE4tts i kundposten: webbprojektets adress (till exempel Adobe Fonts), vilken familj och vikt varje typsnittsnamn i mallen motsvarar, och typsnittsprovet. Skrivs med write { op: "registry_define", node: { id: "<kundens id>", fonts: { stylesheets, families, sample } }, change: true }. Har en metod andra typsnitt f\xF6r kunden s\xE4tts de i kundens variant av metoden (typsnitt, webbprojekt, typsnittsprov).';
 
 // atoms/render/html_pdf.atom.ts
-var spec33 = {
+var spec34 = {
   "id": "c_render_html_pdf",
   "name": "render.call.html_pdf",
   "grounding": "observed",
@@ -31163,14 +31451,15 @@ function fillTemplate(template, values) {
   if (missing.size) throw new Error(`mallen v\xE4ntar sig v\xE4rden som datan saknar: ${[...missing].join(", ")}`);
   return out;
 }
+var SAVED = /^(bank:\/\/|text:\/\/|file:)/;
 async function bankFile(ctx, customer, name) {
   if (!ctx.bank) throw new Error("inneh\xE5llsbanken \xE4r inte kopplad h\xE4r, s\xE5 mallen kan inte l\xE4sas: k\xF6r steget i dirigenten p\xE5 servern");
   const want = name.trim().normalize("NFC").toLowerCase();
   const base = (s2) => (s2 ?? "").split("/").pop().normalize("NFC").toLowerCase();
   const view = await ctx.bank.view();
-  const hit = registrationsOf(view).filter((r) => r.party === customer && r.uri.startsWith("bank://") && (base(r.found_in) === want || base(r.uri) === want)).at(-1);
+  const hit = registrationsOf(view).filter((r) => r.party === customer && SAVED.test(r.uri) && (base(r.found_in) === want || base(r.uri) === want)).at(-1);
   if (!hit) throw new Error(`${name} finns inte i kundens bank: l\xE4gg filen i kundens bank f\xF6rst`);
-  const data = await h\u00E4mta(ctx.bank.store, ctx.bank.tenant, hit.sha256);
+  const data = hit.uri.startsWith("text://") ? await ctx.bank.text(hit.sha256).then((d) => typeof d?.markdown === "string" ? new TextEncoder().encode(d.markdown) : null).catch(() => null) ?? await h\u00E4mta(ctx.bank.store, ctx.bank.tenant, hit.sha256) : await h\u00E4mta(ctx.bank.store, ctx.bank.tenant, hit.sha256);
   if (!data) throw new Error(`${name} \xE4r registrerad men filen finns inte i banken`);
   return data;
 }
@@ -31254,7 +31543,7 @@ async function save(ctx, f) {
   }]);
   return ref.uri;
 }
-function run33(args, ctx) {
+function run34(args, ctx) {
   return runWith(args, ctx, (html) => htmlToPdf(html, 6e4));
 }
 async function runWith(args, ctx, pdfOf, fetchFonts) {
@@ -31310,7 +31599,7 @@ async function runWith(args, ctx, pdfOf, fetchFonts) {
   return { proposal: false, file_name, pages: pageCount(Buffer.from(pdf)), ref, done: true, ...htmlOut, warnings: page.warnings };
 }
 var PAGE_FIELDS = ["proposal", "file_name", "pages", "ref", "done"];
-var fixtures33 = [
+var fixtures34 = [
   { name: "en sida som HTML: f\xF6rhandsvisningen", args: { html: '<!doctype html><title>Prov</title><section>Sida 1</section><section style="break-before:page">Sida 2</section>', file_name: "prov", folder: "Prov", page_size: "A4" }, expect_fields: PAGE_FIELDS },
   { name: "en sida som adress: f\xF6rhandsvisningen", args: { url: "https://example.com/sida", file_name: "sida.pdf" }, expect_fields: PAGE_FIELDS },
   { name: "b\xE5de html och url avvisas", args: { html: "<p>x</p>", url: "https://example.com", file_name: "x" }, expect_error: "inte b\xE5da" },
@@ -31326,9 +31615,9 @@ var fixtures33 = [
 // atoms/render/qr_code.atom.ts
 var qr_code_atom_exports = {};
 __export(qr_code_atom_exports, {
-  fixtures: () => fixtures34,
-  run: () => run34,
-  spec: () => spec34
+  fixtures: () => fixtures35,
+  run: () => run35,
+  spec: () => spec35
 });
 
 // atoms/render/qr.ts
@@ -31533,7 +31822,7 @@ function penalty(m) {
   const n2 = m.length;
   let r = 0;
   const line2 = (get) => {
-    let run38 = 0, color2 = false;
+    let run39 = 0, color2 = false;
     const hist = [0, 0, 0, 0, 0, 0, 0];
     const addHist = (len) => {
       if (hist[0] === 0) len += n2;
@@ -31547,22 +31836,22 @@ function penalty(m) {
     };
     for (let i = 0; i < n2; i++) {
       if (get(i) === color2) {
-        run38++;
-        if (run38 === 5) r += 3;
-        else if (run38 > 5) r++;
+        run39++;
+        if (run39 === 5) r += 3;
+        else if (run39 > 5) r++;
       } else {
-        addHist(run38);
+        addHist(run39);
         if (!color2) r += count() * 40;
         color2 = get(i);
-        run38 = 1;
+        run39 = 1;
       }
     }
     if (color2) {
-      addHist(run38);
-      run38 = 0;
+      addHist(run39);
+      run39 = 0;
     }
-    run38 += n2;
-    addHist(run38);
+    run39 += n2;
+    addHist(run39);
     r += count() * 40;
   };
   for (let y = 0; y < n2; y++) line2((x) => m[y][x]);
@@ -31632,7 +31921,7 @@ function withUtm(url, utm) {
 }
 
 // atoms/render/qr_code.atom.ts
-var spec34 = {
+var spec35 = {
   "id": "c_render_qr_code",
   "name": "render.call.qr_code",
   "grounding": "observed",
@@ -31704,7 +31993,7 @@ var spec34 = {
   }
 };
 var PX_PER_MODULE = 24;
-async function run34(args, ctx) {
+async function run35(args, ctx) {
   const i = args;
   if (typeof i.url !== "string" || !i.url.trim()) throw new Error("ange url: adressen koden ska leda till");
   if (typeof i.file_name !== "string" || !i.file_name.trim()) throw new Error("ange file_name: filens namn");
@@ -31740,7 +32029,7 @@ async function run34(args, ctx) {
   const p = await keep2({ ...common, bytes: png3, mime: "image/png", name: `${base}.png` });
   return { proposal: false, url_with_utm, refs: { png: p.ref, svg: s2.ref }, code, done: true };
 }
-var fixtures34 = [
+var fixtures35 = [
   { name: "en kod med UTM och runda prickar: f\xF6rhandsvisningen", args: {
     url: "https://example.com/meetings/prov-person",
     utm: '{"medium":"fysisk","source":"brevlada_kanal","campaign":"prov_person"}',
@@ -31756,13 +32045,13 @@ var fixtures34 = [
 // atoms/state/desired_state.atom.ts
 var desired_state_atom_exports = {};
 __export(desired_state_atom_exports, {
-  fixtures: () => fixtures35,
-  run: () => run35,
-  spec: () => spec35
+  fixtures: () => fixtures36,
+  run: () => run36,
+  spec: () => spec36
 });
 
 // src/v2/state/desired/diff.ts
-import { createHash as createHash13 } from "node:crypto";
+import { createHash as createHash14 } from "node:crypto";
 var RANK = { "\u25CF": 0, "\u25D0": 1, "\u25A0": 2 };
 var maxMark = (a, b) => RANK[a] >= RANK[b] ? a : b;
 function comparedFields(t, values) {
@@ -31975,7 +32264,7 @@ function diff(profile, desired, existing, ledger = /* @__PURE__ */ new Map()) {
 }
 function fingerprint(rows3) {
   const body = rows3.map((r) => [r.row, r.type, r.state, r.id, r.parent_row, r.archive, r.replace, r.changes.map((c) => [c.field, normal(c.before), normal(c.after)])]);
-  return createHash13("sha256").update(JSON.stringify(body)).digest("hex");
+  return createHash14("sha256").update(JSON.stringify(body)).digest("hex");
 }
 function tally(d) {
   const n2 = { matches: 0, create: 0, change: 0, blocked: 0, only_in_system: d.only_in_system.length };
@@ -32043,61 +32332,61 @@ async function readScoped(profile, desired, ledger, t, vars2) {
   };
   const types = [...new Set(inOrder(profile, desired).map((r) => r.type))].filter((ty) => profile.object_types[ty]);
   for (const type of types) {
-    const spec38 = profile.object_types[type];
+    const spec39 = profile.object_types[type];
     const rows3 = desired.filter((r) => r.type === type);
-    if (spec38.parent === null && spec38.read.list_all) {
+    if (spec39.parent === null && spec39.read.list_all) {
       const params = {
-        ...spec38.read.query ? { query: fill(spec38.read.query, vars2) } : spec38.read.fields.length ? { fields: spec38.read.fields.join(",") } : {},
-        ...Object.fromEntries(Object.entries(spec38.read.params ?? {}).map(([k, v]) => [k, fill(v, vars2)]))
+        ...spec39.read.query ? { query: fill(spec39.read.query, vars2) } : spec39.read.fields.length ? { fields: spec39.read.fields.join(",") } : {},
+        ...Object.fromEntries(Object.entries(spec39.read.params ?? {}).map(([k, v]) => [k, fill(v, vars2)]))
       };
       const opts = {
-        ...spec38.read.results ? { results: spec38.read.results } : {},
-        ...spec38.read.row ? { row: spec38.read.row } : {},
-        ...spec38.read.graphql ? { graphql: fill(spec38.read.graphql, vars2) } : {}
+        ...spec39.read.results ? { results: spec39.read.results } : {},
+        ...spec39.read.row ? { row: spec39.read.row } : {},
+        ...spec39.read.graphql ? { graphql: fill(spec39.read.graphql, vars2) } : {}
       };
-      for (const r of await t.list(fill(spec38.read.path, vars2), params, Object.keys(opts).length ? opts : void 0)) add(type, r, null);
+      for (const r of await t.list(fill(spec39.read.path, vars2), params, Object.keys(opts).length ? opts : void 0)) add(type, r, null);
       continue;
     }
-    if (spec38.parent === null && spec38.read.filter) {
-      const path2 = fill(spec38.read.path, vars2);
+    if (spec39.parent === null && spec39.read.filter) {
+      const path2 = fill(spec39.read.path, vars2);
       const ids = [...new Set(rows3.flatMap((r) => [ledger.get(r.row), r.id]).filter((x) => !!x))];
-      if (ids.length && spec38.read.by_ids !== false) await byFilter(type, path2, "id", ids);
-      const key = spec38.key[0];
-      const sub = spec38.read.filter.key_field?.split(".").slice(1);
-      const names = key && spec38.read.filter_names ? [...new Set(rows3.filter((r) => !ledger.has(r.row) && !r.id).map((r) => sub?.length ? at(r.values[key], sub.join("."))[0] : r.values[key]).filter((v) => v !== void 0 && v !== null && v !== "").map((v) => JSON.stringify(v)))].map((v) => JSON.parse(v)) : [];
-      if (names.length) await byFilter(type, path2, spec38.read.filter.key_field ?? key, names);
+      if (ids.length && spec39.read.by_ids !== false) await byFilter(type, path2, "id", ids);
+      const key = spec39.key[0];
+      const sub = spec39.read.filter.key_field?.split(".").slice(1);
+      const names = key && spec39.read.filter_names ? [...new Set(rows3.filter((r) => !ledger.has(r.row) && !r.id).map((r) => sub?.length ? at(r.values[key], sub.join("."))[0] : r.values[key]).filter((v) => v !== void 0 && v !== null && v !== "").map((v) => JSON.stringify(v)))].map((v) => JSON.parse(v)) : [];
+      if (names.length) await byFilter(type, path2, spec39.read.filter.key_field ?? key, names);
       continue;
     }
-    if (spec38.parent === null) {
+    if (spec39.parent === null) {
       const ids = [...new Set(rows3.flatMap((r) => [ledger.get(r.row), r.id]).filter((x) => !!x))];
-      const named2 = (spec38.partial ?? []).flatMap((f) => rows3.flatMap((r) => {
+      const named2 = (spec39.partial ?? []).flatMap((f) => rows3.flatMap((r) => {
         const v = r.values[f];
         return v && typeof v === "object" && !Array.isArray(v) ? Object.keys(v) : [];
       }));
-      const fields = [.../* @__PURE__ */ new Set([...spec38.read.fields, ...named2])];
-      if (ids.length && spec38.read.by_ids !== false)
-        for (const r of await t.byIds(ids, fields, { path: fill(spec38.read.path, vars2), ...spec38.read.fields_param ? { fields_param: spec38.read.fields_param } : {} })) add(type, r, null);
-      const key = spec38.key[0];
-      const names = key && spec38.read.filter_names ? [...new Set(rows3.filter((r) => !ledger.has(r.row) && !r.id).map((r) => r.values[key]).filter((v) => v !== void 0).map(String))] : [];
+      const fields = [.../* @__PURE__ */ new Set([...spec39.read.fields, ...named2])];
+      if (ids.length && spec39.read.by_ids !== false)
+        for (const r of await t.byIds(ids, fields, { path: fill(spec39.read.path, vars2), ...spec39.read.fields_param ? { fields_param: spec39.read.fields_param } : {} })) add(type, r, null);
+      const key = spec39.key[0];
+      const names = key && spec39.read.filter_names ? [...new Set(rows3.filter((r) => !ledger.has(r.row) && !r.id).map((r) => r.values[key]).filter((v) => v !== void 0).map(String))] : [];
       if (names.length) {
-        const found = await t.list(fill(spec38.read.path, vars2), { fields: spec38.read.fields.join(","), filtering: [{ field: key, operator: "IN", value: names }] });
+        const found = await t.list(fill(spec39.read.path, vars2), { fields: spec39.read.fields.join(","), filtering: [{ field: key, operator: "IN", value: names }] });
         for (const r of found) add(type, r, null);
       }
       continue;
     }
-    const parents = out.filter((e) => e.type === spec38.parent).map((e) => e.id);
-    if (spec38.read.parent_from) {
+    const parents = out.filter((e) => e.type === spec39.parent).map((e) => e.id);
+    if (spec39.read.parent_from) {
       if (!parents.length) continue;
-      const from = spec38.read.parent_from;
-      const opts = spec38.read.results ? { results: spec38.read.results } : void 0;
-      for (const r of await t.list(fill(spec38.read.path, vars2), spec38.read.fields.length ? { fields: spec38.read.fields.join(",") } : {}, opts)) {
+      const from = spec39.read.parent_from;
+      const opts = spec39.read.results ? { results: spec39.read.results } : void 0;
+      for (const r of await t.list(fill(spec39.read.path, vars2), spec39.read.fields.length ? { fields: spec39.read.fields.join(",") } : {}, opts)) {
         const p = at(r, from)[0];
         if (typeof p === "string" && parents.includes(p)) add(type, r, p);
       }
       continue;
     }
     for (const p of parents) {
-      const found = await t.list(fill(spec38.read.path, { ...vars2, parent: p }), { fields: spec38.read.fields.join(",") });
+      const found = await t.list(fill(spec39.read.path, { ...vars2, parent: p }), { fields: spec39.read.fields.join(",") });
       for (const r of found) add(type, r, p);
     }
   }
@@ -32286,8 +32575,8 @@ function bearerWriteTransport(fetch2, host, token, specOf) {
       const grouped = /* @__PURE__ */ new Map();
       for (const o of ops) if (o.kind === "create" && o.batch_path) grouped.set(o.batch_path, [...grouped.get(o.batch_path) ?? [], o]);
       for (const [path2, all2] of grouped) {
-        const spec38 = specOf(all2[0].type);
-        const key = spec38.key;
+        const spec39 = specOf(all2[0].type);
+        const key = spec39.key;
         const group = [];
         for (const o of all2) {
           const missing = failedRefs(o);
@@ -32296,11 +32585,11 @@ function bearerWriteTransport(fetch2, host, token, specOf) {
         }
         if (!group.length) continue;
         const list4 = group.map(body);
-        const r = await send2("POST", path2, spec38.batchBody === "array" ? list4 : { inputs: list4 });
-        const found = at2(r.json, spec38.batchResults);
+        const r = await send2("POST", path2, spec39.batchBody === "array" ? list4 : { inputs: list4 });
+        const found = at2(r.json, spec39.batchResults);
         const results2 = Array.isArray(found) ? found : [];
         group.forEach((o, n2) => {
-          const hit = results2.find((x) => sameKey3(x[key], o.params[key])) ?? (spec38.batchBody === "array" && results2.length === group.length ? results2[n2] : void 0);
+          const hit = results2.find((x) => sameKey3(x[key], o.params[key])) ?? (spec39.batchBody === "array" && results2.length === group.length ? results2[n2] : void 0);
           if (r.status < 400 && hit) {
             const id = String(hit["id"] ?? hit[key]);
             ids.set(o.row, id);
@@ -32310,7 +32599,7 @@ function bearerWriteTransport(fetch2, host, token, specOf) {
       }
       for (const o of ops) {
         if (o.kind === "create" && o.batch_path) continue;
-        const spec38 = specOf(o.type);
+        const spec39 = specOf(o.type);
         const missing = failedRefs(o);
         if (missing) {
           out.push({ row: o.row, ok: false, error: missing });
@@ -32319,13 +32608,13 @@ function bearerWriteTransport(fetch2, host, token, specOf) {
         if (o.mutation) {
           const r2 = await send2("POST", o.path, { query: o.mutation, variables: o.kind === "create" ? { input: body(o) } : { id: o.id, input: o.params } });
           const errors2 = r2.json?.errors;
-          const made = o.kind === "create" && spec38.result ? at2(r2.json, spec38.result) : null;
-          out.push(r2.status < 400 && !Array.isArray(errors2) ? { row: o.row, ok: true, ...o.kind === "create" ? { id: String(made?.["id"] ?? made?.[spec38.key] ?? "") } : {} } : { row: o.row, ok: false, error: Array.isArray(errors2) ? JSON.stringify(errors2).slice(0, 200) : why(r2.json, r2.status) });
+          const made = o.kind === "create" && spec39.result ? at2(r2.json, spec39.result) : null;
+          out.push(r2.status < 400 && !Array.isArray(errors2) ? { row: o.row, ok: true, ...o.kind === "create" ? { id: String(made?.["id"] ?? made?.[spec39.key] ?? "") } : {} } : { row: o.row, ok: false, error: Array.isArray(errors2) ? JSON.stringify(errors2).slice(0, 200) : why(r2.json, r2.status) });
           continue;
         }
         const r = await send2(o.kind === "create" ? "POST" : o.method ?? "PATCH", o.path, body(o));
-        const j = (spec38.result ? at2(r.json, spec38.result) : r.json) ?? {};
-        const id = o.kind === "create" ? String(j["id"] ?? j[spec38.key] ?? "") : "";
+        const j = (spec39.result ? at2(r.json, spec39.result) : r.json) ?? {};
+        const id = o.kind === "create" ? String(j["id"] ?? j[spec39.key] ?? "") : "";
         if (r.status < 400 && id) ids.set(o.row, id);
         out.push(r.status < 400 ? { row: o.row, ok: true, ...o.kind === "create" ? { id } : {} } : { row: o.row, ok: false, error: why(r.json, r.status) });
       }
@@ -32369,12 +32658,12 @@ function googleAdsTransports(fetch2, headers, api, customer, specOf, maxPages = 
         return ids.has(row2) ? resourceName(refType, ids.get(row2)) : temp.get(row2) ?? "";
       };
       const mutateOperations = ops.map((o) => {
-        const spec38 = specOf(o.type);
+        const spec39 = specOf(o.type);
         const fields = { ...o.params };
         for (const [field, row2] of Object.entries(o.refs)) fields[field] = pointer(o, field, row2);
-        for (const [field, refType] of Object.entries(spec38?.refTypes ?? {}))
+        for (const [field, refType] of Object.entries(spec39?.refTypes ?? {}))
           if (typeof fields[field] === "string" && /^\d+$/.test(fields[field])) fields[field] = resourceName(refType, fields[field]);
-        const name = spec38?.operation ?? `${o.type}Operation`;
+        const name = spec39?.operation ?? `${o.type}Operation`;
         return o.kind === "create" ? { [name]: { create: { resourceName: temp.get(o.row), ...fields } } } : { [name]: { update: { resourceName: resourceName(o.type, o.id ?? ""), ...fields }, updateMask: Object.keys(o.params).join(",") } };
       });
       const res = await post("/googleAds:mutate", { mutateOperations, partialFailure: true });
@@ -32618,16 +32907,16 @@ async function listOne(args, ctx) {
   const profile = ctx.call?.systemProfile?.(system);
   if (!profile) throw new Error(`systemposten f\xF6r \xAB${system}\xBB finns inte i nya registret`);
   const type = String(args["read_type"]);
-  const spec38 = profile.object_types[type];
-  if (!spec38) throw new Error(`\xAB${type}\xBB finns inte i systemposten f\xF6r ${system}`);
+  const spec39 = profile.object_types[type];
+  if (!spec39) throw new Error(`\xAB${type}\xBB finns inte i systemposten f\xF6r ${system}`);
   const t = await transportsFor(system, profile.transport, ctx, profile, args);
   const own = Object.fromEntries(Object.entries(args).filter(([k, v]) => typeof v === "string" && !["system", "read_type", "as", "plan"].includes(k)));
   const given = { ...own, ...args["vars"] && typeof args["vars"] === "object" ? Object.fromEntries(Object.entries(args["vars"]).map(([k, v]) => [k, String(v)])) : {} };
   const acc = profile.account;
-  const needsAccount = !!acc && JSON.stringify(spec38.read).includes("{account}");
+  const needsAccount = !!acc && JSON.stringify(spec39.read).includes("{account}");
   const vars2 = { ...given, ...!needsAccount ? {} : acc.form.startsWith("act_") ? { account: accountPath(args[acc.param] ?? args["ad_account_id"]) } : { account: digits(args[acc.param], acc.param) } };
   const fill3 = (s2) => s2.replace(/\{(\w+)\}/g, (m, k) => vars2[k] ?? m);
-  const read = spec38.read;
+  const read = spec39.read;
   const params = {
     ...read.query ? { query: fill3(read.query) } : read.fields.length ? { fields: read.fields.join(",") } : {},
     ...Object.fromEntries(Object.entries(read.params ?? {}).map(([k, v]) => [k, fill3(v)]))
@@ -32679,7 +32968,7 @@ function withTexts(p, rows3) {
 }
 
 // atoms/state/desired_state.atom.ts
-var spec35 = {
+var spec36 = {
   "id": "c_state_desired_state",
   "name": "state.call.desired_state",
   "grounding": "observed",
@@ -32742,7 +33031,7 @@ var spec35 = {
   "operation_id": "o_state_desired_state",
   "step_id": "s_state_desired_state"
 };
-async function run35(args, ctx) {
+async function run36(args, ctx) {
   if (typeof args["read_type"] === "string" && args["read_type"] !== "") {
     const items2 = await listOne(args, ctx);
     if (!Array.isArray(items2)) return items2;
@@ -32754,7 +33043,7 @@ async function run35(args, ctx) {
   const preview = withTexts(previewOf(d, `Publiceringsplanen mot ${l.system}`), l.rows);
   return { preview, summary: summaryOf(d), rows: d.rows, only_in_system: d.only_in_system, money: d.money };
 }
-var fixtures35 = [
+var fixtures36 = [
   {
     name: "utan systemposten i nya registret k\xF6rs inget",
     args: { system: "meta", plan: "c_0000000001", ad_account_id: "act_1" },
@@ -32765,9 +33054,9 @@ var fixtures35 = [
 // atoms/state/desired_state_apply.atom.ts
 var desired_state_apply_atom_exports = {};
 __export(desired_state_apply_atom_exports, {
-  fixtures: () => fixtures36,
-  run: () => run36,
-  spec: () => spec36
+  fixtures: () => fixtures37,
+  run: () => run37,
+  spec: () => spec37
 });
 
 // src/v2/state/desired/batches.ts
@@ -32805,16 +33094,16 @@ function planWrites(profile, d, desired, vars2) {
       }
     }
     if (kind === "create") {
-      const spec38 = t.create;
+      const spec39 = t.create;
       const params = {};
       for (const c of r.changes) params[c.field] = c.after;
       for (const f of comparedFields(t, want.values)) if (params[f] === void 0 && want.values[f] !== void 0) params[f] = want.values[f];
-      Object.assign(params, fillAll(spec38.fixed, vars2));
+      Object.assign(params, fillAll(spec39.fixed, vars2));
       const refs = {};
-      if (t.parent !== null && spec38.parent_field) {
+      if (t.parent !== null && spec39.parent_field) {
         const pid = want.parent ? idOfRow.get(want.parent) : null;
-        if (pid) params[spec38.parent_field] = pid;
-        else if (r.parent_row) refs[spec38.parent_field] = r.parent_row;
+        if (pid) params[spec39.parent_field] = pid;
+        else if (r.parent_row) refs[spec39.parent_field] = r.parent_row;
       }
       for (const [field, other] of Object.entries(want.refs ?? {})) {
         const id = idOfRow.get(other);
@@ -32825,38 +33114,38 @@ function planWrites(profile, d, desired, vars2) {
         row: r.row,
         type: r.type,
         kind,
-        path: fill2(spec38.path, vars2),
-        params: renamed(params, spec38.as),
+        path: fill2(spec39.path, vars2),
+        params: renamed(params, spec39.as),
         refs,
         id: null,
-        ...spec38.wrap ? { wrap: spec38.wrap } : {},
-        ...spec38.mutation ? { mutation: spec38.mutation } : {},
-        ...spec38.batch_path ? { batch_path: fill2(spec38.batch_path, vars2) } : {}
+        ...spec39.wrap ? { wrap: spec39.wrap } : {},
+        ...spec39.mutation ? { mutation: spec39.mutation } : {},
+        ...spec39.batch_path ? { batch_path: fill2(spec39.batch_path, vars2) } : {}
       });
     } else if (kind === "archive") {
-      const spec38 = t.archive;
+      const spec39 = t.archive;
       ops.push({
         row: r.row,
         type: r.type,
         kind,
-        path: fill2(spec38.path, { ...vars2, id: r.id }),
-        params: fillAll(spec38.set, { ...vars2, id: r.id }),
+        path: fill2(spec39.path, { ...vars2, id: r.id }),
+        params: fillAll(spec39.set, { ...vars2, id: r.id }),
         refs: {},
         id: r.id,
-        ...spec38.method ? { method: spec38.method } : {}
+        ...spec39.method ? { method: spec39.method } : {}
       });
     } else {
-      const spec38 = t.update;
+      const spec39 = t.update;
       ops.push({
         row: r.row,
         type: r.type,
         kind,
-        path: fill2(spec38.path, { ...vars2, id: encodeURIComponent(r.id) }),
-        params: { ...renamed(Object.fromEntries(r.changes.map((c) => [c.field, c.after])), spec38.as), ...fillAll(spec38.fixed, { ...vars2, id: r.id }) },
+        path: fill2(spec39.path, { ...vars2, id: encodeURIComponent(r.id) }),
+        params: { ...renamed(Object.fromEntries(r.changes.map((c) => [c.field, c.after])), spec39.as), ...fillAll(spec39.fixed, { ...vars2, id: r.id }) },
         refs: {},
         id: r.id,
-        ...spec38.method ? { method: spec38.method } : {},
-        ...spec38.mutation ? { mutation: spec38.mutation } : {}
+        ...spec39.method ? { method: spec39.method } : {},
+        ...spec39.mutation ? { mutation: spec39.mutation } : {}
       });
     }
   }
@@ -32917,10 +33206,10 @@ async function applyDiff(i) {
   const back2 = await i.read();
   const after = diff(i.profile, i.desired, back2, i.ledger);
   const archived = (op) => {
-    const spec38 = i.profile.object_types[op.type]?.archive;
+    const spec39 = i.profile.object_types[op.type]?.archive;
     const e = back2.find((x) => x.type === op.type && x.id === op.id);
-    if (spec38?.gone === true) return !e;
-    const set = spec38?.set ?? {};
+    if (spec39?.gone === true) return !e;
+    const set = spec39?.set ?? {};
     return !!e && Object.entries(set).every(([k, v]) => e.values[k] === v);
   };
   const rows3 = [];
@@ -32949,7 +33238,7 @@ async function applyDiff(i) {
 }
 
 // atoms/state/activate.ts
-import { createHash as createHash14 } from "node:crypto";
+import { createHash as createHash15 } from "node:crypto";
 var ON = "ACTIVE";
 var usable2 = (s2) => s2 === "tested" || s2 === "live";
 function activationPreview(profile, ledger, existing) {
@@ -32966,7 +33255,7 @@ function activationPreview(profile, ledger, existing) {
     ids,
     rows: picked.map(([r]) => r),
     mark: "\u25A0",
-    fingerprint: createHash14("sha256").update(JSON.stringify(ids)).digest("hex"),
+    fingerprint: createHash15("sha256").update(JSON.stringify(ids)).digest("hex"),
     summary: `${ids.length} saker sl\xE5s p\xE5 och b\xF6rjar visas (och kosta): de som dirigenten skapat och som \xE4r pausade. Inget annat startas.`
   };
 }
@@ -32993,7 +33282,7 @@ async function activate(i) {
 }
 
 // atoms/state/desired_state_apply.atom.ts
-var spec36 = {
+var spec37 = {
   "id": "c_state_desired_state_apply",
   "name": "state.call.desired_state_apply",
   "grounding": "observed",
@@ -33072,7 +33361,7 @@ var spec36 = {
     "note": []
   }
 };
-async function run36(args, ctx) {
+async function run37(args, ctx) {
   const l = await loadDesired(args, ctx);
   const mode = String(args["mode"] ?? "apply");
   if (mode !== "apply" && mode !== "activate") throw new Error(`mode ska vara apply eller activate, fick \xAB${mode}\xBB`);
@@ -33154,7 +33443,7 @@ async function run36(args, ctx) {
   });
   return { receipt, summary: receipt.stopped ?? receipt.summary, rows: receipt.rows, remaining: receipt.remaining };
 }
-var fixtures36 = [
+var fixtures37 = [
   {
     name: "utan systemposten i nya registret skrivs inget",
     args: { system: "meta", plan: "c_0000000001", ad_account_id: "act_1", mode: "apply", fingerprint: "x" },
@@ -33165,11 +33454,11 @@ var fixtures36 = [
 // atoms/usage/read_calls.atom.ts
 var read_calls_atom_exports = {};
 __export(read_calls_atom_exports, {
-  fixtures: () => fixtures37,
-  run: () => run37,
-  spec: () => spec37
+  fixtures: () => fixtures38,
+  run: () => run38,
+  spec: () => spec38
 });
-var spec37 = {
+var spec38 = {
   id: "c_usage_read_calls",
   name: "usage.call.read_calls",
   grounding: "decided",
@@ -33225,7 +33514,7 @@ var median2 = (xs) => {
   const s2 = [...xs].sort((a, b) => a - b), m = Math.floor(s2.length / 2);
   return s2.length % 2 ? s2[m] : Math.round((s2[m - 1] + s2[m]) / 2);
 };
-async function run37(args, ctx) {
+async function run38(args, ctx) {
   if (!ctx.usage) throw new Error("anropsloggen \xE4r inte kopplad h\xE4r; inget l\xE4stes");
   const from = time4(args["from"], "from"), to = time4(args["to"], "to");
   if (to <= from) throw new Error("from m\xE5ste vara f\xF6re to");
@@ -33267,12 +33556,12 @@ async function run37(args, ctx) {
     gaps
   };
 }
-var fixtures37 = [
+var fixtures38 = [
   { name: "utan kopplad logg s\xE4ger atomen det", args: { from: "2026-11-04T23:00:00+01:00", to: "2026-11-04T23:45:00+01:00" }, expect_error: "inte kopplad" }
 ];
 
 // atoms/index.generated.ts
-var ATOMS = [request_atom_exports, change_bank_atom_exports, pack_files_atom_exports, read_bank_atom_exports, create_event_atom_exports, save_version_atom_exports, create_draft_atom_exports, list_inflow_atom_exports, send_mail_atom_exports, connection_check_atom_exports, pagespeed_atom_exports, search_console_atom_exports, change_atom_exports, read_atom_exports, archive_record_atom_exports, cms_content_publish_atom_exports, cms_content_write_atom_exports, find_objects_atom_exports, list_content_atom_exports, read_menus_atom_exports, read_object_atom_exports, read_source_atom_exports, ui_settings_register_atom_exports, ui_template_edit_atom_exports, user_write_atom_exports, write_record_atom_exports, write_source_atom_exports, change_ad_object_atom_exports, create_ad_creative_atom_exports, manage_access_atom_exports, write_atom_exports, html_pdf_atom_exports, qr_code_atom_exports, desired_state_atom_exports, desired_state_apply_atom_exports, read_calls_atom_exports, fetch_pages_atom_exports];
+var ATOMS = [request_atom_exports, change_bank_atom_exports, pack_files_atom_exports, read_bank_atom_exports, create_event_atom_exports, save_version_atom_exports, create_draft_atom_exports, list_inflow_atom_exports, read_attachments_atom_exports, send_mail_atom_exports, connection_check_atom_exports, pagespeed_atom_exports, search_console_atom_exports, change_atom_exports, read_atom_exports, archive_record_atom_exports, cms_content_publish_atom_exports, cms_content_write_atom_exports, find_objects_atom_exports, list_content_atom_exports, read_menus_atom_exports, read_object_atom_exports, read_source_atom_exports, ui_settings_register_atom_exports, ui_template_edit_atom_exports, user_write_atom_exports, write_record_atom_exports, write_source_atom_exports, change_ad_object_atom_exports, create_ad_creative_atom_exports, manage_access_atom_exports, write_atom_exports, html_pdf_atom_exports, qr_code_atom_exports, desired_state_atom_exports, desired_state_apply_atom_exports, read_calls_atom_exports, fetch_pages_atom_exports];
 
 // src/local-runner/server.ts
 import { homedir } from "node:os";
