@@ -105,7 +105,7 @@ var init_is = __esm({
     number = (val) => typeof val === "number" && Number.isFinite(val);
     integer = (val) => Number.isInteger(val);
     inRange = (val, min, max) => val >= min && val <= max;
-    inArray = (val, list4) => list4.includes(val);
+    inArray = (val, list5) => list5.includes(val);
     invalidParameterError = (name, expected, actual) => new Error(
       `Expected ${expected} for ${name} but received ${actual} of type ${typeof actual}`
     );
@@ -1161,7 +1161,7 @@ var require_sort = __commonJS({
   "node_modules/semver/functions/sort.js"(exports, module) {
     "use strict";
     var compareBuild = require_compare_build();
-    var sort = (list4, loose) => list4.sort((a, b) => compareBuild(a, b, loose));
+    var sort = (list5, loose) => list5.sort((a, b) => compareBuild(a, b, loose));
     module.exports = sort;
   }
 });
@@ -1171,7 +1171,7 @@ var require_rsort = __commonJS({
   "node_modules/semver/functions/rsort.js"(exports, module) {
     "use strict";
     var compareBuild = require_compare_build();
-    var rsort = (list4, loose) => list4.sort((a, b) => compareBuild(b, a, loose));
+    var rsort = (list5, loose) => list5.sort((a, b) => compareBuild(b, a, loose));
     module.exports = rsort;
   }
 });
@@ -8063,17 +8063,17 @@ function BUFFER(input) {
     return new Buffer2(input).pointer;
   throw new TypeError("expected buffer");
 }
-function ENUM(value, list4) {
+function ENUM(value, list5) {
   if (typeof value === "number") {
-    if (value >= 0 && value < list4.length)
+    if (value >= 0 && value < list5.length)
       return value;
   }
   if (typeof value === "string") {
-    let idx = list4.indexOf(value);
+    let idx = list5.indexOf(value);
     if (idx >= 0)
       return idx;
   }
-  throw new TypeError(`invalid enum value ("${value}"; expected ${list4.join(", ")})`);
+  throw new TypeError(`invalid enum value ("${value}"; expected ${list5.join(", ")})`);
 }
 function allocateUTF8(str5) {
   var size = libmupdf.lengthBytesUTF8(str5) + 1;
@@ -9073,14 +9073,14 @@ var init_mupdf = __esm({
     Shade._drop = libmupdf._wasm_drop_shade;
     StructuredText = class _StructuredText extends Userdata {
       walk(walker) {
-        let block2 = libmupdf._wasm_stext_page_get_first_block(this.pointer);
-        while (block2) {
-          let block_type = libmupdf._wasm_stext_block_get_type(block2);
-          let block_bbox = fromRect(libmupdf._wasm_stext_block_get_bbox(block2));
+        let block3 = libmupdf._wasm_stext_page_get_first_block(this.pointer);
+        while (block3) {
+          let block_type = libmupdf._wasm_stext_block_get_type(block3);
+          let block_bbox = fromRect(libmupdf._wasm_stext_block_get_bbox(block3));
           if (block_type === 0) {
             if (walker.beginTextBlock)
               walker.beginTextBlock(block_bbox);
-            let line2 = libmupdf._wasm_stext_block_get_first_line(block2);
+            let line2 = libmupdf._wasm_stext_block_get_first_line(block3);
             while (line2) {
               let line_bbox = fromRect(libmupdf._wasm_stext_line_get_bbox(line2));
               let line_wmode = libmupdf._wasm_stext_line_get_wmode(line2);
@@ -9109,24 +9109,24 @@ var init_mupdf = __esm({
               walker.endTextBlock();
           } else if (block_type === 1) {
             if (walker.onImageBlock) {
-              let matrix = fromMatrix(libmupdf._wasm_stext_block_get_transform(block2));
-              let image = new Image(libmupdf._wasm_stext_block_get_image(block2));
+              let matrix = fromMatrix(libmupdf._wasm_stext_block_get_transform(block3));
+              let image = new Image(libmupdf._wasm_stext_block_get_image(block3));
               walker.onImageBlock(block_bbox, matrix, image);
             }
           } else if (block_type === 2) {
           } else if (block_type === 3) {
             if (walker.onVector) {
-              let v_flags_word = libmupdf._wasm_stext_block_get_v_flags(block2);
+              let v_flags_word = libmupdf._wasm_stext_block_get_v_flags(block3);
               let v_flags = {
                 isStroked: !!(v_flags_word & 1),
                 isRectangle: !!(v_flags_word & 2)
               };
-              let v_color = colorFromNumber(libmupdf._wasm_stext_block_get_v_argb(block2));
+              let v_color = colorFromNumber(libmupdf._wasm_stext_block_get_v_argb(block3));
               walker.onVector(block_bbox, v_flags, v_color);
             }
           } else if (block_type === 4) {
           }
-          block2 = libmupdf._wasm_stext_block_get_next(block2);
+          block3 = libmupdf._wasm_stext_block_get_next(block3);
         }
       }
       asJSON(scale = 1) {
@@ -10772,9 +10772,9 @@ var init_mupdf = __esm({
           result[i] = this.getBorderDashItem(i);
         return result;
       }
-      setBorderDashPattern(list4) {
+      setBorderDashPattern(list5) {
         this.clearBorderDash();
-        for (let v of list4)
+        for (let v of list5)
           this.addBorderDashItem(v);
       }
       getIntent() {
@@ -10888,10 +10888,10 @@ var init_mupdf = __esm({
       setStampImage(image) {
         libmupdf._wasm_pdf_set_annot_stamp_image(this.pointer, image.pointer);
       }
-      setAppearanceFromDisplayList(appearance, state, transform, list4) {
+      setAppearanceFromDisplayList(appearance, state, transform, list5) {
         checkMatrix(transform);
-        checkType(list4, DisplayList);
-        libmupdf._wasm_pdf_set_annot_appearance_from_display_list(this.pointer, STRING_OPT(appearance), STRING2_OPT(state), MATRIX(transform), list4.pointer);
+        checkType(list5, DisplayList);
+        libmupdf._wasm_pdf_set_annot_appearance_from_display_list(this.pointer, STRING_OPT(appearance), STRING2_OPT(state), MATRIX(transform), list5.pointer);
       }
       setAppearance(appearance, state, transform, bbox, resources, contents) {
         checkMatrix(transform);
@@ -13104,16 +13104,16 @@ var require_headers = __commonJS({
       }
       return 0;
     }
-    function indexOf(block2, num5, offset, end) {
+    function indexOf(block3, num5, offset, end) {
       for (; offset < end; offset++) {
-        if (block2[offset] === num5) return offset;
+        if (block3[offset] === num5) return offset;
       }
       return end;
     }
-    function cksum(block2) {
+    function cksum(block3) {
       let sum = 8 * 32;
-      for (let i = 0; i < 148; i++) sum += block2[i];
-      for (let j = 156; j < 512; j++) sum += block2[j];
+      for (let i = 0; i < 148; i++) sum += block3[i];
+      for (let j = 156; j < 512; j++) sum += block3[j];
       return sum;
     }
     function encodeOct(val, n2) {
@@ -14103,8 +14103,8 @@ var require_tar_fs = __commonJS({
       }
       return pack2;
     };
-    function head2(list4) {
-      return list4.length ? list4[list4.length - 1] : null;
+    function head2(list5) {
+      return list5.length ? list5[list5.length - 1] : null;
     }
     function processGetuid() {
       return !global.Bare && process.getuid ? process.getuid() : -1;
@@ -22307,16 +22307,16 @@ var spec3 = {
   }
 };
 function fileList(v) {
-  let list4 = v;
+  let list5 = v;
   if (typeof v === "string") {
     try {
-      list4 = JSON.parse(v);
+      list5 = JSON.parse(v);
     } catch {
       throw new Error('files ska vara en JSON-lista: [{"ref":"bank://\u2026","path":"mapp/namn"}]');
     }
   }
-  if (!Array.isArray(list4) || !list4.length) throw new Error("ange files: minst en fil ur banken");
-  return list4.map((x) => {
+  if (!Array.isArray(list5) || !list5.length) throw new Error("ange files: minst en fil ur banken");
+  return list5.map((x) => {
     const f = typeof x === "string" ? { ref: x } : x;
     if (typeof f?.ref !== "string" || !f.ref.trim()) throw new Error("varje fil i files beh\xF6ver ref: filen i banken");
     return { ref: f.ref.trim(), ...f.path ? { path: zipPath(f.path) } : {} };
@@ -22326,14 +22326,14 @@ async function run3(args, ctx) {
   const i = args;
   if (typeof i.file_name !== "string" || !i.file_name.trim()) throw new Error("ange file_name: zipens namn");
   const file_name = /\.zip$/i.test(i.file_name.trim()) ? i.file_name.trim() : `${i.file_name.trim()}.zip`;
-  const list4 = fileList(i.files);
-  const paths = list4.filter((f) => f.path).map((f) => f.path);
+  const list5 = fileList(i.files);
+  const paths = list5.filter((f) => f.path).map((f) => f.path);
   const twice = paths.find((p, k) => paths.indexOf(p) !== k);
   if (twice) throw new Error(`s\xF6kv\xE4gen \xAB${twice}\xBB finns tv\xE5 g\xE5nger i files`);
   const files = ctx.call.files;
   if (i.confirmed !== true || ctx.dry_run) {
     const entries = [];
-    for (const f of list4) {
+    for (const f of list5) {
       const m = files ? await files.meta(f.ref) : null;
       entries.push({ path: f.path ?? m?.name ?? f.ref, ref: m?.ref ?? f.ref, size: m?.size ?? null });
     }
@@ -22343,7 +22343,7 @@ async function run3(args, ctx) {
   if (!keep2 || !files) throw new Error("zipen kan bara g\xF6ras i ett steg med filbanken");
   if (!i.customer) throw new Error("ange customer: kunden zipen sparas hos");
   const read = [];
-  for (const f of list4) {
+  for (const f of list5) {
     const d = await files.read(f.ref);
     read.push({ path: f.path ?? zipPath(d.name), ref: d.ref, bytes: d.bytes });
   }
@@ -22742,12 +22742,276 @@ var fixtures5 = [
   }
 ];
 
-// atoms/content/save_version.atom.ts
-var save_version_atom_exports = {};
-__export(save_version_atom_exports, {
+// atoms/communication/assemble.atom.ts
+var assemble_atom_exports = {};
+__export(assemble_atom_exports, {
   fixtures: () => fixtures6,
   run: () => run6,
   spec: () => spec6
+});
+
+// src/v2/domain/communication.ts
+var COMMUNICATION_AREA = "communication";
+var PHASES = ["plan", "write", "review"];
+function factsOf(entries, customer) {
+  return sectionsOf(entries, customer).find((g) => g.section.kind === "core" && g.facts)?.facts ?? null;
+}
+var asText = (g, part) => g.parts[part]?.items ?? [];
+var sectionsOf = (entries, customer) => entries.filter((g) => g.kind === "guidance" && g.level === "customer" && g.applies_to.area === COMMUNICATION_AREA && g.applies_to.customer !== null && String(g.applies_to.customer) === customer && g.section !== void 0);
+var inPhase = (g, phase) => !g.applies_to.phases || g.applies_to.phases.length === 0 || g.applies_to.phases.includes(phase);
+var forChannel = (g, channel) => channel !== null && (g.applies_to.channels ?? []).some((c) => c === "*" || c === channel);
+var block2 = (g) => {
+  const lines = [`## ${g.section.title}`, ...asText(g, "purpose"), ...asText(g, "how_to")];
+  const forbid = asText(g, "forbid");
+  if (forbid.length > 0) lines.push("Inte s\xE5 h\xE4r:", ...forbid.map((x) => `- ${x}`));
+  const check = asText(g, "check");
+  if (check.length > 0) lines.push("Kontrollera:", ...check.map((x) => `- ${x}`));
+  const ex = asText(g, "answer_format");
+  if (ex.length > 0) lines.push(...ex);
+  if (g.section.source) lines.push(`K\xE4lla: ${g.section.source}`);
+  return lines.join("\n");
+};
+var STATE_LABEL = { proven: "belagt", unproven: "obelagt \u2013 f\xE5r bara st\xE5 med motivering", decided_inactive: "beslutat, inte aktiverat" };
+var claimsBlock = (claims) => ["## P\xE5st\xE5enden", ...claims.map((c) => `- ${c.text} (${STATE_LABEL[c.state]}; ${c.source.doc}${c.source.where ? `, ${c.source.where}` : ""}) [${c.id}]`)].join("\n");
+var glossaryBlock = (terms) => ["## Ord som f\xF6rklaras f\xF6rsta g\xE5ngen de st\xE5r", ...terms.map((t) => `- ${t.term}: ${t.explanation}`)].join("\n");
+var phrasesBlock = (phrases) => ["## Fraser som inte anv\xE4nds", ...phrases.map((p) => `- \xAB${p.phrase}\xBB: ${p.why}`)].join("\n");
+function assembleCommunication(entries, file, s2) {
+  const all2 = sectionsOf(entries, s2.customer).filter((g) => inPhase(g, s2.phase)).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  const picked = [], omitted = [], parts = [];
+  let used = 0;
+  const take = (id, kind, title, source, text7, always = false) => {
+    if (!always && used + text7.length > s2.cap) {
+      omitted.push({ id, why: "cap" });
+      return;
+    }
+    parts.push(text7);
+    used += text7.length + 2;
+    picked.push({ id, kind, title, source });
+  };
+  for (const g of all2.filter((x) => x.section.kind === "core")) take(String(g.id), "core", g.section.title, g.section.source ?? null, block2(g), true);
+  if (file && file.forbidden_phrases.length > 0) take("forbidden_phrases", "phrases", "Fraser som inte anv\xE4nds", null, phrasesBlock(file.forbidden_phrases), true);
+  if (file && s2.phase !== "plan") {
+    const relevant = file.claims.filter((c) => c.product === null || s2.products.includes(c.product));
+    for (const c of relevant.filter((x) => x.state === "decided_inactive")) omitted.push({ id: c.id, why: "inactive" });
+    const usable3 = relevant.filter((x) => x.state !== "decided_inactive");
+    if (usable3.length > 0) take("claims", "claims", "P\xE5st\xE5enden", null, claimsBlock(usable3));
+  }
+  if (file && file.glossary.length > 0 && s2.phase !== "plan") take("glossary", "glossary", "Ordlista", null, glossaryBlock(file.glossary));
+  for (const g of all2.filter((x) => x.section.kind === "channel" && forChannel(x, s2.channel))) take(String(g.id), "channel", g.section.title, g.section.source ?? null, block2(g));
+  const territories = all2.filter((x) => x.section.kind === "territory");
+  if (s2.phase === "plan") {
+    if (territories.length > 0) take(
+      "territories",
+      "territory_list",
+      "Territorier",
+      null,
+      ["## Territorier att v\xE4lja bland", ...territories.map((t) => `- ${t.section.title} [${String(t.id)}]: ${asText(t, "purpose")[0] ?? asText(t, "how_to")[0] ?? ""}`)].join("\n")
+    );
+  } else {
+    for (const g of territories.filter((t) => s2.territories.includes(String(t.id)))) take(String(g.id), "territory", g.section.title, g.section.source ?? null, block2(g));
+  }
+  if (s2.phase !== "plan") for (const g of all2.filter((x) => x.section.kind === "examples" && forChannel(x, s2.channel))) take(String(g.id), "examples", g.section.title, g.section.source ?? null, block2(g));
+  const more = omitted.filter((o) => o.why === "cap").map((o) => o.id);
+  if (more.length > 0) parts.push(`Mer finns: ${more.join(", ")}`);
+  return { text: parts.join("\n\n"), picked, omitted };
+}
+var norm = (t) => t.toLowerCase().replace(/\s+/g, " ");
+var escape = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+var sentences = (text7) => text7.split(/(?<=[.!?])\s+|\n+/).map((x) => x.trim()).filter(Boolean);
+var EXPLAINS = (term) => new RegExp(`(${escape(term)}\\s+(\xE4r|betyder|kallas|allts\xE5)(?!\\p{L}))|(kallas\\s+${escape(term)})|(${escape(term)}\\s*(,|\u2013|\u2014|\\()\\s*\\S)`, "iu");
+function checkCommunication(text7, file, deviations) {
+  const errors2 = [];
+  for (const d of deviations) if (d.why.trim() === "") errors2.push(`Avsteget fr\xE5n \xAB${d.from}\xBB saknar motivering.`);
+  const reasoned = new Set(deviations.filter((d) => d.why.trim() !== "").map((d) => norm(d.from)));
+  const findings2 = [];
+  const add = (kind, from, quote) => {
+    findings2.push({ kind, from, quote, covered: reasoned.has(norm(from)) });
+  };
+  const body = norm(text7);
+  if (file) {
+    for (const p of file.forbidden_phrases) if (body.includes(norm(p.phrase))) add("forbidden_phrase", p.phrase, p.phrase);
+    for (const c of file.claims) {
+      if (c.state === "proven") continue;
+      const re = new RegExp(c.detect ?? escape(c.text), "iu");
+      const m = re.exec(text7);
+      if (m) add(c.state === "unproven" ? "unproven_claim" : "inactive_claim", c.id, m[0]);
+    }
+    const ss = sentences(text7);
+    for (const t of file.glossary) {
+      const first = ss.find((x) => new RegExp(`(?<![\\p{L}\\p{N}])${escape(t.term)}`, "iu").test(x));
+      if (first && !EXPLAINS(t.term).test(first)) add("unexplained_term", t.term, first);
+    }
+  }
+  for (const f of findings2) if (!f.covered) errors2.push(
+    f.kind === "forbidden_phrase" ? `Frasen \xAB${f.quote}\xBB anv\xE4nds. Skriv om, eller motivera avsteget.` : f.kind === "unproven_claim" ? `P\xE5st\xE5endet \xAB${f.quote}\xBB \xE4r obelagt. Ta bort det, eller motivera varf\xF6r det st\xE5r.` : f.kind === "inactive_claim" ? `P\xE5st\xE5endet \xAB${f.quote}\xBB \xE4r beslutat men inte aktiverat. Ta bort det, eller motivera varf\xF6r det st\xE5r.` : `Ordet \xAB${f.from}\xBB f\xF6rklaras inte f\xF6rsta g\xE5ngen det st\xE5r: \xAB${f.quote}\xBB.`
+  );
+  return { ok: errors2.length === 0, findings: findings2, errors: errors2 };
+}
+
+// atoms/communication/assemble.atom.ts
+var spec6 = {
+  "id": "c_communication_assemble",
+  "name": "communication.call.assemble",
+  "grounding": "observed",
+  "found_in": "atomf\xF6rslag communication.atom_proposal.assemble \u2014 R\xE4tt del av kundens handbok kommer fram vid r\xE4tt tillf\xE4lle utan att prompten sv\xE4ller. Ny yta: ingen atom g\xF6r det.",
+  "scope": "shared",
+  "surface": "communication",
+  "input": [
+    "customer",
+    "channel",
+    "products",
+    "phase",
+    "territories",
+    "cap"
+  ],
+  "output": [
+    "text",
+    "picked",
+    "omitted"
+  ],
+  "idempotent": true,
+  "atom": "communication.handbook.assemble",
+  "effect": {
+    "verb": "reads",
+    "object": "communication.handbook"
+  },
+  "performer": "code",
+  "built_from": "p_communication_assemble",
+  "label": "S\xE4tt ihop kundens kommunikation",
+  "summary": "Ger den del av kundens kommunikationshandbok som ett textmoment beh\xF6ver: k\xE4rnan alltid, sedan p\xE5st\xE5enden f\xF6r produkterna, kanalavsnittet, valda territorier, exempel och ordlista, under ett tak. Som en text i skill-form med k\xE4lla per avsnitt. Skriver ingenting.",
+  "keywords": [
+    "kommunikation",
+    "handbok",
+    "tonalitet",
+    "p\xE5st\xE5enden",
+    "budskap",
+    "communication handbook",
+    "brand guide"
+  ],
+  "test_target": "P\xE5hittad kund; samma indata ger samma utdata (src/v2/domain/communication.test.ts).",
+  "leaves": {
+    "schema": {
+      "text": "den ihopsatta texten med k\xE4lla per avsnitt",
+      "picked": "valda avsnitt",
+      "omitted": "utel\xE4mnade id med sk\xE4l (cap eller inactive)"
+    },
+    "done_when": [
+      "texten \xE4r ihopsatt"
+    ],
+    "where": "svaret; inget sparas"
+  },
+  "requires": "read",
+  "stage": "draft",
+  "module": "mod_knowledge",
+  "operation_id": "o_communication_assemble",
+  "step_id": "s_communication_assemble"
+};
+async function run6(args, ctx) {
+  const customer = String(args["customer"] ?? "").trim();
+  if (!customer) throw new Error("kunden saknas: ange customer");
+  const phase = String(args["phase"] ?? "write");
+  if (!PHASES.includes(phase)) throw new Error(`fasen ${phase} finns inte: plan, write eller review`);
+  if (!ctx.view) throw new Error("kundens handbok saknas h\xE4r \u2014 k\xF6r steget i dirigenten");
+  const a = assembleCommunication(sectionsFrom(ctx), factsOf(sectionsFrom(ctx), customer), {
+    customer,
+    channel: args["channel"] ? String(args["channel"]) : null,
+    products: list(args["products"]),
+    phase,
+    territories: list(args["territories"]),
+    cap: Number(args["cap"] ?? 8e3) || 8e3
+  });
+  return { text: a.text, picked: JSON.stringify(a.picked), omitted: JSON.stringify(a.omitted) };
+}
+var sectionsFrom = (ctx) => (ctx.view?.all() ?? []).filter((n2) => n2.kind === "guidance");
+var list = (v) => Array.isArray(v) ? v.map(String) : typeof v === "string" && v.trim() ? v.split(",").map((x) => x.trim()) : [];
+var fixtures6 = [
+  { name: "ett vanligt anrop f\xF6r webben", args: { customer: "@runner", channel: "web", products: "", phase: "write", territories: "", cap: "6000" } },
+  { name: "en ok\xE4nd fas avvisas", args: { customer: "@runner", channel: "web", products: "", phase: "draft", territories: "", cap: "6000" }, expect_error: "fasen draft finns inte" }
+];
+
+// atoms/communication/check.atom.ts
+var check_atom_exports = {};
+__export(check_atom_exports, {
+  fixtures: () => fixtures7,
+  run: () => run7,
+  spec: () => spec7
+});
+var spec7 = {
+  "id": "c_communication_check",
+  "name": "communication.call.check",
+  "grounding": "observed",
+  "found_in": "atomf\xF6rslag communication.atom_proposal.check \u2014 Claude f\xE5r g\xF6ra avsteg men m\xE5ste motivera dem, och anv\xE4ndaren ser avstegen n\xE4r texten godk\xE4nns.",
+  "scope": "shared",
+  "surface": "communication",
+  "input": [
+    "customer",
+    "text",
+    "deviations"
+  ],
+  "output": [
+    "ok",
+    "findings",
+    "errors"
+  ],
+  "idempotent": true,
+  "atom": "communication.handbook.check",
+  "effect": {
+    "verb": "reads",
+    "object": "communication.text"
+  },
+  "performer": "code",
+  "built_from": "p_communication_check",
+  "label": "Kontrollera en text mot kundens kommunikation",
+  "summary": "Kontrollerar en f\xE4rdig text mot kundens handbok: f\xF6rbjudna fraser, obelagda och inaktiva p\xE5st\xE5enden, fackord som inte f\xF6rklaras f\xF6rsta g\xE5ngen. Ett motiverat avsteg t\xE4cker ett fynd; ett avsteg utan motivering \xE4r fel. Skriver ingenting.",
+  "keywords": [
+    "kontrollera text",
+    "avsteg",
+    "obelagt p\xE5st\xE5ende",
+    "f\xF6rbjuden fras",
+    "check copy",
+    "claims"
+  ],
+  "test_target": "P\xE5hittad kund; motiverat avsteg t\xE4cker, avsteg utan motivering \xE4r fel (src/v2/domain/communication.test.ts).",
+  "leaves": {
+    "schema": {
+      "ok": "godk\xE4nd eller inte",
+      "findings": "fynd, t\xE4ckta eller inte",
+      "errors": "fel att r\xE4tta"
+    },
+    "done_when": [
+      "texten \xE4r kontrollerad"
+    ],
+    "where": "svaret; inget sparas"
+  },
+  "requires": "read",
+  "stage": "draft",
+  "module": "mod_knowledge",
+  "operation_id": "o_communication_check",
+  "step_id": "s_communication_check"
+};
+async function run7(args, ctx) {
+  const customer = String(args["customer"] ?? "").trim();
+  if (!customer) throw new Error("kunden saknas: ange customer");
+  const text7 = String(args["text"] ?? "");
+  if (!text7.trim()) throw new Error("texten saknas: ange text");
+  const raw2 = typeof args["deviations"] === "string" && args["deviations"].trim() ? JSON.parse(args["deviations"]) : args["deviations"] ?? [];
+  const deviations = Array.isArray(raw2) ? raw2 : [];
+  if (!ctx.view) throw new Error("kundens handbok saknas h\xE4r \u2014 k\xF6r steget i dirigenten");
+  const r = checkCommunication(text7, factsOf(sectionsFrom2(ctx), customer), deviations);
+  return { ok: String(r.ok), findings: JSON.stringify(r.findings), errors: JSON.stringify(r.errors) };
+}
+var sectionsFrom2 = (ctx) => (ctx.view?.all() ?? []).filter((n2) => n2.kind === "guidance");
+var fixtures7 = [
+  { name: "utan text k\xF6rs inget", args: { customer: "@runner", text: "", deviations: "[]" }, expect_error: "texten saknas" },
+  { name: "en ren text utan avsteg", args: { customer: "@runner", text: "En text.", deviations: "[]" } }
+];
+
+// atoms/content/save_version.atom.ts
+var save_version_atom_exports = {};
+__export(save_version_atom_exports, {
+  fixtures: () => fixtures8,
+  run: () => run8,
+  spec: () => spec8
 });
 import { randomUUID } from "node:crypto";
 
@@ -22773,7 +23037,7 @@ var docHash = (doc) => createHash4("sha256").update(canonicalJson(normalizeDoc(d
 var textUri = (tenant, hash) => `text://${tenant}/${hash}`;
 
 // atoms/content/save_version.atom.ts
-var spec6 = {
+var spec8 = {
   "id": "c_content_save_version",
   "name": "content.call.save_version",
   "grounding": "observed",
@@ -22870,7 +23134,7 @@ function fieldsOf(v) {
   if (!o || typeof o !== "object" || Array.isArray(o)) throw new Error("fields ska vara ett objekt med texter");
   return Object.fromEntries(Object.entries(o).map(([k, x]) => [k, typeof x === "string" ? x : JSON.stringify(x)]));
 }
-async function run6(args, ctx) {
+async function run8(args, ctx) {
   const bank = bankOf(ctx);
   const view = await bank.view();
   const customer = partyOf(view, args["customer"]);
@@ -22917,7 +23181,7 @@ async function run6(args, ctx) {
   await bank.append([event]);
   return { id, version: ref.sha256, uri: ref.uri, dry_run: false, planned: { type: event.type, subject_ref: id, payload: event.payload }, done: true };
 }
-var fixtures6 = [
+var fixtures8 = [
   { name: "utan bank s\xE4ger atomen det", args: { customer: "p1", kind: "dokument", name: "Prov", markdown: "Text." }, expect_error: "inte kopplad" },
   { name: "utan text nekas den", args: { customer: "p1", kind: "dokument", name: "Prov" }, expect_error: "inte kopplad|markdown saknas" }
 ];
@@ -22925,9 +23189,9 @@ var fixtures6 = [
 // atoms/gmail/create_draft.atom.ts
 var create_draft_atom_exports = {};
 __export(create_draft_atom_exports, {
-  fixtures: () => fixtures8,
-  run: () => run8,
-  spec: () => spec8
+  fixtures: () => fixtures10,
+  run: () => run10,
+  spec: () => spec10
 });
 
 // src/google/send.ts
@@ -23165,12 +23429,12 @@ __export(send_mail_atom_exports, {
   SEND_INPUT: () => SEND_INPUT,
   SEND_OPTIONAL: () => SEND_OPTIONAL,
   SEND_OUTPUT: () => SEND_OUTPUT,
-  fixtures: () => fixtures7,
+  fixtures: () => fixtures9,
   mailProblem: () => mailProblem,
-  run: () => run7,
+  run: () => run9,
   runAs: () => runAs,
   sendMessage: () => sendMessage,
-  spec: () => spec7
+  spec: () => spec9
 });
 function mailProblem(view, party2, delivery, scopes) {
   const p = view.get(party2);
@@ -23304,7 +23568,7 @@ async function runAs(delivery, args, ctx) {
     confirmed: args["confirmed"] === true
   });
 }
-var spec7 = {
+var spec9 = {
   id: "c_gmail_send_mail",
   name: "gmail.call.send_mail",
   grounding: "observed",
@@ -23354,14 +23618,14 @@ var spec7 = {
   step_id: "s_gmail_send_mail",
   lead_days: 0
 };
-async function run7(args, ctx) {
+async function run9(args, ctx) {
   return runAs("send", args, ctx);
 }
 var RUNNER2 = {
   runner: { mail: { send: { enabled: true }, draft: { enabled: true } } },
   scopes: [GMAIL_SEND_SCOPE, GMAIL_COMPOSE_SCOPE]
 };
-var fixtures7 = [
+var fixtures9 = [
   { name: "f\xF6rhandsvisning av ett mejl", ...RUNNER2, args: {
     party: "@runner",
     to: "kund@example.se",
@@ -23400,7 +23664,7 @@ var fixtures7 = [
 ];
 
 // atoms/gmail/create_draft.atom.ts
-var spec8 = {
+var spec10 = {
   id: "c_gmail_create_draft",
   name: "gmail.call.create_draft",
   grounding: "observed",
@@ -23447,11 +23711,11 @@ var spec8 = {
   step_id: "s_gmail_create_draft",
   lead_days: 0
 };
-async function run8(args, ctx) {
+async function run10(args, ctx) {
   return runAs("draft", args, ctx);
 }
 var RUNNER3 = { runner: { mail: { draft: { enabled: true } } }, scopes: [GMAIL_COMPOSE_SCOPE] };
-var fixtures8 = [
+var fixtures10 = [
   { name: "utkast f\xF6rhandsvisas", ...RUNNER3, args: {
     party: "@runner",
     to: "kund@example.se",
@@ -23477,9 +23741,9 @@ var fixtures8 = [
 // atoms/gmail/list_inflow.atom.ts
 var list_inflow_atom_exports = {};
 __export(list_inflow_atom_exports, {
-  fixtures: () => fixtures9,
-  run: () => run9,
-  spec: () => spec9
+  fixtures: () => fixtures11,
+  run: () => run11,
+  spec: () => spec11
 });
 
 // src/intake/gmail.ts
@@ -23622,7 +23886,7 @@ function labelTerm(label, exclude) {
 }
 
 // atoms/gmail/list_inflow.atom.ts
-var spec9 = {
+var spec11 = {
   id: "c_gmail_read_inflow",
   name: "gmail.call.read_inflow",
   grounding: "decided",
@@ -23665,15 +23929,15 @@ var API2 = "https://gmail.googleapis.com/gmail/v1/users/me/";
 var HEADERS = ["From", "Subject", "To", "Cc", "Date", "Delivered-To", "Message-ID", "References"];
 var DATE2 = /^\d{4}-\d{2}-\d{2}$/;
 var MAX_PAGES = 20;
-var list = (v) => (Array.isArray(v) ? v.map(String) : String(v ?? "").split(",")).map((x) => x.trim()).filter(Boolean);
-async function run9(args, ctx) {
+var list2 = (v) => (Array.isArray(v) ? v.map(String) : String(v ?? "").split(",")).map((x) => x.trim()).filter(Boolean);
+async function run11(args, ctx) {
   const party2 = String(args["party"] ?? "").trim();
   if (!party2) throw new Error("party saknas \u2014 personen vars Google-koppling l\xE4ser posten");
   const only = String(args["thread"] ?? "").trim();
   const address = String(args["address"] ?? "").trim().toLowerCase();
   const from = String(args["fran"] ?? "").trim();
   const to = String(args["till"] ?? "").trim();
-  const domains = new Set(list(args["interna"]).map((d) => d.toLowerCase()));
+  const domains = new Set(list2(args["interna"]).map((d) => d.toLowerCase()));
   if (!only && (!address || !from || !to)) throw new Error("address, fran och till beh\xF6vs \u2014 adressen och f\xF6nstret");
   if (!only && !domains.size) throw new Error("inga interna dom\xE4ner \u2014 utan dem g\xE5r uppackningen inte att avg\xF6ra");
   const link = ctx.connection ? await ctx.connection("google", party2) : null;
@@ -23681,8 +23945,8 @@ async function run9(args, ctx) {
   if (!link.scopes.includes(GMAIL_SCOPE)) throw new Error("Google-kopplingen saknar Gmail (gmail.readonly) \u2014 koppla om med Gmail p\xE5slaget");
   const mailbox = (link.account ?? "").trim().toLowerCase();
   let query = only ? `thread:${only}` : DATE2.test(from) && DATE2.test(to) ? inflowQueryRange(address, from, to, mailbox) : inflowQueryBetween(address, from, to, mailbox);
-  const labels = list(args["labels"]);
-  const never = list(args["never_labels"]);
+  const labels = list2(args["labels"]);
+  const never = list2(args["never_labels"]);
   const pick3 = labels.length > 1 ? `{${labels.map((l) => labelTerm(l, false)).join(" ")}}` : labels.length ? labelTerm(labels[0], false) : "";
   const extra = [pick3, never.map((l) => labelTerm(l, true)).join(" ")].filter(Boolean).join(" ");
   if (extra) query = `${query} ${extra}`;
@@ -23753,7 +24017,7 @@ async function run9(args, ctx) {
   }
   return { mailbox, query, messages, broken, bodies };
 }
-var fixtures9 = [
+var fixtures11 = [
   {
     name: "utan koppling",
     args: { party: "@runner", address: "in@example.se", fran: "2026-09-20", till: "2026-09-21", interna: "example.se" },
@@ -23780,9 +24044,9 @@ var read_attachments_atom_exports = {};
 __export(read_attachments_atom_exports, {
   ATTACHMENT_MAX: () => ATTACHMENT_MAX,
   THREAD_MAX: () => THREAD_MAX,
-  fixtures: () => fixtures10,
-  run: () => run10,
-  spec: () => spec10
+  fixtures: () => fixtures12,
+  run: () => run12,
+  spec: () => spec12
 });
 
 // src/intake/attachments.ts
@@ -23923,7 +24187,7 @@ function threadImages(messages, earlier = []) {
 }
 
 // atoms/gmail/read_attachments.atom.ts
-var spec10 = {
+var spec12 = {
   id: "c_gmail_read_attachments",
   name: "gmail.call.read_attachments",
   grounding: "decided",
@@ -23978,7 +24242,7 @@ function findPart(p, id, depth = 0) {
   }
   return void 0;
 }
-async function run10(args, ctx) {
+async function run12(args, ctx) {
   const party2 = String(args["party"] ?? "").trim();
   if (!party2) throw new Error("party saknas \u2014 personen vars Google-koppling l\xE4ser posten");
   const thread = String(args["thread"] ?? "").trim();
@@ -24055,7 +24319,7 @@ async function run10(args, ctx) {
   }
   return { thread, attachments, skipped };
 }
-var fixtures10 = [
+var fixtures12 = [
   { name: "utan koppling", args: { party: "@runner", thread: "t-1" }, expect_error: "Google" },
   { name: "utan gmail.readonly", scopes: [], args: { party: "@runner", thread: "t-1" }, expect_error: "Gmail" },
   { name: "utan tr\xE5d", args: { party: "@runner", thread: "" }, expect_error: "thread" }
@@ -24065,9 +24329,9 @@ var fixtures10 = [
 var connection_check_atom_exports = {};
 __export(connection_check_atom_exports, {
   CHECK_TEXT: () => CHECK_TEXT,
-  fixtures: () => fixtures11,
-  run: () => run11,
-  spec: () => spec11
+  fixtures: () => fixtures13,
+  run: () => run13,
+  spec: () => spec13
 });
 
 // src/registry/admin.ts
@@ -24090,7 +24354,7 @@ async function reasonOf2(r) {
   const c = b?.error?.errors?.[0]?.reason ?? b?.error?.status;
   return typeof c === "string" ? c : "";
 }
-async function run11(args, ctx) {
+async function run13(args, ctx) {
   const party2 = ctx.call.runner ?? (typeof args["party"] === "string" ? args["party"] : "");
   const view = ctx.view;
   const admins = view ? view.find("party").filter((p2) => isSuperadmin(view, p2.id)).map((p2) => p2.label ?? p2.id) : [];
@@ -24135,7 +24399,7 @@ async function run11(args, ctx) {
     row2("gmail_api", p.ok ? true : apiOff ? false : null, "admin")
   ]);
 }
-var spec11 = {
+var spec13 = {
   id: "c_google_connection_check",
   name: "google.call.connection_check",
   grounding: "observed",
@@ -24172,7 +24436,7 @@ var spec11 = {
   step_id: "s_google_connection_check",
   lead_days: 0
 };
-var fixtures11 = [
+var fixtures13 = [
   { name: "kopplad med utkast", scopes: [GMAIL_COMPOSE_SCOPE], args: { party: "@runner" }, expect_fields: ["ready", "rows"] },
   { name: "utan koppling s\xE4gs det, med personen som \xE5tg\xE4rdar", args: { party: "@runner" }, expect_fields: ["rows"] }
 ];
@@ -24181,10 +24445,10 @@ var fixtures11 = [
 var pagespeed_atom_exports = {};
 __export(pagespeed_atom_exports, {
   STRATEGIES: () => STRATEGIES,
-  fixtures: () => fixtures13,
+  fixtures: () => fixtures15,
   pagespeedRow: () => pagespeedRow,
-  run: () => run13,
-  spec: () => spec13
+  run: () => run15,
+  spec: () => spec15
 });
 
 // atoms/webb/fetch_pages.atom.ts
@@ -24196,30 +24460,30 @@ __export(fetch_pages_atom_exports, {
   findCanonical: () => findCanonical,
   findNoindex: () => findNoindex,
   findScripts: () => findScripts,
-  fixtures: () => fixtures12,
+  fixtures: () => fixtures14,
   pool: () => pool,
-  run: () => run12,
-  spec: () => spec12,
+  run: () => run14,
+  spec: () => spec14,
   urlsOf: () => urlsOf
 });
 var CHECKS = ["status", "redirect_chain", "canonical", "noindex", "scripts"];
 function checksOf(v) {
   const raw2 = Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : [];
-  const list4 = raw2.map((x) => String(x).trim()).filter(Boolean);
-  if (!list4.length) return ["status", "redirect_chain"];
-  const bad = list4.filter((x) => !CHECKS.includes(x));
+  const list5 = raw2.map((x) => String(x).trim()).filter(Boolean);
+  if (!list5.length) return ["status", "redirect_chain"];
+  const bad = list5.filter((x) => !CHECKS.includes(x));
   if (bad.length) throw new Error(`ok\xE4nd kontroll ${bad.join(", ")} \u2014 v\xE4lj bland ${CHECKS.join(", ")}`);
-  return [...new Set(list4)];
+  return [...new Set(list5)];
 }
 function urlsOf(urls, items2) {
-  const list4 = [];
-  if (Array.isArray(urls)) list4.push(...urls.map(String));
-  else if (typeof urls === "string") list4.push(...urls.split(/[\s,]+/));
+  const list5 = [];
+  if (Array.isArray(urls)) list5.push(...urls.map(String));
+  else if (typeof urls === "string") list5.push(...urls.split(/[\s,]+/));
   if (Array.isArray(items2)) {
     for (const it of items2)
-      if (it && typeof it["url"] === "string" && it["published"] !== false && it["state"] !== "archived") list4.push(it["url"]);
+      if (it && typeof it["url"] === "string" && it["published"] !== false && it["state"] !== "archived") list5.push(it["url"]);
   }
-  const ok = list4.map((u) => u.trim()).filter(Boolean);
+  const ok = list5.map((u) => u.trim()).filter(Boolean);
   const bad = ok.filter((u) => !/^https?:\/\/[^\s/]+/.test(u));
   if (bad.length) throw new Error(`inte en adress med http(s): ${bad.slice(0, 3).join(", ")}`);
   return [...new Set(ok)];
@@ -24296,16 +24560,16 @@ async function fetchPage(get, url, checks, timeoutMs) {
     };
   }
 }
-async function pool(list4, n2, f, deadline = Infinity) {
-  const out = new Array(list4.length);
+async function pool(list5, n2, f, deadline = Infinity) {
+  const out = new Array(list5.length);
   let next = 0;
-  await Promise.all(Array.from({ length: Math.min(n2, list4.length) }, async () => {
-    while (next < list4.length && Date.now() < deadline) {
+  await Promise.all(Array.from({ length: Math.min(n2, list5.length) }, async () => {
+    while (next < list5.length && Date.now() < deadline) {
       const i = next++;
-      out[i] = await f(list4[i]);
+      out[i] = await f(list5[i]);
     }
   }));
-  return { done: out.filter((x) => x !== void 0), skipped: list4.filter((_2, i) => out[i] === void 0) };
+  return { done: out.filter((x) => x !== void 0), skipped: list5.filter((_2, i) => out[i] === void 0) };
 }
 var int = (v, name, def, lo, hi) => {
   if (v === void 0 || v === null || v === "") return def;
@@ -24313,7 +24577,7 @@ var int = (v, name, def, lo, hi) => {
   if (!Number.isInteger(n2) || n2 < lo || n2 > hi) throw new Error(`${name} \xE4r ett heltal ${lo}\u2013${hi}, fick ${String(v)}`);
   return n2;
 };
-var spec12 = {
+var spec14 = {
   id: "c_web_fetch_pages",
   name: "web.call.fetch_pages",
   grounding: "decided",
@@ -24349,7 +24613,7 @@ var spec12 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["fetched_pages"]
 };
-async function run12(args, ctx) {
+async function run14(args, ctx) {
   const checks = checksOf(args["checks"]);
   const max = int(args["max"], "max", 500, 1, 2e3);
   const concurrency2 = int(args["concurrency"], "concurrency", 4, 1, 8);
@@ -24368,7 +24632,7 @@ async function run12(args, ctx) {
   );
   return { pages: done, checked: checks, not_checked: skipped, dry_run: false };
 }
-var fixtures12 = [
+var fixtures14 = [
   { name: "status och kedja ur sidlistan", args: { items: [{ url: "https://exempel.se/", published: true }] } },
   // data-i-koden: påhittad provadress
   { name: "m\xE4tskript p\xE5 tv\xE5 adresser", args: { urls: ["https://exempel.se/", "https://exempel.se/om"], checks: ["scripts"], concurrency: 2 } },
@@ -24382,14 +24646,14 @@ var fixtures12 = [
 var STRATEGIES = ["mobile", "desktop", "both"];
 var CATEGORIES = ["performance", "accessibility", "best-practices", "seo"];
 function urlsOf2(urls, items2) {
-  const list4 = [];
-  if (Array.isArray(urls)) list4.push(...urls.map(String));
-  else if (typeof urls === "string") list4.push(...urls.split(/[\s,]+/));
+  const list5 = [];
+  if (Array.isArray(urls)) list5.push(...urls.map(String));
+  else if (typeof urls === "string") list5.push(...urls.split(/[\s,]+/));
   if (Array.isArray(items2)) {
     for (const it of items2)
-      if (it && typeof it["url"] === "string" && it["published"] !== false && it["state"] !== "archived") list4.push(it["url"]);
+      if (it && typeof it["url"] === "string" && it["published"] !== false && it["state"] !== "archived") list5.push(it["url"]);
   }
-  return [...new Set(list4.map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u)))];
+  return [...new Set(list5.map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u)))];
 }
 var n = (v) => typeof v === "number" && Number.isFinite(v) ? v : null;
 function pagespeedRow(url, strategy2, d) {
@@ -24412,7 +24676,7 @@ function pagespeedRow(url, strategy2, d) {
     field: metrics2 ? Object.fromEntries(Object.entries(metrics2).map(([k, v]) => [k.toLowerCase(), String(v.category ?? "")])) : null
   };
 }
-var spec13 = {
+var spec15 = {
   id: "c_google_pagespeed",
   name: "google.call.pagespeed",
   grounding: "decided",
@@ -24447,7 +24711,7 @@ var spec13 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["pagespeed_report"]
 };
-async function run13(args, ctx) {
+async function run15(args, ctx) {
   const strategy2 = String(args["strategy"] ?? "mobile");
   if (!STRATEGIES.includes(strategy2)) throw new Error(`strategy \xE4r ${STRATEGIES.join(", ")}, fick ${strategy2}`);
   const max = args["max"] === void 0 || args["max"] === null ? 10 : Number(args["max"]);
@@ -24482,7 +24746,7 @@ async function run13(args, ctx) {
   }, deadline - 3e3);
   return { pagespeed: done, not_checked: skipped.map(([u, s2]) => `${s2} ${u}`), dry_run: false };
 }
-var fixtures13 = [
+var fixtures15 = [
   { name: "mobil ur sidlistan", args: { items: [{ url: "https://exempel.se/", published: true }] } },
   // data-i-koden: påhittad provadress
   { name: "b\xE5da strategierna", args: { urls: ["https://exempel.se/"], strategy: "both" } },
@@ -24496,11 +24760,11 @@ var fixtures13 = [
 var search_console_atom_exports = {};
 __export(search_console_atom_exports, {
   QUERIES: () => QUERIES,
-  fixtures: () => fixtures14,
+  fixtures: () => fixtures16,
   periodOf: () => periodOf,
-  run: () => run14,
+  run: () => run16,
   siteOf: () => siteOf,
-  spec: () => spec14,
+  spec: () => spec16,
   urlsOf: () => urlsOf3
 });
 var QUERIES = ["search_analytics", "url_inspection"];
@@ -24523,14 +24787,14 @@ function periodOf(v, now = Date.now()) {
   return { start: day(end - (days - 1) * 864e5), end: day(end) };
 }
 function urlsOf3(urls, items2) {
-  const list4 = [];
-  if (Array.isArray(urls)) list4.push(...urls.map(String));
-  else if (typeof urls === "string") list4.push(...urls.split(/[\s,]+/));
+  const list5 = [];
+  if (Array.isArray(urls)) list5.push(...urls.map(String));
+  else if (typeof urls === "string") list5.push(...urls.split(/[\s,]+/));
   if (Array.isArray(items2)) {
     for (const it of items2)
-      if (it && typeof it["url"] === "string" && it["published"] !== false && it["state"] !== "archived") list4.push(it["url"]);
+      if (it && typeof it["url"] === "string" && it["published"] !== false && it["state"] !== "archived") list5.push(it["url"]);
   }
-  return [...new Set(list4.map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u)))];
+  return [...new Set(list5.map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u)))];
 }
 function siteOf(given, urls) {
   if (typeof given === "string" && given.trim()) return given.trim();
@@ -24557,7 +24821,7 @@ async function call2(get, token, url, body, site) {
     throw new Error(`Search Console ${res.status}: ${String(data["error"]?.message ?? text7.slice(0, 200))}`);
   return data;
 }
-var spec14 = {
+var spec16 = {
   id: "c_google_search_console",
   name: "google.call.search_console",
   grounding: "decided",
@@ -24595,7 +24859,7 @@ var spec14 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["search_console_data"]
 };
-async function run14(args, ctx) {
+async function run16(args, ctx) {
   const query = String(args["query"] ?? "").trim();
   if (!QUERIES.includes(query)) throw new Error(`query \xE4r ${QUERIES.join(" eller ")}, fick ${String(args["query"])}`);
   const urls = urlsOf3(args["urls"], args["items"]);
@@ -24687,7 +24951,7 @@ async function run14(args, ctx) {
   return { site_url: site, index_status, remaining: queue2, dry_run: false };
 }
 var CONNECTED = { scopes: ["https://www.googleapis.com/auth/webmasters.readonly"] };
-var fixtures14 = [
+var fixtures16 = [
   {
     name: "s\xF6kdata per sida, egendomen ur sidlistan",
     ...CONNECTED,
@@ -24718,12 +24982,12 @@ var fixtures14 = [
 // atoms/googleads/change.atom.ts
 var change_atom_exports = {};
 __export(change_atom_exports, {
-  fixtures: () => fixtures15,
-  run: () => run15,
-  spec: () => spec15
+  fixtures: () => fixtures17,
+  run: () => run17,
+  spec: () => spec17
 });
 var STATUSES = ["ENABLED", "PAUSED"];
-var spec15 = {
+var spec17 = {
   id: "c_googleads_change",
   name: "googleads.call.change",
   grounding: "decided",
@@ -24763,7 +25027,7 @@ var spec15 = {
   step_id: "s_googleads_change",
   lead_days: 0
 };
-async function run15(args, ctx) {
+async function run17(args, ctx) {
   if (args["customer_id"] === void 0 || args["customer_id"] === "")
     throw new Error("customer_id saknas \u2014 ge kundkontots id uttryckligen; en \xE4ndring g\xE5r aldrig mot f\xF6rvaltarkontot av sig sj\xE4lv");
   const customer = digits(args["customer_id"], "customer_id");
@@ -24783,7 +25047,7 @@ async function run15(args, ctx) {
   const got = d["results"]?.[0]?.resourceName ?? resource;
   return { customer_id: customer, campaign: { id: campaignId, status, resource_name: got }, dry_run: false };
 }
-var fixtures15 = [
+var fixtures17 = [
   { name: "pausa en kampanj (torrt)", keys: PROV_KEYS, args: { customer_id: "1000000001", campaign_id: "2000000001", status: "PAUSED" } },
   { name: "utan kundkonto avvisas", keys: PROV_KEYS, args: { campaign_id: "2000000001", status: "PAUSED" }, expect_error: "customer_id saknas" },
   { name: "ok\xE4nd status avvisas", keys: PROV_KEYS, args: { customer_id: "1000000001", campaign_id: "2000000001", status: "REMOVED" }, expect_error: "status \xE4r" }
@@ -24794,15 +25058,15 @@ var read_atom_exports = {};
 __export(read_atom_exports, {
   ACTIONS: () => ACTIONS3,
   campaignQuery: () => campaignQuery,
-  fixtures: () => fixtures16,
-  run: () => run16,
-  spec: () => spec16
+  fixtures: () => fixtures18,
+  run: () => run18,
+  spec: () => spec18
 });
 var ACTIONS3 = ["accounts", "campaigns", "report"];
 var PERIODS = ["LAST_7_DAYS", "LAST_14_DAYS", "LAST_30_DAYS", "THIS_MONTH", "LAST_MONTH"];
 var MAX_PAGES2 = 20;
 var campaignQuery = (period) => `SELECT campaign.id, campaign.name, campaign.status, metrics.clicks, metrics.impressions, metrics.cost_micros, metrics.conversions, metrics.ctr, metrics.average_cpc FROM campaign WHERE segments.date DURING ${period}`;
-var spec16 = {
+var spec18 = {
   id: "c_googleads_read",
   name: "googleads.call.read",
   grounding: "decided",
@@ -24839,7 +25103,7 @@ var spec16 = {
   step_id: "s_googleads_read",
   lead_days: 0
 };
-async function run16(args, ctx) {
+async function run18(args, ctx) {
   const action = String(args["action"] ?? "").trim();
   if (!ACTIONS3.includes(action)) throw new Error(`action \xE4r ${ACTIONS3.join(", ")}, fick ${String(args["action"] ?? "inget")}`);
   const keys = await keysOf(ctx);
@@ -24878,7 +25142,7 @@ async function run16(args, ctx) {
   }
   return { action, customer_id: customer, rows: rows3, dry_run: false };
 }
-var fixtures16 = [
+var fixtures18 = [
   { name: "kontona kopplingen n\xE5r", keys: PROV_KEYS, args: { action: "accounts" }, expect_fields: ["action", "accounts"] },
   { name: "kampanjernas nyckeltal", keys: PROV_KEYS, args: { action: "campaigns", customer_id: "100-000-0001", period: "LAST_7_DAYS" }, expect_fields: ["action", "customer_id", "rows"] },
   { name: "egen GAQL-rapport", keys: PROV_KEYS, args: { action: "report", customer_id: "1000000001", query: "SELECT campaign.id FROM campaign" }, expect_fields: ["rows"] },
@@ -24891,10 +25155,10 @@ var fixtures16 = [
 var archive_record_atom_exports = {};
 __export(archive_record_atom_exports, {
   archivePreviewId: () => archivePreviewId,
-  fixtures: () => fixtures17,
+  fixtures: () => fixtures19,
   idsOf: () => idsOf,
-  run: () => run17,
-  spec: () => spec17
+  run: () => run19,
+  spec: () => spec19
 });
 import { createHash as createHash8 } from "node:crypto";
 
@@ -25092,7 +25356,7 @@ function severity(objectType2, verb) {
 }
 
 // atoms/hubspot/archive_record.atom.ts
-var spec17 = {
+var spec19 = {
   id: "c_hs_archive_object",
   name: "hubspot.call.archive_object",
   grounding: "decided",
@@ -25144,8 +25408,8 @@ function idsOf(v) {
     } catch {
     }
   }
-  const list4 = Array.isArray(x) ? x.map(String) : typeof x === "string" ? x.split(",") : [];
-  const ids = [...new Set(list4.map((s2) => s2.trim()).filter(Boolean))];
+  const list5 = Array.isArray(x) ? x.map(String) : typeof x === "string" ? x.split(",") : [];
+  const ids = [...new Set(list5.map((s2) => s2.trim()).filter(Boolean))];
   if (!ids.length) throw new Error("ids saknas: ge en lista med postid");
   return ids;
 }
@@ -25169,7 +25433,7 @@ async function attachedTo(get, token, type, ids) {
   return out;
 }
 var show = (r) => `${r.type} ${r.id}${r.name ? ` (${r.name})` : ""}`;
-async function run17(args, ctx) {
+async function run19(args, ctx) {
   const objectType2 = String(args["object_type"] ?? "").trim();
   if (!objectType2) throw new Error("object_type saknas, t.ex. quotes eller line_items");
   const path2 = guardType(objectType2, "archive");
@@ -25202,7 +25466,7 @@ async function run17(args, ctx) {
   return { ...base, proposal: false, archived: ids, done: true };
 }
 var CONNECTED2 = { scopes: ["crm"] };
-var fixtures17 = [
+var fixtures19 = [
   { name: "testofferten", ...CONNECTED2, args: { object_type: "quotes", ids: ["1"] } },
   { name: "offertraderna som text", ...CONNECTED2, args: { object_type: "line_items", ids: "2, 3" } },
   { name: "anv\xE4ndarobjektet avvisas", ...CONNECTED2, args: { object_type: "users", ids: ["1"] }, expect_error: "anv\xE4ndare och beh\xF6righeter" },
@@ -25215,9 +25479,9 @@ var fixtures17 = [
 // atoms/hubspot/cms_content_publish.atom.ts
 var cms_content_publish_atom_exports = {};
 __export(cms_content_publish_atom_exports, {
-  fixtures: () => fixtures18,
-  run: () => run18,
-  spec: () => spec18
+  fixtures: () => fixtures20,
+  run: () => run20,
+  spec: () => spec20
 });
 
 // atoms/hubspot/cms_content.ts
@@ -25394,7 +25658,7 @@ async function importImage(get, token, url, folder, wait2) {
 }
 
 // atoms/hubspot/cms_content_publish.atom.ts
-var spec18 = {
+var spec20 = {
   "id": "c_hubspot_cms_content_publish",
   "name": "hubspot.call.cms_content_publish",
   "grounding": "decided",
@@ -25482,7 +25746,7 @@ function when(v, now) {
   if (t <= now) throw new Error("publish_at har redan varit; utel\xE4mna den f\xF6r att publicera nu");
   return new Date(t).toISOString();
 }
-async function run18(args, ctx) {
+async function run20(args, ctx) {
   const type = contentType(args["content_type"]);
   const id = typeof args["content_id"] === "string" ? args["content_id"].trim() : String(args["content_id"] ?? "").trim();
   if (!id) throw new Error("content_id \xE4r utkastets id i HubSpot");
@@ -25515,7 +25779,7 @@ async function run18(args, ctx) {
   return { ...base, proposal: false, state: after.state, url: after.url, published_at: at3 ?? after.publish_date, done: true };
 }
 var CONNECTED3 = { scopes: ["content"] };
-var fixtures18 = [
+var fixtures20 = [
   { name: "publicera ett utkast nu", ...CONNECTED3, args: { content_type: "blog_post", content_id: "789" } },
   { name: "schemal\xE4gga ett utkast", ...CONNECTED3, args: { content_type: "blog_post", content_id: "789", publish_at: "2099-01-01T07:00:00Z" } },
   { name: "en tid som varit avvisas", ...CONNECTED3, args: { content_id: "789", publish_at: "2020-01-01T07:00:00Z" }, expect_error: "redan varit" },
@@ -25526,11 +25790,11 @@ var fixtures18 = [
 // atoms/hubspot/cms_content_write.atom.ts
 var cms_content_write_atom_exports = {};
 __export(cms_content_write_atom_exports, {
-  fixtures: () => fixtures19,
-  run: () => run19,
-  spec: () => spec19
+  fixtures: () => fixtures21,
+  run: () => run21,
+  spec: () => spec21
 });
-var spec19 = {
+var spec21 = {
   "id": "c_hubspot_cms_content_write",
   "name": "hubspot.call.cms_content_write",
   "grounding": "decided",
@@ -25619,7 +25883,7 @@ var spec19 = {
   }
 };
 var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function run19(args, ctx) {
+async function run21(args, ctx) {
   const type = contentType(args["content_type"]);
   const fields = contentFields(args["fields"]);
   const id = typeof args["content_id"] === "string" && args["content_id"].trim() ? args["content_id"].trim() : null;
@@ -25687,7 +25951,7 @@ var POST = {
   featured_image_alt_text: "hus med solceller",
   widgets: { text: { body: { text: "<p>Minuspriser p\xE5 el uppst\xE5r n\xE4r \u2026</p>" } } }
 };
-var fixtures19 = [
+var fixtures21 = [
   {
     name: "ett nytt blogginl\xE4gg som utkast",
     ...CONNECTED4,
@@ -25731,10 +25995,10 @@ __export(find_objects_atom_exports, {
   LIST_PRODUCTS: () => LIST_PRODUCTS,
   SEARCH_OBJECTS: () => SEARCH_OBJECTS,
   SEARCH_PRODUCTS: () => SEARCH_PRODUCTS,
-  fixtures: () => fixtures20,
+  fixtures: () => fixtures22,
   route: () => route,
-  run: () => run20,
-  spec: () => spec20
+  run: () => run22,
+  spec: () => spec22
 });
 
 // atoms/merged.ts
@@ -25819,8 +26083,8 @@ async function rowsOf(get, token, type, o) {
   switch (type) {
     case "owners": {
       const archived = o.status.includes("ARCHIVED");
-      const list4 = await allPages2(get, token, "/crm/v3/owners", { limit: 100, ...archived ? { archived: true } : {} }, lim);
-      return list4.map((u) => ({
+      const list5 = await allPages2(get, token, "/crm/v3/owners", { limit: 100, ...archived ? { archived: true } : {} }, lim);
+      return list5.map((u) => ({
         id: String(u["id"]),
         object_type: type,
         name: `${s(u["firstName"]) ?? ""} ${s(u["lastName"]) ?? ""}`.trim() || (s(u["email"]) ?? String(u["id"])),
@@ -25888,14 +26152,14 @@ async function rowsOf(get, token, type, o) {
       return out;
     }
     case "files": {
-      const list4 = await allPages2(
+      const list5 = await allPages2(
         get,
         token,
         "/files/v3/files/search",
         { limit: 100, ...o.text ? { name: o.text } : {} },
         { max: o.max ?? 500 }
       );
-      return list4.map((f) => ({
+      return list5.map((f) => ({
         id: String(f["id"]),
         object_type: type,
         name: [s(f["name"]), s(f["extension"])].filter(Boolean).join("."),
@@ -25912,8 +26176,8 @@ async function rowsOf(get, token, type, o) {
       }));
     }
     case "workflows": {
-      const list4 = await listFlows(get, token);
-      return list4.map((f) => ({
+      const list5 = await listFlows(get, token);
+      return list5.map((f) => ({
         id: String(f.id),
         object_type: type,
         name: f.name ?? String(f.id),
@@ -25924,8 +26188,8 @@ async function rowsOf(get, token, type, o) {
       }));
     }
     case "marketing_emails": {
-      const list4 = await allPages2(get, token, "/marketing/v3/emails", { limit: 100 }, lim);
-      return list4.map((e) => ({
+      const list5 = await allPages2(get, token, "/marketing/v3/emails", { limit: 100 }, lim);
+      return list5.map((e) => ({
         id: String(e["id"]),
         object_type: type,
         name: s(e["name"]) ?? String(e["id"]),
@@ -25971,7 +26235,7 @@ function route(args) {
   }
   return { call: SEARCH_OBJECTS, args };
 }
-var spec20 = {
+var spec22 = {
   id: "c_hs_find_objects",
   name: "hubspot.call.find_objects",
   grounding: "observed",
@@ -26002,7 +26266,7 @@ var spec20 = {
   step_id: "s_hs_find_objects",
   lead_days: 0
 };
-async function run20(args, ctx) {
+async function run22(args, ctx) {
   const type = typeof args["object_type"] === "string" ? args["object_type"].trim() : "";
   if (isAccountObjectType(type)) return readAccount(type, args, ctx);
   if (args["status"] !== void 0 && args["status"] !== null && args["status"] !== "")
@@ -26025,7 +26289,7 @@ async function readAccount(type, args, ctx) {
   );
   return { objects, object_type: type, count: objects.length, filter: { text: text7 ?? null, status }, dry_run: false };
 }
-var fixtures20 = [
+var fixtures22 = [
   { name: "produkter med text", args: { object_type: "products", text: "panel" }, expect_fields: ["call", "args"] },
   { name: "produkter utan text", args: { object_type: "products" }, expect_fields: ["call", "args"] },
   { name: "kontakter med filter", args: { object_type: "contacts", filter_groups: [] }, expect_fields: ["call", "args"] },
@@ -26044,11 +26308,11 @@ __export(list_content_atom_exports, {
   CONTENT_TYPES: () => CONTENT_TYPES2,
   PAGE_TYPES: () => PAGE_TYPES,
   contentTypes: () => contentTypes,
-  fixtures: () => fixtures21,
+  fixtures: () => fixtures23,
   listContent: () => listContent,
   listObjects: () => listObjects,
-  run: () => run21,
-  spec: () => spec21
+  run: () => run23,
+  spec: () => spec23
 });
 
 // atoms/hubspot/cms_pages.ts
@@ -26160,9 +26424,9 @@ function moduleFields(json) {
     return [];
   }
   const out = [];
-  const walk = (list4, prefix) => {
-    if (!Array.isArray(list4)) return;
-    for (const f of list4) {
+  const walk = (list5, prefix) => {
+    if (!Array.isArray(list5)) return;
+    for (const f of list5) {
       const name = `${prefix}${String(f["name"] ?? "")}`;
       out.push({ name, type: String(f["type"] ?? "") });
       if (f["type"] === "group") walk(f["children"], `${name}.`);
@@ -26295,8 +26559,8 @@ async function readForms(get, token, o) {
   });
 }
 async function readRedirects(get, token, o) {
-  const list4 = await allPages2(get, token, "/cms/v3/url-redirects", { limit: 100 }, { max: o.max ?? 2e3 });
-  return list4.map((r) => ({
+  const list5 = await allPages2(get, token, "/cms/v3/url-redirects", { limit: 100 }, { max: o.max ?? 2e3 });
+  return list5.map((r) => ({
     id: String(r["id"] ?? ""),
     name: text3(r["routePrefix"]) ?? "",
     url: text3(r["destination"]),
@@ -26351,11 +26615,11 @@ var PAGE_TYPES = ["site_page", "landing_page", "blog_post", "blog"];
 var CONTENT_TYPES2 = [...PAGE_TYPES, ...OBJECT_TYPES];
 function contentTypes(v) {
   const raw2 = Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : [];
-  const list4 = raw2.map((x) => String(x).trim()).filter(Boolean);
-  if (!list4.length) return [...PAGE_TYPES];
-  const bad = list4.filter((x) => !CONTENT_TYPES2.includes(x));
+  const list5 = raw2.map((x) => String(x).trim()).filter(Boolean);
+  if (!list5.length) return [...PAGE_TYPES];
+  const bad = list5.filter((x) => !CONTENT_TYPES2.includes(x));
   if (bad.length) throw new Error(`ok\xE4nd inneh\xE5llstyp ${bad.join(", ")} \u2014 v\xE4lj bland ${CONTENT_TYPES2.join(", ")}`);
-  return [...new Set(list4)];
+  return [...new Set(list5)];
 }
 async function listContent(get, token, o) {
   const items2 = [];
@@ -26422,11 +26686,11 @@ async function listObjects(get, token, o) {
   return { objects, remaining, counts };
 }
 var rootOf = (v) => {
-  const list4 = (Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : []).map((x) => String(x).trim()).filter(Boolean);
-  return list4.length ? list4 : null;
+  const list5 = (Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : []).map((x) => String(x).trim()).filter(Boolean);
+  return list5.length ? list5 : null;
 };
 var itemsOf = (v) => Array.isArray(v) ? v.filter((x) => !!x && typeof x === "object") : void 0;
-var spec21 = {
+var spec23 = {
   id: "c_hubspot_list_content",
   name: "hubspot.call.list_content",
   grounding: "observed",
@@ -26466,7 +26730,7 @@ var spec21 = {
   // Vad steget lämnar, som typ (omgång 6, rotorsak (a)): ett leveransmål översätter typen i sitt `material`.
   produces: ["cms_content_listing"]
 };
-async function run21(args, ctx) {
+async function run23(args, ctx) {
   const types = contentTypes(args["content_types"]);
   const one = typeof args["content_id"] === "string" && args["content_id"].trim() ? args["content_id"].trim() : null;
   if (one) return readOne(one, types, ctx);
@@ -26528,7 +26792,7 @@ async function readOne(id, types, ctx) {
   return { item, counts: { [t]: 1 }, dry_run: false };
 }
 var CONNECTED5 = { scopes: ["content"] };
-var fixtures21 = [
+var fixtures23 = [
   { name: "sidtyperna", ...CONNECTED5, args: {}, expect_fields: ["items", "blogs", "counts"] },
   {
     name: "mallar, moduler, HubDB, formul\xE4r, omdirigeringar",
@@ -26555,9 +26819,9 @@ var fixtures21 = [
 // atoms/hubspot/read_menus.atom.ts
 var read_menus_atom_exports = {};
 __export(read_menus_atom_exports, {
-  fixtures: () => fixtures22,
-  run: () => run22,
-  spec: () => spec22
+  fixtures: () => fixtures24,
+  run: () => run24,
+  spec: () => spec24
 });
 
 // atoms/hubspot/cms_menus.ts
@@ -26665,7 +26929,7 @@ var pageList = (v) => {
   if (!Array.isArray(v)) throw new Error("items \xE4r en lista med sidor (id och url)");
   return v.filter((p) => !!p && typeof p === "object" && p["page_type"] !== "blog_post").map((p) => ({ ...p, id: String(p["id"] ?? ""), url: typeof p["url"] === "string" ? p["url"] : "" }));
 };
-var spec22 = {
+var spec24 = {
   id: "c_hubspot_read_menus",
   name: "hubspot.call.read_menus",
   grounding: "observed",
@@ -26700,7 +26964,7 @@ var spec22 = {
   step_id: "s_hubspot_read_menus",
   lead_days: 0
 };
-async function run22(args, ctx) {
+async function run24(args, ctx) {
   const pages = pageList(args["items"]);
   const link = ctx.connection ? await ctx.connection("hubspot", "") : null;
   if (!link?.token) throw new Error("ingen koppling till HubSpot h\xE4r \u2014 HUBSPOT_TOKEN saknas");
@@ -26715,7 +26979,7 @@ async function run22(args, ctx) {
   };
 }
 var CONNECTED6 = { scopes: ["content"] };
-var fixtures22 = [
+var fixtures24 = [
   { name: "menyerna utan sidor", ...CONNECTED6, args: {} },
   { name: "med sidor att j\xE4mf\xF6ra", ...CONNECTED6, args: { items: [
     { id: "1", url: "https://www.example.com/om-oss", page_type: "site_page" },
@@ -26730,12 +26994,12 @@ var fixtures22 = [
 var read_object_atom_exports = {};
 __export(read_object_atom_exports, {
   CALL_BY_TYPE: () => CALL_BY_TYPE,
-  fixtures: () => fixtures23,
-  run: () => run23,
-  spec: () => spec23
+  fixtures: () => fixtures25,
+  run: () => run25,
+  spec: () => spec25
 });
 var CALL_BY_TYPE = { products: "hubspot.call.get_product" };
-var spec23 = {
+var spec25 = {
   id: "c_hs_read_object",
   name: "hubspot.call.read_object",
   grounding: "observed",
@@ -26762,8 +27026,8 @@ var spec23 = {
   step_id: "s_hs_read_object",
   lead_days: 0
 };
-var list2 = (v) => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : []).map((x) => String(x).trim()).filter(Boolean);
-async function run23(args, ctx) {
+var list3 = (v) => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : []).map((x) => String(x).trim()).filter(Boolean);
+async function run25(args, ctx) {
   const type = typeof args["object_type"] === "string" ? args["object_type"].trim() : "";
   if (!type) throw new Error("object_type saknas (t.ex. products, contacts, deals eller kundens 2-\u2026)");
   const id = args["object_id"] === void 0 || args["object_id"] === null ? "" : String(args["object_id"]).trim();
@@ -26772,7 +27036,7 @@ async function run23(args, ctx) {
     const rest = without(args, "object_type", "object_id");
     return delegate(ctx, CALL_BY_TYPE.products, { product_id: id, ...rest });
   }
-  const properties = list2(args["properties"]), associations = list2(args["associations"]);
+  const properties = list3(args["properties"]), associations = list3(args["associations"]);
   const idProperty = typeof args["id_property"] === "string" && args["id_property"].trim() ? args["id_property"].trim() : void 0;
   const asked = { object_type: type, object_id: id, properties, associations, ...idProperty ? { id_property: idProperty } : {} };
   if (ctx.dry_run || !ctx.connection) return { object: null, asked, dry_run: true };
@@ -26801,7 +27065,7 @@ async function run23(args, ctx) {
   }
   return { object: { id: String(d["id"]), properties: d["properties"] ?? {}, associations: assoc }, asked, dry_run: false };
 }
-var fixtures23 = [
+var fixtures25 = [
   { name: "en produkt", args: { object_type: "products", object_id: "123" }, expect_fields: ["call", "args"] },
   { name: "en post med kopplingar", args: { object_type: "2-1", object_id: "1", associations: "2-2" }, expect_fields: ["object", "asked"] },
   { name: "utan id avvisas", args: { object_type: "contacts" }, expect_error: "object_id saknas" }
@@ -26810,9 +27074,9 @@ var fixtures23 = [
 // atoms/hubspot/read_source.atom.ts
 var read_source_atom_exports = {};
 __export(read_source_atom_exports, {
-  fixtures: () => fixtures24,
-  run: () => run24,
-  spec: () => spec24
+  fixtures: () => fixtures26,
+  run: () => run26,
+  spec: () => spec26
 });
 
 // atoms/hubspot/cms_source.ts
@@ -26952,7 +27216,7 @@ ${text7}\r
 }
 
 // atoms/hubspot/read_source.atom.ts
-var spec24 = {
+var spec26 = {
   id: "c_hubspot_read_source",
   name: "hubspot.call.read_source",
   grounding: "decided",
@@ -26990,7 +27254,7 @@ var spec24 = {
   step_id: "s_hubspot_read_source",
   lead_days: 0
 };
-async function run24(args, ctx) {
+async function run26(args, ctx) {
   const path2 = sourcePath(args["path"]);
   const env = environment(args["environment"]);
   const link = ctx.connection ? await ctx.connection("hubspot", "") : null;
@@ -26999,7 +27263,7 @@ async function run24(args, ctx) {
   return { ...await readSource(ctx.fetch, link.token, env, path2), dry_run: false };
 }
 var CONNECTED7 = { scopes: ["content"] };
-var fixtures24 = [
+var fixtures26 = [
   { name: "en modul", ...CONNECTED7, args: { path: "Tema/modules/Sammanstallning.module" } },
   { name: "en mall som utkast", ...CONNECTED7, args: { path: "Tema/templates/avtal.html", environment: "draft" } },
   { name: "ok\xE4nd milj\xF6 avvisas", ...CONNECTED7, args: { path: "a.html", environment: "live" }, expect_error: "draft eller published" },
@@ -27010,20 +27274,20 @@ var fixtures24 = [
 // atoms/hubspot/ui_settings_register.atom.ts
 var ui_settings_register_atom_exports = {};
 __export(ui_settings_register_atom_exports, {
-  fixtures: () => fixtures25,
-  run: () => run25,
-  spec: () => spec25
+  fixtures: () => fixtures27,
+  run: () => run27,
+  spec: () => spec27
 });
 
 // atoms/browser/recipe.ts
 var IF_BLOCKED = 'Stoppar klienten handgreppet (t.ex. Claude Codes auto mode) \xE4r det klientens egen s\xE4kerhetsregel, och den kringg\xE5s inte. S\xE4g det till anv\xE4ndaren, citera anv\xE4ndarens ja ordagrant som user_approval, och be anv\xE4ndaren till\xE5ta handlingen i klienten och f\xF6rs\xF6ka igen. G\xE5r det \xE4nd\xE5 inte: skicka write { op: "bug_report" } med var det stoppade.';
 var RUNTIME = /* @__PURE__ */ new Set(["result", "evidence", "user_approval"]);
-function browserRun(spec39) {
+function browserRun(spec41) {
   return async (args, ctx) => {
-    const r = spec39.browser;
-    const optional = new Set(spec39.optional_input ?? []);
+    const r = spec41.browser;
+    const optional = new Set(spec41.optional_input ?? []);
     const values = {};
-    for (const k of spec39.input) {
+    for (const k of spec41.input) {
       if (RUNTIME.has(k)) continue;
       const v = args[k];
       if ((v === void 0 || v === "") && !optional.has(k)) throw new Error(`${k} saknas`);
@@ -27037,12 +27301,12 @@ function browserRun(spec39) {
       steps = [...r.path, ...p];
     }
     const approval = r.severity === "\u25CF" ? "\u25CF g\xF6rs direkt, g\xE5r att \xE5ngra" : r.severity === "\u25D0" ? "\u25D0 visa vad som ska g\xF6ras och v\xE4nta p\xE5 ja innan handgreppet" : "\u25A0 fr\xE5ga alltid, och visa vad som h\xE4nger p\xE5 det innan handgreppet";
-    const recipe = { ...r, steps, values, approval, ...spec39.effect.verb !== "reads" ? { if_blocked: IF_BLOCKED } : {} };
+    const recipe = { ...r, steps, values, approval, ...spec41.effect.verb !== "reads" ? { if_blocked: IF_BLOCKED } : {} };
     const evidence = typeof args["evidence"] === "string" ? args["evidence"].trim() : "";
     const result = typeof args["result"] === "string" ? args["result"].trim() : "";
     if (ctx.dry_run || !evidence) return { recipe, awaiting: true, result: "", evidence: "", done: false };
     const yes3 = typeof args["user_approval"] === "string" ? args["user_approval"].trim() : "";
-    if (spec39.effect.verb !== "reads" && r.severity !== "\u25CF" && !yes3)
+    if (spec41.effect.verb !== "reads" && r.severity !== "\u25CF" && !yes3)
       throw new Error("user_approval saknas \u2014 ett \u25D0/\u25A0-handgrepp tas emot f\xF6rst med m\xE4nniskans ja");
     if (!result) throw new Error("result saknas: vad blev gjort (id, namn eller avl\xE4sningen)");
     return { recipe, awaiting: false, result, evidence, done: true };
@@ -27050,7 +27314,7 @@ function browserRun(spec39) {
 }
 
 // atoms/hubspot/ui_settings_register.atom.ts
-var spec25 = {
+var spec27 = {
   "id": "c_hubspot_ui_settings_register",
   "name": "hubspot.call.ui_settings_register",
   "grounding": "observed",
@@ -27148,8 +27412,8 @@ var spec25 = {
     "note": []
   }
 };
-var run25 = browserRun(spec25);
-var fixtures25 = [
+var run27 = browserRun(spec27);
+var fixtures27 = [
   { name: "receptet f\xF6r offertmallen", args: { setting: "quote_template", source: "TEST offertmall.html", display_name: "TEST offertmall" } },
   { name: "ok\xE4nd inst\xE4llning s\xE4gs", args: { setting: "pipelines", source: "x", display_name: "x" }, expect_error: "har inget recept" }
 ];
@@ -27157,11 +27421,11 @@ var fixtures25 = [
 // atoms/hubspot/ui_template_edit.atom.ts
 var ui_template_edit_atom_exports = {};
 __export(ui_template_edit_atom_exports, {
-  fixtures: () => fixtures26,
-  run: () => run26,
-  spec: () => spec26
+  fixtures: () => fixtures28,
+  run: () => run28,
+  spec: () => spec28
 });
-var spec26 = {
+var spec28 = {
   "id": "c_hubspot_ui_template_edit",
   "name": "hubspot.call.ui_template_edit",
   "grounding": "observed",
@@ -27285,9 +27549,9 @@ var spec26 = {
     "note": []
   }
 };
-var run26 = browserRun(spec26);
+var run28 = browserRun(spec28);
 var BASE2 = { action: "insert_token", template_kind: "sales_email", template: "TEST mall", token: "contact.firstname" };
-var fixtures26 = [
+var fixtures28 = [
   { name: "receptet f\xF6r att infoga ett f\xE4lt", args: BASE2 },
   { name: "receptet f\xF6r att klona", args: { ...BASE2, action: "clone", new_name: "TEST klon" } },
   { name: "ok\xE4nd action s\xE4gs", args: { ...BASE2, action: "delete" }, expect_error: "har inget recept" },
@@ -27297,12 +27561,12 @@ var fixtures26 = [
 // atoms/hubspot/user_write.atom.ts
 var user_write_atom_exports = {};
 __export(user_write_atom_exports, {
-  fixtures: () => fixtures27,
-  run: () => run27,
-  spec: () => spec27
+  fixtures: () => fixtures29,
+  run: () => run29,
+  spec: () => spec29
 });
 import { createHash as createHash11 } from "node:crypto";
-var spec27 = {
+var spec29 = {
   "id": "c_hubspot_user_write",
   "name": "hubspot.call.user_write",
   "grounding": "decided",
@@ -27385,7 +27649,7 @@ var spec27 = {
   }
 };
 var text5 = (v) => typeof v === "string" ? v.trim() : typeof v === "number" ? String(v) : "";
-var list3 = (v) => (Array.isArray(v) ? v.map(text5) : text5(v) ? text5(v).split(",").map((x) => x.trim()) : []).filter(Boolean);
+var list4 = (v) => (Array.isArray(v) ? v.map(text5) : text5(v) ? text5(v).split(",").map((x) => x.trim()) : []).filter(Boolean);
 var yes = (v) => v === true || v === "true" || v === "ja";
 function pick2(what, ref, all2) {
   const byId = all2.find((x) => String(x.id) === ref);
@@ -27395,11 +27659,11 @@ function pick2(what, ref, all2) {
   const near = all2.filter((x) => (x.name ?? "").toLowerCase().includes(ref.toLowerCase())).map((x) => `${x.name} (${x.id})`).slice(0, 5);
   throw new Error(named2.length > 1 ? `${what} \xAB${ref}\xBB finns ${named2.length} g\xE5nger \u2014 ange id:t` : `${what} \xAB${ref}\xBB finns inte i portalen${near.length ? ` (n\xE4rmast: ${near.join(", ")})` : ""}`);
 }
-async function run27(args, ctx) {
+async function run29(args, ctx) {
   const email = text5(args["email"]).toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error("email \xE4r anv\xE4ndarens e-postadress");
   const first = text5(args["first_name"]), last = text5(args["last_name"]);
-  const primaryRef = text5(args["primary_team"]), secondaryRefs = list3(args["secondary_teams"]), roleRef = text5(args["role"]);
+  const primaryRef = text5(args["primary_team"]), secondaryRefs = list4(args["secondary_teams"]), roleRef = text5(args["role"]);
   const welcome = yes(args["send_welcome_email"]);
   const link = ctx.connection ? await ctx.connection("hubspot", "") : null;
   if (!link?.token) throw new Error("ingen koppling till HubSpot h\xE4r \u2014 HUBSPOT_TOKEN saknas");
@@ -27449,7 +27713,7 @@ async function run27(args, ctx) {
 }
 var CONNECTED8 = { scopes: ["settings.users.write", "settings.users.teams.read"] };
 var TEST_MAIL = (who) => `${who}@example.com`;
-var fixtures27 = [
+var fixtures29 = [
   {
     name: "en ny s\xE4ljare med huvudteam, utan v\xE4lkomstmejl",
     ...CONNECTED8,
@@ -27469,11 +27733,11 @@ var fixtures27 = [
 var write_record_atom_exports = {};
 __export(write_record_atom_exports, {
   changeStateKey: () => changeStateKey,
-  fixtures: () => fixtures28,
-  run: () => run28,
-  spec: () => spec28
+  fixtures: () => fixtures30,
+  run: () => run30,
+  spec: () => spec30
 });
-var spec28 = {
+var spec30 = {
   id: "c_hs_write_object",
   name: "hubspot.call.write_object",
   grounding: "decided",
@@ -27526,7 +27790,7 @@ var rowsOf2 = (v) => {
   })() : v;
   return Array.isArray(x) ? x : [];
 };
-async function run28(args, ctx) {
+async function run30(args, ctx) {
   const objectType2 = guardType(String(args["object_type"] ?? ""), "write");
   if (args["require_expected"] === true || args["require_expected"] === "true")
     for (const [i, r] of rowsOf2(args["updates"]).entries()) {
@@ -27568,7 +27832,7 @@ async function run28(args, ctx) {
     })), "application/json");
   return result;
 }
-var fixtures28 = [
+var fixtures30 = [
   { name: "en ny produkt", args: {
     object_type: "products",
     unique_property: "name",
@@ -27612,11 +27876,11 @@ var fixtures28 = [
 // atoms/hubspot/write_source.atom.ts
 var write_source_atom_exports = {};
 __export(write_source_atom_exports, {
-  fixtures: () => fixtures29,
-  run: () => run29,
-  spec: () => spec29
+  fixtures: () => fixtures31,
+  run: () => run31,
+  spec: () => spec31
 });
-var spec29 = {
+var spec31 = {
   id: "c_hubspot_write_source",
   name: "hubspot.call.write_source",
   grounding: "decided",
@@ -27659,7 +27923,7 @@ var spec29 = {
   step_id: "s_hubspot_write_source",
   lead_days: 0
 };
-async function run29(args, ctx) {
+async function run31(args, ctx) {
   const path2 = sourcePath(args["path"]);
   const env = environment(args["environment"]);
   const text7 = args["content"];
@@ -27687,7 +27951,7 @@ async function run29(args, ctx) {
   return { ...base, proposal: false, done: true };
 }
 var CONNECTED9 = { scopes: ["content"] };
-var fixtures29 = [
+var fixtures31 = [
   { name: "en ny modulfil", ...CONNECTED9, args: { path: "Tema/modules/Ny TEST.module/module.html", content: "<p>hej</p>" } },
   {
     name: "skriva \xF6ver ett utkast",
@@ -27702,10 +27966,10 @@ var fixtures29 = [
 var change_ad_object_atom_exports = {};
 __export(change_ad_object_atom_exports, {
   CALL_BY_CHANGE: () => CALL_BY_CHANGE,
-  fixtures: () => fixtures30,
+  fixtures: () => fixtures32,
   previews: () => previews,
-  run: () => run30,
-  spec: () => spec30
+  run: () => run32,
+  spec: () => spec32
 });
 var CALL_BY_CHANGE = {
   status: "meta.call.set_status",
@@ -27713,7 +27977,7 @@ var CALL_BY_CHANGE = {
   targeting: "meta.call.update_targeting",
   details: "meta.call.update_object"
 };
-var spec30 = {
+var spec32 = {
   id: "c_meta_change_ad_object",
   name: "meta.call.change_ad_object",
   grounding: "observed",
@@ -27802,10 +28066,10 @@ var spec30 = {
   lead_days: 0
 };
 var previews = true;
-async function run30(args, ctx) {
+async function run32(args, ctx) {
   return delegate(ctx, pick(CALL_BY_CHANGE, "change", args["change"]), without(args, "change"));
 }
-var fixtures30 = [
+var fixtures32 = [
   ...Object.keys(CALL_BY_CHANGE).map((change) => ({
     name: `change ${change}`,
     args: { change, object_id: "1", level: "adset" },
@@ -27822,10 +28086,10 @@ var fixtures30 = [
 var create_ad_creative_atom_exports = {};
 __export(create_ad_creative_atom_exports, {
   CALL_BY_FORMAT: () => CALL_BY_FORMAT,
-  fixtures: () => fixtures31,
+  fixtures: () => fixtures33,
   previews: () => previews2,
-  run: () => run31,
-  spec: () => spec31
+  run: () => run33,
+  spec: () => spec33
 });
 var CALL_BY_FORMAT = {
   image: "meta.call.create_creative",
@@ -27835,7 +28099,7 @@ var CALL_BY_FORMAT = {
   // Leadformuläret hos sidan (provet 2026-10-08): det annonsmaterialet öppnar med lead_gen_form_id.
   lead_form: "meta.call.create_lead_form"
 };
-var spec31 = {
+var spec33 = {
   id: "c_meta_create_ad_creative",
   name: "meta.call.create_ad_creative",
   grounding: "observed",
@@ -28001,10 +28265,10 @@ var spec31 = {
   lead_days: 0
 };
 var previews2 = true;
-async function run31(args, ctx) {
+async function run33(args, ctx) {
   return delegate(ctx, pick(CALL_BY_FORMAT, "format", args["format"]), without(args, "format"));
 }
-var fixtures31 = [
+var fixtures33 = [
   ...Object.entries(CALL_BY_FORMAT).map(([format2]) => ({
     name: `format ${format2}`,
     args: { format: format2, ad_account_id: "act_1", name: "TEST-creative", page_id: "1" },
@@ -28030,11 +28294,11 @@ __export(manage_access_atom_exports, {
   ACTIONS: () => ACTIONS4,
   ROLES: () => ROLES,
   TASKS: () => TASKS,
-  fixtures: () => fixtures32,
-  run: () => run32,
-  spec: () => spec32
+  fixtures: () => fixtures34,
+  run: () => run34,
+  spec: () => spec34
 });
-var spec32 = {
+var spec34 = {
   "id": "c_meta_manage_access",
   "name": "meta.call.manage_access",
   "grounding": "observed",
@@ -28140,9 +28404,9 @@ async function credentials(ctx) {
 }
 function accountList(v) {
   if (typeof v === "string" && /^(alla|all)$/i.test(v.trim())) return "all";
-  const list4 = listOf(v).map(accountPath);
-  if (!list4.length) throw new Error("accounts saknas: ange annonskontons id, eller \xABalla\xBB");
-  return list4;
+  const list5 = listOf(v).map(accountPath);
+  if (!list5.length) throw new Error("accounts saknas: ange annonskontons id, eller \xABalla\xBB");
+  return list5;
 }
 async function businessAccounts(get, cred, business) {
   const owned = await allPages(get, cred, `${business}/owned_ad_accounts`, { fields: "id,name" });
@@ -28157,7 +28421,7 @@ async function personId(get, cred, business, person2) {
   if (!hit) throw new Error("personen finns inte i business managern \u2014 bjud in med action: invite f\xF6rst, och v\xE4nta tills inbjudan \xE4r antagen");
   return String(hit["id"]);
 }
-async function run32(args, ctx) {
+async function run34(args, ctx) {
   const action = oneOf(args["action"], ACTIONS4, "action").toLowerCase();
   const business = objectId(args["business_id"], "business_id");
   const person2 = String(args["person"] ?? "").trim();
@@ -28181,9 +28445,9 @@ async function run32(args, ctx) {
   if (action === "list") {
     const users = await allPages(get, cred, `${business}/business_users`, { fields: "id,name,email,role" });
     const pending = await allPages(get, cred, `${business}/pending_users`, { fields: "id,email,role,status" });
-    const list4 = await businessAccounts(get, cred, business);
+    const list5 = await businessAccounts(get, cred, business);
     const withUsers = [];
-    for (const a of list4) {
+    for (const a of list5) {
       const assigned = await allPages(get, cred, `${String(a["id"])}/assigned_users`, { business, fields: "id,name,tasks" });
       withUsers.push({ id: a["id"], name: a["name"], users: assigned });
     }
@@ -28208,7 +28472,7 @@ async function run32(args, ctx) {
   return { action, business_id: business, accounts: changed, done: changed.every((c) => c["ok"]) };
 }
 var KEYS = { META_ADS_TOKEN: "prov", META_APP_SECRET: "prov" };
-var fixtures32 = [
+var fixtures34 = [
   { name: "lista \xE5tkomst", args: { action: "list", business_id: "100000000000001" }, keys: KEYS, expect_fields: ["planned"] },
   {
     name: "ge l\xE4sbeh\xF6righet p\xE5 alla konton",
@@ -28244,9 +28508,9 @@ var fixtures32 = [
 // atoms/presentation/write.atom.ts
 var write_atom_exports = {};
 __export(write_atom_exports, {
-  fixtures: () => fixtures33,
-  run: () => run33,
-  spec: () => spec33
+  fixtures: () => fixtures35,
+  run: () => run35,
+  spec: () => spec35
 });
 import { createHash as createHash13 } from "node:crypto";
 
@@ -28585,16 +28849,16 @@ var ratio = (f, i) => f && /^\d+x\d+$/.test(f) ? f.replace("x", " / ") : i.width
 function copyHtml(text7) {
   if (text7 === null) return `<p class="missing">Texten gick inte att l\xE4sa just nu.</p>`;
   const out = [];
-  let list4 = null;
+  let list5 = null;
   const flush = () => {
-    if (list4) out.push(`<ul>${list4.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>`);
-    list4 = null;
+    if (list5) out.push(`<ul>${list5.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>`);
+    list5 = null;
   };
   for (const para of text7.trim().split(/\n{2,}/)) {
     for (const line2 of para.split("\n")) {
       const t = line2.trim();
       if (/^[-*•✓]\s+/.test(t)) {
-        (list4 ??= []).push(t.replace(/^[-*•✓]\s+/, ""));
+        (list5 ??= []).push(t.replace(/^[-*•✓]\s+/, ""));
         continue;
       }
       flush();
@@ -29143,7 +29407,7 @@ function planWithdraw(view, id) {
 }
 
 // atoms/presentation/write.atom.ts
-var spec33 = {
+var spec35 = {
   "id": "c_presentation_write",
   "name": "presentation.call.write",
   "grounding": "observed",
@@ -29230,7 +29494,7 @@ var spec33 = {
     "note": []
   }
 };
-async function run33(args, ctx) {
+async function run35(args, ctx) {
   if (!ctx.view) throw new Error("presentationen kan bara publiceras i ett steg \u2014 registret saknas");
   const i = args;
   const action = i.action ?? "publish";
@@ -29300,7 +29564,7 @@ var BLOCKS2 = [
   { type: "cover", title: "Provkampanj" },
   { type: "copy_angles", items: [{ ref: `bank://rotor/${SHA}`, label: "Vinkel A", mime: "text/markdown" }] }
 ];
-var fixtures33 = [
+var fixtures35 = [
   { name: "f\xF6rhandsvisning av en ny presentation", ...RUNNER4, args: {
     action: "publish",
     party: "@runner",
@@ -29347,10 +29611,10 @@ var fixtures33 = [
 var html_pdf_atom_exports = {};
 __export(html_pdf_atom_exports, {
   fillTemplate: () => fillTemplate,
-  fixtures: () => fixtures34,
-  run: () => run34,
+  fixtures: () => fixtures36,
+  run: () => run36,
   runWith: () => runWith,
-  spec: () => spec34
+  spec: () => spec36
 });
 
 // atoms/render/html-pdf.ts
@@ -29640,10 +29904,10 @@ function priceTable(layout, library, change, date) {
   const subtitle = (layout.subtitle ?? "").replace("{date}", date);
   if (subtitle) parts.push(`<p class=datum>${esc2(subtitle)}</p>`);
   const placed = /* @__PURE__ */ new Set();
-  for (const block2 of layout.order) {
-    if (block2.kind === "section") {
-      const section2 = layout.sections.find((s2) => s2.title === block2.title);
-      if (!section2) throw new Error(`sektionen \xAB${block2.title}\xBB st\xE5r i ordningen men finns inte bland sektionerna`);
+  for (const block3 of layout.order) {
+    if (block3.kind === "section") {
+      const section2 = layout.sections.find((s2) => s2.title === block3.title);
+      if (!section2) throw new Error(`sektionen \xAB${block3.title}\xBB st\xE5r i ordningen men finns inte bland sektionerna`);
       for (const id of section2.products) placed.add(id);
       const present = section2.products.filter((id) => {
         if (!products.has(id)) {
@@ -29679,25 +29943,25 @@ function priceTable(layout, library, change, date) {
       const sn = layout.section_notes?.[section2.title];
       const condHead = hasCondition ? `<th class=v>${esc2(layout.condition_headings?.[section2.title] ?? layout.condition_heading ?? "")}</th>` : "";
       parts.push(`<h2>${esc2(section2.title)}</h2>${sn ? `<p class=not>${esc2(note(sn, null))}</p>` : ""}` + table(layout.product_heading ?? "", condHead + priceHeads(), rows3.map((r) => r.cells)));
-    } else if (block2.kind === "quantity") {
-      for (const c of block2.columns) for (const id of [c.base, c.per_unit, ...c.parts ?? []]) if (typeof id === "string") placed.add(id);
-      const credit = block2.credit === true && withCredit && block2.columns.length === 1;
+    } else if (block3.kind === "quantity") {
+      for (const c of block3.columns) for (const id of [c.base, c.per_unit, ...c.parts ?? []]) if (typeof id === "string") placed.add(id);
+      const credit = block3.credit === true && withCredit && block3.columns.length === 1;
       const rows3 = [];
-      for (let n2 = block2.from; n2 <= block2.to; n2 += block2.step ?? 1) {
-        const label = (n2 === 1 && block2.label_one ? block2.label_one : block2.label).replace("{n}", String(n2));
-        const cells = block2.columns.flatMap((c) => {
+      for (let n2 = block3.from; n2 <= block3.to; n2 += block3.step ?? 1) {
+        const label = (n2 === 1 && block3.label_one ? block3.label_one : block3.label).replace("{n}", String(n2));
+        const cells = block3.columns.flatMap((c) => {
           const total = (cr) => amount(c.base, cr) + (c.parts ?? []).reduce((s2, id) => s2 + amount(id, cr), 0) + amount(c.per_unit, cr) * n2;
           return credit ? [money2(total(false)), money2(total(true))] : [money2(total(false))];
         });
         rows3.push([{ text: label }, ...cells.map((t) => ({ text: t }))]);
       }
-      if (block2.last_row) rows3.push([{ text: block2.last_row.label }, ...block2.columns.flatMap((c) => credit ? [money2(amount(c.per_unit, false)), money2(amount(c.per_unit, true))] : [money2(amount(c.per_unit, false))]).map((t) => ({ text: t }))]);
-      const head2 = credit ? priceHeads() : block2.columns.length > 1 ? heads(block2.columns.map((c) => c.title ?? "")) : heads([layout.price_heading ?? ""]);
-      parts.push(`<h2>${esc2(block2.title)}</h2>${block2.note ? `<p class=not>${esc2(note(block2.note, block2))}</p>` : ""}` + table(block2.heading, head2, rows3));
-    } else if (block2.kind === "list") {
-      parts.push(`<h2>${esc2(block2.title)}</h2><ul class=${block2.columns === 2 ? "ingar" : "villkor"}>${block2.items.map((i) => `<li>${esc2(i)}</li>`).join("")}</ul>`);
+      if (block3.last_row) rows3.push([{ text: block3.last_row.label }, ...block3.columns.flatMap((c) => credit ? [money2(amount(c.per_unit, false)), money2(amount(c.per_unit, true))] : [money2(amount(c.per_unit, false))]).map((t) => ({ text: t }))]);
+      const head2 = credit ? priceHeads() : block3.columns.length > 1 ? heads(block3.columns.map((c) => c.title ?? "")) : heads([layout.price_heading ?? ""]);
+      parts.push(`<h2>${esc2(block3.title)}</h2>${block3.note ? `<p class=not>${esc2(note(block3.note, block3))}</p>` : ""}` + table(block3.heading, head2, rows3));
+    } else if (block3.kind === "list") {
+      parts.push(`<h2>${esc2(block3.title)}</h2><ul class=${block3.columns === 2 ? "ingar" : "villkor"}>${block3.items.map((i) => `<li>${esc2(i)}</li>`).join("")}</ul>`);
     } else {
-      throw new Error(`ok\xE4nt block i ordningen: ${block2.kind ? `\xAB${block2.kind}\xBB` : "ett block utan typ"}`);
+      throw new Error(`ok\xE4nt block i ordningen: ${block3.kind ? `\xAB${block3.kind}\xBB` : "ett block utan typ"}`);
     }
   }
   const belongs = (p) => {
@@ -29714,6 +29978,21 @@ function priceTable(layout, library, change, date) {
 
 // atoms/render/html_pdf.atom.ts
 init_butik();
+
+// atoms/bank/file-by-name.ts
+init_butik();
+var SAVED = /^(bank:\/\/|text:\/\/|file:)/;
+async function bankFile(ctx, customer, name) {
+  if (!ctx.bank) throw new Error("inneh\xE5llsbanken \xE4r inte kopplad h\xE4r, s\xE5 mallen kan inte l\xE4sas: k\xF6r steget i dirigenten p\xE5 servern");
+  const want = name.trim().normalize("NFC").toLowerCase();
+  const base = (s2) => (s2 ?? "").split("/").pop().normalize("NFC").toLowerCase();
+  const view = await ctx.bank.view();
+  const hit = registrationsOf(view).filter((r) => r.party === customer && SAVED.test(r.uri) && (base(r.found_in) === want || base(r.uri) === want)).at(-1);
+  if (!hit) throw new Error(`${name} finns inte i kundens bank: l\xE4gg filen i kundens bank f\xF6rst`);
+  const data = hit.uri.startsWith("text://") ? await ctx.bank.text(hit.sha256).then((d) => typeof d?.markdown === "string" ? new TextEncoder().encode(d.markdown) : null).catch(() => null) ?? await h\u00E4mta(ctx.bank.store, ctx.bank.tenant, hit.sha256) : await h\u00E4mta(ctx.bank.store, ctx.bank.tenant, hit.sha256);
+  if (!data) throw new Error(`${name} \xE4r registrerad men filen finns inte i banken`);
+  return data;
+}
 
 // atoms/render/html-template.ts
 var GENERIC = /* @__PURE__ */ new Set(["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "inherit", "initial", "unset"]);
@@ -30665,7 +30944,7 @@ var GRANNAR = [
 var ID_WORDS = [
   ["kampanj", "campaign"]
 ];
-var norm = (s2) => s2.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+var norm2 = (s2) => s2.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 var SM\u00C5ORD = /* @__PURE__ */ new Set(["ur", "i", "till", "for", "en", "ett", "och", "av", "pa", "med", "som", "den", "det"]);
 var FR\u00C5GEORD = /* @__PURE__ */ new Set([
   "hur",
@@ -31183,7 +31462,7 @@ var BASIS_DEFAULT = `det best\xE4llningen s\xE4ger; resten tas fram i uppdraget 
 var REFRESH_S = 30 * 86400;
 
 // src/plan/loose-material.ts
-var GROUPS = [...GRANNAR, ...ID_WORDS].map((g) => g.map((w) => stam(norm(w))));
+var GROUPS = [...GRANNAR, ...ID_WORDS].map((g) => g.map((w) => stam(norm2(w))));
 
 // src/types/resolved.ts
 var resolvedStep = z.object({
@@ -31321,7 +31600,7 @@ function customerFonts(view, customer) {
 var FONTS_WHERE = 'Kundens typsnitt s\xE4tts i kundposten: webbprojektets adress (till exempel Adobe Fonts), vilken familj och vikt varje typsnittsnamn i mallen motsvarar, och typsnittsprovet. Skrivs med write { op: "registry_define", node: { id: "<kundens id>", fonts: { stylesheets, families, sample } }, change: true }. Har en metod andra typsnitt f\xF6r kunden s\xE4tts de i kundens variant av metoden (typsnitt, webbprojekt, typsnittsprov).';
 
 // atoms/render/html_pdf.atom.ts
-var spec34 = {
+var spec36 = {
   "id": "c_render_html_pdf",
   "name": "render.call.html_pdf",
   "grounding": "observed",
@@ -31451,18 +31730,6 @@ function fillTemplate(template, values) {
   if (missing.size) throw new Error(`mallen v\xE4ntar sig v\xE4rden som datan saknar: ${[...missing].join(", ")}`);
   return out;
 }
-var SAVED = /^(bank:\/\/|text:\/\/|file:)/;
-async function bankFile(ctx, customer, name) {
-  if (!ctx.bank) throw new Error("inneh\xE5llsbanken \xE4r inte kopplad h\xE4r, s\xE5 mallen kan inte l\xE4sas: k\xF6r steget i dirigenten p\xE5 servern");
-  const want = name.trim().normalize("NFC").toLowerCase();
-  const base = (s2) => (s2 ?? "").split("/").pop().normalize("NFC").toLowerCase();
-  const view = await ctx.bank.view();
-  const hit = registrationsOf(view).filter((r) => r.party === customer && SAVED.test(r.uri) && (base(r.found_in) === want || base(r.uri) === want)).at(-1);
-  if (!hit) throw new Error(`${name} finns inte i kundens bank: l\xE4gg filen i kundens bank f\xF6rst`);
-  const data = hit.uri.startsWith("text://") ? await ctx.bank.text(hit.sha256).then((d) => typeof d?.markdown === "string" ? new TextEncoder().encode(d.markdown) : null).catch(() => null) ?? await h\u00E4mta(ctx.bank.store, ctx.bank.tenant, hit.sha256) : await h\u00E4mta(ctx.bank.store, ctx.bank.tenant, hit.sha256);
-  if (!data) throw new Error(`${name} \xE4r registrerad men filen finns inte i banken`);
-  return data;
-}
 var jsonOf = (bytes, name) => {
   try {
     return JSON.parse(new TextDecoder().decode(bytes));
@@ -31543,7 +31810,7 @@ async function save(ctx, f) {
   }]);
   return ref.uri;
 }
-function run34(args, ctx) {
+function run36(args, ctx) {
   return runWith(args, ctx, (html) => htmlToPdf(html, 6e4));
 }
 async function runWith(args, ctx, pdfOf, fetchFonts) {
@@ -31599,7 +31866,7 @@ async function runWith(args, ctx, pdfOf, fetchFonts) {
   return { proposal: false, file_name, pages: pageCount(Buffer.from(pdf)), ref, done: true, ...htmlOut, warnings: page.warnings };
 }
 var PAGE_FIELDS = ["proposal", "file_name", "pages", "ref", "done"];
-var fixtures34 = [
+var fixtures36 = [
   { name: "en sida som HTML: f\xF6rhandsvisningen", args: { html: '<!doctype html><title>Prov</title><section>Sida 1</section><section style="break-before:page">Sida 2</section>', file_name: "prov", folder: "Prov", page_size: "A4" }, expect_fields: PAGE_FIELDS },
   { name: "en sida som adress: f\xF6rhandsvisningen", args: { url: "https://example.com/sida", file_name: "sida.pdf" }, expect_fields: PAGE_FIELDS },
   { name: "b\xE5de html och url avvisas", args: { html: "<p>x</p>", url: "https://example.com", file_name: "x" }, expect_error: "inte b\xE5da" },
@@ -31615,9 +31882,9 @@ var fixtures34 = [
 // atoms/render/qr_code.atom.ts
 var qr_code_atom_exports = {};
 __export(qr_code_atom_exports, {
-  fixtures: () => fixtures35,
-  run: () => run35,
-  spec: () => spec35
+  fixtures: () => fixtures37,
+  run: () => run37,
+  spec: () => spec37
 });
 
 // atoms/render/qr.ts
@@ -31822,7 +32089,7 @@ function penalty(m) {
   const n2 = m.length;
   let r = 0;
   const line2 = (get) => {
-    let run39 = 0, color2 = false;
+    let run41 = 0, color2 = false;
     const hist = [0, 0, 0, 0, 0, 0, 0];
     const addHist = (len) => {
       if (hist[0] === 0) len += n2;
@@ -31836,22 +32103,22 @@ function penalty(m) {
     };
     for (let i = 0; i < n2; i++) {
       if (get(i) === color2) {
-        run39++;
-        if (run39 === 5) r += 3;
-        else if (run39 > 5) r++;
+        run41++;
+        if (run41 === 5) r += 3;
+        else if (run41 > 5) r++;
       } else {
-        addHist(run39);
+        addHist(run41);
         if (!color2) r += count() * 40;
         color2 = get(i);
-        run39 = 1;
+        run41 = 1;
       }
     }
     if (color2) {
-      addHist(run39);
-      run39 = 0;
+      addHist(run41);
+      run41 = 0;
     }
-    run39 += n2;
-    addHist(run39);
+    run41 += n2;
+    addHist(run41);
     r += count() * 40;
   };
   for (let y = 0; y < n2; y++) line2((x) => m[y][x]);
@@ -31921,7 +32188,7 @@ function withUtm(url, utm) {
 }
 
 // atoms/render/qr_code.atom.ts
-var spec35 = {
+var spec37 = {
   "id": "c_render_qr_code",
   "name": "render.call.qr_code",
   "grounding": "observed",
@@ -31993,7 +32260,7 @@ var spec35 = {
   }
 };
 var PX_PER_MODULE = 24;
-async function run35(args, ctx) {
+async function run37(args, ctx) {
   const i = args;
   if (typeof i.url !== "string" || !i.url.trim()) throw new Error("ange url: adressen koden ska leda till");
   if (typeof i.file_name !== "string" || !i.file_name.trim()) throw new Error("ange file_name: filens namn");
@@ -32029,7 +32296,7 @@ async function run35(args, ctx) {
   const p = await keep2({ ...common, bytes: png3, mime: "image/png", name: `${base}.png` });
   return { proposal: false, url_with_utm, refs: { png: p.ref, svg: s2.ref }, code, done: true };
 }
-var fixtures35 = [
+var fixtures37 = [
   { name: "en kod med UTM och runda prickar: f\xF6rhandsvisningen", args: {
     url: "https://example.com/meetings/prov-person",
     utm: '{"medium":"fysisk","source":"brevlada_kanal","campaign":"prov_person"}',
@@ -32045,9 +32312,9 @@ var fixtures35 = [
 // atoms/state/desired_state.atom.ts
 var desired_state_atom_exports = {};
 __export(desired_state_atom_exports, {
-  fixtures: () => fixtures36,
-  run: () => run36,
-  spec: () => spec36
+  fixtures: () => fixtures38,
+  run: () => run38,
+  spec: () => spec38
 });
 
 // src/v2/state/desired/diff.ts
@@ -32325,68 +32592,68 @@ async function readScoped(profile, desired, ledger, t, vars2) {
     const read = profile.object_types[type].read;
     const f = read.filter;
     for (let i = 0; i < values.length; i += 50) {
-      const list4 = values.slice(i, i + 50).map((v) => JSON.stringify(v)).join(",");
-      const params = { [f.param]: f.template.replace("{field}", field).replace("{values}", list4) };
+      const list5 = values.slice(i, i + 50).map((v) => JSON.stringify(v)).join(",");
+      const params = { [f.param]: f.template.replace("{field}", field).replace("{values}", list5) };
       for (const r of await t.list(path2, params, read.results ? { results: read.results } : void 0)) add(type, r, null);
     }
   };
   const types = [...new Set(inOrder(profile, desired).map((r) => r.type))].filter((ty) => profile.object_types[ty]);
   for (const type of types) {
-    const spec39 = profile.object_types[type];
+    const spec41 = profile.object_types[type];
     const rows3 = desired.filter((r) => r.type === type);
-    if (spec39.parent === null && spec39.read.list_all) {
+    if (spec41.parent === null && spec41.read.list_all) {
       const params = {
-        ...spec39.read.query ? { query: fill(spec39.read.query, vars2) } : spec39.read.fields.length ? { fields: spec39.read.fields.join(",") } : {},
-        ...Object.fromEntries(Object.entries(spec39.read.params ?? {}).map(([k, v]) => [k, fill(v, vars2)]))
+        ...spec41.read.query ? { query: fill(spec41.read.query, vars2) } : spec41.read.fields.length ? { fields: spec41.read.fields.join(",") } : {},
+        ...Object.fromEntries(Object.entries(spec41.read.params ?? {}).map(([k, v]) => [k, fill(v, vars2)]))
       };
       const opts = {
-        ...spec39.read.results ? { results: spec39.read.results } : {},
-        ...spec39.read.row ? { row: spec39.read.row } : {},
-        ...spec39.read.graphql ? { graphql: fill(spec39.read.graphql, vars2) } : {}
+        ...spec41.read.results ? { results: spec41.read.results } : {},
+        ...spec41.read.row ? { row: spec41.read.row } : {},
+        ...spec41.read.graphql ? { graphql: fill(spec41.read.graphql, vars2) } : {}
       };
-      for (const r of await t.list(fill(spec39.read.path, vars2), params, Object.keys(opts).length ? opts : void 0)) add(type, r, null);
+      for (const r of await t.list(fill(spec41.read.path, vars2), params, Object.keys(opts).length ? opts : void 0)) add(type, r, null);
       continue;
     }
-    if (spec39.parent === null && spec39.read.filter) {
-      const path2 = fill(spec39.read.path, vars2);
+    if (spec41.parent === null && spec41.read.filter) {
+      const path2 = fill(spec41.read.path, vars2);
       const ids = [...new Set(rows3.flatMap((r) => [ledger.get(r.row), r.id]).filter((x) => !!x))];
-      if (ids.length && spec39.read.by_ids !== false) await byFilter(type, path2, "id", ids);
-      const key = spec39.key[0];
-      const sub = spec39.read.filter.key_field?.split(".").slice(1);
-      const names = key && spec39.read.filter_names ? [...new Set(rows3.filter((r) => !ledger.has(r.row) && !r.id).map((r) => sub?.length ? at(r.values[key], sub.join("."))[0] : r.values[key]).filter((v) => v !== void 0 && v !== null && v !== "").map((v) => JSON.stringify(v)))].map((v) => JSON.parse(v)) : [];
-      if (names.length) await byFilter(type, path2, spec39.read.filter.key_field ?? key, names);
+      if (ids.length && spec41.read.by_ids !== false) await byFilter(type, path2, "id", ids);
+      const key = spec41.key[0];
+      const sub = spec41.read.filter.key_field?.split(".").slice(1);
+      const names = key && spec41.read.filter_names ? [...new Set(rows3.filter((r) => !ledger.has(r.row) && !r.id).map((r) => sub?.length ? at(r.values[key], sub.join("."))[0] : r.values[key]).filter((v) => v !== void 0 && v !== null && v !== "").map((v) => JSON.stringify(v)))].map((v) => JSON.parse(v)) : [];
+      if (names.length) await byFilter(type, path2, spec41.read.filter.key_field ?? key, names);
       continue;
     }
-    if (spec39.parent === null) {
+    if (spec41.parent === null) {
       const ids = [...new Set(rows3.flatMap((r) => [ledger.get(r.row), r.id]).filter((x) => !!x))];
-      const named2 = (spec39.partial ?? []).flatMap((f) => rows3.flatMap((r) => {
+      const named2 = (spec41.partial ?? []).flatMap((f) => rows3.flatMap((r) => {
         const v = r.values[f];
         return v && typeof v === "object" && !Array.isArray(v) ? Object.keys(v) : [];
       }));
-      const fields = [.../* @__PURE__ */ new Set([...spec39.read.fields, ...named2])];
-      if (ids.length && spec39.read.by_ids !== false)
-        for (const r of await t.byIds(ids, fields, { path: fill(spec39.read.path, vars2), ...spec39.read.fields_param ? { fields_param: spec39.read.fields_param } : {} })) add(type, r, null);
-      const key = spec39.key[0];
-      const names = key && spec39.read.filter_names ? [...new Set(rows3.filter((r) => !ledger.has(r.row) && !r.id).map((r) => r.values[key]).filter((v) => v !== void 0).map(String))] : [];
+      const fields = [.../* @__PURE__ */ new Set([...spec41.read.fields, ...named2])];
+      if (ids.length && spec41.read.by_ids !== false)
+        for (const r of await t.byIds(ids, fields, { path: fill(spec41.read.path, vars2), ...spec41.read.fields_param ? { fields_param: spec41.read.fields_param } : {} })) add(type, r, null);
+      const key = spec41.key[0];
+      const names = key && spec41.read.filter_names ? [...new Set(rows3.filter((r) => !ledger.has(r.row) && !r.id).map((r) => r.values[key]).filter((v) => v !== void 0).map(String))] : [];
       if (names.length) {
-        const found = await t.list(fill(spec39.read.path, vars2), { fields: spec39.read.fields.join(","), filtering: [{ field: key, operator: "IN", value: names }] });
+        const found = await t.list(fill(spec41.read.path, vars2), { fields: spec41.read.fields.join(","), filtering: [{ field: key, operator: "IN", value: names }] });
         for (const r of found) add(type, r, null);
       }
       continue;
     }
-    const parents = out.filter((e) => e.type === spec39.parent).map((e) => e.id);
-    if (spec39.read.parent_from) {
+    const parents = out.filter((e) => e.type === spec41.parent).map((e) => e.id);
+    if (spec41.read.parent_from) {
       if (!parents.length) continue;
-      const from = spec39.read.parent_from;
-      const opts = spec39.read.results ? { results: spec39.read.results } : void 0;
-      for (const r of await t.list(fill(spec39.read.path, vars2), spec39.read.fields.length ? { fields: spec39.read.fields.join(",") } : {}, opts)) {
+      const from = spec41.read.parent_from;
+      const opts = spec41.read.results ? { results: spec41.read.results } : void 0;
+      for (const r of await t.list(fill(spec41.read.path, vars2), spec41.read.fields.length ? { fields: spec41.read.fields.join(",") } : {}, opts)) {
         const p = at(r, from)[0];
         if (typeof p === "string" && parents.includes(p)) add(type, r, p);
       }
       continue;
     }
     for (const p of parents) {
-      const found = await t.list(fill(spec39.read.path, { ...vars2, parent: p }), { fields: spec39.read.fields.join(",") });
+      const found = await t.list(fill(spec41.read.path, { ...vars2, parent: p }), { fields: spec41.read.fields.join(",") });
       for (const r of found) add(type, r, p);
     }
   }
@@ -32407,8 +32674,8 @@ function parsePlan(fields) {
     return null;
   }
 }
-var norm2 = (s2) => s2.replace(/\s+/g, " ").trim().toLocaleLowerCase("sv");
-var rowKey = (adsetId, adName) => `${adsetId}|${norm2(adName)}`;
+var norm3 = (s2) => s2.replace(/\s+/g, " ").trim().toLocaleLowerCase("sv");
+var rowKey = (adsetId, adName) => `${adsetId}|${norm3(adName)}`;
 
 // atoms/state/transports.ts
 function wrapped(params, wrap) {
@@ -32575,8 +32842,8 @@ function bearerWriteTransport(fetch2, host, token, specOf) {
       const grouped = /* @__PURE__ */ new Map();
       for (const o of ops) if (o.kind === "create" && o.batch_path) grouped.set(o.batch_path, [...grouped.get(o.batch_path) ?? [], o]);
       for (const [path2, all2] of grouped) {
-        const spec39 = specOf(all2[0].type);
-        const key = spec39.key;
+        const spec41 = specOf(all2[0].type);
+        const key = spec41.key;
         const group = [];
         for (const o of all2) {
           const missing = failedRefs(o);
@@ -32584,12 +32851,12 @@ function bearerWriteTransport(fetch2, host, token, specOf) {
           else group.push(o);
         }
         if (!group.length) continue;
-        const list4 = group.map(body);
-        const r = await send2("POST", path2, spec39.batchBody === "array" ? list4 : { inputs: list4 });
-        const found = at2(r.json, spec39.batchResults);
+        const list5 = group.map(body);
+        const r = await send2("POST", path2, spec41.batchBody === "array" ? list5 : { inputs: list5 });
+        const found = at2(r.json, spec41.batchResults);
         const results2 = Array.isArray(found) ? found : [];
         group.forEach((o, n2) => {
-          const hit = results2.find((x) => sameKey3(x[key], o.params[key])) ?? (spec39.batchBody === "array" && results2.length === group.length ? results2[n2] : void 0);
+          const hit = results2.find((x) => sameKey3(x[key], o.params[key])) ?? (spec41.batchBody === "array" && results2.length === group.length ? results2[n2] : void 0);
           if (r.status < 400 && hit) {
             const id = String(hit["id"] ?? hit[key]);
             ids.set(o.row, id);
@@ -32599,7 +32866,7 @@ function bearerWriteTransport(fetch2, host, token, specOf) {
       }
       for (const o of ops) {
         if (o.kind === "create" && o.batch_path) continue;
-        const spec39 = specOf(o.type);
+        const spec41 = specOf(o.type);
         const missing = failedRefs(o);
         if (missing) {
           out.push({ row: o.row, ok: false, error: missing });
@@ -32608,13 +32875,13 @@ function bearerWriteTransport(fetch2, host, token, specOf) {
         if (o.mutation) {
           const r2 = await send2("POST", o.path, { query: o.mutation, variables: o.kind === "create" ? { input: body(o) } : { id: o.id, input: o.params } });
           const errors2 = r2.json?.errors;
-          const made = o.kind === "create" && spec39.result ? at2(r2.json, spec39.result) : null;
-          out.push(r2.status < 400 && !Array.isArray(errors2) ? { row: o.row, ok: true, ...o.kind === "create" ? { id: String(made?.["id"] ?? made?.[spec39.key] ?? "") } : {} } : { row: o.row, ok: false, error: Array.isArray(errors2) ? JSON.stringify(errors2).slice(0, 200) : why(r2.json, r2.status) });
+          const made = o.kind === "create" && spec41.result ? at2(r2.json, spec41.result) : null;
+          out.push(r2.status < 400 && !Array.isArray(errors2) ? { row: o.row, ok: true, ...o.kind === "create" ? { id: String(made?.["id"] ?? made?.[spec41.key] ?? "") } : {} } : { row: o.row, ok: false, error: Array.isArray(errors2) ? JSON.stringify(errors2).slice(0, 200) : why(r2.json, r2.status) });
           continue;
         }
         const r = await send2(o.kind === "create" ? "POST" : o.method ?? "PATCH", o.path, body(o));
-        const j = (spec39.result ? at2(r.json, spec39.result) : r.json) ?? {};
-        const id = o.kind === "create" ? String(j["id"] ?? j[spec39.key] ?? "") : "";
+        const j = (spec41.result ? at2(r.json, spec41.result) : r.json) ?? {};
+        const id = o.kind === "create" ? String(j["id"] ?? j[spec41.key] ?? "") : "";
         if (r.status < 400 && id) ids.set(o.row, id);
         out.push(r.status < 400 ? { row: o.row, ok: true, ...o.kind === "create" ? { id } : {} } : { row: o.row, ok: false, error: why(r.json, r.status) });
       }
@@ -32658,12 +32925,12 @@ function googleAdsTransports(fetch2, headers, api, customer, specOf, maxPages = 
         return ids.has(row2) ? resourceName(refType, ids.get(row2)) : temp.get(row2) ?? "";
       };
       const mutateOperations = ops.map((o) => {
-        const spec39 = specOf(o.type);
+        const spec41 = specOf(o.type);
         const fields = { ...o.params };
         for (const [field, row2] of Object.entries(o.refs)) fields[field] = pointer(o, field, row2);
-        for (const [field, refType] of Object.entries(spec39?.refTypes ?? {}))
+        for (const [field, refType] of Object.entries(spec41?.refTypes ?? {}))
           if (typeof fields[field] === "string" && /^\d+$/.test(fields[field])) fields[field] = resourceName(refType, fields[field]);
-        const name = spec39?.operation ?? `${o.type}Operation`;
+        const name = spec41?.operation ?? `${o.type}Operation`;
         return o.kind === "create" ? { [name]: { create: { resourceName: temp.get(o.row), ...fields } } } : { [name]: { update: { resourceName: resourceName(o.type, o.id ?? ""), ...fields }, updateMask: Object.keys(o.params).join(",") } };
       });
       const res = await post("/googleAds:mutate", { mutateOperations, partialFailure: true });
@@ -32756,16 +33023,16 @@ function adTextsOf(doc) {
 function adTextProblems(t, o) {
   const out = [];
   if (!t.bodies.length) out.push("inneh\xE5llet har ingen annonstext");
-  for (const [list4, what] of [[t.bodies, "texter"], [t.titles, "rubriker"], [t.descriptions, "beskrivningar"]])
-    if (list4.length > AD_TEXT_LIMIT) out.push(`inneh\xE5llet har ${list4.length} ${what}; Meta tar h\xF6gst ${AD_TEXT_LIMIT}`);
+  for (const [list5, what] of [[t.bodies, "texter"], [t.titles, "rubriker"], [t.descriptions, "beskrivningar"]])
+    if (list5.length > AD_TEXT_LIMIT) out.push(`inneh\xE5llet har ${list5.length} ${what}; Meta tar h\xF6gst ${AD_TEXT_LIMIT}`);
   if (!o.placementImages && (t.bodies.length > 1 || t.titles.length > 1 || t.descriptions.length > 1))
     out.push("flera texter kr\xE4ver en bild per placering (fl\xF6det och stories), s\xE5 att Meta f\xE5r sina regler per placering");
   return out;
 }
 function adTextLines(t) {
   const lines = [], warnings = [];
-  for (const [list4, label] of [[t.bodies, "text"], [t.titles, "rubrik"], [t.descriptions, "beskrivning"]])
-    list4.forEach((x, n2) => {
+  for (const [list5, label] of [[t.bodies, "text"], [t.titles, "rubrik"], [t.descriptions, "beskrivning"]])
+    list5.forEach((x, n2) => {
       const len = [...x].length;
       lines.push(`${label}_${n2 + 1} (${len} tecken): ${x}`);
       if (label === "rubrik" && len > HEADLINE_WARN)
@@ -32907,16 +33174,16 @@ async function listOne(args, ctx) {
   const profile = ctx.call?.systemProfile?.(system);
   if (!profile) throw new Error(`systemposten f\xF6r \xAB${system}\xBB finns inte i nya registret`);
   const type = String(args["read_type"]);
-  const spec39 = profile.object_types[type];
-  if (!spec39) throw new Error(`\xAB${type}\xBB finns inte i systemposten f\xF6r ${system}`);
+  const spec41 = profile.object_types[type];
+  if (!spec41) throw new Error(`\xAB${type}\xBB finns inte i systemposten f\xF6r ${system}`);
   const t = await transportsFor(system, profile.transport, ctx, profile, args);
   const own = Object.fromEntries(Object.entries(args).filter(([k, v]) => typeof v === "string" && !["system", "read_type", "as", "plan"].includes(k)));
   const given = { ...own, ...args["vars"] && typeof args["vars"] === "object" ? Object.fromEntries(Object.entries(args["vars"]).map(([k, v]) => [k, String(v)])) : {} };
   const acc = profile.account;
-  const needsAccount = !!acc && JSON.stringify(spec39.read).includes("{account}");
+  const needsAccount = !!acc && JSON.stringify(spec41.read).includes("{account}");
   const vars2 = { ...given, ...!needsAccount ? {} : acc.form.startsWith("act_") ? { account: accountPath(args[acc.param] ?? args["ad_account_id"]) } : { account: digits(args[acc.param], acc.param) } };
   const fill3 = (s2) => s2.replace(/\{(\w+)\}/g, (m, k) => vars2[k] ?? m);
-  const read = spec39.read;
+  const read = spec41.read;
   const params = {
     ...read.query ? { query: fill3(read.query) } : read.fields.length ? { fields: read.fields.join(",") } : {},
     ...Object.fromEntries(Object.entries(read.params ?? {}).map(([k, v]) => [k, fill3(v)]))
@@ -32968,7 +33235,7 @@ function withTexts(p, rows3) {
 }
 
 // atoms/state/desired_state.atom.ts
-var spec36 = {
+var spec38 = {
   "id": "c_state_desired_state",
   "name": "state.call.desired_state",
   "grounding": "observed",
@@ -33031,7 +33298,7 @@ var spec36 = {
   "operation_id": "o_state_desired_state",
   "step_id": "s_state_desired_state"
 };
-async function run36(args, ctx) {
+async function run38(args, ctx) {
   if (typeof args["read_type"] === "string" && args["read_type"] !== "") {
     const items2 = await listOne(args, ctx);
     if (!Array.isArray(items2)) return items2;
@@ -33043,7 +33310,7 @@ async function run36(args, ctx) {
   const preview = withTexts(previewOf(d, `Publiceringsplanen mot ${l.system}`), l.rows);
   return { preview, summary: summaryOf(d), rows: d.rows, only_in_system: d.only_in_system, money: d.money };
 }
-var fixtures36 = [
+var fixtures38 = [
   {
     name: "utan systemposten i nya registret k\xF6rs inget",
     args: { system: "meta", plan: "c_0000000001", ad_account_id: "act_1" },
@@ -33054,9 +33321,9 @@ var fixtures36 = [
 // atoms/state/desired_state_apply.atom.ts
 var desired_state_apply_atom_exports = {};
 __export(desired_state_apply_atom_exports, {
-  fixtures: () => fixtures37,
-  run: () => run37,
-  spec: () => spec37
+  fixtures: () => fixtures39,
+  run: () => run39,
+  spec: () => spec39
 });
 
 // src/v2/state/desired/batches.ts
@@ -33094,16 +33361,16 @@ function planWrites(profile, d, desired, vars2) {
       }
     }
     if (kind === "create") {
-      const spec39 = t.create;
+      const spec41 = t.create;
       const params = {};
       for (const c of r.changes) params[c.field] = c.after;
       for (const f of comparedFields(t, want.values)) if (params[f] === void 0 && want.values[f] !== void 0) params[f] = want.values[f];
-      Object.assign(params, fillAll(spec39.fixed, vars2));
+      Object.assign(params, fillAll(spec41.fixed, vars2));
       const refs = {};
-      if (t.parent !== null && spec39.parent_field) {
+      if (t.parent !== null && spec41.parent_field) {
         const pid = want.parent ? idOfRow.get(want.parent) : null;
-        if (pid) params[spec39.parent_field] = pid;
-        else if (r.parent_row) refs[spec39.parent_field] = r.parent_row;
+        if (pid) params[spec41.parent_field] = pid;
+        else if (r.parent_row) refs[spec41.parent_field] = r.parent_row;
       }
       for (const [field, other] of Object.entries(want.refs ?? {})) {
         const id = idOfRow.get(other);
@@ -33114,38 +33381,38 @@ function planWrites(profile, d, desired, vars2) {
         row: r.row,
         type: r.type,
         kind,
-        path: fill2(spec39.path, vars2),
-        params: renamed(params, spec39.as),
+        path: fill2(spec41.path, vars2),
+        params: renamed(params, spec41.as),
         refs,
         id: null,
-        ...spec39.wrap ? { wrap: spec39.wrap } : {},
-        ...spec39.mutation ? { mutation: spec39.mutation } : {},
-        ...spec39.batch_path ? { batch_path: fill2(spec39.batch_path, vars2) } : {}
+        ...spec41.wrap ? { wrap: spec41.wrap } : {},
+        ...spec41.mutation ? { mutation: spec41.mutation } : {},
+        ...spec41.batch_path ? { batch_path: fill2(spec41.batch_path, vars2) } : {}
       });
     } else if (kind === "archive") {
-      const spec39 = t.archive;
+      const spec41 = t.archive;
       ops.push({
         row: r.row,
         type: r.type,
         kind,
-        path: fill2(spec39.path, { ...vars2, id: r.id }),
-        params: fillAll(spec39.set, { ...vars2, id: r.id }),
+        path: fill2(spec41.path, { ...vars2, id: r.id }),
+        params: fillAll(spec41.set, { ...vars2, id: r.id }),
         refs: {},
         id: r.id,
-        ...spec39.method ? { method: spec39.method } : {}
+        ...spec41.method ? { method: spec41.method } : {}
       });
     } else {
-      const spec39 = t.update;
+      const spec41 = t.update;
       ops.push({
         row: r.row,
         type: r.type,
         kind,
-        path: fill2(spec39.path, { ...vars2, id: encodeURIComponent(r.id) }),
-        params: { ...renamed(Object.fromEntries(r.changes.map((c) => [c.field, c.after])), spec39.as), ...fillAll(spec39.fixed, { ...vars2, id: r.id }) },
+        path: fill2(spec41.path, { ...vars2, id: encodeURIComponent(r.id) }),
+        params: { ...renamed(Object.fromEntries(r.changes.map((c) => [c.field, c.after])), spec41.as), ...fillAll(spec41.fixed, { ...vars2, id: r.id }) },
         refs: {},
         id: r.id,
-        ...spec39.method ? { method: spec39.method } : {},
-        ...spec39.mutation ? { mutation: spec39.mutation } : {}
+        ...spec41.method ? { method: spec41.method } : {},
+        ...spec41.mutation ? { mutation: spec41.mutation } : {}
       });
     }
   }
@@ -33206,10 +33473,10 @@ async function applyDiff(i) {
   const back2 = await i.read();
   const after = diff(i.profile, i.desired, back2, i.ledger);
   const archived = (op) => {
-    const spec39 = i.profile.object_types[op.type]?.archive;
+    const spec41 = i.profile.object_types[op.type]?.archive;
     const e = back2.find((x) => x.type === op.type && x.id === op.id);
-    if (spec39?.gone === true) return !e;
-    const set = spec39?.set ?? {};
+    if (spec41?.gone === true) return !e;
+    const set = spec41?.set ?? {};
     return !!e && Object.entries(set).every(([k, v]) => e.values[k] === v);
   };
   const rows3 = [];
@@ -33282,7 +33549,7 @@ async function activate(i) {
 }
 
 // atoms/state/desired_state_apply.atom.ts
-var spec37 = {
+var spec39 = {
   "id": "c_state_desired_state_apply",
   "name": "state.call.desired_state_apply",
   "grounding": "observed",
@@ -33361,7 +33628,7 @@ var spec37 = {
     "note": []
   }
 };
-async function run37(args, ctx) {
+async function run39(args, ctx) {
   const l = await loadDesired(args, ctx);
   const mode = String(args["mode"] ?? "apply");
   if (mode !== "apply" && mode !== "activate") throw new Error(`mode ska vara apply eller activate, fick \xAB${mode}\xBB`);
@@ -33443,7 +33710,7 @@ async function run37(args, ctx) {
   });
   return { receipt, summary: receipt.stopped ?? receipt.summary, rows: receipt.rows, remaining: receipt.remaining };
 }
-var fixtures37 = [
+var fixtures39 = [
   {
     name: "utan systemposten i nya registret skrivs inget",
     args: { system: "meta", plan: "c_0000000001", ad_account_id: "act_1", mode: "apply", fingerprint: "x" },
@@ -33454,11 +33721,11 @@ var fixtures37 = [
 // atoms/usage/read_calls.atom.ts
 var read_calls_atom_exports = {};
 __export(read_calls_atom_exports, {
-  fixtures: () => fixtures38,
-  run: () => run38,
-  spec: () => spec38
+  fixtures: () => fixtures40,
+  run: () => run40,
+  spec: () => spec40
 });
-var spec38 = {
+var spec40 = {
   id: "c_usage_read_calls",
   name: "usage.call.read_calls",
   grounding: "decided",
@@ -33514,7 +33781,7 @@ var median2 = (xs) => {
   const s2 = [...xs].sort((a, b) => a - b), m = Math.floor(s2.length / 2);
   return s2.length % 2 ? s2[m] : Math.round((s2[m - 1] + s2[m]) / 2);
 };
-async function run38(args, ctx) {
+async function run40(args, ctx) {
   if (!ctx.usage) throw new Error("anropsloggen \xE4r inte kopplad h\xE4r; inget l\xE4stes");
   const from = time4(args["from"], "from"), to = time4(args["to"], "to");
   if (to <= from) throw new Error("from m\xE5ste vara f\xF6re to");
@@ -33556,12 +33823,12 @@ async function run38(args, ctx) {
     gaps
   };
 }
-var fixtures38 = [
+var fixtures40 = [
   { name: "utan kopplad logg s\xE4ger atomen det", args: { from: "2026-11-04T23:00:00+01:00", to: "2026-11-04T23:45:00+01:00" }, expect_error: "inte kopplad" }
 ];
 
 // atoms/index.generated.ts
-var ATOMS = [request_atom_exports, change_bank_atom_exports, pack_files_atom_exports, read_bank_atom_exports, create_event_atom_exports, save_version_atom_exports, create_draft_atom_exports, list_inflow_atom_exports, read_attachments_atom_exports, send_mail_atom_exports, connection_check_atom_exports, pagespeed_atom_exports, search_console_atom_exports, change_atom_exports, read_atom_exports, archive_record_atom_exports, cms_content_publish_atom_exports, cms_content_write_atom_exports, find_objects_atom_exports, list_content_atom_exports, read_menus_atom_exports, read_object_atom_exports, read_source_atom_exports, ui_settings_register_atom_exports, ui_template_edit_atom_exports, user_write_atom_exports, write_record_atom_exports, write_source_atom_exports, change_ad_object_atom_exports, create_ad_creative_atom_exports, manage_access_atom_exports, write_atom_exports, html_pdf_atom_exports, qr_code_atom_exports, desired_state_atom_exports, desired_state_apply_atom_exports, read_calls_atom_exports, fetch_pages_atom_exports];
+var ATOMS = [request_atom_exports, change_bank_atom_exports, pack_files_atom_exports, read_bank_atom_exports, create_event_atom_exports, assemble_atom_exports, check_atom_exports, save_version_atom_exports, create_draft_atom_exports, list_inflow_atom_exports, read_attachments_atom_exports, send_mail_atom_exports, connection_check_atom_exports, pagespeed_atom_exports, search_console_atom_exports, change_atom_exports, read_atom_exports, archive_record_atom_exports, cms_content_publish_atom_exports, cms_content_write_atom_exports, find_objects_atom_exports, list_content_atom_exports, read_menus_atom_exports, read_object_atom_exports, read_source_atom_exports, ui_settings_register_atom_exports, ui_template_edit_atom_exports, user_write_atom_exports, write_record_atom_exports, write_source_atom_exports, change_ad_object_atom_exports, create_ad_creative_atom_exports, manage_access_atom_exports, write_atom_exports, html_pdf_atom_exports, qr_code_atom_exports, desired_state_atom_exports, desired_state_apply_atom_exports, read_calls_atom_exports, fetch_pages_atom_exports];
 
 // src/local-runner/server.ts
 import { homedir } from "node:os";
