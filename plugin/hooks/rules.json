@@ -1,0 +1,170 @@
+{
+ "generated": "npm run gen:skills ur src/v2/skill/hook-rules.ts; ändra där",
+ "dirigent_tool": "dirigent|__(plan_state|execute_step)$",
+ "dirigent_reply": "\"envelope\"",
+ "prompt": {
+  "words": "\\b(kund|kunden|uppdrag|moment|fil|filen|filer|ladda upp|mejl|mejla|maila|kollega|planera|planering|leverans|offert|kampanj|crm|hubspot|annons|prislista|projekt)",
+  "line": "Det här rör Rotors kunder eller arbete: använd kopplingen rotor-dirigenten. Osäker på vägen: read{op:\"can\", q:\"<önskan i ord>\"} innan du säger att något inte går eller väljer en annan koppling."
+ },
+ "pre": [
+  {
+   "id": "gmail_write",
+   "tool": "^mcp__.*__(send_message|create_draft|reply|forward|update_draft)$",
+   "input": "\"(subject|body|to)\"",
+   "wish": "skicka mejl utkast kollega meddelande",
+   "name": "gmail",
+   "ways": [
+    {
+     "tool": "write",
+     "op": "mail_draft",
+     "severity": "■",
+     "example": {
+      "tool": "write",
+      "args": {
+       "op": "mail_draft"
+      }
+     }
+    },
+    {
+     "tool": "write",
+     "op": "message",
+     "severity": "◐",
+     "example": {
+      "tool": "write",
+      "args": {
+       "op": "message"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "hubspot_write",
+   "tool": "^mcp__.*__manage_(crm_objects|marketing_email|landing_page|blog_post|website_page|segment|campaign_objects|saved_reports)$",
+   "wish": "kör förmåga kund system crm ändra",
+   "name": "hubspot",
+   "ways": [
+    {
+     "tool": "execute_step",
+     "severity": "enligt handlingen",
+     "example": {
+      "tool": "execute_step",
+      "args": {}
+     }
+    },
+    {
+     "tool": "write",
+     "op": "quick_run",
+     "severity": "◐",
+     "example": {
+      "tool": "write",
+      "args": {
+       "op": "quick_run"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "meta_write",
+   "tool": "^mcp__.*__ads_(create|update|activate|boost|delete|catalog_create|catalog_update)",
+   "wish": "kör förmåga annons kampanj ändra",
+   "name": "meta",
+   "ways": [
+    {
+     "tool": "write",
+     "op": "quick_run",
+     "severity": "◐",
+     "example": {
+      "tool": "write",
+      "args": {
+       "op": "quick_run"
+      }
+     }
+    },
+    {
+     "tool": "write",
+     "op": "registry_define",
+     "severity": "◐",
+     "example": {
+      "tool": "write",
+      "args": {
+       "op": "registry_define"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "id": "curl_upload",
+   "tool": "^Bash$",
+   "input": "curl[^\\n]{0,400}rotor-dirigenten\\.netlify\\.app",
+   "wish": "ladda upp fil filbank spara",
+   "name": "curl",
+   "ways": [
+    {
+     "tool": "write",
+     "op": "file_add",
+     "severity": "◐",
+     "example": {
+      "tool": "write",
+      "args": {
+       "op": "file_add"
+      }
+     }
+    },
+    {
+     "tool": "read",
+     "op": "files",
+     "severity": "●",
+     "example": {
+      "tool": "read",
+      "args": {
+       "op": "files"
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "files": {
+  "ext": "\\.(pdf|docx?|pptx?|xlsx?|png|jpe?g|webp|svg|idml|zip|html)$",
+  "way": {
+   "tool": "write",
+   "op": "file_add",
+   "severity": "◐",
+   "example": {
+    "tool": "write",
+    "args": {
+     "op": "file_add"
+    }
+   }
+  },
+  "chunk_kb": 256,
+  "name_rule": "<vad>_<variant>_<ÅÅÅÅ-MM-DD>.<ext>, gemener, å ä ö blir a a o (prislista-villa-2026-11-10)"
+ },
+ "batch": {
+  "min": 3,
+  "way": {
+   "tool": "write",
+   "op": "batch_apply",
+   "severity": "■",
+   "example": {
+    "tool": "write",
+    "args": {
+     "op": "batch_apply"
+    }
+   }
+  }
+ },
+ "pre_line": "Dirigenten har vägen för det här; använd den i stället (eller fråga read{op:\"can\"}). Gäller inte om dirigenten svarat att förmågan saknas eller användaren uttryckligen bett om den andra kopplingen.",
+ "stale_line": "Dirigenten säger att dina verktyg är gamla (stale_tools). Säg det till användaren en gång med stale_tools.how; anropa saknade op:ar ändå med read/write{op}.",
+ "refused_line": "Dirigenten sa nej men gav vägen: skicka envelope.next (mallen) direkt i stället för att gissa en ny form. Vid rev_conflict: samma anrop med den nya rev ur svaret.",
+ "batch_line": "Flera anrop av samma slag i rad: act tar batch (flera handlingar i ordning, ■ ensam). Skicka resten i ett anrop.",
+ "file_line": "Filen finns bara lokalt. Lägg den i kundens filbank med dirigenten: write{op:\"file_add\", name, base64, mime, customer, task?, moment?}; större än 256 kB i delar med chunk {id, index, total, sha256}. Aldrig curl.",
+ "stop_intro": "Innan du avslutar: hantera eller nämn det här för användaren.",
+ "stop_preview": "En förhandsvisning (■) väntar på användarens svar.",
+ "stop_file": "En fil du skapat finns bara lokalt, inte i kundens filbank.",
+ "stop_affected": "Ändringen berör moment som inte öppnats igen (affected i svaret).",
+ "stop_kvar": "Repot är ändrat men docs/kvar.md inte: lägg till eller stryk raden."
+}

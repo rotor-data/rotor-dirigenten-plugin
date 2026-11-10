@@ -1,11 +1,59 @@
 {
-  "description": "Vägkartan: loggar vad Claude gör i webbläsaren och andra kopplingar medan ett moment görs utanför dirigenten, utan värden, och skickar stegen till dirigenten i bakgrunden när momentet markeras gjort.",
+  "description": "Vägkartan: loggar vad Claude gör i webbläsaren och andra kopplingar medan ett moment görs utanför dirigenten, utan värden, och skickar stegen till dirigenten i bakgrunden när momentet markeras gjort. Vakten (guard.mjs): styr till dirigentens väg före andra kopplingar, säger till om gamla verktyg, nej med vägen, batch och filer som bara finns lokalt, och vad som återstår innan turen avslutas.",
   "hooks": {
     "PostToolUse": [
       {
         "matcher": "mcp__.*",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/trail.mjs\"", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/trail.mjs\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guard.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "mcp__.*|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guard.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guard.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/guard.mjs\"",
+            "timeout": 5
+          }
         ]
       }
     ]
