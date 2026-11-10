@@ -50,8 +50,12 @@ function turn(lines) {
 
 export function onPrompt(input) {
   const p = String(input.prompt ?? "");
-  if (!re(RULES.prompt.words).test(p)) return null;
-  return { hookSpecificOutput: { hookEventName: "UserPromptSubmit", additionalContext: RULES.prompt.line } };
+  const lines = [];
+  if (re(RULES.prompt.words).test(p)) lines.push(RULES.prompt.line);
+  // A pause while planning goes on in the conversation: the summary is written at once.
+  if (RULES.planning && re(RULES.planning.pause_words).test(p) && transcript(input.transcript_path).some((o) => blocks(o).some((b) => b.type === "tool_use" && re(RULES.planning.writes).test(text(b.input)))))
+    lines.push(RULES.pause_line);
+  return lines.length ? { hookSpecificOutput: { hookEventName: "UserPromptSubmit", additionalContext: lines.join(" ") } } : null;
 }
 
 export function onPre(input) {
@@ -151,6 +155,15 @@ export function onStop(input, git = gitChanged) {
   if (wrote && existsSync(join(cwd, "docs/kvar.md"))) {
     const changed = git(cwd);
     if (changed.length && !changed.includes("docs/kvar.md") && !/kvar\.md|kvar-listan/i.test(said)) items.push(RULES.stop_kvar);
+  }
+  // Planning in this turn: the last planning write's reply still reminds of what must not be lost, and no note of it came after.
+  const P = RULES.planning;
+  if (P) {
+    const at = uses.map((u, i) => ({ i, s: text(u.input) })).filter((x) => re(P.writes).test(x.s));
+    const lastWrite = at.at(-1);
+    const keptAfter = lastWrite !== undefined && uses.slice(lastWrite.i).some((u) => re(P.writes).test(text(u.input)) && re(P.keep).test(text(u.input)));
+    const reminded = results.some((x) => re(P.remind).test(x));
+    if (lastWrite !== undefined && reminded && !keptAfter) items.push(RULES.stop_planning);
   }
   return items.length ? { decision: "block", reason: `${RULES.stop_intro}\n- ${items.join("\n- ")}` } : null;
 }

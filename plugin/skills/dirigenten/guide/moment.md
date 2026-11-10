@@ -67,5 +67,5 @@ Actions
 
 Example 1: `act{on:{kind:"moment",id:"<id>"}, action:"change", rev:"<rev>"}` — Ändra: Ett värde eller ordningen för det här momentet ändras i uppdragets plan.
 Example 2: `act{on:{kind:"moment",id:"<id>"}, action:"change", rev:"<rev>"}` (Ändra, inverse `change`) followed by `act{…, action:"undo", rev:"<new rev>"}` when the user changes their mind.
-Counterexample: `do_self` while the moment is "blocked" is refused (Går inte nu: momentet är blockerat. Det som går nu: Skriv själv, Peka på fil, Gjort utanför, Hoppa över, Godkänn alla, Gör på annat sätt här, Gör på annat sätt för kunden, Byt vem, Ta bort koppling, Ta över, Gör ändå, Släpp.). Do not retry it; read and take what `available` offers.
+Counterexample: `do_self` while the moment is "blocked" is refused (Går inte nu: momentet är blockerat. Det som går nu: Skriv själv, Peka på fil, Gjort utanför, Hoppa över, Godkänn alla, Gör på annat sätt här, Gör på annat sätt för kunden, Byt vem, Ta bort koppling, Gör ändå, Släpp.). Do not retry it; read and take what `available` offers.
 Edge case: two people act on the same `rev`: one is written, the other gets `written:false` with the new `rev`. Read, then decide again. The `unavailable` list gives `why` and what unlocks it.

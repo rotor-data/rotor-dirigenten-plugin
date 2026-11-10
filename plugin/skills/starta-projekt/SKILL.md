@@ -37,6 +37,19 @@ Anta inte att något fortfarande inte fungerar för att det inte fungerade tidig
 
 ## 3. Målet först, sedan valen
 
+Planeringen följer samma steg varje gång, oavsett metod:
+1. Läs beställningen ordagrant och allt underlag som finns: kundens profil, filbanken, tidigare uppdrag och mejltrådar. Klart när: beställningen sparad (goal.order) och underlaget med källor.
+2. Skriv målet: det som ska vara sant när uppdraget är klart, med resultaten. Klart när: goal med results, eller unclear: true.
+3. Välj leveranstypen och metoden ur registret; finns ingen, eget mål baklänges. Klart när: deliverable_type, eller eget mål.
+4. Låt dirigenten räkna delmålen baklänges från målet; planera allt som går med det som finns. Klart när: planen sluten baklänges, inga öppna strukturfel.
+5. Varje moment med vem som gör det (en roll), vad det lämnar och hur man ser att det är klart. Klart när: varje moment har utförare, resultat och klart-villkor.
+6. Grindarna: kundens ja, egna ja och kontroller, där metoden säger. Klart när: varje ja och kontroll står på sitt moment.
+7. Vad som bygger på vad; skjut bara upp det som bevisligen beror på ett kommande resultat («planeras när X finns»). Klart när: inget står som «planeras senare» utan ett giltigt beroende (grinden: deferred_without_dependency).
+8. Datum och tid ur målets datum och momentens ledtid. Klart när: datum eller förslag på datum per delmål.
+9. Det som saknas fylls i som antagande med källa, eller blir en parallell fråga till rätt roll med förslag på svar; inget stoppar. Klart när: antagandena och frågorna listade, ingen spärr.
+Planera allt som går nu; skjut bara upp det som bevisligen beror på ett kommande resultat (texter per del innan strukturen är godkänd, annonser per målgrupp innan målgrupperna är beslutade). Det uppskjutna står som «planeras när X finns» och växer ur resultatet med metodens regler och ett ja för hela tillväxten.
+Planeringen sparas i dirigenten medan du planerar, så att vem som helst kan fortsätta i en annan chatt eller i vyn; ingen vet när en chatt tar slut. Varje beslut, val och uppskjutet steg sparas med sitt resonemang (write och planning_note: varför, alternativen och varför de valdes bort, antaganden, källor med ref); utan det tas det inte emot. Det som bara du vet sparas efter varje tur där planeringen ändrats: farhågor, förbehåll och personens ordagranna krav (kind requirement eller concern). Överlämningen räknar servern fram efter varje skrivning. Säger personen «vi tar det sen», «pausa» eller byter ämne: spara en sammanfattning direkt (write och planning_pause med summary). Ett delbeslut som någon annan ska ta läggs hos den personen med förslag (write och planning_delegate) och besvaras med skäl och ja (planning_answer). Den som fortsätter läser planeringen (read och planning): överlämningen först, det som hänt efter den senaste sammanfattningen, resonemanget kort, sedan nästa steg. Det som går att planera ska vara planerat innan arbetet går vidare: ett moment som bygger på det som återstår att planera stoppas med «Planera klart först» tills det är planerat; det som väntar på ett kommande resultat stoppar aldrig.
+
 1. Skriv målet: det som ska vara sant när uppdraget är klart, mätbart där det går. Delmålen och ordningen mellan dem räknas av dirigenten baklänges från målet.
    Är arbetsordningen redan känd (underlaget eller användaren säger vad som kommer först, med datum, vem som ansvarar eller vad en del ska åstadkomma): lämna den med målet i samma skrivning, så räknas bara resten baklänges. Fälten står i `guide{phase: "planning"}`, med ett exempel; ett avslag säger vilket fält som inte finns och ger mallen att skriva efter. Ett nytt datum ersätter det gamla.
    Exempel: «avtalet först, synopsis före mallen, svenska före engelska» blir delmål i den ordningen, med datum och ansvarig. Motexempel: bara målet, och ordningen gissas fram baklänges.

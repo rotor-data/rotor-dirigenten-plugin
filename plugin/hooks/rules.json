@@ -157,6 +157,12 @@
    }
   }
  },
+ "planning": {
+  "writes": "\"op\":\"planning_(note|delegate|answer)\"",
+  "keep": "\"kind\":\"(requirement|concern)\"",
+  "remind": "\"remind\":",
+  "pause_words": "\\b(vi tar det sen|ta det sen|pausa|paus|vi fortsätter sen|en annan gång|byt(er)? ämne)\\b"
+ },
  "pre_line": "Dirigenten har vägen för det här; använd den i stället (eller fråga read{op:\"can\"}). Gäller inte om dirigenten svarat att förmågan saknas eller användaren uttryckligen bett om den andra kopplingen.",
  "stale_line": "Dirigenten säger att dina verktyg är gamla (stale_tools). Säg det till användaren en gång med stale_tools.how; anropa saknade op:ar ändå med read/write{op}.",
  "refused_line": "Dirigenten sa nej men gav vägen: skicka envelope.next (mallen) direkt i stället för att gissa en ny form. Vid rev_conflict: samma anrop med den nya rev ur svaret.",
@@ -166,5 +172,7 @@
  "stop_preview": "En förhandsvisning (■) väntar på användarens svar.",
  "stop_file": "En fil du skapat finns bara lokalt, inte i kundens filbank.",
  "stop_affected": "Ändringen berör moment som inte öppnats igen (affected i svaret).",
- "stop_kvar": "Repot är ändrat men docs/kvar.md inte: lägg till eller stryk raden."
+ "stop_kvar": "Repot är ändrat men docs/kvar.md inte: lägg till eller stryk raden.",
+ "stop_planning": "Planeringen ändrades i turen: spara det som bara du vet och som inte får tappas — farhågor, förbehåll och personens ordagranna krav — med planning_note (kind requirement eller concern).",
+ "pause_line": "Personen pausar eller byter ämne: spara en sammanfattning av planeringen direkt med write{op:\"planning_pause\", task, summary} (med personens ord)."
 }
