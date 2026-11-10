@@ -45,6 +45,8 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"content_list"}`: lista innehåll med läge (utkast, godkänd, publicerad): customer?, kind?, status?
 - `read|write{op:"content_approve"}`: godkänn senaste versionen av en text i banken: id, user_approval (personens ord); decline (vad som ska ändras) eller withdraw
 - `read|write{op:"asset_copy"}`: lägg en fil ur filbanken i en mapp: from_ref, folder, valfritt filename, customer; samma fil, kopplingarna står kvar
+- `read|write{op:"file_remove"}`: ta bort en fil ur filbanken (■): from_ref, reason (skälet krävs); först en förhandsvisning, sedan samma anrop med preview_id från svaret och user_approval (personens ord ordagrant); filen går att lägga tillbaka
+- `read|write{op:"file_restore"}`: lägg tillbaka en borttagen fil i filbanken: from_ref (filens ref, namn eller kontrollsumma), valfritt reason
 - `read|write{op:"upload_link"}`: uppladdningssidan för en kund: customer, valfritt for_task och for_node (momentet), folder; fler filer på en gång
 - `read|write{op:"image_picker"}`: bildväljaren: mode sources|search|prompt; customer eller content; source, q, page, formats, text_area, channel
 - `read|write{op:"image_target"}`: bildväljarens mål: pick_image { task, ref }
