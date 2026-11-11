@@ -114,6 +114,17 @@
      }
     },
     {
+     "tool": "write",
+     "op": "save",
+     "severity": "●",
+     "example": {
+      "tool": "write",
+      "args": {
+       "op": "save"
+      }
+     }
+    },
+    {
      "tool": "read",
      "op": "files",
      "severity": "●",

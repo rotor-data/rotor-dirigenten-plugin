@@ -2,15 +2,15 @@
 
 When: upload, save, find, move or remove a file.
 
-## file add ◐
+## save ●
 
 input:
 ```json
-{"tool":"write","args":{"op":"file_add","name":"<name>","text":"<text>","customer":"<customer>"}}
+{"tool":"write","args":{"op":"save","text":"<text>","customer":"<customer>"}}
 ```
 output:
 ```json
-{"phase":"done","say":{"happened":"«<name>» ligger nu i kundens filbank, i «customer/claude/filer» som föreslagen plats; den kan flyttas därifrån.","now":"«<name>» ligger nu i kundens filbank, i «customer/claude/filer» som föreslagen plats; den kan flyttas därifrån.","then":"Den syns i kundens filer och kan knytas till ett moment därifrån."}}
+{"phase":"done","say":{"happened":"Sparat: «Material · v1 · 01 jan», i kundens bank.","now":"Sparat: «Material · v1 · 01 jan», i kundens bank.","then":"Det syns i listan där det sparades och kan flyttas därifrån."}}
 ```
 next:
 ```json

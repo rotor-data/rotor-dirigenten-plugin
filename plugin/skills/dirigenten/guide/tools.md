@@ -43,9 +43,12 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 v1's step tools, with v1's fields, done on v2's moments through read, act or plan_state (severity and yes as there):
 - `read|write{op:"content_search"}`: sök i innehållsbanken: query, customer?, limit?
 - `read|write{op:"content_list"}`: lista innehåll med läge (utkast, godkänd, publicerad): customer?, kind?, status?
+- `read|write{op:"save"}`: spara en text, fil eller länk (●, med ångra; stoppar bara av rättighet eller personuppgifter): text|base64|url, mime?, name?, what?, about? (vilken sida eller «kunden»), customer|task, moment?, folder?, kind? (v1:s sort), as_file? (en text som är en fil), chunk?; vad det är och namnet läses ur innehållet
 - `read|write{op:"content_approve"}`: godkänn senaste versionen av en text i banken: id, user_approval (personens ord); decline (vad som ska ändras) eller withdraw
 - `read|write{op:"asset_copy"}`: lägg en fil ur filbanken i en mapp: from_ref, folder, valfritt filename, customer; samma fil, kopplingarna står kvar
 - `read|write{op:"file_remove"}`: ta bort en fil ur filbanken (■): from_ref, reason (skälet krävs); först en förhandsvisning, sedan samma anrop med preview_id från svaret och user_approval (personens ord ordagrant); filen går att lägga tillbaka
+- `read|write{op:"material_backfill"}`: fyll i vad det är och vad det gäller för allt som sparats innan save läste det (◐): valfritt customer; först en förhandsvisning grupperad per mönster, sedan samma anrop med preview_id och user_approval (personens ord); inget innehåll ändras, och allt ångras på en gång; före ifyllnaden läses samma uppgifter vid sökning, utom det som bara textens brödtext avgör (till exempel sidan som bara står i rubriken)
+- `read|write{op:"material_backfill_undo"}`: ångra en ifyllnad av uppgifter om sparat material, hela på en gång: batch (ur svaret)
 - `read|write{op:"file_restore"}`: lägg tillbaka en borttagen fil i filbanken: from_ref (filens ref, namn eller kontrollsumma), valfritt reason
 - `read|write{op:"upload_link"}`: uppladdningssidan för en kund: customer, valfritt for_task och for_node (momentet), folder; fler filer på en gång
 - `read|write{op:"image_picker"}`: bildväljaren: mode sources|search|prompt; customer eller content; source, q, page, formats, text_area, channel

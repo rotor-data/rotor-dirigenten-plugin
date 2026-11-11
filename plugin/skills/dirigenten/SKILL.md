@@ -19,7 +19,7 @@ Rotor's customers, tasks, files, mail, planning and customer systems: connector 
 ## Calls (generated)
 
 - can → `read{"op":"can","q":"<q>"}` ●
-- file add → `write{"op":"file_add","name":"<name>","text":"<text>","customer":"<customer>"}` ◐
+- save → `write{"op":"save","text":"<text>","customer":"<customer>"}` ●
 - file remove → `write{"op":"file_remove","from_ref":"<from_ref>","reason":"<reason>"}` ■
 - file restore → `write{"op":"file_restore","from_ref":"<from_ref>"}` ◐
 - asset copy → `write{"op":"asset_copy","from_ref":"<from_ref>","folder":"<folder>","customer":"<customer>"}` ◐
@@ -29,7 +29,6 @@ Rotor's customers, tasks, files, mail, planning and customer systems: connector 
 - mail draft → `write{"op":"mail_draft","values":"<values>"}` ■
 - content graph → `read{"op":"content_graph","graph_id":"<graph_id>"}` ●
 - content graph edit → `write{"op":"content_graph_edit","graph_id":"<graph_id>","node":"<node>","path":"<path>","value":"<value>"}` ◐
-- content save → `write{"op":"content_save","markdown":"<markdown>","customer":"<customer>","kind":"<kind>","name":"<name>"}` ◐
 - quick run → `write{"op":"quick_run","task":"<task>"}` ◐
 - batch apply → `write{"op":"batch_apply","action":"<action>","items":"<items>","params":"<params>"}` ■
 - run on a moment → `act{"on":{"kind":"moment","id":"<moment>","task":"<task>"},"action":"run","rev":"<rev>"}` per envelope

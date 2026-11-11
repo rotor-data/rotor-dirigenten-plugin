@@ -2,6 +2,21 @@
 
 When: texts, a site, content that must hang together.
 
+## save ●
+
+input:
+```json
+{"tool":"write","args":{"op":"save","text":"<text>","customer":"<customer>"}}
+```
+output:
+```json
+{"phase":"done","say":{"happened":"Sparat: «Material · v1 · 01 jan», i kundens bank.","now":"Sparat: «Material · v1 · 01 jan», i kundens bank.","then":"Det syns i listan där det sparades och kan flyttas därifrån."}}
+```
+next:
+```json
+null
+```
+
 ## content graph ●
 
 input:
@@ -30,19 +45,4 @@ output:
 next:
 ```json
 {"tool":"write","args":{"op":"content_graph_edit","graph_id":"<grafens id>","node":"<node>","path":"<path>","value":"<value>"}}
-```
-
-## content save ◐
-
-input:
-```json
-{"tool":"write","args":{"op":"content_save","markdown":"<markdown>","customer":"<customer>","kind":"<kind>","name":"<name>"}}
-```
-output:
-```json
-{"phase":"refused","say":{"happened":"Det sparades inte. Vad som behövs står i det som saknas.","now":"Det sparades inte. Vad som behövs står i det som saknas.","then":"Rätta anropet efter det som saknas och skicka det igen."},"missing":[{"field":"customer","template":"{\"customer\":\"<kundens id eller namn>\"}"}]}
-```
-next:
-```json
-{"tool":"write","args":{"op":"content_save","markdown":"<markdown>","customer":"<kundens id eller namn>","kind":"<kind>","name":"<name>"}}
 ```
