@@ -10,7 +10,7 @@ input:
 ```
 output:
 ```json
-{"phase":"done","say":{"happened":"Sparat: «Material · v1 · 01 jan», i kundens bank.","now":"Sparat: «Material · v1 · 01 jan», i kundens bank.","then":"Det syns i listan där det sparades och kan flyttas därifrån."}}
+{"phase":"done","say":{"happened":"Sparat: «Material · <text> · v1 · 01 jan», bland filerna för <customer>.","now":"Sparat: «Material · <text> · v1 · 01 jan», bland filerna för <customer>.","then":"Det syns i listan där det sparades och kan flyttas därifrån."}}
 ```
 next:
 ```json

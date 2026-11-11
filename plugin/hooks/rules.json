@@ -125,13 +125,13 @@
      }
     },
     {
-     "tool": "read",
-     "op": "files",
-     "severity": "●",
+     "tool": "write",
+     "op": "file_remove",
+     "severity": "■",
      "example": {
-      "tool": "read",
+      "tool": "write",
       "args": {
-       "op": "files"
+       "op": "file_remove"
       }
      }
     }

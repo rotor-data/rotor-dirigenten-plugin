@@ -10,7 +10,7 @@ input:
 ```
 output:
 ```json
-{"phase":"done","say":{"happened":"Sparat: «Material · v1 · 01 jan», i kundens bank.","now":"Sparat: «Material · v1 · 01 jan», i kundens bank.","then":"Det syns i listan där det sparades och kan flyttas därifrån."}}
+{"phase":"done","say":{"happened":"Sparat: «Material · <text> · v1 · 01 jan», bland filerna för <customer>.","now":"Sparat: «Material · <text> · v1 · 01 jan», bland filerna för <customer>.","then":"Det syns i listan där det sparades och kan flyttas därifrån."}}
 ```
 next:
 ```json
@@ -85,11 +85,11 @@ input:
 ```
 output:
 ```json
-{"phase":"refused","say":{"happened":"Det gick inte att läsa; inget ändrades. Vad som behövs står i det som saknas.","now":"Det gick inte att läsa; inget ändrades. Vad som behövs står i det som saknas.","then":"Rätta anropet efter det som saknas och skicka det igen."},"missing":[{"field":"customer","template":"{\"customer\":\"<kund>\"}"}]}
+{"phase":"read","say":{"happened":"Uppladdningsrutan visas i chatten: användaren släpper en eller flera filer där (högst 25 MB och 20 filer, gäller i 30 minuter), och de sparas direkt. Syns ingen ruta: ge användaren länken https://<dirigenten>/upload?t=<signed>, samma sak på en egen sida.","now":"Uppladdningsrutan visas i chatten: användaren släpper en eller flera filer där (högst 25 MB och 20 filer, gäller i 30 minuter), och de sparas direkt. Syns ingen ruta: ge användaren länken https://<dirigenten>/upload?t=<signed>, samma sak på en egen sida.","then":"Fortsätt med nästa sak."},"upload":{"page":"https://<dirigenten>/upload?t=<signed>","expires_at":"2026-01-01T09:30:00Z","max_bytes":26214400,"max_files":20,"for":{"customer":"<customer>","folder":"<folder>","type":"core.asset.material"}}}
 ```
 next:
 ```json
-{"tool":"read","args":{"op":"upload_link","customer":"<kund>","folder":"<folder>"}}
+null
 ```
 
 ## attach file on a moment per envelope

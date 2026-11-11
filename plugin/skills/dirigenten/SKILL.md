@@ -15,6 +15,7 @@ Rotor's customers, tasks, files, mail, planning and customer systems: connector 
 - ● do. ◐ one yes per task and day. ■ call without `user_approval`, show the preview, then send the verbatim yes with `preview_id`, alone.
 - A refusal carries `envelope.next`: send it. `stale_tools` in a reply: tell the user `stale_tools.how` once.
 - Tell the user what `say` says (happened, now, then). **Förklara det du hänvisar till.**
+- A file in the chat (attached, or one you made) goes into the file bank by what you hold of it: words → `save` with `text`; bytes you can read → `save` with `base64` (parts over 256 kB); only seen → `upload_link`. Recipe: references/files-from-the-chat.md.
 
 ## Calls (generated)
 
@@ -44,6 +45,7 @@ Rotor's customers, tasks, files, mail, planning and customer systems: connector 
 ## Examples per area
 
 - [Files and the file bank](references/files-and-file-bank.md): upload, save, find, move or remove a file
+- [A file in the chat into the file bank](references/files-from-the-chat.md): the user attached a file, or you made one, and it should be in the file bank
 - [Mail and calendar](references/mail-and-calendar.md): mail a colleague or a customer, reply
 - [Planning and project start](references/planning-and-project-start.md): plan, add a step, how is a customer doing
 - [Content and the content graph](references/content-and-content-graph.md): texts, a site, content that must hang together
