@@ -9,13 +9,13 @@ description: How the dirigenten registry, planning and delivery system fits toge
 
 Rotor's customers, tasks, files, mail, planning and customer systems: connector rotor-dirigenten. Rules:
 
-- Not sure, or about to say «cannot» or use another connector (mail, CRM, ads, curl): `read{op:"can", q:"<the user's words>"}` first.
+- Not sure, or about to say «cannot» or use another connector (mail, CRM, ads; curl only to an upload_link): `read{op:"can", q:"<the user's words>"}` first.
 - Every op below works under `read`/`write` even when your tool schema lacks it.
 - `act{on, action, rev}` does things; `rev` from the last read; several of a kind in one call with `batch`.
 - ● do. ◐ one yes per task and day. ■ call without `user_approval`, show the preview, then send the verbatim yes with `preview_id`, alone.
 - A refusal carries `envelope.next`: send it. `stale_tools` in a reply: tell the user `stale_tools.how` once.
 - Tell the user what `say` says (happened, now, then). **Förklara det du hänvisar till.**
-- A file in the chat (attached, or one you made) goes into the file bank by what you hold of it: words → `save` with `text`; bytes you can read → `save` with `base64` (parts over 256 kB); only seen → `upload_link`. Recipe: references/files-from-the-chat.md.
+- A file in the chat (attached, or one you made) goes into the file bank by what you hold of it: words → `save` with `text`; in your workspace → `upload_link` + curl (never type bytes out); base64 only under 8 kB without curl; only seen → `upload{customer}`. Recipe: references/files-from-the-chat.md.
 
 ## Calls (generated)
 

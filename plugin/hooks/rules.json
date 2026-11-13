@@ -101,6 +101,7 @@
    "input": "curl[^\\n]{0,400}rotor-dirigenten\\.netlify\\.app",
    "wish": "ladda upp fil filbank spara",
    "name": "curl",
+   "allow": "^(?![^\\n]*(?:\\$|`|;|&&|\\|\\||\\||>|<|\\\\))(?![\\s\\S]*\\n)\\s*curl(?:\\s+(?:-s|-S|-sS|-Ss|--silent|--show-error|--fail|--fail-with-body|-H\\s+(?:\"X-File-Name: [^\"\\n]*\"|'X-File-Name: [^'\\n]*')))*(?:\\s+(?:--upload-file|-T)\\s+(?:\"(?!-\")(?!-)[^\"\\n]+\"|'(?!-')(?!-)[^'\\n]+'|(?!-)[^\\s\"'@]+)|\\s+-F\\s+(?:\"file=@(?!-\")[^\"\\n]+\"|'file=@(?!-')[^'\\n]+'|file=@(?:\"(?!-\")(?!-)[^\"\\n]+\"|'(?!-')(?!-)[^'\\n]+'|(?!-)[^\\s\"'@]+)))(?:\\s+(?:-s|-S|-sS|-Ss|--silent|--show-error|--fail|--fail-with-body|-H\\s+(?:\"X-File-Name: [^\"\\n]*\"|'X-File-Name: [^'\\n]*')))*\\s+([\"']?)https://rotor-dirigenten\\.netlify\\.app/upload\\?t=[A-Za-z0-9._~%-]+(?:&(?:name|reply|part|parts|sha256)=[A-Za-z0-9._~%-]*)*\\1(?:\\s+(?:-s|-S|-sS|-Ss|--silent|--show-error|--fail|--fail-with-body|-H\\s+(?:\"X-File-Name: [^\"\\n]*\"|'X-File-Name: [^'\\n]*')))*\\s*$",
    "ways": [
     {
      "tool": "write",
@@ -178,7 +179,7 @@
  "stale_line": "Dirigenten säger att dina verktyg är gamla (stale_tools). Säg det till användaren en gång med stale_tools.how; anropa saknade op:ar ändå med read/write{op}.",
  "refused_line": "Dirigenten sa nej men gav vägen: skicka envelope.next (mallen) direkt i stället för att gissa en ny form. Vid rev_conflict: samma anrop med den nya rev ur svaret.",
  "batch_line": "Flera anrop av samma slag i rad: act tar batch (flera handlingar i ordning, ■ ensam). Skicka resten i ett anrop.",
- "file_line": "Filen finns bara lokalt. Lägg den i kundens filbank med dirigenten: write{op:\"file_add\", name, base64, mime, customer, task?, moment?}; större än 256 kB i delar med chunk {id, index, total, sha256}. Aldrig curl.",
+ "file_line": "Filen finns bara lokalt. Lägg den i kundens filbank med dirigenten: read{op:\"upload_link\", customer, for_task?, for_node?} och sedan kod: curl --upload-file <fil> \"<länken>&name=<filnamn>\" (bytes går direkt, inte genom texten). curl bara till en upload_link. Base64 i write{op:\"save\"} bara under 8 kB om curl inte går.",
  "stop_intro": "Innan du avslutar: hantera eller nämn det här för användaren.",
  "stop_preview": "En förhandsvisning (■) väntar på användarens svar.",
  "stop_file": "En fil du skapat finns bara lokalt, inte i kundens filbank.",

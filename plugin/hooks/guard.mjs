@@ -65,6 +65,8 @@ export function onPre(input) {
     if (r.input && !re(r.input).test(args)) continue;
     // Developing dirigenten itself (the repo) may curl its previews.
     if (r.id === "curl_upload" && /rotor-dirigenten|wt-/.test(String(input.cwd ?? "")) && !/upload/.test(args)) continue;
+    // A file sent by code to an upload_link (the only curl allowed against dirigenten; the pattern is generated, hook-rules.ts).
+    if (r.allow && re(r.allow, "").test(String(input.tool_input?.command ?? ""))) continue;
     const lines = transcript(input.transcript_path);
     // Exceptions are scoped to this request: a mention in an old user turn, or a phrase in an unrelated tool result,
     // must not silently disable the guard for later customer writes.
