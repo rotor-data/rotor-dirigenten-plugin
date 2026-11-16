@@ -57,6 +57,8 @@ Planeringen sparas i dirigenten medan du planerar, så att vem som helst kan for
 2. Planens öppna val tas ett i taget, högst tre per varv, vart och ett med ditt förslag och vad svaret ändrar.
 3. Det som saknas beskrivs med exakt vad (filen, siffran, inloggningen, beslutet), varför (vilket moment det stoppar), exakt hur (en länk, en färdig prompt, en stegvis instruktion med Vad behövs, Så gör du och Kontrollera, eller ett färdigt meddelande som skickas först efter ja) och vem som troligen har det och när.
 4. Saknar dirigenten en förmåga: skriv atomförslaget själv och säg till användaren bara «det här kan dirigenten inte än, det byggs», plus hur det görs för hand under tiden.
+5. Har planen `decompose` (ett resultat utan arbetssätt, till exempel ett system som ska vara i bruk, data som ska vara flyttad, en grupp som ska vara utbildad eller ett system som ska vara stängt): läs underlaget först (steg 1) och svara själv med `goal.decompose.<resultat>: { milestones: [{ id, label, produces, reads: [{ result, hard }], executor, executor_reason, done_when }] }`. Ett delmål lämnar resultatet, vart och ett av de andra matar ett delmål på vägen; utförare i ordningen atom, claude, code, human sist med skäl. Rätta det `decompose.errors` säger och skicka igen.
+6. Svaret har `review_request` med det som lagts till utanför metoderna: låt en subagent som bara ser målet och planen granska det (i Cowork eller Code), annars ett separat steg. Fynden skrivs i `goal.review_findings` och tas i svepet med ja, nej eller senare. Förslag i `learning` (metod eller atomförslag) läggs fram och skrivs först efter ja.
 
 ## 4. Instruktionerna skrivs i planeringen
 
