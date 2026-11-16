@@ -25082,6 +25082,13 @@ var sha2562 = (data3) => createHash6("sha256").update(data3).digest("hex");
 
 // src/google/send.ts
 var GMAIL_SEND_LABEL = SCOPE_NAMN[GMAIL_SEND_SCOPE];
+function ownSendProblem(p, scopes) {
+  if (p.mail?.send?.enabled === false)
+    return `${p.label} har st\xE4ngt av utskick fr\xE5n sin egen adress \u2014 sl\xE5 p\xE5 det i Inst\xE4llningar \u2192 Kopplingar`;
+  if (!scopes.includes(GMAIL_SEND_SCOPE))
+    return `${p.label}s koppling saknar r\xE4tten att skicka \u2014 koppla om Google med r\xE4tten att skicka (l\xE4nken i svaret)`;
+  return null;
+}
 var GMAIL_MESSAGE_LIMIT = 25 * 1024 * 1024;
 var ATTACHMENT_BUDGET = Math.floor(GMAIL_MESSAGE_LIMIT * 3 / 4) - 512 * 1024;
 var mb = (n2) => `${(n2 / 1024 / 1024).toFixed(1).replace(".", ",")} MB`;
@@ -25330,11 +25337,7 @@ function mailProblem(view, party2, delivery, scopes) {
       return `${part.label}s koppling saknar r\xE4tten att skriva utkast \u2014 sl\xE5 p\xE5 \xAButkast\xBB i inst\xE4llningarna och koppla om Google`;
     return null;
   }
-  if (part.mail?.send?.enabled !== true)
-    return `${part.label} har inte slagit p\xE5 utskick fr\xE5n sin egen adress`;
-  if (!scopes.includes(GMAIL_SEND_SCOPE))
-    return `${part.label}s koppling saknar r\xE4tten att skicka \u2014 sl\xE5 p\xE5 utskick i inst\xE4llningarna och koppla om Google`;
-  return null;
+  return ownSendProblem(part, scopes);
 }
 var MAIL_LINK_TTL_S = 86400;
 var GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me/";
@@ -25583,8 +25586,16 @@ var fixtures10 = [
     // data-i-koden: påhittad provadress
     attachments: [{ ref: "/Users/x/fil.pdf" }]
   }, expect_error: "ingen bankreferens" },
+  { name: "f\xF6rhandsvisas utan inst\xE4llning: jaet kommer i steget", scopes: RUNNER2.scopes, args: {
+    party: "@runner",
+    to: "kund@example.se",
+    subject: "Underlaget",
+    body: "Hej"
+  } },
+  // data-i-koden: påhittad provadress
   {
-    name: "nekas utan p\xE5slaget utskick",
+    name: "nekas n\xE4r utskick \xE4r avslaget",
+    runner: { mail: { send: { enabled: false } } },
     scopes: RUNNER2.scopes,
     args: {
       party: "@runner",
@@ -25593,7 +25604,7 @@ var fixtures10 = [
       body: "Hej"
     },
     // data-i-koden: påhittad provadress
-    expect_error: "inte slagit p\xE5"
+    expect_error: "st\xE4ngt av utskick"
   }
 ];
 
@@ -28188,7 +28199,23 @@ var spec23 = {
   output: ["objects", "products"],
   label: "S\xF6k poster i HubSpot",
   summary: "S\xF6ker poster av en typ i HubSpot (contacts, companies, deals, products \u2026) med filter, eller med fritext f\xF6r produkter; utan filter och text listas produkterna. L\xE4ser ocks\xE5 portalens \xE4gare, anv\xE4ndare, roller, segment, marknadsmejl, filer och arbetsfl\xF6den (med internmejlens mottagare), filtrerade p\xE5 namn eller id (text) och l\xE4ge (status). L\xE4ser bara.",
-  keywords: ["s\xF6k poster av en typ", "find objects", "\xE4gare", "anv\xE4ndare", "segment", "listor", "marknadsmejl", "filer", "arbetsfl\xF6den", "owners"],
+  keywords: [
+    "s\xF6k poster av en typ",
+    "find objects",
+    "\xE4gare",
+    "anv\xE4ndare",
+    "segment",
+    "listor",
+    "marknadsmejl",
+    "filer",
+    "arbetsfl\xF6den",
+    "owners",
+    "l\xE4s marknadsmejl",
+    "lista marknadsmejl",
+    "l\xE4sa ett marknadsmejl",
+    "marketing emails",
+    "nyhetsbrev"
+  ],
   test_target: "l\xE4ser bara",
   leaves: {
     schema: { objects: "tr\xE4ffarna, alla sidor hopslagna; f\xF6r owners, users, roles, segments, marketing_emails, files och workflows en rad per objekt: id, name, object_type, status (\xE4gare ACTIVE/ARCHIVED, segmentets typ MANUAL/DYNAMIC/SNAPSHOT, mejlets l\xE4ge DRAFT/PUBLISHED, filens \xE5tkomst, fl\xF6det ENABLED/DISABLED), email, updated, details (filens path och url; fl\xF6dets internmejl med mottagarnas namn n\xE4r det s\xF6ktes med text)", products: "produkterna (objekttypen products)" },
@@ -35325,7 +35352,7 @@ var spec39 = {
     "where": "svaret; inget sparas"
   },
   "requires": "read",
-  "stage": "draft",
+  "stage": "published",
   "module": "n0101",
   "operation_id": "o_state_desired_state",
   "step_id": "s_state_desired_state"

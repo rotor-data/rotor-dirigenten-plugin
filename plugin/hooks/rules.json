@@ -36,11 +36,12 @@
       }
      }
     }
-   ]
+   ],
+   "reads": []
   },
   {
    "id": "hubspot_write",
-   "tool": "^mcp__.*__manage_(crm_objects|marketing_email|landing_page|blog_post|website_page|segment|campaign_objects|saved_reports)$",
+   "tool": "^mcp__.+__(?:(discover_hubspot_schema|get_aeo_metrics|get_campaign_attribution_reports|get_content_analytics_report|get_conversation_channel_metadata|get_crm_objects|get_marketing_email_analytics|get_organization_details|get_properties|get_social_channels|get_social_post_analytics|get_user_details|import\\-claude\\-design\\-from\\-url|manage_aeo_prompts|manage_aeo_recommendations|manage_blog_post|manage_campaign_objects|manage_crm_objects|manage_landing_page|manage_marketing_email|manage_onboarding|manage_saved_reports|manage_segment|manage_social_posts|manage_website_page|query_crm_data|query_segments|read_campaign_data|read_social_posts|render_asset|render_hubspot_home|search_conversations|search_crm_objects|search_intent_signals|search_owners|search_properties|show_feedback_form|tool_guidance)$)",
    "wish": "kör förmåga kund system crm ändra",
    "name": "hubspot",
    "ways": [
@@ -63,11 +64,296 @@
       }
      }
     }
-   ]
+   ],
+   "routes": [
+    {
+     "input": "\"createRequest\"",
+     "tool": "manage_crm_objects",
+     "ways": [
+      {
+       "tool": "execute_step",
+       "call": "c_hs_write_object",
+       "label": "Skapa eller ändra poster i HubSpot",
+       "severity": "■",
+       "example": {
+        "tool": "execute_step",
+        "args": {
+         "call": "c_hs_write_object",
+         "customer": "<kund>",
+         "values": {}
+        }
+       }
+      }
+     ]
+    },
+    {
+     "input": "\"updateRequest\"",
+     "tool": "manage_crm_objects",
+     "ways": [
+      {
+       "tool": "execute_step",
+       "call": "c_hubspot_update_record",
+       "label": "Ändra en post i HubSpot",
+       "severity": "■",
+       "example": {
+        "tool": "execute_step",
+        "args": {
+         "call": "c_hubspot_update_record",
+         "customer": "<kund>",
+         "values": {}
+        }
+       }
+      }
+     ]
+    },
+    {
+     "input": "\"_type\":\"CREATE\"",
+     "tool": "manage_marketing_email",
+     "ways": [
+      {
+       "tool": "execute_step",
+       "call": "c_hubspot_create_marketing_email_draft",
+       "label": "Bygg marknadsmejl i HubSpot som utkast",
+       "severity": "■",
+       "example": {
+        "tool": "execute_step",
+        "args": {
+         "call": "c_hubspot_create_marketing_email_draft",
+         "customer": "<kund>",
+         "values": {}
+        }
+       }
+      }
+     ]
+    },
+    {
+     "input": "\"_type\":\"(UPDATE|EDIT_CONTENT|CLONE|AB_TEST_EMAIL)\"",
+     "tool": "manage_marketing_email",
+     "ways": []
+    },
+    {
+     "input": "\"type\":\"Create(Static|Dynamic)SegmentOperation\"",
+     "tool": "manage_segment",
+     "ways": [
+      {
+       "tool": "execute_step",
+       "call": "c_hubspot_create_segment_from_filters",
+       "label": "Skapa segment i HubSpot ur villkor eller adresser",
+       "severity": "■",
+       "example": {
+        "tool": "execute_step",
+        "args": {
+         "call": "c_hubspot_create_segment_from_filters",
+         "customer": "<kund>",
+         "values": {}
+        }
+       }
+      }
+     ]
+    },
+    {
+     "input": "\"type\":\"[A-Za-z]+Operation\"",
+     "tool": "manage_segment",
+     "ways": []
+    },
+    {
+     "input": "\"(_type|type|action|operation)\":\"(CREATE|UPDATE|CLONE|DELETE|PUBLISH|SCHEDULE)[A-Z_]*\"",
+     "tool": "manage_blog_post",
+     "ways": [
+      {
+       "tool": "execute_step",
+       "call": "c_blogg_skapa",
+       "label": "Skapa blogginlägg som utkast",
+       "severity": "■",
+       "example": {
+        "tool": "execute_step",
+        "args": {
+         "call": "c_blogg_skapa",
+         "customer": "<kund>",
+         "values": {}
+        }
+       }
+      }
+     ]
+    },
+    {
+     "input": "\"(createRequest|updateRequest)\"|\"(_type|type|action|operation)\":\"(CREATE|UPDATE|EDIT|CLONE|DELETE|ARCHIVE|RESTORE|PUBLISH|SCHEDULE|AB_TEST)[A-Z_]*\"",
+     "ways": []
+    }
+   ],
+   "reads": [
+    {
+     "tool": "get_crm_objects",
+     "capability": "c_hs_read_object",
+     "keys": [
+      "objectIds",
+      "objectType",
+      "properties"
+     ]
+    },
+    {
+     "tool": "search_crm_objects",
+     "capability": "c_hs_search_objects",
+     "keys": [
+      "chatInsights",
+      "filterGroups",
+      "limit",
+      "objectType",
+      "offset",
+      "properties",
+      "query",
+      "sorts"
+     ]
+    },
+    {
+     "tool": "search_properties",
+     "capability": "c_hs_properties",
+     "keys": [
+      "keywords",
+      "objectType",
+      "query"
+     ]
+    },
+    {
+     "tool": "get_properties",
+     "capability": "c_hs_properties",
+     "keys": [
+      "objectType",
+      "propertyNames"
+     ]
+    },
+    {
+     "tool": "search_owners",
+     "capability": "c_hs_find_objects",
+     "keys": [
+      "limit",
+      "offset",
+      "ownerIds",
+      "searchQuery"
+     ]
+    },
+    {
+     "tool": "get_user_details",
+     "capability": "c_hs_whoami",
+     "keys": [
+      "include"
+     ]
+    },
+    {
+     "tool": "get_organization_details",
+     "capability": "c_hs_whoami",
+     "keys": [
+      "include"
+     ]
+    },
+    {
+     "tool": "discover_hubspot_schema",
+     "capability": "c_hs_properties",
+     "keys": [
+      "query"
+     ],
+     "nest": {
+      "field": "query",
+      "type_key": "_queryType",
+      "types": [
+       "SEARCH_OBJECT_TYPES",
+       "GET_OBJECT_TYPES",
+       "GET_PIPELINES"
+      ],
+      "keys": [
+       "_queryType",
+       "fetchOptions",
+       "searchTerms",
+       "cursor",
+       "limit",
+       "typeNameFilter",
+       "objectType"
+      ]
+     }
+    },
+    {
+     "tool": "manage_marketing_email",
+     "capability": "c_hs_find_objects",
+     "keys": [
+      "operation"
+     ],
+     "nest": {
+      "field": "operation",
+      "type_key": "_type",
+      "types": [
+       "GET_EMAIL_DETAILS",
+       "GET_TEMPLATE",
+       "GET_CONTENT",
+       "PREVIEW_CONTENT",
+       "LIST_TEMPLATES",
+       "LIST_SUBSCRIPTION_TYPES",
+       "LIST_FROM_ADDRESSES",
+       "POLL_EMAIL_CREATION"
+      ],
+      "keys": [
+       "_type",
+       "marketingEmailId",
+       "marketingEmailObjectId",
+       "path",
+       "emailTemplateType",
+       "emailType",
+       "filenameContains",
+       "folderPath",
+       "limit",
+       "offset",
+       "customSampleData",
+       "sampleContactId",
+       "textOnly",
+       "variantName"
+      ]
+     }
+    }
+   ],
+   "names": [
+    "discover_hubspot_schema",
+    "get_aeo_metrics",
+    "get_campaign_attribution_reports",
+    "get_content_analytics_report",
+    "get_conversation_channel_metadata",
+    "get_crm_objects",
+    "get_marketing_email_analytics",
+    "get_organization_details",
+    "get_properties",
+    "get_social_channels",
+    "get_social_post_analytics",
+    "get_user_details",
+    "import-claude-design-from-url",
+    "manage_aeo_prompts",
+    "manage_aeo_recommendations",
+    "manage_blog_post",
+    "manage_campaign_objects",
+    "manage_crm_objects",
+    "manage_landing_page",
+    "manage_marketing_email",
+    "manage_onboarding",
+    "manage_saved_reports",
+    "manage_segment",
+    "manage_social_posts",
+    "manage_website_page",
+    "query_crm_data",
+    "query_segments",
+    "read_campaign_data",
+    "read_social_posts",
+    "render_asset",
+    "render_hubspot_home",
+    "search_conversations",
+    "search_crm_objects",
+    "search_intent_signals",
+    "search_owners",
+    "search_properties",
+    "show_feedback_form",
+    "tool_guidance"
+   ],
+   "server": "hubspot"
   },
   {
    "id": "meta_write",
-   "tool": "^mcp__.*__ads_(create|update|activate|boost|delete|catalog_create|catalog_update)",
+   "tool": "^mcp__.+__(?:ads_[a-z_]+$)",
    "wish": "kör förmåga annons kampanj ändra",
    "name": "meta",
    "ways": [
@@ -93,7 +379,35 @@
       }
      }
     }
-   ]
+   ],
+   "routes": [
+    {
+     "input": "",
+     "tool": "ads_catalog_[a-z_]+",
+     "ways": []
+    },
+    {
+     "input": "",
+     "ways": [
+      {
+       "tool": "execute_step",
+       "call": "c_meta_change_ad_object",
+       "label": "Ändra kampanj, annonsgrupp eller annons i Meta",
+       "severity": "■",
+       "example": {
+        "tool": "execute_step",
+        "args": {
+         "call": "c_meta_change_ad_object",
+         "customer": "<kund>",
+         "values": {}
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "reads": [],
+   "names": []
   },
   {
    "id": "curl_upload",
@@ -136,7 +450,8 @@
       }
      }
     }
-   ]
+   ],
+   "reads": []
   }
  ],
  "files": {
@@ -175,6 +490,10 @@
   "remind": "\"remind\":",
   "pause_words": "\\b(vi tar det sen|ta det sen|pausa|paus|vi fortsätter sen|en annan gång|byt(er)? ämne)\\b"
  },
+ "nonlinear": {
+  "input": "\"goal\":\\{|\"op\":\"(define|draft|append|planning_note|planning_answer)\"|\"action\":\"(add_goal|add_dependency|move|change_method|reassign)\""
+ },
+ "pass_line": "Dirigenten har ingen förmåga i drift som tydligt gör den här skrivningen, så den går igenom här (användarens ja gäller som vanligt). Gjordes det utanför dirigenten: skriv det med act{action:\"done_outside\"} och föreslå en atom med write{op:\"molecule_build\", atom_proposal}.",
  "pre_line": "Dirigenten har vägen för det här; använd den i stället (eller fråga read{op:\"can\"}). Gäller inte om dirigenten svarat att förmågan saknas eller användaren uttryckligen bett om den andra kopplingen.",
  "stale_line": "Dirigenten säger att dina verktyg är gamla (stale_tools). Säg det till användaren en gång med stale_tools.how; anropa saknade op:ar ändå med read/write{op}.",
  "refused_line": "Dirigenten sa nej men gav vägen: skicka envelope.next (mallen) direkt i stället för att gissa en ny form. Vid rev_conflict: samma anrop med den nya rev ur svaret.",
@@ -186,5 +505,6 @@
  "stop_affected": "Ändringen berör moment som inte öppnats igen (affected i svaret).",
  "stop_kvar": "Repot är ändrat men docs/kvar.md inte: lägg till eller stryk raden.",
  "stop_planning": "Planeringen ändrades i turen: spara det som bara du vet och som inte får tappas — farhågor, förbehåll och personens ordagranna krav — med planning_note (kind requirement eller concern).",
+ "nonlinear_line": "Planen är ickelinjär och deterministisk (Daniel P 2026-11-16): ordningen följer av vad som bygger på vad, aldrig av faser, ordningsnummer eller steglistor. Bara moment med egen hållpunkt har fast datum; övriga får ett spann (tidigast–senast) som räknas fram. Lagra aldrig det som går att räkna fram. Kräver något omdöme: lös det själv med skäl först, och lämna det till människan sist.",
  "pause_line": "Personen pausar eller byter ämne: spara en sammanfattning av planeringen direkt med write{op:\"planning_pause\", task, summary} (med personens ord)."
 }

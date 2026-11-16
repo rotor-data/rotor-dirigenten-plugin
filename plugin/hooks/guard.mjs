@@ -5,7 +5,9 @@
  * samma svar: instruktionerna, ways vid okänd op, stale_tools och batch_hint.
  *
  *   UserPromptSubmit  en rad om dirigenten när prompten rör kund, uppdrag, fil, mejl eller planering
- *   PreToolUse        stoppar andra kopplingars skrivningar och curl mot dirigenten när dirigenten har vägen
+ *   PreToolUse        styr om andra kopplingars skrivningar när dirigenten har en förmåga i drift för dem; läsningar och
+ *                     skrivningar utan väg går igenom (de senare med en notis); curl mot dirigenten
+ *                     planeringsskrivningar till dirigenten får principen om ickelinjär plan
  *   PostToolUse       gamla verktyg, ett nej med vägen (rev_conflict), batch, en fil som bara finns lokalt
  *   Stop              en obesvarad förhandsvisning, en lokal fil, berörda moment, docs/kvar.md
  *
@@ -60,24 +62,64 @@ export function onPrompt(input) {
 
 export function onPre(input) {
   const name = String(input.tool_name ?? ""), args = text(input.tool_input);
+  // A planning write to dirigenten: the non-linear principle, said where the plan is made (Daniel P 2026-11-16).
+  if (isDirigent(name)) return RULES.nonlinear && re(RULES.nonlinear.input, "").test(args)
+    ? { hookSpecificOutput: { hookEventName: "PreToolUse", additionalContext: RULES.nonlinear_line } } : null;
   for (const r of RULES.pre) {
-    if (!re(r.tool).test(name)) continue;
+    if (!re(r.tool).test(name) && !(Array.isArray(r.routes) && (onSystemServer(r, name) || sameServerAsKnown(r, name, input.transcript_path)))) continue;
     if (r.input && !re(r.input).test(args)) continue;
     // Developing dirigenten itself (the repo) may curl its previews.
     if (r.id === "curl_upload" && /rotor-dirigenten|wt-/.test(String(input.cwd ?? "")) && !/upload/.test(args)) continue;
     // A file sent by code to an upload_link (the only curl allowed against dirigenten; the pattern is generated, hook-rules.ts).
     if (r.allow && re(r.allow, "").test(String(input.tool_input?.command ?? ""))) continue;
+    // A routed connector (HubSpot, Meta): only a write in its input matches; a read always passes. A write is redirected
+    // only when dirigenten has a live capability that clearly does it; otherwise it passes with a note (Daniel P 2026-11-16).
+    let ways = r.ways;
+    if (Array.isArray(r.routes)) {
+      // Only a known read with its exact shape passes silently; anything else is a write (the reads are generated, hook-rules.ts).
+      if (isKnownRead(r.reads ?? [], name, input.tool_input)) continue;
+      const route = r.routes.find((x) => (!x.tool || re(`__${x.tool}$`, "").test(name)) && (x.input === "" || re(x.input, "").test(args)));
+      // A write no route names, or one dirigenten has no live capability for: passes with the note, never silently.
+      if (!route || !route.ways.length) return { hookSpecificOutput: { hookEventName: "PreToolUse", additionalContext: RULES.pass_line } };
+      ways = route.ways;
+    }
     const lines = transcript(input.transcript_path);
     // Exceptions are scoped to this request: a mention in an old user turn, or a phrase in an unrelated tool result,
     // must not silently disable the guard for later customer writes.
     const current = turn(lines);
     if (explicitlyChoosesConnector(lastUserText(lines), r.name)) continue;
     if (dirigentSaysCapabilityMissing(current)) continue;
-    const ways = r.ways.map((w) => `${w.tool}${w.op ? `{op:"${w.op}"}` : ""} (${w.severity})`).join(" eller ");
+    const said = ways.map((w) => `${w.tool}${w.op ? `{op:"${w.op}"}` : ""}${w.call ? `{call:"${w.call}"} (${w.label})` : ""} (${w.severity})`).join(" eller ");
     return { hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny",
-      permissionDecisionReason: `${RULES.pre_line} Dirigentens väg: ${ways}. Exempel: ${JSON.stringify(r.ways[0]?.example ?? { tool: "read", args: { op: "can" } })}.` } };
+      permissionDecisionReason: `${RULES.pre_line} Dirigentens väg: ${said}. Exempel: ${JSON.stringify(ways[0]?.example ?? { tool: "read", args: { op: "can" } })}.` } };
   }
   return null;
+}
+
+const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+const subset = (o, keys) => Object.keys(o).every((k) => keys.includes(k));
+/** A known read: the exact tool, the input's keys within the read's, and a nested operation of a listed type with its own keys. */
+function isKnownRead(reads, name, input) {
+  const tool = name.split("__").pop();
+  const read = reads.find((x) => x.tool === tool);
+  if (!read || !plain(input) || !subset(input, read.keys)) return false;
+  if (!read.nest) return true;
+  const op = input[read.nest.field];
+  return plain(op) && subset(op, read.nest.keys) && typeof op[read.nest.type_key] === "string" && read.nest.types.includes(op[read.nest.type_key]);
+}
+/** A tool on a server whose name names the system (the connector's `server` in the registry): known even in a fresh session. */
+function onSystemServer(r, name) {
+  if (!r.server || !name.startsWith("mcp__")) return false;
+  const server = name.slice(5, name.lastIndexOf("__"));
+  return re(r.server).test(server);
+}
+/** A tool not on the connector's list from a server that served one of its listed tools earlier in the session. */
+function sameServerAsKnown(r, name, path) {
+  const names = r.names ?? [];
+  if (!names.length || !name.startsWith("mcp__")) return false;
+  const server = name.slice(0, name.lastIndexOf("__"));
+  return transcript(path).some((o) => blocks(o).some((b) => b.type === "tool_use" && typeof b.name === "string"
+    && b.name.startsWith(`${server}__`) && names.includes(b.name.slice(server.length + 2))));
 }
 
 function explicitlyChoosesConnector(message, name) {
