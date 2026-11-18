@@ -406,7 +406,12 @@
      ]
     }
    ],
-   "reads": [],
+   "reads": [
+    {
+     "tool": "ads_get_insights",
+     "capability": "c_meta_read_insights"
+    }
+   ],
    "names": []
   },
   {

@@ -21250,7 +21250,7 @@ var captureRoute = z.object({
    * annars en till-adress hos Rotor (`address`) eller en från-adress hos
    * kunden (`from_address`). Exakt en av de tre per väg i kanalen `gmail`
    * (`capture-rules.ts`). Träffar ett mejl flera källor gäller mapp > till >
-   * från (`sourceFor` i `src/intake/routes.ts`).
+   * från (`sourceFor` i `src/v2/translate/intake/routes.ts`).
    *
    * En mapp är en persons etikett och läses bara i den personens brevlåda,
    * och ägaren står utskriven på källan (beslut 2026-10-06: mappar bara i
@@ -26279,6 +26279,29 @@ __export(connection_check_atom_exports, {
   spec: () => spec14
 });
 
+// src/v2/mcp/carried-errors.ts
+import { AsyncLocalStorage } from "node:async_hooks";
+var scope2 = new AsyncLocalStorage();
+function noticeOf(what, error, verb = "l\xE4sas") {
+  const why = error instanceof Error ? error.message : String(error);
+  return `${what} kunde inte ${verb}: ${why || "ok\xE4nt fel"}.`;
+}
+function carryError(what, error, opts = {}) {
+  const text8 = noticeOf(what, error, opts.verb);
+  const into = opts.into;
+  into?.push(text8);
+  const list9 = scope2.getStore();
+  if (list9 && list9 !== into && !list9.includes(text8)) list9.push(text8);
+}
+async function orNotice(read, fallback, what, opts = {}) {
+  try {
+    return await read;
+  } catch (error) {
+    carryError(what, error, opts);
+    return fallback;
+  }
+}
+
 // src/registry/admin.ts
 function isSuperadmin(view, partyId) {
   const p = partyId ? view.get(partyId) : void 0;
@@ -26294,8 +26317,8 @@ var CHECK_TEXT = {
   fix_person: "Klicka p\xE5 l\xE4nken under Inst\xE4llningar \u2192 Kopplingar och godk\xE4nn hos Google.",
   fix_admin: "Det h\xE4r beh\xF6ver en administrat\xF6r st\xE4lla in en g\xE5ng f\xF6r alla. Be en administrat\xF6r om det; du beh\xF6ver inte g\xF6ra n\xE5got annat."
 };
-async function reasonOf2(r) {
-  const b = await r.json().catch(() => null);
+async function reasonOf2(r, notices) {
+  const b = await orNotice(r.json(), null, "Gmails svar", { into: notices });
   const c = b?.error?.errors?.[0]?.reason ?? b?.error?.status;
   return typeof c === "string" ? c : "";
 }
@@ -26311,14 +26334,17 @@ async function run14(args, ctx) {
     admin_needed: rows4.some((r) => r.ok === false && r.fixer === "admin"),
     runner_is_admin: runnerIsAdmin,
     admins,
-    dry_run: dry
+    dry_run: dry,
+    ...notices.length > 0 ? { notices } : {}
   });
+  const notices = [];
   let link = null;
   try {
     link = ctx.connection ? await ctx.connection("google", party2) : null;
   } catch (e) {
     const m = e.message;
     if (/^GOOGLE_ADMIN: /.test(m)) return out([row2("connection", true, "person"), row2("workspace", false, "admin")]);
+    carryError("Kopplingen till Google", e, { into: notices });
     return out([row2("connection", false, "person")]);
   }
   if (!link?.token) return out([row2("connection", false, "person")]);
@@ -26329,12 +26355,12 @@ async function run14(args, ctx) {
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ access_token: link.token }).toString()
   });
-  const granted = info.ok ? String((await info.json().catch(() => ({}))).scope ?? "").split(/\s+/) : [...link.scopes];
+  const granted = info.ok ? String((await orNotice(info.json(), {}, "Googles svar om r\xE4tterna", { into: notices })).scope ?? "").split(/\s+/) : [...link.scopes];
   const compose = granted.includes(GMAIL_COMPOSE_SCOPE);
   const rows3 = [row2("connection", true, "person"), row2("workspace", true, "admin"), row2("compose", compose, "person")];
   if (!compose) return out([...rows3, row2("gmail_api", null, "admin")]);
   const p = await f("https://gmail.googleapis.com/gmail/v1/users/me/profile", { headers: { authorization: `Bearer ${link.token}` } });
-  const reason = p.ok ? "" : await reasonOf2(p);
+  const reason = p.ok ? "" : await reasonOf2(p, notices);
   const apiOff = !p.ok && /accessNotConfigured|SERVICE_DISABLED/i.test(reason);
   const blocked2 = !p.ok && !apiOff && p.status === 403;
   return out([
@@ -30469,6 +30495,7 @@ var fixtures35 = [
 // atoms/presentation/write.atom.ts
 var write_atom_exports = {};
 __export(write_atom_exports, {
+  bankItemsOf: () => bankItemsOf,
   fixtures: () => fixtures36,
   run: () => run36,
   spec: () => spec36
@@ -31455,6 +31482,15 @@ var spec36 = {
     "note": []
   }
 };
+async function bankItemsOf(files, blocks) {
+  const urls = /* @__PURE__ */ new Map(), texts = /* @__PURE__ */ new Map(), notices = [];
+  for (const b of blocks) for (const it of b.items ?? []) {
+    if (!it.ref.startsWith("bank://")) continue;
+    if (/^image\//.test(it.mime ?? "")) urls.set(it.ref, (await orNotice(files.signedUrl(it.ref, 3600), null, `Bilden ${it.ref}`, { into: notices }))?.url ?? "");
+    else texts.set(it.ref, await orNotice(files.read(it.ref).then((f) => new TextDecoder().decode(f.bytes)), null, `Texten ${it.ref}`, { into: notices }));
+  }
+  return { urls, texts, notices };
+}
 async function run36(args, ctx) {
   if (!ctx.view) throw new Error("presentationen kan bara publiceras i ett steg \u2014 registret saknas");
   const i = args;
@@ -31497,14 +31533,7 @@ async function run36(args, ctx) {
     sender: i.party
   });
   const files = ctx.call.files;
-  const urls = /* @__PURE__ */ new Map(), texts = /* @__PURE__ */ new Map();
-  if (files && !ctx.dry_run) {
-    for (const b of i.blocks ?? []) for (const it of b.items ?? []) {
-      if (!it.ref.startsWith("bank://")) continue;
-      if (/^image\//.test(it.mime ?? "")) urls.set(it.ref, (await files.signedUrl(it.ref, 3600).catch(() => null))?.url ?? "");
-      else texts.set(it.ref, await files.read(it.ref).then((f) => new TextDecoder().decode(f.bytes)).catch(() => null));
-    }
-  }
+  const { urls, texts, notices } = files && !ctx.dry_run ? await bankItemsOf(files, i.blocks ?? []) : { urls: /* @__PURE__ */ new Map(), texts: /* @__PURE__ */ new Map(), notices: [] };
   const base = {
     would_change: plan.would_change,
     confirm_values: { preview_id: plan.preview_id },
@@ -31512,7 +31541,8 @@ async function run36(args, ctx) {
     presentation: plan.presentation,
     version: plan.version,
     url: `/visa/${plan.presentation}`,
-    preview_html: previewHtml(plan, (r) => urls.get(r) ?? "", (r) => texts.get(r) ?? null)
+    preview_html: previewHtml(plan, (r) => urls.get(r) ?? "", (r) => texts.get(r) ?? null),
+    ...notices.length > 0 ? { notices } : {}
   };
   if (i.confirmed !== true || i.preview_id !== plan.preview_id) return { ...base, proposal: true, done: false };
   if (!ctx.call.presented) throw new Error("presentationen kan bara publiceras i ett steg");
@@ -32076,7 +32106,7 @@ var eventType = z.enum([
   /**
    * Två ärenden hänger ihop (2026-10-03): `{ threads: [a, b], relation:
    * related|same_cause|standalone, reason? }`. Skrivs efter ett ja; den
-   * senaste kopplingen mellan två trådar gäller (src/intake/related.ts).
+   * senaste kopplingen mellan två trådar gäller (src/v2/translate/intake/related.ts).
    */
   "threads_related",
   /**
@@ -32094,11 +32124,11 @@ var eventType = z.enum([
    * Vart ett mejl tog vägen, när någon flyttade det (v6 del 1, 2026-10-06):
    * `{ thread, outcome: case|order|possibility|nothing|inbox|…, source?, way?,
    * target?, customer?, label?, undo? }`. Den senaste per tråd gäller; `undo`
-   * tar bort flytten så att vägen ur källan gäller igen (src/intake/routing.ts).
+   * tar bort flytten så att vägen ur källan gäller igen (src/v2/translate/intake/routing.ts).
    */
   "mail_routed",
   /**
-   * Facit för ett ärende i en provkörning (2026-10-06, src/intake/trial.ts):
+   * Facit för ett ärende i en provkörning (2026-10-06, src/v2/translate/intake/trial.ts):
    * `{ trial, thread, as_of, accepts, links?, changes_customer?, control? }`.
    * Det senaste facit per ärende gäller.
    */
@@ -32879,7 +32909,9 @@ var V2_EVENT_TYPES = [
   "material_version_claimed",
   "tidy_applied",
   "tidy_undone",
-  "material_placed_by_tidy"
+  "material_placed_by_tidy",
+  "batch_applied",
+  "batch_undone"
 ];
 
 // src/registry/known-events.ts
@@ -33519,6 +33551,9 @@ var BASIS_DEFAULT = `det best\xE4llningen s\xE4ger; resten tas fram i uppdraget 
 
 // src/mcp/oauth.ts
 var REFRESH_S = 30 * 86400;
+
+// src/content/file-link.ts
+var FILE_RANGE_MAX = 2 * 1024 * 1024;
 
 // src/plan/loose-material.ts
 var GROUPS = [...GRANNAR, ...ID_WORDS].map((g) => g.map((w) => stam(norm2(w))));

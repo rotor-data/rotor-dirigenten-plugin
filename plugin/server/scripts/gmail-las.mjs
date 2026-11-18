@@ -6168,7 +6168,7 @@ var captureRoute = z.object({
    * annars en till-adress hos Rotor (`address`) eller en från-adress hos
    * kunden (`from_address`). Exakt en av de tre per väg i kanalen `gmail`
    * (`capture-rules.ts`). Träffar ett mejl flera källor gäller mapp > till >
-   * från (`sourceFor` i `src/intake/routes.ts`).
+   * från (`sourceFor` i `src/v2/translate/intake/routes.ts`).
    *
    * En mapp är en persons etikett och läses bara i den personens brevlåda,
    * och ägaren står utskriven på källan (beslut 2026-10-06: mappar bara i

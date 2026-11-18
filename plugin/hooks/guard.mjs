@@ -102,7 +102,10 @@ const subset = (o, keys) => Object.keys(o).every((k) => keys.includes(k));
 function isKnownRead(reads, name, input) {
   const tool = name.split("__").pop();
   const read = reads.find((x) => x.tool === tool);
-  if (!read || !plain(input) || !subset(input, read.keys)) return false;
+  if (!read) return false;
+  // A read bound by name alone (no keys): the tool never writes, whatever its input.
+  if (!read.keys) return true;
+  if (!plain(input) || !subset(input, read.keys)) return false;
   if (!read.nest) return true;
   const op = input[read.nest.field];
   return plain(op) && subset(op, read.nest.keys) && typeof op[read.nest.type_key] === "string" && read.nest.types.includes(op[read.nest.type_key]);

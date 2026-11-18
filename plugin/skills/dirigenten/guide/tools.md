@@ -1,12 +1,28 @@
 # Guide: tools
-- `search`: find tasks, moments and deliveries; each hit has an `on` for `read`.
-- `read`: one subject's envelope with `rev`; `view:"net"` adds the map; `on:{kind:"file",id}` gives a bank file's text in pages (`guide{phase:"verktyg:read"}`).
-- `guide`: this text, by `phase`.
-- `plan_state`: the overview of deliveries; `lens` `mine` (on me), `yes` (waits for my yes), `late`, `waiting` (on the customer); `customer`, `include`.
-- `act`: the only way to do an action: `on`, `action`, `rev`, `params`, `preview_id`, `user_approval`, `batch`; action `undo` takes the last action back.
-- `execute_step`: run a capability for a moment (`on`, `rev`, `params`, `test`); the result is always logged.
-- `write`: define, append or draft a registry entry (`op`, `entry`, `fixes`); the gate lists what is missing.
-- `upload`: the upload app for a customer (`customer`, `for_task`, `for_node`); only when the user wants to upload.
+- `search`: Find anything.
+  Ex: `search{q:["offer"]}`. Not: `search{q:"offer"}`: q is a list, even for one phrasing.
+  Fields: `q` one to five phrasings; `want` "file": files only; `cursor` page.cursor of the last reply, for the next page.
+- `read`: Envelope, rev; net: map; to_place; entry: fil i zip/tar/eml.
+  Ex: `read{on:{kind:"task",id:"t-1"},view:"net"}`. Not: `read{view:"net"}`: net is one task's map and needs on; only the lists (queue, closed, calendar, inbox, to_place) go without.
+  Fields: `on` the subject as search gave it; kind file for a bank file, entry for a file in its zip/tar/eml; `form` short or full; `view` net (a task's map) or a list; `cursor` page.cursor, for the next page; `party` the person a list is for; `menu` the subject's menu; `also` more subjects for the menu; `change` a field and value to try in the menu.
+- `guide`: Per phase.
+  Ex: `guide{phase:"tools"}`. Not: `guide{phase:""}`: leave phase out for the list; an empty phase is refused.
+  Fields: `phase` the phase to read.
+- `plan_state`: Deliveries by lens.
+  Ex: `plan_state{lens:"yes"}`. Not: `plan_state{lens:"my_yes"}`: lens is one of late, waiting, yes, mine.
+  Fields: `include` done, dormant or duplicate too; `form` short, full, or map with delivery; `cursor` page.cursor, for the next page; `order` customer or person; `customer` customer ids; `person` person ids; `type` kinds of delivery; `lens` late, waiting, yes or mine; `state` states to keep; `when` a span of time; `delivery` one delivery (form map: its whole map).
+- `act`: One action at its rev.
+  Ex: `act{on:{kind:"milestone",id:"ms-1",task:"t-1"},action:"shift",rev:"r-1",params:{days:5}}`. Not: `act{on:{kind:"moment",id:"m-1",task:"t-1"},action:"change_who",rev:"r-1",params:{who:"p-1"}}`: change_who takes party, not who; each action takes only its own params.
+  Fields: `on` the subject: kind, id, task; `action` what to do (envelope.available); `rev` envelope.subject.rev of the last read; null before any event; `params` the action's fields; `preview_id` envelope.preview.preview_id, with the yes; `user_approval` the user's yes, verbatim; `form` short or full; `origin` the view only; `view_session` the view only; `preview` true: show, write nothing; `batch` more calls of the same shape, in order.
+- `execute_step`: Runs a capability.
+  Ex: `execute_step{on:{kind:"moment",id:"m-1",task:"t-1"},rev:"r-1",test:true}`. Not: `execute_step{on:{kind:"step",id:"m-1"}}`: on.kind is moment (or milestone, task, delivery, case, idea), never step.
+  Fields: `on` the moment, with its task; `rev` envelope.subject.rev of the last read; `params` the capability's values; `test` true: against the test target, not live; `preview_id` envelope.preview.preview_id, with the yes; `user_approval` the user's yes, verbatim; `form` short or full; `capability` the one picked when the reply asked; `chain` a reply's chain.run.
+- `write`: save: bank; else registry.
+  Ex: `write{op:"save",text:"Notes"}`. Not: `write{op:"define",entry:{id:"x",kind:"method"}}`: an entry needs id, kind and node.
+  Fields: `op` define, append, draft or save; `text` the text (save); `base64` a file's bytes (save); `name` the file name (save); `mime` the file type (save); `customer` the customer it belongs to (save); `folder` the folder (save); `chunk` id, index, total, sha256: a file over 256 kB in parts; `entry` id, kind, node; `task` the task the entry concerns; `fixes` subject and set, as missing gave them; `user_approval` the user's yes, verbatim; `values` a quick run's values, as an object.
+- `upload`: Upload app; when asked.
+  Ex: `upload{customer:"c-1"}`. Not: `upload{for_task:"t-1"}`: customer is required.
+  Fields: `customer` the customer's id; `for_task` the task the files are for; `for_node` the moment they are for.
 
 Steps
 1. `search{q:[…]}` (one to five phrasings) or `plan_state{}` to find the subject.
@@ -18,7 +34,7 @@ Example 1: `search{q:["offer","quote"]}` then `read{on:hit.on}`.
 Example 2: `plan_state{lens:"mine"}` for what is on the person now; `plan_state{lens:"yes"}` for what waits for her yes.
 Counterexample: calling a customer's system through another connector when this server has the capability.
 Edge case: a legacy call shape (`asset_register`, `{tool,args}` wrapper) is translated while the adapter window is open; `say.now` shows the new form.
-A file into the customer's file bank: `write` with `op` `file_add` and `name`, `text` or `base64` (+`mime`), `customer`, optionally `folder` and `asset_type`; with `task` and `moment` it is also tied to that moment. Without a task it is the customer's alone. v1's `asset_register` with `text` or `base64` becomes this call.
+A text, a file or a link to keep: `write{op:"save"}` first (●, with undo; what it is and what it is about are read from the thing itself). For a file with set fields, `write` with `op` `file_add` and `name`, `text` or `base64` (+`mime`), `customer`, optionally `folder` and `asset_type`; with `task` and `moment` it is also tied to that moment. Without a task it is the customer's alone. The legacy `asset_register` with `text` or `base64` becomes `file_add`.
 A bug report about dirigenten: `write{op:"bug_report", text, where?, screenshot?}` (●, a png as base64 after the person has seen it). People in the house list the open ones with `read{op:"bug_report"}` and mark one fixed with `write{op:"bug_report", resolve, note}` (●).
 Upload app: `upload{customer, for_task?, for_node?}` (only when the user wants to upload; `read{op:"upload_link"}` gives the link alone) gives a page where the user drops one or more files; they go straight to the file bank (never base64). Then offer «Ska jag föreslå var filerna hör hemma?» and, after a yes to the shown proposal, tie each with `act attach_file` (from_ref).
 

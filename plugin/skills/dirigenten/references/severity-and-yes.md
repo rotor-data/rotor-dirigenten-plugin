@@ -25,9 +25,9 @@ input:
 ```
 output:
 ```json
-{"phase":null,"say":{"happened":"Dirigenten tog inte emot anropet, eftersom något saknades eller var fel.","now":"Inget har sparats.","then":"Läs det igen och skicka med vad det gäller."}}
+{"phase":"parked","say":{"happened":"Bara kontrollraden är sparad, själva skrivningen är inte gjord: on saknas eller går inte att läsa","now":"Det står i listan Att kontrollera tills det är klart. Inget annat är ändrat ännu.","then":"Fyll i det som saknas i förslaget, så görs det i samma anrop."}}
 ```
 next:
 ```json
-{"tool":"act","args":{"on":"<vad det gäller>","action":"<same>","rev":"<rev>","preview_id":"<envelope.preview.preview_id>","user_approval":"<the user's words verbatim>"}}
+{"tool":"act","args":{"on":"<vad det gäller>","action":"<same>","rev":"<rev>","preview_id":"<envelope.preview.preview_id>","user_approval":"<the user's words verbatim>","resolves":"nc_82d80abb04b7"}}
 ```
