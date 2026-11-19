@@ -32911,7 +32911,9 @@ var V2_EVENT_TYPES = [
   "tidy_undone",
   "material_placed_by_tidy",
   "batch_applied",
-  "batch_undone"
+  "batch_undone",
+  "moments_repaired",
+  "moments_repair_undone"
 ];
 
 // src/registry/known-events.ts

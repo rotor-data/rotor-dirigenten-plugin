@@ -4,7 +4,7 @@
   Fields: `q` one to five phrasings; `want` "file": files only; `cursor` page.cursor of the last reply, for the next page.
 - `read`: Envelope, rev; net: map; to_place; entry: fil i zip/tar/eml.
   Ex: `read{on:{kind:"task",id:"t-1"},view:"net"}`. Not: `read{view:"net"}`: net is one task's map and needs on; only the lists (queue, closed, calendar, inbox, to_place) go without.
-  Fields: `on` the subject as search gave it; kind file for a bank file, entry for a file in its zip/tar/eml; `form` short or full; `view` net (a task's map) or a list; `cursor` page.cursor, for the next page; `party` the person a list is for; `menu` the subject's menu; `also` more subjects for the menu; `change` a field and value to try in the menu.
+  Fields: `on` the subject as search gave it; kind file for a bank file, entry for a file in its zip/tar/eml; `form` short or full; `view` net (a task's map) or a list; `cursor` page.cursor, for the next page; `whole` net: every moment in one reply; `compact` net: milestones by index; `party` the person a list is for; `menu` the subject's menu; `also` more subjects for the menu; `change` a field and value to try in the menu.
 - `guide`: Per phase.
   Ex: `guide{phase:"tools"}`. Not: `guide{phase:""}`: leave phase out for the list; an empty phase is refused.
   Fields: `phase` the phase to read.
@@ -12,8 +12,9 @@
   Ex: `plan_state{lens:"yes"}`. Not: `plan_state{lens:"my_yes"}`: lens is one of late, waiting, yes, mine.
   Fields: `include` done, dormant or duplicate too; `form` short, full, or map with delivery; `cursor` page.cursor, for the next page; `order` customer or person; `customer` customer ids; `person` person ids; `type` kinds of delivery; `lens` late, waiting, yes or mine; `state` states to keep; `when` a span of time; `delivery` one delivery (form map: its whole map).
 - `act`: One action at its rev.
-  Ex: `act{on:{kind:"milestone",id:"ms-1",task:"t-1"},action:"shift",rev:"r-1",params:{days:5}}`. Not: `act{on:{kind:"moment",id:"m-1",task:"t-1"},action:"change_who",rev:"r-1",params:{who:"p-1"}}`: change_who takes party, not who; each action takes only its own params.
+  Ex: `act{on:{kind:"milestone",id:"ms1",task:"t1"},action:"shift",rev:"r1",params:{days:5}}`. Not: `act{on:{kind:"moment",id:"m-1",task:"t-1"},action:"change_who",rev:"r-1",params:{who:"p-1"}}`: change_who takes party, not who; each action takes only its own params.
   Fields: `on` the subject: kind, id, task; `action` what to do (envelope.available); `rev` envelope.subject.rev of the last read; null before any event; `params` the action's fields; `preview_id` envelope.preview.preview_id, with the yes; `user_approval` the user's yes, verbatim; `form` short or full; `origin` the view only; `view_session` the view only; `preview` true: show, write nothing; `batch` more calls of the same shape, in order.
+  Params: add_milestone{label} add_dependency{from,to} remove_dependency{from,to} change_who{party} change_responsible{party} shift{days} to_task{method,action,summary} change_method{to} set_brief{brief}
 - `execute_step`: Runs a capability.
   Ex: `execute_step{on:{kind:"moment",id:"m-1",task:"t-1"},rev:"r-1",test:true}`. Not: `execute_step{on:{kind:"step",id:"m-1"}}`: on.kind is moment (or milestone, task, delivery, case, idea), never step.
   Fields: `on` the moment, with its task; `rev` envelope.subject.rev of the last read; `params` the capability's values; `test` true: against the test target, not live; `preview_id` envelope.preview.preview_id, with the yes; `user_approval` the user's yes, verbatim; `form` short or full; `capability` the one picked when the reply asked; `chain` a reply's chain.run.
