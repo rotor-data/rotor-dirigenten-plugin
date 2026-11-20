@@ -53,7 +53,7 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 - `read{op:"intake_status"}`: kön: queue: true, format kort|full; övriga lägen (thread, image, pending, candidates, trial) är v2:s egna
 - `write{op:"classify_accept"}`: flytta inkommet dit det hör: thread, classification.route.to
 - `read{op:"view_file"}`: vyns ark: sheet delivery|calendar|how|library|method|order …; utan sheet: for page|version (vyns sida och stämpel) eller personens egen vyadress
-- `read{op:"quick_actions"}`: snabbhandlingarna per kund; med ref: uppdragen filen kan kopplas till
+- `read{op:"quick_actions"}`: snabbhandlingarna ur v2:s rader; med ref: uppdragen filen kan kopplas till
 - `write{op:"mail_draft"}`: mejl som utkast i din egen e-post, bilagor som ref ur filbanken: values { to, subject, body, cc?, attachments: [ref], reply_to? }; to och cc är adresser eller husets personer som part-id, upplösta till sin adress; reply_to är Gmails meddelande- eller tråd-id för mejlet som besvaras, så hamnar utkastet i den tråden (ämnet blir «Re: …» utan subject); förhandsvisning först (■), sedan användarens ja ordagrant; personen skickar själv från sin e-post. Aldrig mejlet bara i chatten eller via en annan e-postkoppling i Claude (den bifogar inga filer). Saknas en rätt: säg vilken och vem som ordnar den, med svarets ord, och erbjud guidning i Chrome. Kontroll: search { q: ["Kontrollera kopplingen för mejl"] } och kör den med read { op: "read_call" }
 - `read{op:"handovers"}`: överlämningar och väntan per leverans: agenda true, format oversikt
 - `read{op:"order_preview"}`: förhandsvisa en beställning: samma fält som när den läggs in, inget skrivs
@@ -115,6 +115,7 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"asset_get"}`: en fil ur banken: ref, id eller name (namnet räcker); thumb för miniatyren
 - `read|write{op:"content_save"}`: spara text: markdown, customer, kind, name; for_task? (uppdrag), for_step? (moment), fields?, images?; utan for_step väljer servern plats
 - `read|write{op:"view_file"}`: vyns ark: sheet library och how (v2:s egna), delivery|calendar|method|order …
+- `read|write{op:"quick_actions"}`: snabbhandlingarna ur v2:s rader; med ref: uppdragen filen kan kopplas till
 - `read|write{op:"to_approve"}`: att godkänna: per text vad, uppdrag, vem och när, förhandsvisning, länk, skillnad mot förra godkända och vad ett ja släpper; task för ett uppdrag
 - `read|write{op:"settings"}`: inställningarna: kopplingar, arbetsdag och för en superadmin vem som har vilka rättigheter
 - `read|write{op:"method_build"}`: nytt eller ändrat arbetssätt: method + draft (metodbyggaren) eller from_plan { label, steps [{ label, type }] }; förhandsvisning först
