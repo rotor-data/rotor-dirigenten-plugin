@@ -25326,6 +25326,55 @@ __export(send_mail_atom_exports, {
   sendMessage: () => sendMessage,
   spec: () => spec10
 });
+
+// src/v2/domain/registry-texts.ts
+var DEFAULTS = /* @__PURE__ */ new Map();
+var held = /* @__PURE__ */ new Map();
+var PLAN_ORIGIN_TEXT = registryTexts("plan.origin", { method_why: "Planeringen f\xF6ljer husets bundna arbetss\xE4tt." });
+var textOf = (key) => held.get(key) ?? DEFAULTS.get(key) ?? key;
+function registryTexts(group, defaults) {
+  for (const [k, v] of Object.entries(defaults)) if (typeof v === "string") DEFAULTS.set(`${group}.${k}`, v);
+  return new Proxy(defaults, {
+    get(target, prop, recv) {
+      const v = Reflect.get(target, prop, recv);
+      return typeof prop === "string" && typeof v === "string" ? textOf(`${group}.${prop}`) : v;
+    }
+  });
+}
+function registryTextTree(group, defaults) {
+  registerDefaults(group, defaults);
+  return new Proxy(defaults, {
+    get(target, prop, recv) {
+      const v = Reflect.get(target, prop, recv);
+      if (typeof prop !== "string") return v;
+      if (typeof v === "string") return textOf(`${group}.${prop}`);
+      return v !== null && typeof v === "object" && !Array.isArray(v) ? registryTextTree(`${group}.${prop}`, v) : v;
+    }
+  });
+}
+function registerDefaults(group, values) {
+  for (const [key, value] of Object.entries(values)) {
+    if (typeof value === "string") DEFAULTS.set(`${group}.${key}`, value);
+    else if (value !== null && typeof value === "object" && !Array.isArray(value)) registerDefaults(`${group}.${key}`, value);
+  }
+}
+
+// src/v2/mcp/texts/mail.send.generated.ts
+var TEXTS = registryTexts("mail.send", {
+  "what": "Mejl fr\xE5n din egen adress ({from}) till {to}{cc}, \xE4mne \xAB{subject}\xBB, bilagor: {attachments}",
+  "preview": "F\xF6rhandsvisning: {what}. Mejlet g\xE5r ut till mottagarna f\xF6rst n\xE4r du svarat ja p\xE5 just det h\xE4r, och det g\xE5r inte att ta tillbaka. Inget \xE4r skickat.",
+  "fill": "Jaet: anv\xE4ndarens svar, ordagrant och ensamt, efter att du visat f\xF6rhandsvisningen med mottagare, \xE4mne, text och bilagor. Skriv aldrig ett svar anv\xE4ndaren inte gett. Utan ett s\xE5dant svar skickas inget.",
+  "done": "{what}: mejlet har g\xE5tt iv\xE4g och ligger under Skickat i din e-post.",
+  "needs_words": "Mejlet skickas bara med anv\xE4ndarens eget ja, ordagrant och ensamt. Inget \xE4r skickat.",
+  "failed": "Mejlet gick inte iv\xE4g: {why}. Inget \xE4r skickat.",
+  "can_run": ", Claude f\xE5r k\xF6ra den efter ja, utan uppgift: {call}",
+  "cc": " (kopia {list})",
+  "none": "inga",
+  "too_large": "{files} \xE4r f\xF6r stor f\xF6r att skickas med e-post (gr\xE4nsen \xE4r 25 MB). L\xE4gg mejlet som utkast i st\xE4llet, eller skicka en mindre fil. Inget \xE4r skickat.",
+  "call_note": "\u2014 skickas fr\xE5n din egen adress, utan uppgift och utan moment; f\xF6rhandsvisas f\xF6rst (\u25A0) och g\xE5r ut f\xF6rst efter ditt eget ja, ordagrant; g\xE5r inte att ta tillbaka"
+});
+
+// atoms/gmail/send_mail.atom.ts
 function mailProblem(view, party2, delivery, scopes) {
   const p = view.get(party2);
   if (p?.kind !== "party" || !p.roles.includes("internal")) return `${party2} \xE4r ingen intern part`;
@@ -25422,6 +25471,8 @@ async function sendMessage(d, i) {
     used += f.bytes.byteLength;
     files.push({ ref: a.ref, filename, sha256: f.sha256, mime: f.mime, data: f.bytes });
   }
+  if (links.length && delivery === "send")
+    throw new Error(TEXTS.too_large.replace("{files}", links.map((l) => l.filename).join(", ")));
   if (links.length && !d.fileLink)
     throw new Error(`${links.map((l) => l.filename).join(", ")} \xE4r f\xF6r stora f\xF6r Gmail (25 MB) och l\xE4nkar till filbanken \xE4r inte inkopplade h\xE4r`);
   const m = {
@@ -30597,7 +30648,7 @@ function head(b, kicker) {
 function verbatim(text8) {
   return text8.trim().split(/\n{2,}/).map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("");
 }
-function textOf(ctx, ref) {
+function textOf2(ctx, ref) {
   const t = ctx.text(ref);
   return t === null ? `<p class="missing">Texten gick inte att l\xE4sa just nu.</p>` : verbatim(t);
 }
@@ -30661,7 +30712,7 @@ var copyAngles = {
   accepts: "annonstexter; vinkeln st\xE5r i materialets beskrivning",
   omitWhenEmpty: true,
   hasContent: (b) => (b.items ?? []).some((i) => !isImage(i)),
-  render: (b, ctx) => section("copy_angles", head(b, "Budskap") + `<div class="cards">${(b.items ?? []).filter((i) => !isImage(i)).map((i, n2) => `<article class="card accent-left"><p class="tag"><span class="num">${n2 + 1}</span>${esc(i.label ?? "Vinkel")}</p><div class="copy">${textOf(ctx, i.ref)}</div>` + (i.caption ? `<p class="note">${esc(i.caption)}</p>` : "") + `</article>`).join("")}</div>`)
+  render: (b, ctx) => section("copy_angles", head(b, "Budskap") + `<div class="cards">${(b.items ?? []).filter((i) => !isImage(i)).map((i, n2) => `<article class="card accent-left"><p class="tag"><span class="num">${n2 + 1}</span>${esc(i.label ?? "Vinkel")}</p><div class="copy">${textOf2(ctx, i.ref)}</div>` + (i.caption ? `<p class="note">${esc(i.caption)}</p>` : "") + `</article>`).join("")}</div>`)
 };
 
 // src/present/blocks/lead_form.ts
@@ -30670,7 +30721,7 @@ var leadForm = {
   accepts: "formul\xE4rets fr\xE5gor som text, och en sk\xE4rmbild av formul\xE4ret",
   omitWhenEmpty: true,
   hasContent: hasItems,
-  render: (b, ctx) => section("lead_form", head(b, "Formul\xE4r") + `<div class="split">${(b.items ?? []).map((i) => isImage(i) ? `<figure class="shot"><img loading="lazy" src="${esc(ctx.fileUrl(i.ref))}" alt="${esc(i.label ?? "Formul\xE4ret")}">` + (i.caption ? `<figcaption>${esc(i.caption)}</figcaption>` : "") + `</figure>` : `<div class="card"><p class="tag">${esc(i.label ?? "Fr\xE5gorna")}</p><div class="copy">${textOf(ctx, i.ref)}</div></div>`).join("")}</div>`)
+  render: (b, ctx) => section("lead_form", head(b, "Formul\xE4r") + `<div class="split">${(b.items ?? []).map((i) => isImage(i) ? `<figure class="shot"><img loading="lazy" src="${esc(ctx.fileUrl(i.ref))}" alt="${esc(i.label ?? "Formul\xE4ret")}">` + (i.caption ? `<figcaption>${esc(i.caption)}</figcaption>` : "") + `</figure>` : `<div class="card"><p class="tag">${esc(i.label ?? "Fr\xE5gorna")}</p><div class="copy">${textOf2(ctx, i.ref)}</div></div>`).join("")}</div>`)
 };
 
 // src/present/blocks/mail_sequence.ts
@@ -30679,7 +30730,7 @@ var mailSequence = {
   accepts: "mejlen i fl\xF6det, i den ordning de g\xE5r ut",
   omitWhenEmpty: true,
   hasContent: hasItems,
-  render: (b, ctx) => section("mail_sequence", head(b, "Mejlfl\xF6de") + `<ol class="sequence">${(b.items ?? []).map((i, n2) => `<li class="card accent-left"><p class="tag"><span class="num">${n2 + 1}</span>${esc(i.label ?? `Mejl ${n2 + 1}`)}</p>` + (i.caption ? `<p class="note">${esc(i.caption)}</p>` : "") + `<div class="copy">${textOf(ctx, i.ref)}</div></li>`).join("")}</ol>`)
+  render: (b, ctx) => section("mail_sequence", head(b, "Mejlfl\xF6de") + `<ol class="sequence">${(b.items ?? []).map((i, n2) => `<li class="card accent-left"><p class="tag"><span class="num">${n2 + 1}</span>${esc(i.label ?? `Mejl ${n2 + 1}`)}</p>` + (i.caption ? `<p class="note">${esc(i.caption)}</p>` : "") + `<div class="copy">${textOf2(ctx, i.ref)}</div></li>`).join("")}</ol>`)
 };
 
 // src/present/blocks/timeline.ts
@@ -30727,7 +30778,7 @@ var otherMaterial = {
   accepts: "allt material som inte h\xF6r till n\xE5got annat block",
   omitWhenEmpty: true,
   hasContent: hasItems,
-  render: (b, ctx) => section("other_material", head({ ...b, title: b.title ?? "\xD6vrigt material" }) + `<div class="cards">${(b.items ?? []).map((i) => i.ref.startsWith("extern:") ? linkCard(i) : isImage(i) ? `<figure class="card"><img loading="lazy" src="${esc(ctx.fileUrl(i.ref))}" alt="${esc(i.label ?? "Bild")}"><figcaption>${esc(i.label ?? "")}</figcaption></figure>` : /^text\//.test(i.mime ?? "text/") ? `<article class="card"><p class="tag">${esc(i.label ?? "Text")}</p><div class="copy">${textOf(ctx, i.ref)}</div></article>` : `<p class="card"><a href="${esc(ctx.fileUrl(i.ref))}">${esc(i.label ?? "Fil")}</a></p>`).join("")}</div>`)
+  render: (b, ctx) => section("other_material", head({ ...b, title: b.title ?? "\xD6vrigt material" }) + `<div class="cards">${(b.items ?? []).map((i) => i.ref.startsWith("extern:") ? linkCard(i) : isImage(i) ? `<figure class="card"><img loading="lazy" src="${esc(ctx.fileUrl(i.ref))}" alt="${esc(i.label ?? "Bild")}"><figcaption>${esc(i.label ?? "")}</figcaption></figure>` : /^text\//.test(i.mime ?? "text/") ? `<article class="card"><p class="tag">${esc(i.label ?? "Text")}</p><div class="copy">${textOf2(ctx, i.ref)}</div></article>` : `<p class="card"><a href="${esc(ctx.fileUrl(i.ref))}">${esc(i.label ?? "Fil")}</a></p>`).join("")}</div>`)
 };
 
 // src/present/blocks/metrics.ts
@@ -30773,7 +30824,7 @@ function reportHtml(text8) {
     return m ? `<h3>${esc(m[2].trim())}</h3>${m[3].trim() ? verbatim(m[3]) : ""}` : verbatim(part);
   }).join("");
 }
-var textOf2 = (ctx, ref) => {
+var textOf3 = (ctx, ref) => {
   const t = ctx.text(ref);
   return t === null ? `<p class="missing">Texten gick inte att l\xE4sa just nu.</p>` : reportHtml(t);
 };
@@ -30782,7 +30833,7 @@ var reportText = {
   accepts: "en skriven rapport (text i banken), visas ordagrant",
   omitWhenEmpty: true,
   hasContent: (b) => hasItems(b) || Boolean(b.text?.trim()),
-  render: (b, ctx) => section("report_text", head(b, "Rapport") + `<div class="prose">${(b.items ?? []).map((i) => textOf2(ctx, i.ref)).join("")}${b.text ? reportHtml(b.text) : ""}</div>`)
+  render: (b, ctx) => section("report_text", head(b, "Rapport") + `<div class="prose">${(b.items ?? []).map((i) => textOf3(ctx, i.ref)).join("")}${b.text ? reportHtml(b.text) : ""}</div>`)
 };
 
 // src/present/blocks/proposal.ts
@@ -30825,7 +30876,7 @@ var socialPost = {
     const images = items2.filter(isImage), texts = items2.filter((i) => !isImage(i));
     const sender = typeof b.data?.["sender"] === "string" ? b.data["sender"] : "";
     const when2 = dateText(b.data?.["scheduled"]);
-    const text8 = texts.map((t) => `<div class="feed-text copy">${textOf(ctx, t.ref)}</div>`).join("");
+    const text8 = texts.map((t) => `<div class="feed-text copy">${textOf2(ctx, t.ref)}</div>`).join("");
     const body = channel === "instagram" ? media(images, ctx.fileUrl) + text8 : text8 + media(images, ctx.fileUrl);
     return `<section class="block b-social_post"><p class="kicker">${esc(CHANNELS[channel])}${when2 ? ` \xB7 ${esc(when2)}` : ""}</p>` + (b.title ? `<h2>${esc(b.title)}</h2>` : "") + (b.lead ? `<p class="lead">${esc(b.lead)}</p>` : "") + `<article class="feed feed-${esc(channel)}"><header class="feed-head"><span class="feed-avatar" aria-hidden="true">${esc(sender.slice(0, 1))}</span><span><b>${esc(sender)}</b><span class="feed-meta">${channel === "linkedin" ? "F\xF6retagssida \xB7 " : ""}${when2 ? esc(when2) : "Inte schemalagt"}</span></span></header>` + body + `<footer class="feed-actions" aria-hidden="true"><span>Gilla</span><span>Kommentera</span><span>Dela</span></footer></article></section>`;
   }
@@ -33355,38 +33406,6 @@ var CLAIMS = [
 import { existsSync as existsSync3, readFileSync } from "node:fs";
 import { dirname as dirname2, join as join7 } from "node:path";
 import { fileURLToPath as fileURLToPath2 } from "node:url";
-
-// src/v2/domain/registry-texts.ts
-var DEFAULTS = /* @__PURE__ */ new Map();
-var held = /* @__PURE__ */ new Map();
-var PLAN_ORIGIN_TEXT = registryTexts("plan.origin", { method_why: "Planeringen f\xF6ljer husets bundna arbetss\xE4tt." });
-var textOf3 = (key) => held.get(key) ?? DEFAULTS.get(key) ?? key;
-function registryTexts(group, defaults) {
-  for (const [k, v] of Object.entries(defaults)) if (typeof v === "string") DEFAULTS.set(`${group}.${k}`, v);
-  return new Proxy(defaults, {
-    get(target, prop, recv) {
-      const v = Reflect.get(target, prop, recv);
-      return typeof prop === "string" && typeof v === "string" ? textOf3(`${group}.${prop}`) : v;
-    }
-  });
-}
-function registryTextTree(group, defaults) {
-  registerDefaults(group, defaults);
-  return new Proxy(defaults, {
-    get(target, prop, recv) {
-      const v = Reflect.get(target, prop, recv);
-      if (typeof prop !== "string") return v;
-      if (typeof v === "string") return textOf3(`${group}.${prop}`);
-      return v !== null && typeof v === "object" && !Array.isArray(v) ? registryTextTree(`${group}.${prop}`, v) : v;
-    }
-  });
-}
-function registerDefaults(group, values) {
-  for (const [key, value] of Object.entries(values)) {
-    if (typeof value === "string") DEFAULTS.set(`${group}.${key}`, value);
-    else if (value !== null && typeof value === "object" && !Array.isArray(value)) registerDefaults(`${group}.${key}`, value);
-  }
-}
 
 // src/v2/domain/sorts.ts
 var SORTS = ["produce", "review", "approve", "ask", "publish", "send", "measure", "record"];

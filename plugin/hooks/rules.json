@@ -2,6 +2,24 @@
  "generated": "npm run gen:skills ur src/v2/skill/hook-rules.ts; ändra där",
  "dirigent_tool": "dirigent|__(plan_state|execute_step)$",
  "dirigent_reply": "\"envelope\"",
+ "dirigent_failed": "\"code\":\\s*\"(INTERNAL|NOT_READY)\"",
+ "consent": {
+  "routes": "\\b(?:use|använd|via|through|genom|kör)\\b(?:\\W+\\w+){0,2}\\W*$",
+  "yes_before": "(?:^|\\W)(?:ja|japp|jo|yes|ok|okej|okay|kör|gör det|go ahead|sure|absolut|visst|går bra|det går bra|fine)(?:\\W+\\w+){0,2}\\W*$",
+  "yes_after": "^[\\w-]*\\W+(?:\\w+\\W+){0,2}?(?:ja|japp|jo|yes|ok|okej|okay|kör|gör det|go ahead|sure|absolut|visst|går bra|det går bra|fine)(?:\\W|$)",
+  "yes": "(?:^|\\W)(?:ja|japp|jo|yes|ok|okej|okay|kör|gör det|go ahead|sure|absolut|visst|går bra|det går bra|fine)(?:\\W|$)",
+  "no": "(?:^|\\W)(?:nej|no|not|don't|never|inte|aldrig|utan|vänta|stopp|stop)(?:\\W|$)",
+  "draft": "utkast|draft",
+  "max_length": "80",
+  "yes_alone": "^\\W*(?:ja|japp|jo|yes|ok|okej|okay|kör|gör det|go ahead|sure|absolut|visst|går bra|det går bra|fine)(?:\\W+(?:skicka|skicka det|skicka mejlet|send it|tack|gärna|det))*\\W*$"
+ },
+ "send_yes": {
+  "input": "\"send\":\\s*true|\"(call|capability)\":\\s*\"(mail_send|[a-z_.]*\\.send_mail)\"",
+  "not_verbatim": "Ett utskick kräver personens eget svar ordagrant som user_approval: hennes senaste meddelande, oförändrat. Inget är skickat.",
+  "not_alone": "Ett utskick kräver ett ensamt ja från personen på förhandsvisningen, utan villkor eller ändringar. Fråga igen. Inget är skickat.",
+  "not_shown": "Visa förhandsvisningen för personen först, med mottagare och ämne, och fråga om just den. Inget är skickat.",
+  "not_fresh": "Jaet gäller förhandsvisningen från turen före. Hämta en ny förhandsvisning (samma anrop utan user_approval), visa den och fråga igen. Inget är skickat."
+ },
  "prompt": {
   "words": "\\b(kund|kunden|uppdrag|moment|fil|filen|filer|ladda upp|mejl|mejla|maila|kollega|planera|planering|leverans|offert|kampanj|crm|hubspot|annons|prislista|projekt)",
   "line": "Det här rör Rotors kunder eller arbete: använd kopplingen rotor-dirigenten. Osäker på vägen: read{op:\"can\", q:\"<önskan i ord>\"} innan du säger att något inte går eller väljer en annan koppling."
@@ -13,6 +31,9 @@
    "input": "\"(subject|body|to)\"",
    "wish": "skicka mejl utkast kollega meddelande",
    "name": "gmail",
+   "exempt_tool": "__(create_draft|update_draft)$",
+   "same": "\"(op|call)\":\\s*\"mail_draft\"",
+   "same_tool": "__(write|execute_step)$",
    "ways": [
     {
      "tool": "write",
