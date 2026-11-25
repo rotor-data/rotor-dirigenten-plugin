@@ -4,7 +4,9 @@
  "dirigent_reply": "\"envelope\"",
  "dirigent_failed": "\"code\":\\s*\"(INTERNAL|NOT_READY)\"",
  "consent": {
-  "routes": "\\b(?:use|använd|via|through|genom|kör)\\b(?:\\W+\\w+){0,2}\\W*$",
+  "routes": "\\b(?:use|använd|via|through|genom|kör|med|with)\\b(?:\\W+\\w+){0,2}\\W*$",
+  "name_suffix": "(?:-?(?:koppling|connector|mcp)\\w*)?(?![\\w-])",
+  "not_dirigent": "(?:^|\\W)(?:inte|not|utan|without)(?:\\W+\\w+){0,2}?\\W+dirigent\\w*",
   "yes_before": "(?:^|\\W)(?:ja|japp|jo|yes|ok|okej|okay|kör|gör det|go ahead|sure|absolut|visst|går bra|det går bra|fine)(?:\\W+\\w+){0,2}\\W*$",
   "yes_after": "^[\\w-]*\\W+(?:\\w+\\W+){0,2}?(?:ja|japp|jo|yes|ok|okej|okay|kör|gör det|go ahead|sure|absolut|visst|går bra|det går bra|fine)(?:\\W|$)",
   "yes": "(?:^|\\W)(?:ja|japp|jo|yes|ok|okej|okay|kör|gör det|go ahead|sure|absolut|visst|går bra|det går bra|fine)(?:\\W|$)",

@@ -160,11 +160,16 @@ const quoted = /«[^»]*»|"[^"]*"|“[^”]*”|`[^`]*`/g;
  * for a draft (not a quoted tool reply). Review 2026-11-23: the words were too loose and pasted mails unlocked it.
  */
 function explicitlyChoosesConnector(message, name, asked = "") {
-  const msg = message.trim();
-  if (!msg || msg.length > Number(W.max_length ?? 80) || !W.yes) return false;
+  const raw = message.trim();
+  if (!raw || raw.length > Number(W.max_length ?? 80) || !W.yes) return false;
+  // Quoted text is someone else's words, never the person's choice (2026-11-25).
+  const own = raw.replace(quoted, " ");
+  // A no to dirigent («inte via dirigenten», 2026-11-25) is not a no to the connector; a no beside the connector still is.
+  const msg = W.not_dirigent ? own.replace(re(W.not_dirigent, "ig"), (m) => (re(`\\b${name}`).test(m) ? m : " ")) : own;
   if (W.no && re(W.no).test(msg)) return false;
-  // The name alone or at the start of a compound («gmailkopplingen», Daniel P 2026-11-23), with or without a hyphen.
-  for (const m of msg.matchAll(new RegExp(`\\b${name}\\w*`, "ig"))) {
+  // The name alone or at the start of a compound («gmailkopplingen», Daniel P 2026-11-23; «Meta-kopplingen»), never
+  // another word that starts like it («metadata»).
+  for (const m of msg.matchAll(new RegExp(`\\b${name}${W.name_suffix ?? "\\w*"}`, "ig"))) {
     const before = msg.slice(0, m.index), after = msg.slice(m.index + m[0].length);
     if (re(W.routes).test(before) || re(W.yes_before).test(before) || re(W.yes_after).test(after)) return true;
   }

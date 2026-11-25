@@ -22019,7 +22019,8 @@ function f\u00F6rhandsbildH\u00E4ndelse(tenant, r, tumme) {
   return {
     type: "asset_produced",
     subject_ref: r.asset_type,
-    call_key: `bank-forhandsbild:${tenant}:${r.party}:${r.sha256}`,
+    // The size is part of the key: an older registration without it (same file) would otherwise make the store drop this one.
+    call_key: `bank-forhandsbild:${tenant}:${r.party}:${r.sha256}:${tumme.width}x${tumme.height}`,
     payload: {
       asset_type: r.asset_type,
       acquisition: r.acquisition,
