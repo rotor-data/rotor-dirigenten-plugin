@@ -73,6 +73,22 @@ var init_butik = __esm({
   }
 });
 
+// src/v2/mcp/thumbnail-mime.ts
+function normalizeMime(mime) {
+  const base = String(mime ?? "").split(";")[0].trim().toLowerCase();
+  return base === "image/jpg" || base === "image/pjpeg" ? "image/jpeg" : base;
+}
+var PDF_MIME, RASTER_MIMES, THUMBNAIL_SOURCES, hasThumbnailSource;
+var init_thumbnail_mime = __esm({
+  "src/v2/mcp/thumbnail-mime.ts"() {
+    "use strict";
+    PDF_MIME = "application/pdf";
+    RASTER_MIMES = /* @__PURE__ */ new Set(["image/png", "image/jpeg", "image/webp"]);
+    THUMBNAIL_SOURCES = /* @__PURE__ */ new Set([...RASTER_MIMES, PDF_MIME]);
+    hasThumbnailSource = (mime) => THUMBNAIL_SOURCES.has(normalizeMime(mime));
+  }
+});
+
 // node_modules/sharp/dist/is.mjs
 var defined, object, plainObject, fn, bool, buffer, typedArray, arrayBuffer, string, number, integer, inRange, inArray, invalidParameterError, nativeError, is_default;
 var init_is = __esm({
@@ -11292,11 +11308,22 @@ __export(forhandsbild_exports, {
   F\u00D6RHANDSBILD_MAX: () => F\u00D6RHANDSBILD_MAX,
   F\u00D6RHANDSBILD_MIME: () => F\u00D6RHANDSBILD_MIME,
   PDF_MIME: () => PDF_MIME,
+  THUMBNAIL_MAX_BYTES: () => THUMBNAIL_MAX_BYTES,
   f\u00F6rhandsbild: () => f\u00F6rhandsbild,
   f\u00F6rstaSidan: () => f\u00F6rstaSidan,
   kanF\u00F6rhandsbild: () => kanF\u00F6rhandsbild,
-  l\u00E4ggF\u00F6rhandsbild: () => l\u00E4ggF\u00F6rhandsbild
+  l\u00E4ggF\u00F6rhandsbild: () => l\u00E4ggF\u00F6rhandsbild,
+  thumbnailOrReason: () => thumbnailOrReason
 });
+async function toWebp(image) {
+  for (const r of LADDER) {
+    let step2 = image.clone().resize({ width: r.side, height: r.side, fit: "inside", withoutEnlargement: true });
+    if (r.flatten) step2 = step2.flatten({ background: "#ffffff" });
+    const out = await step2.webp({ quality: r.quality, alphaQuality: r.alpha }).toBuffer({ resolveWithObject: true });
+    if (out.data.byteLength <= THUMBNAIL_MAX_BYTES) return out;
+  }
+  return null;
+}
 async function f\u00F6rstaSidan(data3) {
   const mupdf = await init_mupdf().then(() => mupdf_exports);
   let doc = null;
@@ -11321,22 +11348,29 @@ async function f\u00F6rstaSidan(data3) {
     doc?.destroy();
   }
 }
-async function f\u00F6rhandsbild(data3, mime) {
-  if (!kanF\u00F6rhandsbild(mime)) return null;
-  if (mime.toLowerCase() === PDF_MIME) {
+async function thumbnailOrReason(data3, mime) {
+  const type = normalizeMime(mime);
+  if (!hasThumbnailSource(type)) return { failed: "not_a_source" };
+  if (type === PDF_MIME) {
     const sida = await f\u00F6rstaSidan(data3);
-    if (!sida) return null;
-    const { data: ut2, info: info2 } = await dist_default(sida.png).resize({ width: F\u00D6RHANDSBILD_MAX, height: F\u00D6RHANDSBILD_MAX, fit: "inside", withoutEnlargement: true }).webp({ quality: F\u00D6RHANDSBILD_KVALITET }).toBuffer({ resolveWithObject: true });
-    return { buffer: new Uint8Array(ut2), width: info2.width, height: info2.height, originalWidth: sida.width, originalHeight: sida.height };
+    if (!sida) return { failed: "unreadable" };
+    const out2 = await toWebp(dist_default(sida.png));
+    if (!out2) return { failed: "over_limit" };
+    return { buffer: new Uint8Array(out2.data), width: out2.info.width, height: out2.info.height, originalWidth: sida.width, originalHeight: sida.height };
   }
   const bild = dist_default(data3, { failOn: "none" }).rotate();
   const meta = await bild.metadata();
   const vriden = (meta.orientation ?? 1) >= 5;
   const ow = vriden ? meta.height : meta.width;
   const oh = vriden ? meta.width : meta.height;
-  if (!ow || !oh) return null;
-  const { data: ut, info } = await bild.resize({ width: F\u00D6RHANDSBILD_MAX, height: F\u00D6RHANDSBILD_MAX, fit: "inside", withoutEnlargement: true }).webp({ quality: F\u00D6RHANDSBILD_KVALITET }).toBuffer({ resolveWithObject: true });
-  return { buffer: new Uint8Array(ut), width: info.width, height: info.height, originalWidth: ow, originalHeight: oh };
+  if (!ow || !oh) return { failed: "unreadable" };
+  const out = await toWebp(bild);
+  if (!out) return { failed: "over_limit" };
+  return { buffer: new Uint8Array(out.data), width: out.info.width, height: out.info.height, originalWidth: ow, originalHeight: oh };
+}
+async function f\u00F6rhandsbild(data3, mime) {
+  const t = await thumbnailOrReason(data3, mime);
+  return "failed" in t ? null : t;
 }
 async function l\u00E4ggF\u00F6rhandsbild(butik, tenant, data3, mime, redan) {
   const f = await f\u00F6rhandsbild(data3, mime);
@@ -11344,18 +11378,26 @@ async function l\u00E4ggF\u00F6rhandsbild(butik, tenant, data3, mime, redan) {
   const ref = await l\u00E4gg(butik, tenant, f.buffer, F\u00D6RHANDSBILD_MIME, redan);
   return { uri: ref.uri, sha256: ref.sha256, width: f.originalWidth, height: f.originalHeight };
 }
-var F\u00D6RHANDSBILD_MAX, F\u00D6RHANDSBILD_KVALITET, F\u00D6RHANDSBILD_MIME, RASTER2, PDF_MIME, kanF\u00F6rhandsbild;
+var F\u00D6RHANDSBILD_MAX, F\u00D6RHANDSBILD_KVALITET, THUMBNAIL_MAX_BYTES, F\u00D6RHANDSBILD_MIME, LADDER, kanF\u00F6rhandsbild;
 var init_forhandsbild = __esm({
   "atoms/bank/forhandsbild.ts"() {
     "use strict";
     init_dist();
     init_butik();
-    F\u00D6RHANDSBILD_MAX = 400;
+    init_thumbnail_mime();
+    F\u00D6RHANDSBILD_MAX = 320;
     F\u00D6RHANDSBILD_KVALITET = 75;
+    THUMBNAIL_MAX_BYTES = 30 * 1024;
     F\u00D6RHANDSBILD_MIME = "image/webp";
-    RASTER2 = /* @__PURE__ */ new Set(["image/png", "image/jpeg", "image/webp"]);
-    PDF_MIME = "application/pdf";
-    kanF\u00F6rhandsbild = (mime) => RASTER2.has(mime.toLowerCase()) || mime.toLowerCase() === PDF_MIME;
+    LADDER = [
+      { side: F\u00D6RHANDSBILD_MAX, quality: F\u00D6RHANDSBILD_KVALITET, alpha: 80 },
+      { side: F\u00D6RHANDSBILD_MAX, quality: 55, alpha: 50 },
+      { side: F\u00D6RHANDSBILD_MAX, quality: 35, alpha: 30 },
+      { side: 240, quality: 35, alpha: 30 },
+      { side: 160, quality: 35, alpha: 30 },
+      { side: 160, quality: 35, alpha: 30, flatten: true }
+    ];
+    kanF\u00F6rhandsbild = (mime) => hasThumbnailSource(mime);
   }
 });
 
@@ -15064,6 +15106,7 @@ var fixtures = [
 var change_bank_atom_exports = {};
 __export(change_bank_atom_exports, {
   ACTIONS: () => ACTIONS,
+  THUMBNAIL_LIMIT: () => THUMBNAIL_LIMIT,
   fixtures: () => fixtures2,
   run: () => run2,
   spec: () => spec2
@@ -21682,6 +21725,7 @@ function contentStates(view) {
 init_butik();
 
 // atoms/bank/plan.ts
+init_thumbnail_mime();
 import { basename } from "node:path";
 
 // src/content/image-size.ts
@@ -21930,24 +21974,46 @@ function planeraRollbyte(inneh\u00E5ll, reg, koder = STANDARD_FORMATKODER) {
     }
   return ut;
 }
-var RASTER = /* @__PURE__ */ new Set(["image/png", "image/jpeg", "image/webp"]);
-function planeraF\u00F6rhandsbilder(party2, reg) {
+function planeraF\u00F6rhandsbilder(party2, reg, opts = {}) {
   const perSha = /* @__PURE__ */ new Map();
   for (const r of reg) {
-    if (r.party !== party2 || !\u00E4rBankUri(r.uri) || !RASTER.has(r.mime.toLowerCase())) continue;
+    if (r.party !== party2 || !\u00E4rBankUri(r.uri) || !hasThumbnailSource(r.mime)) continue;
     const f\u00F6re = perSha.get(r.sha256);
     const width = r.width ?? f\u00F6re?.width;
     const height = r.height ?? f\u00F6re?.height;
     const thumbnail = r.thumbnail ?? f\u00F6re?.thumbnail;
+    const failed = r.thumbnail_failed ?? f\u00F6re?.thumbnail_failed;
     perSha.set(r.sha256, {
       ...r,
       found_in: r.found_in ?? f\u00F6re?.found_in ?? null,
       ...width !== void 0 ? { width } : {},
       ...height !== void 0 ? { height } : {},
-      ...thumbnail !== void 0 ? { thumbnail } : {}
+      ...thumbnail !== void 0 ? { thumbnail } : {},
+      ...failed !== void 0 ? { thumbnail_failed: failed } : {}
     });
   }
-  return [...perSha.values()].filter((r) => !r.thumbnail || !(r.width && r.height));
+  return [...perSha.values()].filter((r) => (!r.thumbnail || !(r.width && r.height)) && (opts.retryFailed || !r.thumbnail_failed));
+}
+function thumbnailFailedEvent(tenant, r, reason) {
+  return {
+    type: "asset_produced",
+    subject_ref: r.asset_type,
+    call_key: `bank-forhandsbild-failed:${tenant}:${r.party}:${r.sha256}:${reason}`,
+    payload: {
+      asset_type: r.asset_type,
+      acquisition: r.acquisition,
+      party: r.party,
+      ref: {
+        sha256: r.sha256,
+        size: r.size,
+        mime: r.mime,
+        uri: r.uri,
+        thumbnail_failed: reason,
+        ...r.width && r.height ? { width: r.width, height: r.height } : {}
+      },
+      ...r.found_in ? { found_in: r.found_in } : {}
+    }
+  };
 }
 function f\u00F6rhandsbildH\u00E4ndelse(tenant, r, tumme) {
   return {
@@ -22000,6 +22066,7 @@ function registrationsOf(view) {
       mime: String(ref["mime"] ?? "application/octet-stream"),
       found_in: typeof p["found_in"] === "string" ? p["found_in"] : null,
       ...typeof ref["thumbnail"] === "string" ? { thumbnail: ref["thumbnail"] } : {},
+      ...typeof ref["thumbnail_failed"] === "string" ? { thumbnail_failed: ref["thumbnail_failed"] } : {},
       ...ref["width"] && ref["height"] ? { width: Number(ref["width"]), height: Number(ref["height"]) } : {}
     };
   });
@@ -22028,11 +22095,11 @@ var spec2 = {
   performer: "code",
   requires: "draft",
   idempotent: true,
-  input: ["action", "customer", "image_field", "default_role", "format_codes", "dry_run"],
-  optional_input: ["image_field", "default_role", "format_codes", "dry_run"],
+  input: ["action", "customer", "image_field", "default_role", "format_codes", "limit", "retry_failed", "dry_run"],
+  optional_input: ["image_field", "default_role", "format_codes", "limit", "retry_failed", "dry_run"],
   output: ["action", "customer", "dry_run", "planned"],
   label: "\xC4ndra i inneh\xE5llsbanken",
-  summary: "Registrerar i kundens inneh\xE5llsbank. action s\xE4ger vad: repoint (externa referenser vars bytes finns i banken pekas om dit), link_images (inneh\xE5ll kopplas till sina bilder efter filnamnen) eller thumbnails (f\xF6rhandsbilder i webp och m\xE5tt f\xF6r bilder som saknar dem). Torrt tills dry_run: false.",
+  summary: "Registrerar i kundens inneh\xE5llsbank. action s\xE4ger vad: repoint (externa referenser vars bytes finns i banken pekas om dit), link_images (inneh\xE5ll kopplas till sina bilder efter filnamnen) eller thumbnails (f\xF6rhandsbilder i webp och m\xE5tt f\xF6r bilder och PDF:er som saknar dem, ett begr\xE4nsat antal per k\xF6rning; svaret s\xE4ger hur m\xE5nga som \xE4r kvar, och en fil som inte g\xE5r att rita antecknas och hoppas \xF6ver tills n\xE5gon ber om ett nytt f\xF6rs\xF6k). Torrt tills dry_run: false.",
   keywords: ["peka om", "drive-referenser", "koppla bilder", "f\xF6rhandsbilder", "thumbnails", "webp", "inneh\xE5llsbanken", "repoint"],
   test_target: "Torrt visar vad som skulle skrivas. Prov i test/p9d-function-moved.test.ts mot en minnesbutik och en logg i minnet.",
   leaves: {
@@ -22118,40 +22185,54 @@ async function run2(args, ctx) {
       deviations: p.avvikelser
     };
   }
-  const wanted = planeraF\u00F6rhandsbilder(party2, reg);
+  const wanted = planeraF\u00F6rhandsbilder(party2, reg, { retryFailed: args["retry_failed"] === true });
   const todo = wanted.filter((r) => inBank.has(r.sha256));
+  const limit = limitOf(args["limit"]);
+  const batch = todo.slice(0, limit);
   if (dry) return {
     action,
     customer: party2,
     dry_run: true,
     made: 0,
-    planned: todo.map((r) => ({ sha256: r.sha256, mime: r.mime, found_in: r.found_in, thumbnail: !!r.thumbnail })),
+    limit,
+    planned: batch.map((r) => ({ sha256: r.sha256, mime: r.mime, found_in: r.found_in, thumbnail: !!r.thumbnail })),
+    remaining: todo.length,
     without_bytes: wanted.length - todo.length
   };
-  const { l\u00E4ggF\u00F6rhandsbild: l\u00E4ggF\u00F6rhandsbild2 } = await Promise.resolve().then(() => (init_forhandsbild(), forhandsbild_exports));
-  const events2 = [];
+  const { thumbnailOrReason: thumbnailOrReason2, F\u00D6RHANDSBILD_MIME: F\u00D6RHANDSBILD_MIME2 } = await Promise.resolve().then(() => (init_forhandsbild(), forhandsbild_exports));
+  const made = [];
   const failed = [];
-  for (const r of todo) {
+  for (const r of batch) {
     const data3 = await h\u00E4mta(bank.store, tenant, r.sha256);
-    const thumb = data3 ? await l\u00E4ggF\u00F6rhandsbild2(bank.store, tenant, data3, r.mime, inBank) : null;
-    if (!thumb) {
-      failed.push(r.found_in ?? r.uri);
+    const t = data3 ? await thumbnailOrReason2(data3, r.mime).catch(() => ({ failed: "render_error" })) : { failed: "bytes_missing" };
+    if ("failed" in t) {
+      await bank.append([thumbnailFailedEvent(tenant, r, t.failed)]);
+      failed.push({ file: r.found_in ?? r.uri, reason: t.failed });
       continue;
     }
-    inBank.add(thumb.sha256);
-    events2.push(f\u00F6rhandsbildH\u00E4ndelse(tenant, r, thumb));
+    const small = await l\u00E4gg(bank.store, tenant, t.buffer, F\u00D6RHANDSBILD_MIME2, inBank);
+    inBank.add(small.sha256);
+    const e = f\u00F6rhandsbildH\u00E4ndelse(tenant, r, { uri: small.uri, width: t.originalWidth, height: t.originalHeight });
+    await bank.append([e]);
+    made.push(e);
   }
-  await bank.append(events2);
   return {
     action,
     customer: party2,
     dry_run: false,
-    planned: events2.map(line),
-    made: events2.length,
+    planned: made.map(line),
+    made: made.length,
     failed,
+    limit,
+    remaining: todo.length - batch.length,
     without_bytes: wanted.length - todo.length
   };
 }
+var THUMBNAIL_LIMIT = 20;
+var limitOf = (v) => {
+  const n2 = Math.floor(Number(v));
+  return Number.isFinite(n2) && n2 > 0 ? Math.min(n2, 200) : THUMBNAIL_LIMIT;
+};
 var fixtures2 = [
   { name: "ok\xE4nd action avvisas", args: { action: "ingest", customer: "p1" }, expect_error: "action \xE4r" },
   { name: "utan bank s\xE4ger atomen det", args: { action: "repoint", customer: "p1" }, expect_error: "inte kopplad" }

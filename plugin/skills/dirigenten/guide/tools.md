@@ -90,7 +90,7 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"planning_answer"}`: besvara ett delbeslut i planeringen (●): task, choice (numret), answer (förvalt förslaget), reason (skälet), user_approval (personens egna ord); sedan fortsätter planeringen
 - `read|write{op:"content_graph_link"}`: koppla material eller ett moment till en del av innehållsgrafen (●, med ångra): graph_id, node, task, ref eller moment; ångra med undoes
 - `read|write{op:"tidy"}`: städa ett uppdrag: task; det som följer av bevis (momentets resultat finns och nästa moment har börjat) markeras klart direkt med ångra, resten kommer som grupperade frågor att säga ja till med act tidy_apply (items, digest); ångra med act undo_tidy_apply
-- `read|write{op:"delivery_material"}`: leveransens material och saker: task (whole: true för hela leveransen) eller delivery
+- `read|write{op:"delivery_material"}`: leveransens material och saker: task (whole: true för hela leveransen) eller delivery; i sidor: page.cursor och page.at_seq ger nästa sida som cursor och at_seq
 - `read|write{op:"mail_draft"}`: mejl som utkast i din egen e-post, bilagor som ref ur filbanken: values { to, subject, body, cc?, attachments: [ref], reply_to? }; to och cc är adresser eller husets personer som part-id, upplösta till sin adress; reply_to är Gmails meddelande- eller tråd-id för mejlet som besvaras, så hamnar utkastet i den tråden (ämnet blir «Re: …» utan subject); förhandsvisning först (■), sedan användarens ja ordagrant; personen skickar själv från sin e-post, eller med send: true skickar dirigenten från personens adress efter hennes eget ja, ordagrant och ensamt (■, går inte att ta tillbaka). Aldrig mejlet bara i chatten eller via en annan e-postkoppling i Claude (den bifogar inga filer). Saknas en rätt: säg vilken och vem som ordnar den, med svarets ord, och erbjud guidning i Chrome. Kontroll: search { q: ["Kontrollera kopplingen för mejl"] } och kör den med read { op: "read_call" }
 - `read|write{op:"context"}`: lägesbilden: task + step/node, eller thread
 - `read|write{op:"step_sheet"}`: stegets ark: task + step/node
@@ -99,7 +99,7 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"question_answer"}`: svara på en fråga: task + question (momentet), answer «ja — …» eller «nej — …»
 - `read|write{op:"step_edit"}`: ändra ett steg: task + step, layer here|customer|method, skip + reason, calendar {…}
 - `read|write{op:"batch_actions"}`: handlingstabellen: varje handling med allvar och om den går i en batch
-- `read|write{op:"material"}`: materialet per moment: task + node (momentets grupper), task (hela leveransen), task + ref (en saks innehåll)
+- `read|write{op:"material"}`: materialet per moment: task + node (momentets grupper), task (hela leveransen, sidor om 50: page.cursor ger nästa som cursor; part: incoming eller results för en del), task + ref (en saks innehåll)
 - `read|write{op:"files"}`: filbanken att bläddra i: customer, folder, q, order new|old|name, cursor; ref (en fils innehåll, thumb för miniatyren), ref + task (uppdragets moment att knyta till)
 - `read|write{op:"project_brief_save"}`: spara projektets brief: project (uppdraget), brief { goal, recipient, scope, due, internal_due }
 - `read|write{op:"inbox_sheet"}`: Inkommet: kön och varje tråds öde, utan ämne och avsändare (60 dagar)

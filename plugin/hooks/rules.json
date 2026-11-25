@@ -431,6 +431,242 @@
     {
      "tool": "ads_get_insights",
      "capability": "c_meta_read_insights"
+    },
+    {
+     "tool": "ads_insights_advertiser_context",
+     "capability": "c_meta_read_insights"
+    },
+    {
+     "tool": "ads_insights_anomaly_signal",
+     "capability": "c_meta_read_insights"
+    },
+    {
+     "tool": "ads_insights_auction_ranking_benchmarks",
+     "capability": "c_meta_read_insights"
+    },
+    {
+     "tool": "ads_insights_industry_benchmark",
+     "capability": "c_meta_read_insights"
+    },
+    {
+     "tool": "ads_insights_performance_trend",
+     "capability": "c_meta_read_insights"
+    },
+    {
+     "tool": "ads_insights_performance_vs_peers",
+     "capability": "c_meta_read_insights"
+    },
+    {
+     "tool": "ads_get_opportunity_score",
+     "capability": "c_meta_read_insights"
+    },
+    {
+     "tool": "ads_get_ad_accounts",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_ad_entities",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_ad_account_pages",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_pages_for_business",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_user_pages",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_ig_accounts",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_datasets",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_dataset_details",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_dataset_stats",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_dataset_quality",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_customconversions",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_account_get_activity_logs",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_errors",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_async_result",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_field_context",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_help_article",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_library_search",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_experiment_list_tests",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_experiment_abtest_get_test",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_experiment_lift_get_test",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_experiment_check_eligibility",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_pixel_event_read",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_pixel_parameter_read",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_get_businesses",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_get_data_sources",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_get_diagnostics",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_get_dynamic_ads_health",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_get_feed_rules",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_get_product_feed_upload_sessions",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_get_suggested_filter",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_list_catalogs",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_list_dpa_eligible_catalogs",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_list_guidance",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_list_partner_integrations",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_list_product_feeds",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_list_product_sets",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_list_products",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_event_source_get",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_event_source_get_catalogs",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_event_source_get_health",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_catalog_event_source_get_recommendations",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_commerce_get_checkout_url_spec",
+     "capability": "c_meta_read_structure"
+    },
+    {
+     "tool": "ads_get_creatives",
+     "capability": "c_meta_read_creatives"
+    },
+    {
+     "tool": "ads_get_creative_ads",
+     "capability": "c_meta_read_creatives"
+    },
+    {
+     "tool": "ads_get_ad_images",
+     "capability": "c_meta_read_creatives"
+    },
+    {
+     "tool": "ads_get_ad_videos",
+     "capability": "c_meta_read_creatives"
+    },
+    {
+     "tool": "ads_get_ad_preview",
+     "capability": "c_meta_read_creatives"
+    },
+    {
+     "tool": "ads_get_ad_preview_screenshot",
+     "capability": "c_meta_read_creatives"
+    },
+    {
+     "tool": "ads_get_ig_media",
+     "capability": "c_meta_read_creatives"
+    },
+    {
+     "tool": "ads_get_ad_account_custom_audiences",
+     "capability": "c_meta_read_custom_audiences"
+    },
+    {
+     "tool": "ads_get_custom_audience",
+     "capability": "c_meta_read_custom_audiences"
+    },
+    {
+     "tool": "ads_get_custom_audience_adsets",
+     "capability": "c_meta_read_custom_audiences"
     }
    ],
    "names": []
