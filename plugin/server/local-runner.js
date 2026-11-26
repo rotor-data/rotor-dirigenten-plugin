@@ -21836,7 +21836,7 @@ function planeraOmpekning(tenant, party2, reg, iBanken2) {
     }
     h\u00E4ndelser.push({
       type: "asset_produced",
-      subject_ref: r.asset_type,
+      subject_ref: subjectOf(r),
       call_key: `bank:${tenant}:${party2}:${r.sha256}`,
       payload: {
         asset_type: r.asset_type,
@@ -21997,7 +21997,7 @@ function planeraF\u00F6rhandsbilder(party2, reg, opts = {}) {
 function thumbnailFailedEvent(tenant, r, reason) {
   return {
     type: "asset_produced",
-    subject_ref: r.asset_type,
+    subject_ref: subjectOf(r),
     call_key: `bank-forhandsbild-failed:${tenant}:${r.party}:${r.sha256}:${reason}`,
     payload: {
       asset_type: r.asset_type,
@@ -22018,7 +22018,7 @@ function thumbnailFailedEvent(tenant, r, reason) {
 function f\u00F6rhandsbildH\u00E4ndelse(tenant, r, tumme) {
   return {
     type: "asset_produced",
-    subject_ref: r.asset_type,
+    subject_ref: subjectOf(r),
     // The size is part of the key: an older registration without it (same file) would otherwise make the store drop this one.
     call_key: `bank-forhandsbild:${tenant}:${r.party}:${r.sha256}:${tumme.width}x${tumme.height}`,
     payload: {
@@ -22038,6 +22038,7 @@ function f\u00F6rhandsbildH\u00E4ndelse(tenant, r, tumme) {
     }
   };
 }
+var subjectOf = (r) => r.asset_type || r.subject_ref || "core.asset.material";
 
 // atoms/bank/registrations.ts
 init_butik();
@@ -22066,6 +22067,7 @@ function registrationsOf(view) {
       size: Number(ref["size"] ?? 0),
       mime: String(ref["mime"] ?? "application/octet-stream"),
       found_in: typeof p["found_in"] === "string" ? p["found_in"] : null,
+      ...e.subject_ref ? { subject_ref: e.subject_ref } : {},
       ...typeof ref["thumbnail"] === "string" ? { thumbnail: ref["thumbnail"] } : {},
       ...typeof ref["thumbnail_failed"] === "string" ? { thumbnail_failed: ref["thumbnail_failed"] } : {},
       ...ref["width"] && ref["height"] ? { width: Number(ref["width"]), height: Number(ref["height"]) } : {}
