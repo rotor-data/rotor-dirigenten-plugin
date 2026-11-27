@@ -28135,8 +28135,13 @@ var displayName = (u) => `${`${u.firstName ?? ""} ${u.lastName ?? ""}`.trim()}${
 
 // atoms/hubspot/flows.ts
 var INTERNAL_EMAIL = "0-8";
-async function listFlows(get2, token) {
-  return await allPages2(get2, token, "/automation/v4/flows", { limit: 100 });
+var FLOW_LIST_FIELDS = ["id", "name", "isEnabled", "flowType", "objectTypeId", "updatedAt", "description"];
+async function listFlows(get2, token, fields) {
+  const flows = await allPages2(get2, token, "/automation/v4/flows", { limit: 100 });
+  const asked = (Array.isArray(fields) ? fields : typeof fields === "string" ? fields.split(",") : []).map((x) => String(x).trim()).filter(Boolean);
+  if (asked.some((x) => x.toLowerCase() === "all")) return flows;
+  const keep2 = asked.length ? asked : FLOW_LIST_FIELDS;
+  return flows.map((f) => Object.fromEntries(keep2.filter((k) => k in f).map((k) => [k, f[k]])));
 }
 function getFlow(get2, token, id) {
   return request2(
@@ -28429,12 +28434,15 @@ var list_content_atom_exports = {};
 __export(list_content_atom_exports, {
   CONTENT_TYPES: () => CONTENT_TYPES2,
   PAGE_TYPES: () => PAGE_TYPES,
+  SUMMARY_ITEMS: () => SUMMARY_ITEMS,
   contentTypes: () => contentTypes,
+  detailOf: () => detailOf,
   fixtures: () => fixtures24,
   listContent: () => listContent,
   listObjects: () => listObjects,
   run: () => run24,
-  spec: () => spec24
+  spec: () => spec24,
+  summarize: () => summarize
 });
 
 // atoms/hubspot/cms_pages.ts
@@ -28735,6 +28743,22 @@ async function readPageAnalytics(get2, token, o) {
 // atoms/hubspot/list_content.atom.ts
 var PAGE_TYPES = ["site_page", "landing_page", "blog_post", "blog"];
 var CONTENT_TYPES2 = [...PAGE_TYPES, ...OBJECT_TYPES];
+var SUMMARY_ITEMS = 20;
+function detailOf(v) {
+  const d = typeof v === "string" ? v.trim().toLowerCase() : "";
+  if (!d || d === "summary") return "summary";
+  if (d === "full") return "full";
+  throw new Error(`detail is summary or full, got ${String(v)}`);
+}
+function summarize(items2) {
+  const by = {};
+  for (const i of items2) {
+    const t = by[i.page_type] ??= {};
+    t[i.state] = (t[i.state] ?? 0) + 1;
+  }
+  const latest2 = [...items2].sort((a, b) => String(b.updated ?? "").localeCompare(String(a.updated ?? ""))).slice(0, SUMMARY_ITEMS);
+  return { summary: { total: items2.length, by_type_and_state: by, items_left_out: items2.length - latest2.length }, items: latest2 };
+}
 function contentTypes(v) {
   const raw2 = Array.isArray(v) ? v : typeof v === "string" ? v.split(",") : [];
   const list9 = raw2.map((x) => String(x).trim()).filter(Boolean);
@@ -28826,9 +28850,9 @@ var spec24 = {
   requires: "read",
   idempotent: true,
   needs_env: ["HUBSPOT_TOKEN"],
-  input: ["content_types", "query", "archived", "max", "period", "root", "budget_ms", "items", "content_id"],
-  optional_input: ["content_types", "query", "archived", "max", "period", "root", "budget_ms", "items", "content_id"],
-  output: ["items", "blogs", "counts", "objects", "remaining", "item"],
+  input: ["content_types", "query", "archived", "max", "period", "root", "budget_ms", "items", "content_id", "detail"],
+  optional_input: ["content_types", "query", "archived", "max", "period", "root", "budget_ms", "items", "content_id", "detail"],
+  output: ["items", "blogs", "counts", "objects", "remaining", "item", "summary"],
   label: "L\xE4s inneh\xE5llet i HubSpot",
   summary: "Listar webbsidor, landningssidor, blogginl\xE4gg och bloggar i HubSpot med samma f\xE4lt per rad, och p\xE5 beg\xE4ran mallar, moduler, HubDB-tabeller med rader, formul\xE4r, omdirigeringar och trafik per sida f\xF6r en period.",
   keywords: ["sidlista", "webbsidor", "landningssidor", "blogginl\xE4gg", "mallar", "moduler", "HubDB", "formul\xE4r", "redirects", "content analytics"],
@@ -28838,6 +28862,7 @@ var spec24 = {
       items: "en rad per sida eller inl\xE4gg: id, title, url, template, language, state (draft/published/scheduled/archived), published, published_at, updated, page_type (site_page/landing_page/blog_post), blog_id",
       blogs: "en rad per blogg: id, name, url, language, post_count och published_count (ur alla inl\xE4gg, n\xE4r blog_post l\xE4stes)",
       counts: "antal rader per inneh\xE5llstyp som l\xE4stes",
+      summary: "with detail summary (the default): total, count per page type and state, and items_left_out; items is then the 20 latest changed. detail full gives every row",
       item: "hela posten med moduler (widgets, layoutSections) och br\xF6dtext, n\xE4r content_id angavs",
       remaining: "designverktygets s\xF6kv\xE4gar som inte hann l\xE4sas inom tiden eller max; tom lista n\xE4r allt l\xE4stes. Inte tom: k\xF6r igen med dem som root",
       objects: "en rad per mall, modul, HubDB-tabell, formul\xE4r, omdirigering eller sida med trafik: id, name, url (s\xF6kv\xE4g, m\xE5l eller sidans adress), content_type, updated och details (mall: template_type, used_by_pages; modul: fields; HubDB: columns, row_count, rows; formul\xE4r: form_type, fields; omdirigering: from, to, redirect_style; trafik: period och HubSpots m\xE4tv\xE4rden)"
@@ -28854,6 +28879,7 @@ var spec24 = {
 };
 async function run24(args, ctx) {
   const types = contentTypes(args["content_types"]);
+  const detail = detailOf(args["detail"]);
   const one = typeof args["content_id"] === "string" && args["content_id"].trim() ? args["content_id"].trim() : null;
   if (one) return readOne(one, types, ctx);
   const query = typeof args["query"] === "string" && args["query"].trim() ? args["query"].trim() : void 0;
@@ -28893,10 +28919,12 @@ async function run24(args, ctx) {
     ...given ? { items: given } : {}
   }) : null;
   const keepObjects = rest && !objectTypes.includes("hubdb_table");
+  const short = pages && detail === "summary" ? summarize(pages.items) : null;
   return {
-    ...pages ? { items: pages.items, blogs: pages.blogs } : {},
+    ...pages ? { items: short ? short.items : pages.items, blogs: pages.blogs } : {},
+    ...short ? { summary: short.summary } : {},
     ...rest ? { objects: rest.objects } : {},
-    $keep: [...pages ? ["items", "blogs"] : [], ...keepObjects ? ["objects"] : []],
+    $keep: [...pages && !short ? ["items", "blogs"] : [], ...keepObjects ? ["objects"] : []],
     ...rest && design ? { remaining: rest.remaining } : {},
     counts: { ...pages?.counts, ...rest?.counts },
     dry_run: false
@@ -28916,6 +28944,8 @@ async function readOne(id, types, ctx) {
 var CONNECTED5 = { scopes: ["content"] };
 var fixtures24 = [
   { name: "sidtyperna", ...CONNECTED5, args: {}, expect_fields: ["items", "blogs", "counts"] },
+  { name: "page types, every row", ...CONNECTED5, args: { detail: "full" }, expect_fields: ["items", "blogs", "counts"] },
+  { name: "unknown detail is refused", ...CONNECTED5, args: { detail: "lite" }, expect_error: "detail is summary or full" },
   {
     name: "mallar, moduler, HubDB, formul\xE4r, omdirigeringar",
     ...CONNECTED5,
@@ -36085,11 +36115,13 @@ import { execFile as execFile2 } from "node:child_process";
 
 // src/execute/surface.ts
 var SurfaceError = class extends Error {
-  constructor(message, transient) {
+  constructor(message, transient, choices) {
     super(message);
     this.transient = transient;
+    this.choices = choices;
   }
   transient;
+  choices;
   name = "SurfaceError";
 };
 

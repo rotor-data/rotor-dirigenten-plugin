@@ -1,5 +1,5 @@
 # Guide: envelope
-Every reply carries `envelope`: `subject` (kind, id, rev), `available` (each with `action`, `label`, `does`, `severity`, `primary`), `unavailable` (`why`, what unlocks it), `next`, `ask_user`, `written`, `receipt`, `preview`, `missing`.
+Every reply carries `envelope`: `subject` (kind, id, rev), `available` (each with `action`, `label`, `does`, `severity`, `primary`), `unavailable` (`why`, what unlocks it), `next`, `ask_user`, `written`, `receipt`, `preview`, `missing`. To the connector an empty list or a null is left out: a field that is not there is empty.
 
 Steps
 1. Read `available`; the entry with `primary: true` comes first.

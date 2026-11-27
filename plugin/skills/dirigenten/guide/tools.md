@@ -4,7 +4,7 @@
   Fields: `q` one to five phrasings; `want` "file": files only; `cursor` page.cursor of the last reply, for the next page.
 - `read`: Envelope, rev; net: map; to_place; entry: fil i zip/tar/eml.
   Ex: `read{on:{kind:"task",id:"t-1"},view:"net"}`. Not: `read{view:"net"}`: net is one task's map and needs on; only the lists (queue, closed, calendar, inbox, to_place) go without.
-  Fields: `on` the subject as search gave it; kind file for a bank file, entry for a file in its zip/tar/eml; `form` short or full; `view` net (a task's map) or a list; `cursor` page.cursor, for the next page; `whole` net: every moment in one reply; `compact` net: milestones by index; `party` the person a list is for; `menu` the subject's menu; `also` more subjects for the menu; `change` a field and value to try in the menu.
+  Fields: `on` the subject as search gave it; kind file for a bank file, entry for a file in its zip/tar/eml; `form` short or full; `view` net (a task's map) or a list; `cursor` page.cursor, for the next page; `whole` net: every moment in one reply; `compact` net: milestones by index; `party` the person a list is for; `menu` the subject's menu; `also` more subjects for the menu; `change` a field and value to try in the menu; `detail` full: everything; short (default): counts, the first rows and short.cut for the rest.
 - `guide`: Per phase.
   Ex: `guide{phase:"tools"}`. Not: `guide{phase:""}`: leave phase out for the list; an empty phase is refused.
   Fields: `phase` the phase to read.
@@ -18,7 +18,7 @@
   Params: add_milestone{label} add_dependency{from,to} remove_dependency{from,to} change_who{party} change_responsible{party} shift{days} set_estimate{hours} to_task{method,action,summary} change_method{to} set_brief{brief}
 - `execute_step`: Runs a capability.
   Ex: `execute_step{on:{kind:"moment",id:"m-1",task:"t-1"},rev:"r-1",test:true}`. Not: `execute_step{on:{kind:"step",id:"m-1"}}`: on.kind is moment (or milestone, task, delivery, case, idea), never step.
-  Fields: `on` the moment, with its task; `rev` envelope.subject.rev of the last read; `params` the capability's values; `test` true: against the test target, not live; `preview_id` envelope.preview.preview_id, with the yes; `user_approval` the user's yes, verbatim; `form` short or full; `capability` the one picked when the reply asked; `chain` a reply's chain.run.
+  Fields: `on` the moment, with its task; `rev` envelope.subject.rev of the last read; `params` the capability's values; `test` true: against the test target, not live; `preview_id` envelope.preview.preview_id, with the yes; `user_approval` the user's yes, verbatim; `form` short or full; `capability` the one picked when the reply asked; `chain` a reply's chain.run; `detail` full: the whole reply of the run; short (default): a summary.
 - `write`: save: bank; else registry.
   Ex: `write{op:"save",text:"Note"}`. Not: `write{op:"define",entry:{id:"x",kind:"method"}}`: an entry needs id, kind and node.
   Fields: `op` define, append, draft or save; `text` the text (save); `base64` a file's bytes (save); `name` the file name (save); `mime` the file type (save); `customer` the customer it belongs to (save); `folder` the folder (save); `chunk` id, index, total, sha256 for files >256 kB; `entry` id, kind, node; `task` the task the entry concerns; `fixes` subject and set, as missing gave them; `user_approval` the user's yes, verbatim; `values` a quick run's values, as an object.
@@ -28,7 +28,7 @@
 
 Steps
 1. `search{q:[…]}` (one to five phrasings) or `plan_state{}` to find the subject.
-2. `read{on}` to get the envelope and `rev`; `read{on, view:"net"}` for a task map (60 moments per page, follow `page.cursor`).
+2. `read{on}` to get the envelope and `rev`; `read{on, view:"net"}` for a task map: what can be done now and what waits, the rest counted. Replies are short by default (`short.cut` says what was left out); `detail:"full"` gives all of it (a map 60 moments per page, follow `page.cursor`).
 3. `act{on, action, rev}` for every action, `execute_step` to run a capability, `write` to define registry entries.
 4. `guide{phase}` for details: moment, task, delivery, case, idea, envelope, severity, promptstandard, tools, routes; `map` for what can run here.
 
@@ -45,19 +45,8 @@ v1's own tools, as `read{op, …}` or `write{op, …}` with v1's fields; `guide{
 - `read{op:"presentation_draft"}`: presentationens utkast
 - `read{op:"project_brief"}`: projektets brief
 - `write{op:"project_brief_save"}`: spara projektets brief
-- `read{op:"library_search"}`: sök i biblioteket
-- `read{op:"library_check"}`: kontrollera biblioteket
-- `read{op:"library_debt"}`: bibliotekets skuld
-- `read{op:"measure_debt"}`: mät skuld
-- `read{op:"classify_propose"}`: förslag på klassning
-- `read{op:"intake_status"}`: kön: queue: true, format kort|full; övriga lägen (thread, image, pending, candidates, trial) är v2:s egna
-- `write{op:"classify_accept"}`: flytta inkommet dit det hör: thread, classification.route.to
 - `read{op:"view_file"}`: vyns ark: sheet delivery|calendar|how|library|method|order …; utan sheet: for page|version (vyns sida och stämpel) eller personens egen vyadress
-- `read{op:"quick_actions"}`: snabbhandlingarna ur v2:s rader; med ref: uppdragen filen kan kopplas till
 - `write{op:"mail_draft"}`: mejl som utkast i din egen e-post, bilagor som ref ur filbanken: values { to, subject, body, cc?, attachments: [ref], reply_to? }; to och cc är adresser eller husets personer som part-id, upplösta till sin adress; reply_to är Gmails meddelande- eller tråd-id för mejlet som besvaras, så hamnar utkastet i den tråden (ämnet blir «Re: …» utan subject); förhandsvisning först (■), sedan användarens ja ordagrant; personen skickar själv från sin e-post, eller med send: true skickar dirigenten från personens adress efter hennes eget ja, ordagrant och ensamt (■, går inte att ta tillbaka). Aldrig mejlet bara i chatten eller via en annan e-postkoppling i Claude (den bifogar inga filer). Saknas en rätt: säg vilken och vem som ordnar den, med svarets ord, och erbjud guidning i Chrome. Kontroll: search { q: ["Kontrollera kopplingen för mejl"] } och kör den med read { op: "read_call" }
-- `read{op:"handovers"}`: överlämningar och väntan per leverans: agenda true, format oversikt
-- `read{op:"order_preview"}`: förhandsvisa en beställning: samma fält som när den läggs in, inget skrivs
-- `write{op:"intake_order"}`: lägg in en beställning: kund, leveranstyp, datum, vem som beställt; blir ett uppdrag
 v1's step tools, with v1's fields, done on v2's moments through read, act or plan_state (severity and yes as there):
 - `read|write{op:"content_search"}`: sök i innehållsbanken: query, customer?, limit?
 - `read|write{op:"content_list"}`: lista innehåll med läge (utkast, godkänd, publicerad): customer?, kind?, status?
@@ -105,6 +94,7 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"inbox_sheet"}`: Inkommet: kön och varje tråds öde, utan ämne och avsändare (60 dagar)
 - `read|write{op:"intake_submit"}`: ta emot kandidater: candidates [...]; undo: kandidaten drar tillbaka den; release: släpper fram en som hålls; fetch läser brevlådan
 - `read|write{op:"intake_order"}`: lägg in en beställning: customer, deliverable_type, due, ordered_by, note, description; preview: true visar den utan att skriva; finns en likadan öppen i dag används den, create_new: true lägger in en ny
+- `read|write{op:"order_preview"}`: förhandsvisa en beställning: samma fält som när den läggs in, inget skrivs
 - `read|write{op:"quick_run"}`: kör en snabbhandling: task (uppdraget) eller values.delivery ger act run_quick på uppdraget; utan dem läses en förmåga som bara läser direkt för customer (även execute_step { call, customer, values }, utan steg), och annars blir det först ett uppdrag (customer, deliverable_type ur förmågans yta, due)
 - `read|write{op:"image_fetch"}`: bild ur en extern källa: for_task, for_node (momentet), provenance { source, source_id }, filename, asset_type; Adobe Stock är ■
 - `read|write{op:"note_link"}`: notera en koppling i kundens system: task, customer, from, relation, to, why
@@ -117,6 +107,10 @@ v1's step tools, with v1's fields, done on v2's moments through read, act or pla
 - `read|write{op:"view_file"}`: vyns ark: sheet library och how (v2:s egna), delivery|calendar|method|order …
 - `read|write{op:"quick_actions"}`: snabbhandlingarna ur v2:s rader; med ref: uppdragen filen kan kopplas till
 - `read|write{op:"to_approve"}`: att godkänna: per text vad, uppdrag, vem och när, förhandsvisning, länk, skillnad mot förra godkända och vad ett ja släpper; task för ett uppdrag
+- `read|write{op:"library_search"}`: sök i biblioteket: arbetssätt, delmoment, koden, delmoment som väntar på kod, leveranstyper och moment; q, kind, surface, produces, consumes, like, limit, format; kind project|task|delivery ger översikten
+- `read|write{op:"library_check"}`: kontrollera biblioteket: pröva ett utkast (operation med calls och parameters) utan att skriva; do debt eller measure ger skulden
+- `read|write{op:"library_debt"}`: bibliotekets skuld: delmoment som inget moment använder, delmoment som väntar på kod, poster utan namn, delmoment utan instruktion och bankens filer per kund
+- `read|write{op:"measure_debt"}`: mät skuld: beställningar och ärenden utan arbetssätt, delmoment som väntar på kod
 - `read|write{op:"settings"}`: inställningarna: kopplingar, arbetsdag och för en superadmin vem som har vilka rättigheter
 - `read|write{op:"method_build"}`: nytt eller ändrat arbetssätt: method + draft (metodbyggaren) eller from_plan { label, steps [{ label, type }] }; förhandsvisning först
 - `read|write{op:"registry_define"}`: ändra en post: node { id, … } med change: true (arbetssätt, delmål, moment, förmåga, eller v1:s steg och molekyl), eller en ny förmåga; förhandsvisning först
@@ -131,3 +125,7 @@ v1's ops that v2 now does itself, with v1's names and fields (severity and yes a
 - `read{op:"messages"}`: meddelandena som trådar med läget i ord och antal per flik; since (ÅÅÅÅ-MM-DD) läser längre bak
 - `write{op:"message"}`: meddelande till en eller flera kollegor: to (namn, mejladress eller id), text, about { task?, step?, thread? }, reply_to; read (id) markerar läst; resolve (id) + note?, scope «thread», undo: true; review + answer för second opinion
 - `write{op:"message_mark"}`: arkivera meddelanden: sent (id), archived true döljer, false tar tillbaka; bara för den som gör det
+- `read{op:"intake_status"}`: inkorgen: queue: true (kön, format kort|full), thread (en tråd), image, pending, candidates, trial
+- `read{op:"handovers"}`: överlämningar och väntan per leverans: det du tar emot, det som väntar på en kollega och det som väntar på kunden
+- `read{op:"classify_propose"}`: förslag på klassning
+- `write{op:"classify_accept"}`: flytta inkommet dit det hör: thread, classification.route.to; också bedömningen (outcome), bildanteckningen, kopplingen (relate) och provet (trial)

@@ -53,4 +53,4 @@ Rotor's customers, tasks, files, mail, planning and customer systems: connector 
 - [Severity and yes](references/severity-and-yes.md): something is sent, published, removed or approved
 - [Refusals and detours](references/refusals-and-detours.md): a refusal, an error, «cannot», stale tools
 
-Details: `guide{phase}`; `map` lists what can run here; `promptstandard` how a prompt is written. Anta inte att något fortfarande inte fungerar för att det inte fungerade tidigare i samtalet eller i går. Fråga servern igen.
+Details: `guide{phase}`; `map` lists what can run here; `promptstandard` how a prompt is written. Anta inte att något fortfarande inte fungerar för att det inte fungerade tidigare i samtalet eller i går. Fråga servern igen. Direkt efter ett avslag skickar du samma anrop igen bara när svaret säger att ett nytt försök kan hjälpa (`retry.may_help`); annars skickar du det anrop eller väljer bland de val som svaret har klara (`next`).
